@@ -2864,29 +2864,29 @@ function buildPresentationSlides(row) {
   ];
   return [
     { title: "Gruppenvorstellung", html: `<p class="presentation-kicker">${escapeHtml(timestamp)}</p><h2>${escapeHtml(groupName)}</h2>${presentationTable(["Rolle", "Name"], roles)}<p class="presentation-note">Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.</p>` },
-    { title: "Phase 2: Problembeschreibung", html: presentationTable(["Rolle", "Probleme / Beobachtung", "Gefühle", "Wünsche"], [
+    { title: "Problembeschreibung", html: `<p class="presentation-subtitle">Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.</p>` + presentationTable(["Rolle", "Probleme / Beobachtung", "Gefühle", "Wünsche"], [
       ["Schulleitung", p2.slProbleme || p2.slProblem || "", p2.slGefuehle || "", p2.slWuensche || ""],
       ["Lehrkraft A", p2.aProbleme || p2.aPerspektive || "", p2.aGefuehle || "", p2.aWuensche || ""],
       ["Lehrkraft B", p2.bProbleme || p2.bPerspektive || "", p2.bGefuehle || "", p2.bWuensche || ""]
     ]) },
-    { title: "Phase 3: Zielformulierung", html: presentationTable(["Bereich", "Eintrag"], [
+    { title: "Zielformulierung", html: `<p class="presentation-subtitle">Hier werden die Einzelziele der Beteiligten, erkennbare Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.</p>` + presentationTable(["Bereich", "Eintrag"], [
       ["Ziel Schulleitung", p3.zielSL || ""],
       ["Ziel Lehrkraft A", p3.zielA || ""],
       ["Ziel Lehrkraft B", p3.zielB || ""],
       ["Gefundene Gemeinsamkeiten", p3.gemeinsamkeiten || ""],
       ["Gemeinsame Zielvereinbarung", p3.gemeinsamesZiel || p3.gemeinsameZielformulierung || ""]
     ]) },
-    { title: "Phase 4: Vertiefte Problembearbeitung", html: presentationTable(["Aspekt", "Ergebnis"], [
+    { title: "Vertiefte Problembearbeitung", html: `<p class="presentation-subtitle">Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.</p>` + presentationTable(["Aspekt", "Ergebnis"], [
       ["Hilfreiche Kritik", p4.kritik || ""],
       ["Absprachen zum weiteren Vorgehen", p4.absprachen || p4.weiteresVorgehen || ""]
     ]) },
-    { title: "Phase 5 und 6: Umsetzung", html: presentationTable(["Aspekt", "Ergebnis"], [
+    { title: "Umsetzung", html: `<p class="presentation-subtitle">Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung der Vereinbarung.</p>` + presentationTable(["Aspekt", "Ergebnis"], [
       ["Zustimmung zur Vereinbarung", p5.zustimmung || ""],
       ["Einschätzung der Praxistauglichkeit durch die Schulleitung", p6.praxistauglichkeit || p6.einschaetzung || ""],
       ["Unterstützungsmöglichkeiten durch die Schulleitung", p6.unterstuetzung || ""],
       ["Erste konkrete Umsetzungsschritte", p6.umsetzung || p6.konkreteUmsetzungsschritte || ""]
     ]) },
-    { title: "Vielen Dank fürs Zuhören", html: `<div class="thanks-slide"><h2>Vielen Dank fürs Zuhören</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p></div>` }
+    { title: "", html: `<div class="thanks-slide"><h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p></div>` }
   ];
 }
 
@@ -2897,7 +2897,8 @@ function renderPresentationSlideFinal() {
   const counter = document.getElementById("presentationCounter");
   if (!slide || !presentationSlidesFinal.length) return;
   const item = presentationSlidesFinal[presentationIndexFinal];
-  slide.innerHTML = `<div class="presentation-slide-inner"><h1>${escapeHtml(item.title)}</h1>${item.html}</div>`;
+  const titleHtml = item.title ? `<h1>${escapeHtml(item.title)}</h1>` : "";
+  slide.innerHTML = `<div class="presentation-slide-inner${item.title ? "" : " no-title-slide"}">${titleHtml}${item.html}</div>`;
   if (counter) counter.textContent = `${presentationIndexFinal + 1} / ${presentationSlidesFinal.length}`;
 }
 function movePresentationFinal(delta) {

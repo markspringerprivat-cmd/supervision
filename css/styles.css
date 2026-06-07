@@ -1617,3 +1617,126 @@ body.public-results .result-track {
   .presentation-table { font-size: 0.9rem; }
   .presentation-table th, .presentation-table td { padding: 10px; }
 }
+
+/* FINAL PRESENTATION LAYOUT UPDATE: wide full-screen slide deck */
+body.presentation-body {
+  background: #0f172a;
+  min-height: 100vh;
+  overflow: hidden;
+}
+.presentation-shell {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-rows: 56px 1fr 58px;
+}
+.presentation-toolbar {
+  min-height: 56px;
+  padding: 8px 18px;
+  box-sizing: border-box;
+}
+.presentation-nav {
+  min-height: 58px;
+  padding: 8px 20px 10px;
+  box-sizing: border-box;
+}
+.presentation-slide {
+  width: calc(100vw - 44px);
+  height: calc(100vh - 132px);
+  max-width: none;
+  max-height: none;
+  align-self: center;
+  justify-self: center;
+  margin: 0;
+  border-radius: 28px;
+  overflow: hidden;
+}
+.presentation-slide-inner {
+  height: 100%;
+  box-sizing: border-box;
+  padding: clamp(42px, 5.2vh, 70px) clamp(54px, 6.4vw, 104px);
+  gap: 0;
+}
+.presentation-slide h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 4.5vw, 5.3rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+.presentation-slide h2 {
+  margin: 12px 0 28px;
+  font-size: clamp(2.4rem, 4.3vw, 5rem);
+  line-height: 1.02;
+}
+.presentation-kicker {
+  margin: 0 0 14px;
+  font-size: clamp(1rem, 1.2vw, 1.25rem);
+}
+.presentation-note {
+  margin-top: 28px;
+  font-size: clamp(1rem, 1.3vw, 1.3rem);
+}
+.presentation-subtitle {
+  margin: 1cm 0 1cm;
+  max-width: 1200px;
+  color: #475569;
+  font-weight: 700;
+  font-size: clamp(1.08rem, 1.45vw, 1.45rem);
+  line-height: 1.45;
+}
+.presentation-table-wrap {
+  width: 100%;
+  max-height: calc(100vh - 360px);
+  overflow: auto;
+  margin: 0;
+}
+.presentation-table {
+  font-size: clamp(1rem, 1.28vw, 1.35rem);
+}
+.presentation-table th,
+.presentation-table td {
+  padding: clamp(14px, 1.55vw, 22px) clamp(16px, 1.8vw, 26px);
+  line-height: 1.35;
+}
+.presentation-slide-inner.no-title-slide {
+  padding: clamp(36px, 4.5vh, 64px) clamp(54px, 6vw, 100px);
+}
+.thanks-slide {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.thanks-slide h2 {
+  margin: 0;
+  font-size: clamp(4rem, 8.5vw, 10rem);
+  line-height: 1.02;
+  color: #1e3a5f;
+}
+.thanks-slide p {
+  margin-top: 24px;
+  font-size: clamp(1.2rem, 1.8vw, 2rem);
+}
+:fullscreen .presentation-shell,
+.presentation-body:fullscreen .presentation-shell {
+  width: 100vw;
+  height: 100vh;
+}
+:fullscreen .presentation-slide,
+.presentation-body:fullscreen .presentation-slide {
+  width: calc(100vw - 44px);
+  height: calc(100vh - 132px);
+}
+@media (max-width: 900px) {
+  body.presentation-body { overflow: auto; }
+  .presentation-shell { min-height: 100vh; height: auto; grid-template-rows: auto 1fr auto; }
+  .presentation-toolbar { flex-wrap: wrap; }
+  .presentation-slide { width: calc(100vw - 20px); height: auto; min-height: 72vh; margin: 10px 0; }
+  .presentation-slide-inner { padding: 26px; }
+  .presentation-subtitle { margin: 26px 0; font-size: 1rem; }
+  .presentation-table { font-size: 0.9rem; }
+  .presentation-table th, .presentation-table td { padding: 10px; }
+}

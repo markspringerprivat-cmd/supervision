@@ -832,6 +832,7 @@ function initResults() {
   if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
   if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
   if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
+  renderRoundBadges();
   window.addEventListener("resize", () => { if (resultRowsCache.length) renderCarouselAt(currentVirtualPosition, false); });
 
   if (!url) {
@@ -959,19 +960,21 @@ function updateSlotCardFocus(position) {
   const cards = track.querySelectorAll(".result-card");
   cards.forEach(card => {
     const virtual = Number(card.dataset.virtualIndex);
-    const slot = virtual - position;
-    const distance = Math.abs(slot);
+    const distance = Math.abs(virtual - position);
     const active = virtual === nearest;
-    const scale = active ? 1 : Math.max(0.78, 1 - Math.min(distance, 3) * 0.09);
-    const opacity = active ? 1 : Math.max(0.12, 0.50 - Math.min(distance, 4) * 0.14);
-    const z = active ? 40 : Math.max(1, 22 - Math.round(distance * 5));
+
+    // Slot-Effekt: alle Kacheln bleiben gleich groß und weiß.
+    // Nur die Fokus-Kachel wird stärker betont; seitliche Kacheln werden dezent transparent.
+    const opacity = active ? 1 : Math.max(0.52, 0.82 - Math.min(distance, 3) * 0.12);
+    const z = active ? 50 : Math.max(1, 30 - Math.round(distance * 4));
+
     card.classList.toggle("is-active", active);
     card.classList.toggle("is-side", !active);
     card.setAttribute("aria-current", active ? "true" : "false");
-    card.style.transform = `scale(${scale})`;
+    card.style.transform = "translate3d(0,0,0) scale(1)";
     card.style.opacity = String(opacity);
     card.style.zIndex = String(z);
-    card.style.filter = active ? "none" : `saturate(.68) blur(${Math.min(distance, 2) * 0.2}px)`;
+    card.style.filter = "none";
   });
 }
 
@@ -1060,6 +1063,35 @@ function updateCarouselCounter() {
   counter.textContent = total ? `${currentResultIndex + 1} / ${total}` : "0 / 0";
 }
 
+
+function getRoundCount() {
+  return Number(localStorage.getItem("sv_results_round_count") || "0") || 0;
+}
+
+function setRoundCount(value) {
+  localStorage.setItem("sv_results_round_count", String(value));
+}
+
+function renderRoundBadges(activeRound = null) {
+  const box = document.getElementById("roundBadges");
+  if (!box) return;
+  const count = getRoundCount();
+  box.innerHTML = "";
+  for (let i = 1; i <= count; i++) {
+    const badge = document.createElement("span");
+    badge.className = "round-badge" + (activeRound === i ? " is-current" : "");
+    badge.textContent = "Runde " + i;
+    box.appendChild(badge);
+  }
+}
+
+function startNewRoundBadge() {
+  const next = getRoundCount() + 1;
+  setRoundCount(next);
+  renderRoundBadges(next);
+  return next;
+}
+
 function spinRandomGroup() {
   if (!resultRowsCache.length) return;
   const btn = document.getElementById("randomGroupBtn");
@@ -1068,10 +1100,11 @@ function spinRandomGroup() {
   if (rouletteFrame) cancelAnimationFrame(rouletteFrame);
 
   randomSpinActive = true;
+  const activeRound = startNewRoundBadge();
   const n = resultRowsCache.length;
-  const duration = 6000 + Math.floor(Math.random() * 6001); // 6–12 Sekunden
+  const duration = 7000 + Math.floor(Math.random() * 5001); // 7–12 Sekunden
   const startPosition = currentVirtualPosition;
-  const loops = Math.max(8, Math.ceil(duration / 850));
+  const loops = Math.max(12, Math.ceil(duration / 650));
   const randomOffset = Math.floor(Math.random() * n);
   const targetPosition = Math.ceil(startPosition) + loops * n + randomOffset;
   const minV = Math.floor(startPosition) - 5;
@@ -1115,6 +1148,7 @@ function spinRandomGroup() {
       status.className = "success";
       status.textContent = "Ausgewählt: " + (chosen.groupName || (chosen.data && chosen.data.groupName) || "Gruppe");
     }
+    renderRoundBadges(activeRound);
     startConfetti(6000);
   }
   rouletteFrame = requestAnimationFrame(frame);

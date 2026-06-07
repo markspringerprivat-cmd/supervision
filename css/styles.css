@@ -510,17 +510,10 @@ body.is-mobile {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: min(210px, 17vw);
+  width: 0;
   z-index: 50;
   pointer-events: none;
-}
-.result-carousel::before {
-  left: 0;
-  background: linear-gradient(90deg, var(--bg) 0%, rgba(245,247,251,.86) 42%, rgba(245,247,251,0) 100%);
-}
-.result-carousel::after {
-  right: 0;
-  background: linear-gradient(270deg, var(--bg) 0%, rgba(245,247,251,.86) 42%, rgba(245,247,251,0) 100%);
+  background: transparent;
 }
 .result-track {
   --slot-gap: 54px;
@@ -663,4 +656,74 @@ body.is-mobile {
     margin-bottom: 72px;
   }
   .result-track { --slot-gap: 18px; padding-bottom: 160px; }
+}
+
+
+/* Feinschliff Slot-Roulette: klare Kacheln, gleiche Größe, Rundenmarker */
+.random-area {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.round-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.round-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #2f9e44;
+  color: #fff;
+  font-weight: 800;
+  font-size: .9rem;
+  box-shadow: 0 8px 18px rgba(47, 158, 68, .20);
+}
+.round-badge.is-current {
+  background: #1b7f35;
+  box-shadow: 0 0 0 4px rgba(47, 158, 68, .16), 0 10px 20px rgba(47, 158, 68, .28);
+}
+.result-carousel {
+  padding-top: 34px !important;
+  padding-bottom: 340px !important;
+  margin-bottom: 140px !important;
+  overflow: hidden;
+}
+.result-track {
+  align-items: flex-start;
+  padding-top: 24px !important;
+  padding-bottom: 260px !important;
+}
+.result-card {
+  background: #fff !important;
+  transform: translate3d(0,0,0) scale(1) !important;
+  filter: none !important;
+  opacity: .68;
+  transition: border-color .18s ease, box-shadow .18s ease, opacity .08s linear;
+}
+.result-card.is-active {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: translate3d(0,0,0) scale(1) !important;
+  box-shadow: 0 36px 96px rgba(22, 50, 79, 0.26);
+}
+.result-card.is-side {
+  filter: none !important;
+  transform: translate3d(0,0,0) scale(1) !important;
+  background: #fff !important;
+}
+.result-carousel::before,
+.result-carousel::after {
+  display: none !important;
+}
+@media (max-width: 760px) {
+  .random-area { align-items: stretch; }
+  .round-badges { width: 100%; }
+  .result-carousel { padding-bottom: 260px !important; margin-bottom: 90px !important; }
 }

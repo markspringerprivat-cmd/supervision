@@ -3608,3 +3608,401 @@ window.addEventListener('DOMContentLoaded', () => {
     };
   }
 })();
+
+/*
+   FINAL OVERRIDE: Präsentationsbearbeitung verbessert
+   - Tabellen ohne horizontales Scrollen, Inhalte umbrechen
+   - Überschrift/Beschreibung direkt bearbeitbar
+   - Textboxen verschiebbar und skalierbar
+   - Speichern-Button
+   - Farbregler entfernt, Muster/Farbe getrennt steuerbar
+*/
+(function(){
+  const DEFAULT_SLIDE_TITLES = [
+    'Gruppenvorstellung',
+    'Problembeschreibung',
+    'Zielformulierung',
+    'Vertiefte Problembearbeitung',
+    'Umsetzung',
+    ''
+  ];
+  const DEFAULT_SLIDE_SUBTITLES = [
+    '',
+    'Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.',
+    'Hier werden die Einzelziele der Beteiligten, erkennbare Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.',
+    'Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.',
+    'Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung der Vereinbarung.',
+    ''
+  ];
+
+  function textOverrides(){
+    const obj = (typeof loadObj === 'function') ? loadObj('presentation_text_overrides', {}) : {};
+    return obj && typeof obj === 'object' ? obj : {};
+  }
+  function saveTextOverrides(obj){
+    if (typeof saveObj === 'function') saveObj('presentation_text_overrides', obj || {});
+  }
+  function getSlideText(idx, type, fallback){
+    const o = textOverrides();
+    const key = `s${idx}_${type}`;
+    return (o[key] !== undefined && o[key] !== null && String(o[key]).trim() !== '') ? String(o[key]) : (fallback || '');
+  }
+  function setSlideText(idx, type, value){
+    const o = textOverrides();
+    o[`s${idx}_${type}`] = String(value || '').trim();
+    saveTextOverrides(o);
+  }
+  window.getPresentationTextOverridesFinal = textOverrides;
+
+  const OLD_GET_SETTINGS = typeof getPresentationSettingsFinal === 'function' ? getPresentationSettingsFinal : null;
+  getPresentationSettingsFinal = function(){
+    const base = OLD_GET_SETTINGS ? OLD_GET_SETTINGS() : {};
+    return Object.assign({
+      heading: '#1e3a5f',
+      text: '#0f172a',
+      background: '#0f172a',
+      slide: '#ffffff',
+      pattern: 'none',
+      patternTarget: 'slide',
+      patternColor: '#e5e7eb',
+      backgroundImage: ''
+    }, base || {});
+  };
+
+  const OLD_APPLY_THEME = typeof applyPresentationThemeToNodeFinal === 'function' ? applyPresentationThemeToNodeFinal : null;
+  applyPresentationThemeToNodeFinal = function(host, settings){
+    const s = Object.assign({}, getPresentationSettingsFinal(), settings || {});
+    if (OLD_APPLY_THEME) OLD_APPLY_THEME(host, s);
+    if (!host) return;
+    host.style.setProperty('--presentation-heading-color', s.heading || '#1e3a5f');
+    host.style.setProperty('--presentation-text-color', s.text || '#0f172a');
+    host.style.setProperty('--presentation-background-color', s.background || '#0f172a');
+    host.style.setProperty('--presentation-slide-color', s.slide || '#ffffff');
+    host.style.setProperty('--presentation-pattern-color', s.patternColor || '#e5e7eb');
+    host.style.setProperty('--presentation-background-image', s.backgroundImage ? `url("${s.backgroundImage}")` : 'none');
+
+    const pattern = s.pattern || 'none';
+    const target = s.patternTarget || 'slide';
+    if (host.classList && host.classList.contains('presentation-slide')) {
+      host.dataset.presentationPattern = target === 'slide' ? pattern : 'none';
+      host.dataset.presentationPatternTarget = target;
+    } else if (host.classList && (host.classList.contains('presentation-prep-stage') || host.classList.contains('presentation-body'))) {
+      host.dataset.presentationPattern = target === 'background' ? pattern : 'none';
+      host.dataset.presentationPatternTarget = target;
+    }
+    if (host.classList && host.classList.contains('presentation-prep-stage')) {
+      host.classList.toggle('has-presentation-bg-image', !!s.backgroundImage);
+    }
+    if (host.classList && host.classList.contains('presentation-body')) {
+      host.classList.toggle('has-presentation-bg-image', !!s.backgroundImage);
+    }
+  };
+
+  function flushContentEditableEdits(){
+    const modal = document.getElementById('presentationPrepModal');
+    if (!modal) return;
+    const slide = modal.querySelector('#summaryPresentationSlide');
+    if (!slide) return;
+    slide.querySelectorAll('[data-edit-save]').forEach(cell => {
+      const k = cell.dataset.editSave;
+      if (!k) return;
+      const txt = cell.innerText.replace(/\u00a0/g, ' ').trim();
+      if (typeof saveText === 'function') saveText(k, txt === '—' ? '' : txt);
+    });
+    const title = slide.querySelector('[data-edit-slide-title]');
+    if (title) setSlideText(Number(title.dataset.editSlideTitle), 'title', title.innerText.trim());
+    const subtitle = slide.querySelector('[data-edit-slide-subtitle]');
+    if (subtitle) setSlideText(Number(subtitle.dataset.editSlideSubtitle), 'subtitle', subtitle.innerText.trim());
+    persistAllExtraTextBoxesFromDom();
+  }
+  window.saveCurrentPresentationEditsFinal = flushContentEditableEdits;
+
+  function persistAllExtraTextBoxesFromDom(){
+    const all = typeof getPresentationExtrasFinal === 'function' ? getPresentationExtrasFinal() : [];
+    const modal = document.getElementById('presentationPrepModal');
+    if (!modal || !Array.isArray(all)) return;
+    const parent = modal.querySelector('#summaryPresentationSlide .presentation-slide-inner');
+    modal.querySelectorAll('.prep-extra-text').forEach(el => {
+      const globalIndex = Number(el.dataset.extraGlobalIndex);
+      if (!Number.isFinite(globalIndex) || !all[globalIndex]) return;
+      all[globalIndex].text = el.innerText.trim();
+      all[globalIndex].x = parseFloat(el.style.left) || all[globalIndex].x || 10;
+      all[globalIndex].y = parseFloat(el.style.top) || all[globalIndex].y || 72;
+      if (parent) {
+        all[globalIndex].w = Math.max(8, (el.offsetWidth / parent.clientWidth) * 100);
+        all[globalIndex].h = Math.max(4, (el.offsetHeight / parent.clientHeight) * 100);
+      }
+    });
+    if (typeof savePresentationExtrasFinal === 'function') savePresentationExtrasFinal(all);
+  }
+
+  const OLD_EXTRAS = typeof renderPresentationExtrasForSlideFinal === 'function' ? renderPresentationExtrasForSlideFinal : null;
+  renderPresentationExtrasForSlideFinal = function(slideIndex, editable){
+    const all = typeof getPresentationExtrasFinal === 'function' ? getPresentationExtrasFinal() : [];
+    const items = all.map((x, idx) => Object.assign({}, x, { _globalIndex: idx }))
+      .filter(x => Number(x.slide) === Number(slideIndex));
+    if (!items.length) return '';
+    return `<div class="presentation-extras-layer">${items.map((x, i) => {
+      const w = Number(x.w) || 24;
+      const h = Number(x.h) || 9;
+      return `<div class="prep-extra-text" data-extra-index="${i}" data-extra-global-index="${x._globalIndex}" contenteditable="${editable && summaryPresentationEditModeFinal ? 'true' : 'false'}" style="left:${Number(x.x)||10}%;top:${Number(x.y)||72}%;width:${w}%;min-height:${h}%">${escapeHtml(x.text || '')}</div>`;
+    }).join('')}</div>`;
+  };
+
+  function isResizeZone(e, el){
+    const r = el.getBoundingClientRect();
+    return (r.right - e.clientX < 22) && (r.bottom - e.clientY < 22);
+  }
+
+  enableExtraTextDragFinal = function(el){
+    if (!el || el.dataset.enhancedResizeDrag === 'true') return;
+    el.dataset.enhancedResizeDrag = 'true';
+    el.addEventListener('blur', persistAllExtraTextBoxesFromDom);
+    el.addEventListener('input', () => { el.dataset.dirty = 'true'; });
+    let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+    el.addEventListener('pointerdown', e => {
+      if (!summaryPresentationEditModeFinal) return;
+      if (isResizeZone(e, el)) return;
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      startLeft = parseFloat(el.style.left) || 10;
+      startTop = parseFloat(el.style.top) || 72;
+      try { el.setPointerCapture(e.pointerId); } catch(_err) {}
+    });
+    el.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const parent = el.closest('.presentation-slide-inner');
+      if (!parent) return;
+      const rect = parent.getBoundingClientRect();
+      const dx = (e.clientX - startX) / rect.width * 100;
+      const dy = (e.clientY - startY) / rect.height * 100;
+      el.style.left = Math.max(0, Math.min(92, startLeft + dx)) + '%';
+      el.style.top = Math.max(0, Math.min(92, startTop + dy)) + '%';
+    });
+    el.addEventListener('pointerup', () => {
+      if (!dragging) return;
+      dragging = false;
+      persistAllExtraTextBoxesFromDom();
+    });
+  };
+
+  const OLD_ADD_BOX = typeof addPresentationTextBoxFinal === 'function' ? addPresentationTextBoxFinal : null;
+  addPresentationTextBoxFinal = function(){
+    const extras = getPresentationExtrasFinal();
+    extras.push({ slide: summaryPresentationIndexFinal, text: 'Zusätzlicher Hinweis', x: 10, y: 72, w: 28, h: 10 });
+    savePresentationExtrasFinal(extras);
+    summaryPresentationEditModeFinal = true;
+    renderSummaryPresentationSlideFinal();
+  };
+
+  const OLD_ENSURE_MODAL = typeof ensurePresentationPrepModalFinal === 'function' ? ensurePresentationPrepModalFinal : null;
+  ensurePresentationPrepModalFinal = function(){
+    const modal = OLD_ENSURE_MODAL ? OLD_ENSURE_MODAL() : null;
+    if (!modal) return modal;
+    const toolbar = modal.querySelector('.presentation-prep-toolbar');
+    if (!toolbar) return modal;
+
+    const hue = toolbar.querySelector('#themeHueRange');
+    if (hue) hue.remove();
+
+    // alte/duplizierte Mustersteuerungen entfernen
+    toolbar.querySelectorAll('#presentationPatternSelect, #presentationPatternTargetSelect, #presentationPatternColorPicker, .pattern-control-label, .pattern-target-select, .pattern-color-picker').forEach(el => el.remove());
+    toolbar.querySelectorAll('label[for="presentationPatternSelect"], label[for="presentationPatternTargetSelect"], label[for="presentationPatternColorPicker"]').forEach(el => el.remove());
+
+    let saveBtn = toolbar.querySelector('#savePresentationPrepBtn');
+    if (!saveBtn) {
+      saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.id = 'savePresentationPrepBtn';
+      saveBtn.className = 'secondary save-presentation-button';
+      saveBtn.textContent = 'Speichern';
+      const after = toolbar.querySelector('#addPresentationText') || toolbar.lastElementChild;
+      after.insertAdjacentElement('afterend', saveBtn);
+      saveBtn.addEventListener('click', () => {
+        flushContentEditableEdits();
+        const old = saveBtn.textContent;
+        saveBtn.textContent = 'Gespeichert';
+        saveBtn.classList.add('success-btn');
+        setTimeout(() => { saveBtn.textContent = old; saveBtn.classList.remove('success-btn'); }, 1200);
+      });
+    }
+
+    const colorPicker = toolbar.querySelector('#themeColorPicker');
+    if (colorPicker && !toolbar.querySelector('#presentationPatternTargetSelect')) {
+      const patternLabel = document.createElement('label');
+      patternLabel.className = 'theme-control-label pattern-control-label';
+      patternLabel.htmlFor = 'presentationPatternSelect';
+      patternLabel.textContent = 'Muster';
+
+      const targetSelect = document.createElement('select');
+      targetSelect.id = 'presentationPatternTargetSelect';
+      targetSelect.className = 'theme-select pattern-target-select';
+      targetSelect.innerHTML = '<option value="slide">Folie</option><option value="background">Hintergrund</option>';
+
+      const patternSelect = document.createElement('select');
+      patternSelect.id = 'presentationPatternSelect';
+      patternSelect.className = 'pattern-select';
+      patternSelect.innerHTML = '<option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Dezente Wellen</option>';
+
+      const patternColor = document.createElement('input');
+      patternColor.id = 'presentationPatternColorPicker';
+      patternColor.type = 'color';
+      patternColor.className = 'pattern-color-picker';
+      patternColor.value = getPresentationSettingsFinal().patternColor || '#e5e7eb';
+      patternColor.title = 'Musterfarbe';
+
+      colorPicker.insertAdjacentElement('afterend', patternLabel);
+      patternLabel.insertAdjacentElement('afterend', targetSelect);
+      targetSelect.insertAdjacentElement('afterend', patternSelect);
+      patternSelect.insertAdjacentElement('afterend', patternColor);
+
+      targetSelect.addEventListener('change', () => {
+        savePresentationSettingsFinal({ patternTarget: targetSelect.value });
+        renderSummaryPresentationSlideFinal(false);
+      });
+      patternSelect.addEventListener('change', () => {
+        savePresentationSettingsFinal({ pattern: patternSelect.value });
+        renderSummaryPresentationSlideFinal(false);
+      });
+      patternColor.addEventListener('input', () => {
+        savePresentationSettingsFinal({ patternColor: patternColor.value });
+        renderSummaryPresentationSlideFinal(false);
+      });
+    }
+
+    const settings = getPresentationSettingsFinal();
+    const ps = toolbar.querySelector('#presentationPatternSelect');
+    const pt = toolbar.querySelector('#presentationPatternTargetSelect');
+    const pc = toolbar.querySelector('#presentationPatternColorPicker');
+    if (ps) ps.value = settings.pattern || 'none';
+    if (pt) pt.value = settings.patternTarget || 'slide';
+    if (pc) pc.value = settings.patternColor || '#e5e7eb';
+    return modal;
+  };
+
+  const OLD_RENDER_SUMMARY_PREP = typeof renderSummaryPresentationSlideFinal === 'function' ? renderSummaryPresentationSlideFinal : null;
+  renderSummaryPresentationSlideFinal = function(updateControls = true){
+    if (OLD_RENDER_SUMMARY_PREP) OLD_RENDER_SUMMARY_PREP(updateControls);
+    const modal = document.getElementById('presentationPrepModal');
+    const slideHost = modal && modal.querySelector('#summaryPresentationSlide');
+    if (!modal || !slideHost) return;
+    const idx = Number(summaryPresentationIndexFinal) || 0;
+    const inner = slideHost.querySelector('.presentation-slide-inner');
+    if (!inner) return;
+
+    const h1 = inner.querySelector('h1');
+    if (h1) {
+      h1.textContent = getSlideText(idx, 'title', DEFAULT_SLIDE_TITLES[idx] || h1.textContent);
+      h1.dataset.editSlideTitle = String(idx);
+      h1.contentEditable = summaryPresentationEditModeFinal ? 'true' : 'false';
+      h1.classList.toggle('is-editable-title', summaryPresentationEditModeFinal);
+      h1.addEventListener('blur', () => setSlideText(idx, 'title', h1.innerText.trim()));
+    }
+    const subtitle = inner.querySelector('.presentation-subtitle');
+    if (subtitle) {
+      subtitle.textContent = getSlideText(idx, 'subtitle', DEFAULT_SLIDE_SUBTITLES[idx] || subtitle.textContent);
+      subtitle.dataset.editSlideSubtitle = String(idx);
+      subtitle.contentEditable = summaryPresentationEditModeFinal ? 'true' : 'false';
+      subtitle.classList.toggle('is-editable-title', summaryPresentationEditModeFinal);
+      subtitle.addEventListener('blur', () => setSlideText(idx, 'subtitle', subtitle.innerText.trim()));
+    }
+    slideHost.querySelectorAll('[data-edit-save], [data-edit-slide-title], [data-edit-slide-subtitle]').forEach(el => {
+      if (summaryPresentationEditModeFinal) el.setAttribute('spellcheck', 'true');
+    });
+    slideHost.querySelectorAll('.prep-extra-text').forEach(el => enableExtraTextDragFinal(el));
+
+    const settings = getPresentationSettingsFinal();
+    applyPresentationThemeToNodeFinal(modal.querySelector('.presentation-prep-stage'), settings);
+    applyPresentationThemeToNodeFinal(slideHost, settings);
+    const toolbar = modal.querySelector('.presentation-prep-toolbar');
+    if (toolbar && updateControls) {
+      const ps = toolbar.querySelector('#presentationPatternSelect');
+      const pt = toolbar.querySelector('#presentationPatternTargetSelect');
+      const pc = toolbar.querySelector('#presentationPatternColorPicker');
+      if (ps) ps.value = settings.pattern || 'none';
+      if (pt) pt.value = settings.patternTarget || 'slide';
+      if (pc) pc.value = settings.patternColor || '#e5e7eb';
+    }
+  };
+
+  const OLD_BUILD_PAYLOAD = typeof buildPayload === 'function' ? buildPayload : null;
+  buildPayload = function(){
+    flushContentEditableEdits();
+    const data = OLD_BUILD_PAYLOAD ? OLD_BUILD_PAYLOAD() : collectSupervisorData();
+    data.presentationSettings = getPresentationSettingsFinal();
+    data.presentationExtras = getPresentationExtrasFinal();
+    data.presentationTextOverrides = textOverrides();
+    return data;
+  };
+
+  const OLD_MERGE = typeof mergePresentationRawDataFinal === 'function' ? mergePresentationRawDataFinal : null;
+  mergePresentationRawDataFinal = function(row){
+    const data = OLD_MERGE ? OLD_MERGE(row) : ((row && row.data) || {});
+    const raw = (row && row.data && row.data.raw) || data.raw || {};
+    data.presentationSettings = raw.presentationSettings || data.presentationSettings || getPresentationSettingsFinal();
+    data.presentationExtras = raw.presentationExtras || data.presentationExtras || [];
+    data.presentationTextOverrides = raw.presentationTextOverrides || data.presentationTextOverrides || {};
+    return data;
+  };
+
+  function getResultText(data, idx, type, fallback){
+    const o = (data && data.presentationTextOverrides) || {};
+    const key = `s${idx}_${type}`;
+    return (o[key] !== undefined && o[key] !== null && String(o[key]).trim() !== '') ? String(o[key]) : (fallback || '');
+  }
+  function subtitleHtml(data, idx, fallback){
+    const txt = getResultText(data, idx, 'subtitle', fallback);
+    return txt ? `<p class="presentation-subtitle">${escapeHtml(txt)}</p>` : '';
+  }
+
+  buildPresentationSlides = function(row){
+    const data = mergePresentationRawDataFinal(row);
+    const p2 = data.p2 || {}, p3 = data.p3 || {}, p4 = data.p4 || {}, p5 = data.p5 || {}, p6 = data.p6 || {};
+    const assignments = data.assignments || {};
+    const groupName = row.groupName || data.groupName || 'Gruppe';
+    const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
+    const roles = [
+      ['Supervisor*in', assignments.supervisor || '—'],
+      ['Schulleitung', assignments.schulleitung || '—'],
+      ['Lehrkraft A', assignments['lehrkraft-a'] || assignments.lehrkraftA || '—'],
+      ['Lehrkraft B', assignments['lehrkraft-b'] || assignments.lehrkraftB || '—']
+    ];
+    const slides = [
+      { title: getResultText(data, 0, 'title', 'Gruppenvorstellung'), html: `<p class="presentation-kicker">${escapeHtml(timestamp)}</p><h2>${escapeHtml(groupName)}</h2>${presentationTable(['Rolle', 'Name'], roles)}<p class="presentation-note">Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.</p>` },
+      { title: getResultText(data, 1, 'title', 'Problembeschreibung'), html: subtitleHtml(data, 1, DEFAULT_SLIDE_SUBTITLES[1]) + presentationTable(['Rolle', 'Probleme / Beobachtung', 'Gefühle', 'Wünsche'], [
+        ['Schulleitung', p2.slProbleme || p2.slProblem || '', p2.slGefuehle || '', p2.slWuensche || ''],
+        ['Lehrkraft A', p2.aProbleme || p2.aPerspektive || '', p2.aGefuehle || '', p2.aWuensche || ''],
+        ['Lehrkraft B', p2.bProbleme || p2.bPerspektive || '', p2.bGefuehle || '', p2.bWuensche || '']
+      ]) },
+      { title: getResultText(data, 2, 'title', 'Zielformulierung'), html: subtitleHtml(data, 2, DEFAULT_SLIDE_SUBTITLES[2]) + presentationTable(['Bereich', 'Eintrag'], [
+        ['Ziel Schulleitung', p3.zielSL || ''], ['Ziel Lehrkraft A', p3.zielA || ''], ['Ziel Lehrkraft B', p3.zielB || ''], ['Gefundene Gemeinsamkeiten', p3.gemeinsamkeiten || ''], ['Gemeinsame Zielvereinbarung', p3.gemeinsamesZiel || p3.gemeinsameZielformulierung || '']
+      ]) },
+      { title: getResultText(data, 3, 'title', 'Vertiefte Problembearbeitung'), html: subtitleHtml(data, 3, DEFAULT_SLIDE_SUBTITLES[3]) + presentationTable(['Aspekt', 'Ergebnis'], [
+        ['Hilfreiche Kritik', p4.kritik || ''], ['Absprachen zum weiteren Vorgehen', p4.absprachen || p4.weiteresVorgehen || '']
+      ]) },
+      { title: getResultText(data, 4, 'title', 'Umsetzung'), html: subtitleHtml(data, 4, DEFAULT_SLIDE_SUBTITLES[4]) + presentationTable(['Aspekt', 'Ergebnis'], [
+        ['Zustimmung zur Vereinbarung', p5.zustimmung || ''], ['Einschätzung der Praxistauglichkeit durch die Schulleitung', p6.praxistauglichkeit || p6.einschaetzung || ''], ['Unterstützungsmöglichkeiten durch die Schulleitung', p6.unterstuetzung || ''], ['Erste konkrete Umsetzungsschritte', p6.umsetzung || p6.konkreteUmsetzungsschritte || '']
+      ]) },
+      { title: getResultText(data, 5, 'title', ''), html: `<div class="thanks-slide"><h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p></div>` }
+    ];
+    const extras = Array.isArray(data.presentationExtras) ? data.presentationExtras : [];
+    return slides.map((slide, idx) => {
+      const ex = extras.filter(x => Number(x.slide) === idx);
+      if (!ex.length) return slide;
+      return Object.assign({}, slide, { html: slide.html + `<div class="presentation-extras-layer">${ex.map(x => `<div class="prep-extra-text result-extra-text" style="left:${Number(x.x)||10}%;top:${Number(x.y)||72}%;width:${Number(x.w)||24}%;min-height:${Number(x.h)||9}%">${escapeHtml(x.text || '')}</div>`).join('')}</div>` });
+    });
+  };
+
+  const OLD_RENDER_PRESENTATION = typeof renderPresentationSlideFinal === 'function' ? renderPresentationSlideFinal : null;
+  renderPresentationSlideFinal = function(){
+    const slide = document.getElementById('presentationSlide');
+    const counter = document.getElementById('presentationCounter');
+    if (!slide || !presentationSlidesFinal.length) return;
+    applyPresentationThemeToNodeFinal(document.body, presentationThemeFinalRuntime || getPresentationSettingsFinal());
+    applyPresentationThemeToNodeFinal(slide, presentationThemeFinalRuntime || getPresentationSettingsFinal());
+    const item = presentationSlidesFinal[presentationIndexFinal];
+    const titleHtml = item.title ? `<h1>${escapeHtml(item.title)}</h1>` : '';
+    slide.innerHTML = `<div class="presentation-slide-inner${item.title ? '' : ' no-title-slide'}">${titleHtml}${item.html}</div>`;
+    if (counter) counter.textContent = `${presentationIndexFinal + 1} / ${presentationSlidesFinal.length}`;
+  };
+})();

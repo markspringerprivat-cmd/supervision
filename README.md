@@ -55,6 +55,3 @@ Die Startseite enthält zusätzlich `gruppenzuweisung.html`. Dort kann eine vorb
 - Die Präsentationsvorschau enthält eine Farbauswahl für Überschrift, Text, Hintergrund und Folie.
 - Zusätzliche Textfelder können eingefügt und verschoben werden; sie werden mit dem Gruppenergebnis gespeichert und später in der Präsentation wieder angezeigt.
 - **Ergebnisse ansehen** auf der Start- und Zusammenfassungsseite ist nur noch im Administrationsmodus zugänglich.
-
-
-Update: Die Präsentationsvorbereitung in der Zusammenfassung öffnet sich jetzt als echtes Fullscreen-Popup über die gesamte Bildschirmfläche.

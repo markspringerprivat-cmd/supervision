@@ -6049,3 +6049,428 @@ try {
   window.closePresentationPrepModalFinal = closeModal;
   window.renderSummaryPresentationSlideFinal = renderSlide;
 })();
+
+/* =========================================================
+   Stable Presentation Preparation Editor V5
+   - isolated from older editor attempts
+   - persistent selection, undo stack, movable/resizable/rotatable items
+   ========================================================= */
+(function(){
+  const STATE_KEY = 'sv_presentation_v5_state';
+  const DEFAULT_KEY = 'sv_presentation_v5_default_snapshot';
+  const LEGACY_SETTINGS_KEY = 'presentation_settings';
+  const STICKER_PATH = 'assets/stickers/';
+  const STICKERS = ['team4.png','team2.png','team3.png','brainstorm.png','team2reading.png','team3working.png','notices.png','worktogether.png','worktogether3.png'];
+  const THEME = { heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff', slidePattern:'none', backgroundPattern:'none', slidePatternColor:'#e5e7eb', backgroundPatternColor:'#0d2b22', backgroundImage:'' };
+  const SLIDE_COUNT = 6;
+
+  let modal = null;
+  let draft = null;
+  let savedOnOpen = null;
+  let dirty = false;
+  let editMode = false;
+  let currentSlide = 0;
+  let selectedId = null;
+  let undoStack = [];
+  let activeTransform = null;
+  let inputUndoArmed = {};
+
+  function clone(v){ return JSON.parse(JSON.stringify(v || {})); }
+  function uuid(prefix){ return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+  function getLS(k, fb){ try { const v=localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch(e){ return fb; } }
+  function setLS(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+  function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function val(v){ const t = String(v ?? '').trim(); return t ? t : '—'; }
+  function n(v, fb){ const x = Number(v); return Number.isFinite(x) ? x : fb; }
+  function data(){ try { return collectSupervisorData ? collectSupervisorData() : {}; } catch(e){ return {}; } }
+  function loadT(k){ try { return typeof loadText === 'function' ? loadText(k) : (localStorage.getItem(k)||''); } catch(e){ return ''; } }
+  function saveT(k, v){ try { if (typeof saveText === 'function') saveText(k, v); else localStorage.setItem(k, v); } catch(e){} }
+  function timestamp(){ try { return formatResultTimestamp(new Date().toISOString()); } catch(e){ return new Date().toLocaleString('de-DE'); } }
+
+  function emptyState(){ return { settings: clone(THEME), values:{}, text:{}, layout:{}, textboxes:[], stickers:[] }; }
+  function getSavedState(){ return Object.assign(emptyState(), getLS(STATE_KEY, null) || getLS(DEFAULT_KEY, null) || emptyState()); }
+  function getDefaultState(){
+    let d = getLS(DEFAULT_KEY, null);
+    if (!d) {
+      d = getSavedState();
+      setLS(DEFAULT_KEY, d);
+    }
+    return Object.assign(emptyState(), d);
+  }
+  function saveState(){ setLS(STATE_KEY, draft); try { setLS(LEGACY_SETTINGS_KEY, draft.settings); } catch(e){} }
+  function markDirty(){ dirty = true; updateBars(); }
+  function pushUndo(){ if (!draft) return; undoStack.push(clone(draft)); if (undoStack.length > 10) undoStack.shift(); updateBars(); }
+  function pushUndoOnce(token){ if (!inputUndoArmed[token]) { pushUndo(); inputUndoArmed[token]=true; setTimeout(()=>{ inputUndoArmed[token]=false; }, 650); } }
+  function undo(){ if (!undoStack.length) return; draft = undoStack.pop(); dirty = true; selectedId = null; render(); }
+  function commit(){
+    persistTextFromDom();
+    saveState();
+    Object.entries(draft.values || {}).forEach(([k,v]) => saveT(k, v));
+    dirty = false;
+    undoStack = [];
+    savedOnOpen = clone(draft);
+    toast('Gespeichert');
+    updateBars();
+    try { if (typeof renderSummary === 'function') renderSummary(data()); } catch(e){}
+  }
+  function toast(text){ const t = modal && modal.querySelector('#v5Toast'); if(!t) return; t.textContent=text; t.hidden=false; setTimeout(()=>{t.hidden=true;}, 1200); }
+
+  function ensureModal(){
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'presentationPrepModalV5';
+    modal.className = 'v5-modal';
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="v5-shell">
+        <div class="v5-toolbar" data-editor-toolbar>
+          <button type="button" id="v5Save" class="success-btn">Speichern</button>
+          <button type="button" id="v5Prev" class="secondary">←</button>
+          <span id="v5Counter" class="small">1 / 6</span>
+          <button type="button" id="v5Next" class="secondary">→</button>
+          <button type="button" id="v5Edit" class="secondary">Bearbeitungsmodus</button>
+          <div class="v5-edit-controls" hidden>
+            <button type="button" id="v5Undo" class="secondary">Rückgängig</button>
+            <button type="button" id="v5AddText" class="secondary">Text hinzufügen</button>
+            <button type="button" id="v5AddSticker" class="secondary">Sticker hinzufügen</button>
+            <label>Farbe <select id="v5DesignTarget"><option value="heading">Überschrift</option><option value="text">Text</option><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+            <input id="v5DesignColor" type="color" value="#1e3a5f" aria-label="Designfarbe">
+            <label>Musterziel <select id="v5PatternTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+            <label>Muster <select id="v5PatternType"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Wellen</option></select></label>
+            <input id="v5PatternColor" type="color" value="#e5e7eb" aria-label="Musterfarbe">
+            <input id="v5BgInput" type="file" accept="image/*" hidden>
+            <button type="button" id="v5BgBtn" class="secondary">Hintergrundbild</button>
+            <button type="button" id="v5BgRemove" class="secondary">Bild entfernen</button>
+            <button type="button" id="v5Reset" class="warning-btn">Zurücksetzen</button>
+          </div>
+          <span class="v5-spacer"></span>
+          <button type="button" id="v5Close" class="secondary">Schließen</button>
+        </div>
+        <div class="v5-context" id="v5Context" data-editor-toolbar hidden>
+          <strong>Auswahl</strong>
+          <label>Schriftgröße <input id="v5FontSize" type="number" min="8" max="120" step="1" value="22"> px</label>
+          <label>Textfarbe <input id="v5TextColor" type="color" value="#0f172a"></label>
+          <button type="button" id="v5Front" class="secondary">Nach vorn</button>
+          <button type="button" id="v5Back" class="secondary">Nach hinten</button>
+          <button type="button" id="v5Delete" class="danger" disabled>Auswahl löschen</button>
+        </div>
+        <div id="v5Toast" class="v5-toast" hidden></div>
+        <div class="v5-stage" id="v5Stage"><section class="v5-slide" id="v5Slide"></section></div>
+      </div>`;
+    document.body.appendChild(modal);
+    bindModal();
+    return modal;
+  }
+
+  function bindModal(){
+    modal.querySelector('#v5Save').onclick = commit;
+    modal.querySelector('#v5Close').onclick = close;
+    modal.querySelector('#v5Prev').onclick = () => moveSlide(-1);
+    modal.querySelector('#v5Next').onclick = () => moveSlide(1);
+    modal.querySelector('#v5Edit').onclick = () => { editMode=!editMode; selectedId=null; render(); };
+    modal.querySelector('#v5Undo').onclick = undo;
+    modal.querySelector('#v5AddText').onclick = addTextBox;
+    modal.querySelector('#v5AddSticker').onclick = openStickerPicker;
+    modal.querySelector('#v5Reset').onclick = () => { if(!confirm('Auf den ursprünglichen Standardstand zurücksetzen?')) return; pushUndo(); draft = clone(getDefaultState()); dirty=true; selectedId=null; render(); };
+    modal.querySelector('#v5DesignTarget').onchange = syncDesignControls;
+    modal.querySelector('#v5DesignColor').oninput = e => { pushUndoOnce('designColor'); const t=modal.querySelector('#v5DesignTarget').value; draft.settings[t]=e.target.value; markDirty(); applyTheme(); };
+    modal.querySelector('#v5PatternTarget').onchange = syncPatternControls;
+    modal.querySelector('#v5PatternType').onchange = e => { pushUndoOnce('patternType'); const t=modal.querySelector('#v5PatternTarget').value; draft.settings[t==='background'?'backgroundPattern':'slidePattern']=e.target.value; markDirty(); applyTheme(); };
+    modal.querySelector('#v5PatternColor').oninput = e => { pushUndoOnce('patternColor'); const t=modal.querySelector('#v5PatternTarget').value; draft.settings[t==='background'?'backgroundPatternColor':'slidePatternColor']=e.target.value; markDirty(); applyTheme(); };
+    modal.querySelector('#v5BgBtn').onclick = () => modal.querySelector('#v5BgInput').click();
+    modal.querySelector('#v5BgInput').onchange = e => { const file=e.target.files && e.target.files[0]; if(!file) return; pushUndo(); const r=new FileReader(); r.onload = () => { draft.settings.backgroundImage = String(r.result || ''); markDirty(); applyTheme(); }; r.onerror = () => alert('Bild konnte nicht geladen werden.'); r.readAsDataURL(file); e.target.value=''; };
+    modal.querySelector('#v5BgRemove').onclick = () => { pushUndo(); draft.settings.backgroundImage=''; markDirty(); applyTheme(); };
+    modal.querySelector('#v5FontSize').oninput = e => { if(!selectedId) return; pushUndoOnce('fontSize'); setSelectedStyle('fontSize', n(e.target.value,22)); };
+    modal.querySelector('#v5TextColor').oninput = e => { if(!selectedId) return; pushUndoOnce('textColor'); setSelectedStyle('color', e.target.value); };
+    modal.querySelector('#v5Front').onclick = () => adjustZ(10);
+    modal.querySelector('#v5Back').onclick = () => adjustZ(-10);
+    modal.querySelector('#v5Delete').onclick = deleteSelected;
+    modal.querySelectorAll('[data-editor-toolbar], .v5-toolbar, .v5-context').forEach(el => {
+      el.addEventListener('pointerdown', e => e.stopPropagation());
+      el.addEventListener('click', e => e.stopPropagation());
+    });
+    modal.querySelector('#v5Stage').addEventListener('pointerdown', e => {
+      if (e.target.closest('.v5-item') || e.target.closest('.v5-handle')) return;
+      selectedId = null; updateSelection();
+    });
+  }
+
+  function open(){
+    ensureModal();
+    if (!getLS(DEFAULT_KEY, null)) setLS(DEFAULT_KEY, getSavedState());
+    draft = clone(getSavedState());
+    savedOnOpen = clone(draft);
+    dirty = false; editMode = false; currentSlide = 0; selectedId = null; undoStack=[]; inputUndoArmed={};
+    modal.hidden = false;
+    render();
+  }
+  function close(){
+    if (dirty) {
+      const save = confirm('Änderungen speichern? OK = speichern, Abbrechen = ohne Speichern schließen.');
+      if (save) commit();
+      else draft = clone(savedOnOpen);
+    }
+    modal.hidden = true; selectedId=null; editMode=false;
+  }
+  function moveSlide(delta){ persistTextFromDom(); currentSlide = Math.max(0, Math.min(SLIDE_COUNT-1, currentSlide+delta)); selectedId=null; render(); }
+
+  function render(){
+    persistTextFromDom();
+    const slide = modal.querySelector('#v5Slide');
+    slide.innerHTML = buildSlideHTML(currentSlide) + buildDynamicItems(currentSlide);
+    slide.classList.toggle('is-editing', editMode);
+    wireItems();
+    applyTheme();
+    updateBars();
+    updateSelection();
+  }
+
+  function getValue(key, fallback){ return (draft.values && draft.values[key] !== undefined) ? draft.values[key] : (loadT(key) || fallback || ''); }
+  function setValue(key, value){ if(!draft.values) draft.values={}; draft.values[key]=value; }
+  function getTextOverride(key, fallback){ return (draft.text && draft.text[key]) || fallback || ''; }
+  function setTextOverride(key, value){ if(!draft.text) draft.text={}; draft.text[key]=value; }
+  function rowData(){ const d=data(); return d || {}; }
+
+  function buildSlideHTML(i){
+    const d = rowData(); const p2=d.p2||{}, p3=d.p3||{}, p4=d.p4||{}, p5=d.p5||{}, p6=d.p6||{}, a=d.assignments||{};
+    const group = d.groupName || d.groupId || 'Gruppe';
+    const titles = ['Gruppenvorstellung','Problembeschreibung','Zielformulierung','Vertiefte Problembearbeitung','Umsetzung',''];
+    const subtitles = [timestamp(), 'Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.', 'Hier werden die Einzelziele der Beteiligten, Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.', 'Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.', 'Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung der Vereinbarung.', ''];
+    const title = getTextOverride(`s${i}_title`, titles[i]);
+    const sub = getTextOverride(`s${i}_subtitle`, subtitles[i]);
+    let html = '';
+    if (i !== 5) html += item('title', i, title, `<h1 data-v5-text="title" contenteditable="${editMode}">${esc(title)}</h1>`);
+    if (i === 0) {
+      html += item('group', i, group, `<h2 data-v5-text="group" contenteditable="${editMode}">${esc(group)}</h2>`);
+      html += item('subtitle', i, sub, `<p class="presentation-kicker" data-v5-text="subtitle" contenteditable="${editMode}">${esc(sub)}</p>`);
+      html += item('main', i, '', table(['Rolle','Name'], [
+        ['Supervisor*in', a.supervisor || '—'], ['Schulleitung', a.schulleitung || '—'], ['Lehrkraft A', a['lehrkraft-a'] || a.lehrkraftA || '—'], ['Lehrkraft B', a['lehrkraft-b'] || a.lehrkraftB || '—']
+      ]));
+      html += item('note', i, 'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.', `<p class="presentation-note" contenteditable="${editMode}">Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.</p>`);
+    } else if (i === 1) {
+      html += item('subtitle', i, sub, `<p class="presentation-subtitle" data-v5-text="subtitle" contenteditable="${editMode}">${esc(sub)}</p>`);
+      html += item('main', i, '', editableTable(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], [
+        ['Schulleitung',['sup_p2_sl_probleme', p2.slProbleme],['sup_p2_sl_gefuehle', p2.slGefuehle],['sup_p2_sl_wuensche', p2.slWuensche]],
+        ['Lehrkraft A',['sup_p2_a_probleme', p2.aProbleme],['sup_p2_a_gefuehle', p2.aGefuehle],['sup_p2_a_wuensche', p2.aWuensche]],
+        ['Lehrkraft B',['sup_p2_b_probleme', p2.bProbleme],['sup_p2_b_gefuehle', p2.bGefuehle],['sup_p2_b_wuensche', p2.bWuensche]]
+      ]));
+    } else if (i === 2) {
+      html += item('subtitle', i, sub, `<p class="presentation-subtitle" data-v5-text="subtitle" contenteditable="${editMode}">${esc(sub)}</p>`);
+      html += item('main', i, '', editableTable(['Bereich','Eintrag'], [
+        ['Ziel Schulleitung',['sup_p3_ziel_sl', p3.zielSL]], ['Ziel Lehrkraft A',['sup_p3_ziel_a', p3.zielA]], ['Ziel Lehrkraft B',['sup_p3_ziel_b', p3.zielB]], ['Gefundene Gemeinsamkeiten',['sup_p3_gemeinsamkeiten', p3.gemeinsamkeiten]], ['Gemeinsame Zielvereinbarung',['sup_p3_gemeinsames_ziel', p3.gemeinsamesZiel]]
+      ]));
+    } else if (i === 3) {
+      html += item('subtitle', i, sub, `<p class="presentation-subtitle" data-v5-text="subtitle" contenteditable="${editMode}">${esc(sub)}</p>`);
+      html += item('main', i, '', editableTable(['Aspekt','Ergebnis'], [ ['Hilfreiche Kritik',['sup_p4_kritik', p4.kritik]], ['Absprachen zum weiteren Vorgehen',['sup_p4_absprachen', p4.absprachen]] ]));
+    } else if (i === 4) {
+      html += item('subtitle', i, sub, `<p class="presentation-subtitle" data-v5-text="subtitle" contenteditable="${editMode}">${esc(sub)}</p>`);
+      html += item('main', i, '', editableTable(['Aspekt','Ergebnis'], [ ['Zustimmung zur Vereinbarung',['sup_p5_zustimmung', p5.zustimmung]], ['Einschätzung der Praxistauglichkeit durch die Schulleitung',['sup_p6_praxistauglichkeit', p6.praxistauglichkeit]], ['Unterstützungsmöglichkeiten durch die Schulleitung',['sup_p6_unterstuetzung', p6.unterstuetzung]], ['Erste konkrete Umsetzungsschritte',['sup_p6_umsetzung', p6.umsetzung]] ]));
+    } else if (i === 5) {
+      html += item('thanks', i, 'Vielen Dank fürs Zuhören!', `<div class="thanks-slide"><h2 data-v5-text="thanks" contenteditable="${editMode}">Vielen Dank fürs Zuhören!</h2><p contenteditable="${editMode}">Raum für Rückfragen und gemeinsame Reflexion.</p></div>`);
+    }
+    return html;
+  }
+  function defaultLayout(type, slide){
+    const defaults = {
+      title:{x:6,y:7,w:86,h:10,rot:0,z:20,fontSize:44,color:''}, group:{x:6,y:24,w:86,h:12,rot:0,z:21,fontSize:42,color:''}, subtitle:{x:6,y:20,w:78,h:8,rot:0,z:20,fontSize:18,color:''}, main:{x:6,y:32,w:88,h:42,rot:0,z:20,fontSize:16,color:''}, note:{x:6,y:78,w:80,h:8,rot:0,z:20,fontSize:15,color:''}, thanks:{x:15,y:35,w:70,h:25,rot:0,z:20,fontSize:48,color:''}
+    };
+    if(slide===0 && type==='subtitle') return {x:6,y:18,w:40,h:5,rot:0,z:21,fontSize:16,color:''};
+    if(slide===0 && type==='main') return {x:6,y:42,w:80,h:30,rot:0,z:20,fontSize:16,color:''};
+    return clone(defaults[type] || defaults.main);
+  }
+  function item(type, slide, plainText, inner){
+    const id = `s${slide}_${type}`;
+    const lay = Object.assign(defaultLayout(type, slide), (draft.layout && draft.layout[id]) || {});
+    return `<div class="v5-item v5-base v5-${type}" data-v5-id="${id}" data-v5-type="${type}" data-deletable="false" style="${styleOf(lay)}">${inner}${handles()}</div>`;
+  }
+  function styleOf(l){ return `left:${n(l.x,0)}%;top:${n(l.y,0)}%;width:${n(l.w,20)}%;min-height:${n(l.h,6)}%;transform:rotate(${n(l.rot,0)}deg);z-index:${n(l.z,20)};font-size:${n(l.fontSize,16)}px;${l.color?`color:${l.color};`:''}`; }
+  function handles(){ return editMode ? '<button class="v5-handle v5-drag" data-handle="move" title="Verschieben">●</button><button class="v5-handle v5-rotate" data-handle="rotate" title="Drehen">↻</button><button class="v5-handle v5-resize" data-handle="resize" title="Größe ändern">◢</button>' : ''; }
+  function table(headers, rows){ return `<table class="v5-table"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${esc(val(c))}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+  function editableTable(headers, rows){ return `<table class="v5-table"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>Array.isArray(c)?`<td data-v5-cell="${esc(c[0])}" contenteditable="${editMode}">${esc(val(getValue(c[0], c[1])))}</td>`:`<td>${esc(val(c))}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+  function buildDynamicItems(slide){
+    let out = '';
+    (draft.textboxes||[]).forEach(tb => { if(Number(tb.slide)!==slide) return; out += `<div class="v5-item v5-dynamic v5-textbox" data-v5-id="${esc(tb.id)}" data-deletable="true" style="${styleOf(tb)}" contenteditable="${editMode}">${esc(tb.text||'Text')}</div>` + (editMode ? '' : ''); });
+    (draft.stickers||[]).forEach(st => { if(Number(st.slide)!==slide) return; out += `<div class="v5-item v5-dynamic v5-sticker" data-v5-id="${esc(st.id)}" data-deletable="true" style="${styleOf(st)}"><img src="${esc(st.src)}" alt="Sticker" draggable="false"></div>`; });
+    return out;
+  }
+
+  function wireItems(){
+    const slide = modal.querySelector('#v5Slide');
+    slide.querySelectorAll('.v5-item').forEach(el => {
+      if(editMode && !el.querySelector('.v5-handle')) el.insertAdjacentHTML('beforeend', handles());
+      el.addEventListener('pointerdown', e => {
+        if (!editMode) return;
+        const h = e.target.closest('[data-handle]');
+        if (h) { beginTransform(e, el, h.dataset.handle); return; }
+        select(el.dataset.v5Id);
+      });
+      el.addEventListener('click', e => { if(editMode){ e.stopPropagation(); select(el.dataset.v5Id); } });
+      const textNodes = el.querySelectorAll('[contenteditable="true"], [data-v5-cell]');
+      textNodes.forEach(node => {
+        node.addEventListener('input', () => { pushUndoOnce('textInput_'+(el.dataset.v5Id||'')); updateDraftFromNode(node); markDirty(); });
+        node.addEventListener('pointerdown', e => { if(editMode) { select(el.dataset.v5Id); e.stopPropagation(); } });
+      });
+    });
+  }
+  function updateDraftFromNode(node){
+    const key = node.dataset.v5Cell;
+    if (key) setValue(key, node.innerText.trim()==='—'?'':node.innerText.trim());
+    const parent = node.closest('.v5-item');
+    if (parent && node.dataset.v5Text) setTextOverride(`${parent.dataset.v5Id.replace(/^s(\d+)_.*$/,'s$1')}_${node.dataset.v5Text}`, node.innerText.trim());
+    if (parent && parent.classList.contains('v5-textbox')) { const tb=(draft.textboxes||[]).find(x=>x.id===parent.dataset.v5Id); if(tb) tb.text=parent.innerText.trim(); }
+  }
+  function persistTextFromDom(){
+    if(!modal || !draft) return;
+    modal.querySelectorAll('[data-v5-cell]').forEach(updateDraftFromNode);
+    modal.querySelectorAll('[data-v5-text]').forEach(updateDraftFromNode);
+    modal.querySelectorAll('.v5-textbox').forEach(updateDraftFromNode);
+  }
+  function select(id){ selectedId = id; updateSelection(); }
+  function updateSelection(){
+    if(!modal) return;
+    modal.querySelectorAll('.v5-item').forEach(el => el.classList.toggle('is-selected', editMode && el.dataset.v5Id === selectedId));
+    const ctx = modal.querySelector('#v5Context');
+    const el = selectedId ? modal.querySelector(`[data-v5-id="${CSS.escape(selectedId)}"]`) : null;
+    ctx.hidden = !editMode || !el;
+    if (el) {
+      const l = getLayoutForElement(el);
+      modal.querySelector('#v5FontSize').value = Math.round(n(l.fontSize, parseFloat(getComputedStyle(el).fontSize)||18));
+      modal.querySelector('#v5TextColor').value = rgbToHex(l.color || getComputedStyle(el).color || '#0f172a');
+      modal.querySelector('#v5Delete').disabled = el.dataset.deletable !== 'true';
+    }
+  }
+  function getLayoutForElement(el){
+    const id = el.dataset.v5Id;
+    let source = null;
+    if(id && id.startsWith('tb_')) source = (draft.textboxes||[]).find(x=>x.id===id);
+    else if(id && id.startsWith('st_')) source = (draft.stickers||[]).find(x=>x.id===id);
+    else source = (draft.layout||{})[id] || defaultLayout(el.dataset.v5Type || 'main', currentSlide);
+    return source || {};
+  }
+  function saveLayoutForElement(el, l){
+    const id = el.dataset.v5Id;
+    if(id.startsWith('tb_')) { const x=(draft.textboxes||[]).find(v=>v.id===id); if(x) Object.assign(x,l); }
+    else if(id.startsWith('st_')) { const x=(draft.stickers||[]).find(v=>v.id===id); if(x) Object.assign(x,l); }
+    else { draft.layout[id] = Object.assign({}, draft.layout[id] || defaultLayout(el.dataset.v5Type||'main', currentSlide), l); }
+  }
+  function beginTransform(e, el, mode){
+    e.preventDefault(); e.stopPropagation();
+    select(el.dataset.v5Id); pushUndo();
+    const slide = modal.querySelector('#v5Slide'); const sr=slide.getBoundingClientRect(); const er=el.getBoundingClientRect(); const lay=getLayoutForElement(el);
+    const center = {x: er.left + er.width/2, y: er.top + er.height/2};
+    const startAngle = Math.atan2(e.clientY-center.y, e.clientX-center.x) * 180 / Math.PI;
+    activeTransform = { mode, el, sx:e.clientX, sy:e.clientY, sr, x:n(lay.x,(er.left-sr.left)/sr.width*100), y:n(lay.y,(er.top-sr.top)/sr.height*100), w:n(lay.w,er.width/sr.width*100), h:n(lay.h,er.height/sr.height*100), rot:n(lay.rot,0), center, startAngle };
+    window.addEventListener('pointermove', transformMove);
+    window.addEventListener('pointerup', transformEnd, {once:true});
+  }
+  function transformMove(e){
+    if(!activeTransform) return;
+    const t=activeTransform; const dx=(e.clientX-t.sx)/t.sr.width*100; const dy=(e.clientY-t.sy)/t.sr.height*100;
+    const l={};
+    if(t.mode==='move'){ l.x=t.x+dx; l.y=t.y+dy; }
+    if(t.mode==='resize'){ l.w=Math.max(4,t.w+dx); l.h=Math.max(3,t.h+dy); }
+    if(t.mode==='rotate'){ const a=Math.atan2(e.clientY-t.center.y, e.clientX-t.center.x)*180/Math.PI; l.rot=t.rot+(a-t.startAngle); }
+    saveLayoutForElement(t.el,l); Object.assign(t, getLayoutForElement(t.el)); t.el.setAttribute('style', styleOf(getLayoutForElement(t.el))); t.el.classList.add('is-selected'); markDirty();
+  }
+  function transformEnd(){ window.removeEventListener('pointermove', transformMove); activeTransform=null; }
+  function setSelectedStyle(prop, value){
+    const el = selectedId && modal.querySelector(`[data-v5-id="${CSS.escape(selectedId)}"]`); if(!el) return;
+    const l = {}; l[prop] = value; saveLayoutForElement(el,l); el.setAttribute('style', styleOf(getLayoutForElement(el))); el.classList.add('is-selected'); markDirty(); updateSelection();
+  }
+  function adjustZ(delta){ const el=selectedId&&modal.querySelector(`[data-v5-id="${CSS.escape(selectedId)}"]`); if(!el) return; pushUndo(); const l=getLayoutForElement(el); setSelectedStyle('z', n(l.z,20)+delta); }
+  function deleteSelected(){
+    const el=selectedId&&modal.querySelector(`[data-v5-id="${CSS.escape(selectedId)}"]`); if(!el || el.dataset.deletable !== 'true') return;
+    pushUndo();
+    draft.textboxes = (draft.textboxes||[]).filter(x=>x.id!==selectedId);
+    draft.stickers = (draft.stickers||[]).filter(x=>x.id!==selectedId);
+    selectedId=null; markDirty(); render();
+  }
+  function addTextBox(){ if(!editMode) return; pushUndo(); const id=uuid('tb'); draft.textboxes.push({id, slide:currentSlide, text:'Neuer Text', x:12, y:76, w:25, h:8, rot:0, z:80, fontSize:18, color:draft.settings.text}); dirty=true; render(); select(id); }
+  function openStickerPicker(){
+    if(!editMode) return;
+    let p=document.getElementById('v5StickerPicker');
+    if(!p){
+      p=document.createElement('div'); p.id='v5StickerPicker'; p.className='v5-picker'; p.hidden=true;
+      p.innerHTML = `<div class="v5-picker-box"><div class="v5-picker-head"><h2>Sticker hinzufügen</h2><button type="button" id="v5ClosePicker">Schließen</button></div><div class="v5-picker-grid">${STICKERS.map(f=>`<button type="button" data-sticker="${esc(f)}"><img src="${STICKER_PATH+esc(f)}" alt=""></button>`).join('')}</div></div>`;
+      document.body.appendChild(p);
+      p.onclick = e => { if(e.target === p) p.hidden=true; };
+      p.querySelector('#v5ClosePicker').onclick = () => p.hidden=true;
+      p.querySelectorAll('[data-sticker]').forEach(btn => btn.onclick = () => { pushUndo(); const id=uuid('st'); draft.stickers.push({id, slide:currentSlide, src:STICKER_PATH+btn.dataset.sticker, x:58, y:48, w:24, h:22, rot:0, z:90}); p.hidden=true; dirty=true; render(); select(id); });
+    }
+    p.hidden=false;
+  }
+
+  function applyTheme(){
+    if(!modal || !draft) return;
+    const stage=modal.querySelector('#v5Stage'), slide=modal.querySelector('#v5Slide');
+    const s=Object.assign({}, THEME, draft.settings||{});
+    stage.style.backgroundColor=s.background;
+    stage.style.backgroundImage = [s.backgroundImage ? `url("${s.backgroundImage}")` : '', patternCss(s.backgroundPattern, s.backgroundPatternColor)].filter(Boolean).join(', ');
+    stage.style.backgroundSize = [s.backgroundImage ? 'cover' : '', patternSize(s.backgroundPattern)].filter(Boolean).join(', ');
+    stage.style.backgroundPosition = 'center';
+    slide.style.backgroundColor=s.slide;
+    slide.style.backgroundImage=patternCss(s.slidePattern, s.slidePatternColor);
+    slide.style.backgroundSize=patternSize(s.slidePattern);
+    slide.style.color=s.text;
+    slide.style.setProperty('--presentation-heading-color', s.heading);
+    slide.style.setProperty('--presentation-text-color', s.text);
+    slide.style.setProperty('--presentation-slide-color', s.slide);
+    slide.style.setProperty('--presentation-background-color', s.background);
+    syncDesignControls(); syncPatternControls();
+  }
+  function patternCss(pattern, color){
+    color = color || 'rgba(30,58,95,.14)';
+    if(!pattern || pattern==='none') return '';
+    if(pattern==='dots') return `radial-gradient(${color} 1.4px, transparent 1.6px)`;
+    if(pattern==='grid') return `linear-gradient(${color} 1px, transparent 1px), linear-gradient(90deg, ${color} 1px, transparent 1px)`;
+    if(pattern==='diagonal') return `repeating-linear-gradient(135deg, ${color} 0 1px, transparent 1px 16px)`;
+    if(pattern==='waves') return `radial-gradient(ellipse at 50% 120%, transparent 0 22px, ${color} 23px, transparent 24px)`;
+    return '';
+  }
+  function patternSize(pattern){ if(pattern==='dots') return '18px 18px'; if(pattern==='grid') return '22px 22px, 22px 22px'; if(pattern==='diagonal') return 'auto'; if(pattern==='waves') return '46px 24px'; return 'auto'; }
+  function syncDesignControls(){ if(!modal||!draft) return; const t=modal.querySelector('#v5DesignTarget')?.value || 'heading'; const c=modal.querySelector('#v5DesignColor'); if(c) c.value=draft.settings[t] || THEME[t] || '#000000'; }
+  function syncPatternControls(){ if(!modal||!draft) return; const t=modal.querySelector('#v5PatternTarget')?.value || 'slide'; const p=modal.querySelector('#v5PatternType'); const c=modal.querySelector('#v5PatternColor'); if(p) p.value=t==='background'?(draft.settings.backgroundPattern||'none'):(draft.settings.slidePattern||'none'); if(c)c.value=t==='background'?(draft.settings.backgroundPatternColor||'#0d2b22'):(draft.settings.slidePatternColor||'#e5e7eb'); }
+  function updateBars(){
+    if(!modal) return;
+    modal.querySelector('#v5Counter').textContent = `${currentSlide+1} / ${SLIDE_COUNT}${dirty?' · ungespeichert':''}`;
+    modal.querySelector('#v5Edit').textContent = editMode ? 'Bearbeitung aktiv' : 'Bearbeitungsmodus';
+    modal.querySelector('#v5Edit').classList.toggle('success-btn', editMode);
+    modal.querySelector('.v5-edit-controls').hidden = !editMode;
+    modal.querySelector('#v5Undo').disabled = undoStack.length === 0;
+    updateSelection();
+  }
+  function rgbToHex(c){ if(!c) return '#0f172a'; if(c.startsWith('#')) return c; const m=String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(!m) return '#0f172a'; return '#'+[m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,'0')).join(''); }
+
+  const oldBuildPayload = window.buildPayload || (typeof buildPayload === 'function' ? buildPayload : null);
+  window.getPresentationSettingsFinal = function(){ const s=getLS(STATE_KEY, null); return Object.assign({}, THEME, s && s.settings || {}); };
+  window.getPresentationExtrasFinal = function(){ const s=getLS(STATE_KEY, null); return s && s.textboxes ? s.textboxes : []; };
+  window.getPresentationStickersFinal = function(){ const s=getLS(STATE_KEY, null); return s && s.stickers ? s.stickers : []; };
+  window.getPresentationTextOverridesFinal = function(){ const s=getLS(STATE_KEY, null); return s && s.text ? s.text : {}; };
+  if (typeof buildPayload === 'function') {
+    buildPayload = function(){
+      const payload = oldBuildPayload ? oldBuildPayload() : data();
+      const s = getLS(STATE_KEY, null);
+      if(s){
+        payload.presentationSettings = s.settings || {};
+        payload.presentationExtras = s.textboxes || [];
+        payload.presentationStickers = s.stickers || [];
+        payload.presentationTextOverrides = s.text || {};
+        payload.presentationLayout = s.layout || {};
+        payload.presentationV5 = s;
+        Object.entries(s.values || {}).forEach(([k,v]) => saveT(k,v));
+      }
+      return payload;
+    };
+  }
+
+  window.openPresentationPrepModalFinal = open;
+  window.ensurePresentationPrepModalFinal = ensureModal;
+  window.closePresentationPrepModalFinal = close;
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('openPresentationPrepBtnSafe') || document.getElementById('openPresentationPrepBtn') || document.getElementById('openPresentationPrepBtnV4');
+    if(btn){
+      const clean = btn.cloneNode(true); btn.replaceWith(clean);
+      clean.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); open(); });
+    }
+  });
+})();

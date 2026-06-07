@@ -871,25 +871,22 @@ function renderResults(rows) {
     return;
   }
   if (controls) controls.hidden = false;
-  clampResultIndex();
-  currentVirtualPosition = currentVirtualIndex;
-  renderCarouselAt(currentVirtualPosition, false);
+  if (!Number.isFinite(currentVirtualPosition)) currentVirtualPosition = rows.length - 1;
+  currentVirtualIndex = Math.round(currentVirtualPosition);
+  currentResultIndex = mod(currentVirtualIndex, rows.length);
+  buildSlotTrack(currentVirtualIndex - 4, currentVirtualIndex + 4);
+  positionSlotTrack(currentVirtualPosition, false);
 }
 
 function mod(n, m) {
   return ((n % m) + m) % m;
 }
 
-function resultCardHtml(row, index, slot = 0, active = false) {
+function resultCardHtml(row, index, virtualIndex = index) {
   const data = row.data || {};
   const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
   const groupName = row.groupName || data.groupName || "Gruppe";
-  const offset = carouselOffsetForSlot(slot);
-  const abs = Math.min(3, Math.abs(slot));
-  const scale = active ? 1 : Math.max(0.74, 1 - abs * 0.105);
-  const opacity = active ? 1 : Math.max(0.07, 0.48 - abs * 0.15);
-  const z = active ? 30 : Math.max(1, 18 - Math.round(abs * 4));
-  return `<section class="card result-card ${active ? 'is-active' : 'is-side'}" data-result-index="${index}" data-slot="${slot.toFixed(3)}" aria-current="${active ? 'true' : 'false'}" style="--x:${offset}px;--scale:${scale};--opacity:${opacity};--z:${z};">
+  return `<section class="card result-card slot-card" data-result-index="${index}" data-virtual-index="${virtualIndex}" aria-current="false">
     <button class="result-delete" type="button" data-delete-result="${index}" title="Diesen Eintrag löschen" aria-label="Diesen Eintrag löschen">×</button>
     <div class="result-card-head">
       <div>
@@ -905,38 +902,85 @@ function resultCardHtml(row, index, slot = 0, active = false) {
   </section>`;
 }
 
-function carouselOffsetForSlot(slot) {
-  const vw = Math.max(320, window.innerWidth || 1024);
-  const cardDistance = Math.min(660, Math.max(300, vw * 0.56));
-  return Math.round(slot * cardDistance);
+let slotFirstVirtual = 0;
+let slotLastVirtual = 0;
+
+function buildSlotTrack(firstVirtual, lastVirtual) {
+  const track = document.getElementById("resultsContent");
+  if (!track) return;
+  const n = resultRowsCache.length;
+  if (!n) return;
+  slotFirstVirtual = Math.floor(firstVirtual);
+  slotLastVirtual = Math.ceil(lastVirtual);
+  const pieces = [];
+  for (let virtual = slotFirstVirtual; virtual <= slotLastVirtual; virtual++) {
+    const idx = mod(virtual, n);
+    pieces.push(resultCardHtml(resultRowsCache[idx], idx, virtual));
+  }
+  track.innerHTML = pieces.join("");
+  track.classList.add("slot-track");
+}
+
+function getSlotMetrics() {
+  const carousel = document.getElementById("resultCarousel");
+  const track = document.getElementById("resultsContent");
+  const firstCard = track ? track.querySelector(".result-card") : null;
+  if (!carousel || !track || !firstCard) return null;
+  const style = window.getComputedStyle(track);
+  const gap = parseFloat(style.columnGap || style.gap || "0") || 0;
+  const cardWidth = firstCard.getBoundingClientRect().width;
+  const step = cardWidth + gap;
+  return { carousel, track, cardWidth, step };
+}
+
+function positionSlotTrack(position, smooth = false) {
+  const metrics = getSlotMetrics();
+  if (!metrics) return;
+  const { carousel, track, step } = metrics;
+  currentVirtualPosition = position;
+  const focusVirtual = Math.round(position);
+  currentVirtualIndex = focusVirtual;
+  currentResultIndex = mod(focusVirtual, resultRowsCache.length);
+  const local = position - slotFirstVirtual;
+  const centerX = carousel.clientWidth / 2;
+  const itemCenter = local * step + step / 2;
+  const translate = centerX - itemCenter;
+  track.style.transform = `translate3d(${translate}px, 0, 0)`;
+  track.classList.toggle("is-spinning", !!randomSpinActive);
+  track.classList.toggle("is-smooth", !!smooth && !randomSpinActive);
+  updateSlotCardFocus(position);
+  updateActiveResult(false);
+}
+
+function updateSlotCardFocus(position) {
+  const track = document.getElementById("resultsContent");
+  if (!track) return;
+  const nearest = Math.round(position);
+  const cards = track.querySelectorAll(".result-card");
+  cards.forEach(card => {
+    const virtual = Number(card.dataset.virtualIndex);
+    const slot = virtual - position;
+    const distance = Math.abs(slot);
+    const active = virtual === nearest;
+    const scale = active ? 1 : Math.max(0.78, 1 - Math.min(distance, 3) * 0.09);
+    const opacity = active ? 1 : Math.max(0.12, 0.50 - Math.min(distance, 4) * 0.14);
+    const z = active ? 40 : Math.max(1, 22 - Math.round(distance * 5));
+    card.classList.toggle("is-active", active);
+    card.classList.toggle("is-side", !active);
+    card.setAttribute("aria-current", active ? "true" : "false");
+    card.style.transform = `scale(${scale})`;
+    card.style.opacity = String(opacity);
+    card.style.zIndex = String(z);
+    card.style.filter = active ? "none" : `saturate(.68) blur(${Math.min(distance, 2) * 0.2}px)`;
+  });
 }
 
 function renderCarouselAt(position, smooth = false) {
-  const target = document.getElementById("resultsContent");
-  if (!target) return;
-  const n = resultRowsCache.length;
-  if (!n) {
-    target.innerHTML = `<div class="notice empty-results">Noch keine Ergebnisse vorhanden.</div>`;
-    updateCarouselCounter();
-    return;
+  const focus = Math.round(position);
+  if (focus - 4 < slotFirstVirtual || focus + 4 > slotLastVirtual) {
+    buildSlotTrack(focus - 4, focus + 4);
   }
-  currentVirtualPosition = position;
-  const focusedVirtual = Math.round(position);
-  currentVirtualIndex = focusedVirtual;
-  currentResultIndex = mod(focusedVirtual, n);
-  const maxSide = n === 1 ? 0 : 3;
-  const pieces = [];
-  for (let rel = -maxSide; rel <= maxSide; rel++) {
-    const virtual = focusedVirtual + rel;
-    const slot = virtual - position;
-    const idx = mod(virtual, n);
-    const active = virtual === focusedVirtual;
-    pieces.push(resultCardHtml(resultRowsCache[idx], idx, slot, active));
-  }
-  target.classList.toggle("is-smooth", !!smooth && !randomSpinActive);
-  target.classList.toggle("is-spinning", !!randomSpinActive);
-  target.innerHTML = pieces.join("");
-  updateActiveResult(smooth && !randomSpinActive);
+  positionSlotTrack(position, smooth);
 }
 
 function renderCarouselWindow(smooth = true) {
@@ -967,12 +1011,15 @@ function animateCarouselTo(targetPosition, duration = 520, easing = easeOutCubic
   if (!resultRowsCache.length) return;
   if (carouselAnimationFrame) cancelAnimationFrame(carouselAnimationFrame);
   const startPosition = currentVirtualPosition;
+  const minV = Math.floor(Math.min(startPosition, targetPosition)) - 5;
+  const maxV = Math.ceil(Math.max(startPosition, targetPosition)) + 5;
+  buildSlotTrack(minV, maxV);
   const start = performance.now();
   function frame(now) {
     const t = Math.min(1, (now - start) / duration);
     const eased = easing(t);
     const pos = startPosition + (targetPosition - startPosition) * eased;
-    renderCarouselAt(pos, false);
+    positionSlotTrack(pos, false);
     if (t < 1) {
       carouselAnimationFrame = requestAnimationFrame(frame);
       return;
@@ -981,7 +1028,8 @@ function animateCarouselTo(targetPosition, duration = 520, easing = easeOutCubic
     currentVirtualPosition = Math.round(targetPosition);
     currentVirtualIndex = Math.round(targetPosition);
     currentResultIndex = mod(currentVirtualIndex, resultRowsCache.length);
-    renderCarouselAt(currentVirtualPosition, true);
+    buildSlotTrack(currentVirtualIndex - 4, currentVirtualIndex + 4);
+    positionSlotTrack(currentVirtualPosition, true);
     if (typeof onDone === "function") onDone();
   }
   carouselAnimationFrame = requestAnimationFrame(frame);
@@ -990,19 +1038,17 @@ function animateCarouselTo(targetPosition, duration = 520, easing = easeOutCubic
 function moveResult(delta) {
   if (!resultRowsCache.length || randomSpinActive) return;
   const target = Math.round(currentVirtualPosition) + delta;
-  animateCarouselTo(target, 460, easeOutCubic);
+  animateCarouselTo(target, 560, easeOutCubic);
 }
 
 function updateActiveResult(smooth = true) {
   const carousel = document.getElementById("resultCarousel");
-  const track = document.getElementById("resultsContent");
   const activeCard = document.querySelector(".result-card.is-active");
-  if (track) track.classList.toggle("is-smooth", !!smooth && !randomSpinActive);
   if (activeCard && carousel) {
     window.setTimeout(() => {
-      const height = Math.max(activeCard.offsetHeight + 110, 430);
+      const height = Math.max(activeCard.offsetHeight + 220, 560);
       carousel.style.minHeight = height + "px";
-    }, smooth ? 80 : 0);
+    }, smooth ? 60 : 0);
   }
   updateCarouselCounter();
 }
@@ -1019,13 +1065,18 @@ function spinRandomGroup() {
   const btn = document.getElementById("randomGroupBtn");
   if (randomSpinActive) return;
   if (carouselAnimationFrame) cancelAnimationFrame(carouselAnimationFrame);
+  if (rouletteFrame) cancelAnimationFrame(rouletteFrame);
+
   randomSpinActive = true;
   const n = resultRowsCache.length;
   const duration = 6000 + Math.floor(Math.random() * 6001); // 6–12 Sekunden
   const startPosition = currentVirtualPosition;
-  const loops = Math.max(6, Math.ceil(duration / 1200));
+  const loops = Math.max(8, Math.ceil(duration / 850));
   const randomOffset = Math.floor(Math.random() * n);
   const targetPosition = Math.ceil(startPosition) + loops * n + randomOffset;
+  const minV = Math.floor(startPosition) - 5;
+  const maxV = Math.ceil(targetPosition) + 5;
+  buildSlotTrack(minV, maxV);
   const start = performance.now();
 
   if (btn) {
@@ -1040,10 +1091,10 @@ function spinRandomGroup() {
 
   function frame(now) {
     const t = Math.min(1, (now - start) / duration);
-    // kontinuierliche Bewegung nach links: die Positionszahl steigt; die Kacheln wandern links vorbei.
+    // Anfang sehr schnell, dann immer langsamer wie beim Slot-Roulette.
     const eased = easeOutQuart(t);
     const pos = startPosition + (targetPosition - startPosition) * eased;
-    renderCarouselAt(pos, false);
+    positionSlotTrack(pos, false);
     if (t < 1) {
       rouletteFrame = requestAnimationFrame(frame);
       return;
@@ -1053,7 +1104,8 @@ function spinRandomGroup() {
     currentVirtualPosition = Math.round(targetPosition);
     currentVirtualIndex = Math.round(targetPosition);
     currentResultIndex = mod(currentVirtualIndex, n);
-    renderCarouselAt(currentVirtualPosition, true);
+    buildSlotTrack(currentVirtualIndex - 4, currentVirtualIndex + 4);
+    positionSlotTrack(currentVirtualPosition, true);
     const chosen = resultRowsCache[currentResultIndex];
     if (btn) {
       btn.disabled = false;

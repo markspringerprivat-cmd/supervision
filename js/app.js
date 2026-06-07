@@ -3465,3 +3465,146 @@ window.addEventListener('DOMContentLoaded', () => {
     window.setTimeout(initSummary, 0);
   }
 });
+
+/* ------------------------------------------------------------
+   UPDATE: Hintergrundbild + dezentes Muster für Präsentationen
+   ------------------------------------------------------------ */
+(function installPresentationBackgroundPatternUpdate(){
+  const OLD_APPLY = typeof applyPresentationThemeToNodeFinal === 'function' ? applyPresentationThemeToNodeFinal : null;
+  const OLD_ENSURE = typeof ensurePresentationPrepModalFinal === 'function' ? ensurePresentationPrepModalFinal : null;
+  const OLD_RENDER_SUMMARY = typeof renderSummaryPresentationSlideFinal === 'function' ? renderSummaryPresentationSlideFinal : null;
+
+  function cssUrlForDataUrl(value) {
+    if (!value) return '';
+    return 'url("' + String(value).replace(/"/g, '\\"') + '")';
+  }
+
+  function applyExtendedTheme(host, settings) {
+    if (!host) return;
+    const s = Object.assign({}, (typeof SV_PRESENTATION_THEME_DEFAULT !== 'undefined' ? SV_PRESENTATION_THEME_DEFAULT : {}), settings || {});
+    if (s.backgroundImage) {
+      host.style.setProperty('--presentation-background-image', cssUrlForDataUrl(s.backgroundImage));
+      host.classList.add('has-presentation-bg-image');
+    } else {
+      host.style.removeProperty('--presentation-background-image');
+      host.classList.remove('has-presentation-bg-image');
+    }
+    host.dataset.presentationPattern = s.pattern || 'none';
+  }
+
+  if (OLD_APPLY) {
+    applyPresentationThemeToNodeFinal = function(host, settings) {
+      OLD_APPLY(host, settings);
+      applyExtendedTheme(host, settings);
+    };
+  }
+
+  function refreshPresentationToolbarControls(modal) {
+    if (!modal) return;
+    const settings = typeof getPresentationSettingsFinal === 'function' ? getPresentationSettingsFinal() : {};
+    const pattern = modal.querySelector('#presentationPatternSelect');
+    if (pattern) pattern.value = settings.pattern || 'none';
+  }
+
+  function addPresentationExtendedControls(modal) {
+    if (!modal || modal.dataset.extendedPresentationControls === 'true') return;
+    const toolbar = modal.querySelector('.presentation-prep-toolbar');
+    if (!toolbar) return;
+    modal.dataset.extendedPresentationControls = 'true';
+
+    const bgLabel = document.createElement('label');
+    bgLabel.className = 'button secondary image-upload-label';
+    bgLabel.htmlFor = 'presentationBgImageInput';
+    bgLabel.textContent = 'Hintergrundbild';
+
+    const bgInput = document.createElement('input');
+    bgInput.id = 'presentationBgImageInput';
+    bgInput.type = 'file';
+    bgInput.accept = 'image/*';
+    bgInput.hidden = true;
+
+    const removeBg = document.createElement('button');
+    removeBg.type = 'button';
+    removeBg.id = 'removePresentationBgImage';
+    removeBg.className = 'secondary';
+    removeBg.textContent = 'Bild entfernen';
+
+    const patternLabel = document.createElement('label');
+    patternLabel.className = 'theme-control-label';
+    patternLabel.htmlFor = 'presentationPatternSelect';
+    patternLabel.textContent = 'Muster';
+
+    const patternSelect = document.createElement('select');
+    patternSelect.id = 'presentationPatternSelect';
+    patternSelect.className = 'pattern-select';
+    patternSelect.innerHTML = '<option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Dezente Wellen</option>';
+
+    const after = toolbar.querySelector('#themeHueRange');
+    if (after && after.parentNode === toolbar) {
+      after.insertAdjacentElement('afterend', patternSelect);
+      after.insertAdjacentElement('afterend', patternLabel);
+      after.insertAdjacentElement('afterend', removeBg);
+      after.insertAdjacentElement('afterend', bgInput);
+      after.insertAdjacentElement('afterend', bgLabel);
+    } else {
+      toolbar.append(bgLabel, bgInput, removeBg, patternLabel, patternSelect);
+    }
+
+    bgInput.addEventListener('change', () => {
+      const file = bgInput.files && bgInput.files[0];
+      if (!file) return;
+      if (!file.type || !file.type.startsWith('image/')) {
+        alert('Bitte eine Bilddatei auswählen.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof savePresentationSettingsFinal === 'function') {
+          savePresentationSettingsFinal({ backgroundImage: reader.result });
+        }
+        if (typeof renderSummaryPresentationSlideFinal === 'function') renderSummaryPresentationSlideFinal(false);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    removeBg.addEventListener('click', () => {
+      if (typeof savePresentationSettingsFinal === 'function') {
+        savePresentationSettingsFinal({ backgroundImage: '' });
+      }
+      bgInput.value = '';
+      if (typeof renderSummaryPresentationSlideFinal === 'function') renderSummaryPresentationSlideFinal(false);
+    });
+
+    patternSelect.addEventListener('change', () => {
+      if (typeof savePresentationSettingsFinal === 'function') {
+        savePresentationSettingsFinal({ pattern: patternSelect.value });
+      }
+      if (typeof renderSummaryPresentationSlideFinal === 'function') renderSummaryPresentationSlideFinal(false);
+    });
+    refreshPresentationToolbarControls(modal);
+  }
+
+  if (OLD_ENSURE) {
+    ensurePresentationPrepModalFinal = function() {
+      const modal = OLD_ENSURE();
+      addPresentationExtendedControls(modal);
+      return modal;
+    };
+  }
+
+  if (OLD_RENDER_SUMMARY) {
+    renderSummaryPresentationSlideFinal = function(updateControls) {
+      OLD_RENDER_SUMMARY(updateControls);
+      const modal = document.getElementById('presentationPrepModal');
+      if (!modal) return;
+      const settings = typeof getPresentationSettingsFinal === 'function' ? getPresentationSettingsFinal() : {};
+      const stage = modal.querySelector('.presentation-prep-stage');
+      const slide = modal.querySelector('#summaryPresentationSlide');
+      if (typeof applyPresentationThemeToNodeFinal === 'function') {
+        applyPresentationThemeToNodeFinal(stage, settings);
+        applyPresentationThemeToNodeFinal(slide, settings);
+      }
+      refreshPresentationToolbarControls(modal);
+    };
+  }
+})();

@@ -33,3 +33,12 @@ Dort dein eigenes Passwort eintragen. Genau dieses Passwort wird für das Lösch
 ## Ergebnisübersicht
 
 `ergebnisse.html` zeigt die Gruppen als Karussell. Die Zufallsauswahl läuft im Kreis weiter und wird schrittweise langsamer. Nach der Auswahl erscheint ein kurzer Konfetti-Effekt.
+
+## Lokales Zurücksetzen
+
+Oben am Bildschirmrand gibt es auf jeder Seite zwei lokale Reset-Optionen:
+
+- **Aktuelle Seite leeren** löscht die Eingaben auf der aktuell geöffneten Seite im Browser.
+- **Alles zurücksetzen** löscht alle lokal gespeicherten Website-Daten in diesem Browser, z. B. Rollen, Notizen, Phasenangaben, Zusammenfassung und Rundenmarkierungen. Google-Sheet-Einträge werden dadurch nicht gelöscht.
+
+Auf der Ergebnisseite gibt es zusätzlich **Runden zurücksetzen**. Damit werden nur die bisherigen Roulette-/Zufallsrunden zurückgesetzt, nicht die gespeicherten Gruppenergebnisse.

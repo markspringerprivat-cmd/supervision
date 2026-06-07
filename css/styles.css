@@ -727,3 +727,97 @@ body.is-mobile {
   .round-badges { width: 100%; }
   .result-carousel { padding-bottom: 260px !important; margin-bottom: 90px !important; }
 }
+
+
+/* Roulette-Auswahl: klare Slot-Spur mit weichem Ausblenden an den Seiten */
+.result-carousel {
+  position: relative;
+  overflow: hidden !important;
+}
+.result-carousel::before,
+.result-carousel::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(72px, 11vw, 180px) !important;
+  z-index: 80;
+  pointer-events: none;
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+}
+.result-carousel::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(245,247,251,1) 0%, rgba(245,247,251,.88) 36%, rgba(245,247,251,.42) 72%, rgba(245,247,251,0) 100%) !important;
+}
+.result-carousel::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(245,247,251,1) 0%, rgba(245,247,251,.88) 36%, rgba(245,247,251,.42) 72%, rgba(245,247,251,0) 100%) !important;
+}
+#randomGroupBtn:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+  filter: grayscale(.15);
+}
+#resultsStatus.success {
+  font-weight: 700;
+}
+@media (max-width: 760px) {
+  .result-carousel::before,
+  .result-carousel::after {
+    width: 44px !important;
+  }
+}
+
+/* Globale lokale Reset-Leiste */
+body.has-reset-toolbar { padding-top: 52px; }
+.global-reset-toolbar {
+  position: fixed;
+  z-index: 5000;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 52px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  background: rgba(255,255,255,0.94);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(22, 50, 79, 0.08);
+}
+.global-reset-toolbar .global-reset-btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+}
+.global-reset-toolbar .global-reset-btn.secondary {
+  background: #edf2f7;
+  color: var(--primary-dark);
+}
+.global-reset-toolbar .global-reset-btn.danger {
+  background: #8a1f1f;
+  color: #fff;
+}
+#resetRoundsBtn {
+  background: #edf2f7;
+  color: var(--primary-dark);
+}
+#resetRoundsBtn:hover { background: #dce7f2; }
+@media (max-width: 620px) {
+  body.has-reset-toolbar { padding-top: 94px; }
+  .global-reset-toolbar {
+    flex-wrap: wrap;
+    justify-content: stretch;
+    padding: 8px 12px;
+  }
+  .global-reset-toolbar .global-reset-btn {
+    flex: 1 1 150px;
+    font-size: 0.82rem;
+  }
+}

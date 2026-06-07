@@ -170,8 +170,78 @@ function enhanceLinks() {
   });
 }
 
+
+function injectResetToolbar() {
+  if (document.querySelector('.global-reset-toolbar')) return;
+  const toolbar = document.createElement('div');
+  toolbar.className = 'global-reset-toolbar';
+  toolbar.innerHTML = `
+    <button type="button" class="global-reset-btn secondary" id="clearCurrentPageBtn" title="Eingaben auf dieser Seite leeren">Aktuelle Seite leeren</button>
+    <button type="button" class="global-reset-btn danger" id="resetAllPagesBtn" title="Alle lokal gespeicherten Eingaben zurücksetzen">Alles zurücksetzen</button>
+  `;
+  document.body.prepend(toolbar);
+  document.body.classList.add('has-reset-toolbar');
+
+  const currentBtn = toolbar.querySelector('#clearCurrentPageBtn');
+  const allBtn = toolbar.querySelector('#resetAllPagesBtn');
+
+  currentBtn.addEventListener('click', clearCurrentPageData);
+  allBtn.addEventListener('click', resetAllLocalPageData);
+}
+
+function clearCurrentPageData() {
+  const mode = document.body.dataset.mode || '';
+  const ok = window.confirm('Möchtest du alle Eingaben auf der aktuellen Seite leeren?');
+  if (!ok) return;
+
+  document.querySelectorAll('textarea[data-save], input[data-save], select[data-save]').forEach(el => {
+    const saveKey = el.dataset.save;
+    if (saveKey) localStorage.removeItem(key(saveKey));
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else el.value = '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  if (mode === 'roles') {
+    localStorage.removeItem(key('namesInput'));
+    localStorage.removeItem(key('assignments'));
+    const namesInput = document.getElementById('namesInput');
+    if (namesInput) namesInput.value = '';
+    const assignedBox = document.getElementById('assignedBox');
+    if (assignedBox) assignedBox.innerHTML = '';
+    const roleCards = document.getElementById('roleCards');
+    if (roleCards) roleCards.innerHTML = '';
+    const status = document.getElementById('assignStatus');
+    if (status) status.textContent = 'Diese Seite wurde geleert.';
+  }
+
+  if (mode === 'summary') {
+    localStorage.removeItem(key('summary_group_name'));
+    const groupName = document.getElementById('groupName');
+    if (groupName) groupName.value = '';
+    const status = document.getElementById('submitStatus');
+    if (status) {
+      status.className = 'notice';
+      status.textContent = 'Die Eingaben dieser Seite wurden geleert.';
+    }
+  }
+}
+
+function resetAllLocalPageData() {
+  const ok = window.confirm('Möchtest du wirklich alle lokal gespeicherten Eingaben dieser Website löschen? Das betrifft Rollenzuweisung, Notizen, Phasen, Zusammenfassung und Rundenmarkierungen in diesem Browser. Google-Sheet-Ergebnisse werden dadurch nicht gelöscht.');
+  if (!ok) return;
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('sv_')) keysToRemove.push(k);
+  }
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+  window.location.href = 'index.html';
+}
+
 function initCommon() {
   hydrateFromQuery();
+  injectResetToolbar();
   const groupIdEl = document.querySelector("[data-group-id]");
   if (groupIdEl) groupIdEl.textContent = getGroupId();
   enhanceLinks();
@@ -814,6 +884,7 @@ function initResults() {
   const prevBtn = document.getElementById("prevGroupBtn");
   const nextBtn = document.getElementById("nextGroupBtn");
   const randomBtn = document.getElementById("randomGroupBtn");
+  const resetRoundsBtn = document.getElementById("resetRoundsBtn");
 
   if (deleteBtn) deleteBtn.addEventListener("click", deleteAllResults);
   const resultsContent = document.getElementById("resultsContent");
@@ -832,6 +903,7 @@ function initResults() {
   if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
   if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
   if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
+  if (resetRoundsBtn) resetRoundsBtn.addEventListener("click", resetRouletteRounds);
   renderRoundBadges();
   window.addEventListener("resize", () => { if (resultRowsCache.length) renderCarouselAt(currentVirtualPosition, false); });
 
@@ -869,6 +941,7 @@ function renderResults(rows) {
     currentVirtualIndex = 0;
     currentVirtualPosition = 0;
     updateCarouselCounter();
+    syncRandomSelectionState();
     return;
   }
   if (controls) controls.hidden = false;
@@ -877,6 +950,7 @@ function renderResults(rows) {
   currentResultIndex = mod(currentVirtualIndex, rows.length);
   buildSlotTrack(currentVirtualIndex - 4, currentVirtualIndex + 4);
   positionSlotTrack(currentVirtualPosition, false);
+  syncRandomSelectionState();
 }
 
 function mod(n, m) {
@@ -1064,51 +1138,164 @@ function updateCarouselCounter() {
 }
 
 
-function getRoundCount() {
-  return Number(localStorage.getItem("sv_results_round_count") || "0") || 0;
+const SELECTED_RANDOM_KEY = "sv_results_selected_random_keys";
+const ROUND_HISTORY_KEY = "sv_results_round_history";
+
+function resultKey(row, index) {
+  if (!row) return "idx:" + index;
+  return String(row.rowNumber || row.id || row.groupName || ((row.data && row.data.groupName) || "gruppe")) + "::" + String(row.timestamp || (row.data && row.data.timestamp) || index);
 }
 
-function setRoundCount(value) {
-  localStorage.setItem("sv_results_round_count", String(value));
+function getCurrentResultKeys() {
+  return resultRowsCache.map((row, index) => resultKey(row, index));
+}
+
+function readJsonArray(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeJsonArray(key, value) {
+  localStorage.setItem(key, JSON.stringify(Array.isArray(value) ? value : []));
+}
+
+function getSelectedRandomKeys() {
+  return readJsonArray(SELECTED_RANDOM_KEY);
+}
+
+function setSelectedRandomKeys(keys) {
+  writeJsonArray(SELECTED_RANDOM_KEY, Array.from(new Set(keys || [])));
+}
+
+function getRoundHistory() {
+  return readJsonArray(ROUND_HISTORY_KEY);
+}
+
+function setRoundHistory(history) {
+  writeJsonArray(ROUND_HISTORY_KEY, history || []);
+}
+
+function syncRandomSelectionState() {
+  const current = new Set(getCurrentResultKeys());
+  const selected = getSelectedRandomKeys().filter(key => current.has(key));
+  setSelectedRandomKeys(selected);
+
+  const history = getRoundHistory().filter(item => item && current.has(item.key));
+  setRoundHistory(history);
+  renderRoundBadges();
+  updateRandomAvailability();
+}
+
+function getUnselectedResultIndexes() {
+  const selected = new Set(getSelectedRandomKeys());
+  const indexes = [];
+  resultRowsCache.forEach((row, index) => {
+    if (!selected.has(resultKey(row, index))) indexes.push(index);
+  });
+  return indexes;
+}
+
+function allResultsHaveBeenRandomlySelected() {
+  return !!resultRowsCache.length && getUnselectedResultIndexes().length === 0;
 }
 
 function renderRoundBadges(activeRound = null) {
   const box = document.getElementById("roundBadges");
   if (!box) return;
-  const count = getRoundCount();
+  const history = getRoundHistory();
   box.innerHTML = "";
-  for (let i = 1; i <= count; i++) {
+  history.forEach((item, idx) => {
     const badge = document.createElement("span");
-    badge.className = "round-badge" + (activeRound === i ? " is-current" : "");
-    badge.textContent = "Runde " + i;
+    const roundNumber = idx + 1;
+    badge.className = "round-badge" + (activeRound === roundNumber ? " is-current" : "");
+    badge.textContent = "Runde " + roundNumber;
+    if (item && item.groupName) badge.title = item.groupName;
     box.appendChild(badge);
+  });
+}
+
+function registerRandomSelection(index) {
+  const row = resultRowsCache[index];
+  const key = resultKey(row, index);
+  const groupName = row && (row.groupName || (row.data && row.data.groupName)) || "Gruppe";
+  const selected = getSelectedRandomKeys();
+  if (!selected.includes(key)) selected.push(key);
+  setSelectedRandomKeys(selected);
+
+  const history = getRoundHistory();
+  history.push({ key, groupName, timestamp: new Date().toISOString() });
+  setRoundHistory(history);
+  renderRoundBadges(history.length);
+  return history.length;
+}
+
+
+function resetRouletteRounds() {
+  setSelectedRandomKeys([]);
+  setRoundHistory([]);
+  renderRoundBadges();
+  updateRandomAvailability();
+  const status = document.getElementById('resultsStatus');
+  if (status) {
+    status.className = 'notice';
+    status.textContent = 'Runden wurden zurückgesetzt. Alle Gruppen können wieder gezogen werden.';
   }
 }
 
-function startNewRoundBadge() {
-  const next = getRoundCount() + 1;
-  setRoundCount(next);
-  renderRoundBadges(next);
-  return next;
+function updateRandomAvailability() {
+  const btn = document.getElementById("randomGroupBtn");
+  if (!btn || randomSpinActive) return;
+  if (!resultRowsCache.length) {
+    btn.disabled = true;
+    btn.textContent = "Zufallsauswahl starten";
+    return;
+  }
+  if (allResultsHaveBeenRandomlySelected()) {
+    btn.disabled = true;
+    btn.textContent = "Keine weiteren Einträge verfügbar";
+  } else {
+    btn.disabled = false;
+    btn.textContent = "Zufallsauswahl starten";
+  }
 }
 
 function spinRandomGroup() {
   if (!resultRowsCache.length) return;
   const btn = document.getElementById("randomGroupBtn");
+  const status = document.getElementById("resultsStatus");
   if (randomSpinActive) return;
+
+  const available = getUnselectedResultIndexes();
+  if (!available.length) {
+    if (status) {
+      status.className = "warning";
+      status.textContent = "Keine weiteren Einträge verfügbar.";
+    }
+    updateRandomAvailability();
+    return;
+  }
+
   if (carouselAnimationFrame) cancelAnimationFrame(carouselAnimationFrame);
   if (rouletteFrame) cancelAnimationFrame(rouletteFrame);
 
   randomSpinActive = true;
-  const activeRound = startNewRoundBadge();
   const n = resultRowsCache.length;
   const duration = 7000 + Math.floor(Math.random() * 5001); // 7–12 Sekunden
   const startPosition = currentVirtualPosition;
   const loops = Math.max(12, Math.ceil(duration / 650));
-  const randomOffset = Math.floor(Math.random() * n);
-  const targetPosition = Math.ceil(startPosition) + loops * n + randomOffset;
-  const minV = Math.floor(startPosition) - 5;
-  const maxV = Math.ceil(targetPosition) + 5;
+
+  // Nur Gruppen, die in dieser Runde noch nicht gezogen wurden, dürfen Ziel sein.
+  const targetIndex = available[Math.floor(Math.random() * available.length)];
+  const base = Math.ceil(startPosition) + loops * n;
+  const deltaToTarget = mod(targetIndex - mod(base, n), n);
+  const targetPosition = base + deltaToTarget;
+
+  const minV = Math.floor(startPosition) - 6;
+  const maxV = Math.ceil(targetPosition) + 6;
   buildSlotTrack(minV, maxV);
   const start = performance.now();
 
@@ -1116,7 +1303,6 @@ function spinRandomGroup() {
     btn.disabled = true;
     btn.textContent = "Zufallsauswahl läuft …";
   }
-  const status = document.getElementById("resultsStatus");
   if (status) {
     status.className = "notice";
     status.textContent = "Das Rad läuft …";
@@ -1124,14 +1310,15 @@ function spinRandomGroup() {
 
   function frame(now) {
     const t = Math.min(1, (now - start) / duration);
-    // Anfang sehr schnell, dann immer langsamer wie beim Slot-Roulette.
     const eased = easeOutQuart(t);
     const pos = startPosition + (targetPosition - startPosition) * eased;
     positionSlotTrack(pos, false);
+
     if (t < 1) {
       rouletteFrame = requestAnimationFrame(frame);
       return;
     }
+
     rouletteFrame = null;
     randomSpinActive = false;
     currentVirtualPosition = Math.round(targetPosition);
@@ -1139,18 +1326,19 @@ function spinRandomGroup() {
     currentResultIndex = mod(currentVirtualIndex, n);
     buildSlotTrack(currentVirtualIndex - 4, currentVirtualIndex + 4);
     positionSlotTrack(currentVirtualPosition, true);
+
     const chosen = resultRowsCache[currentResultIndex];
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "Zufallsauswahl starten";
-    }
+    const chosenName = chosen && (chosen.groupName || (chosen.data && chosen.data.groupName)) || "Gruppe";
+    registerRandomSelection(currentResultIndex);
+
     if (status) {
       status.className = "success";
-      status.textContent = "Ausgewählt: " + (chosen.groupName || (chosen.data && chosen.data.groupName) || "Gruppe");
+      status.textContent = chosenName;
     }
-    renderRoundBadges(activeRound);
+    updateRandomAvailability();
     startConfetti(6000);
   }
+
   rouletteFrame = requestAnimationFrame(frame);
 }
 

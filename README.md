@@ -65,3 +65,19 @@ Der Löschbutton auf `ergebnisse.html` nutzt die Apps-Script-Aktion `deleteall`.
 ## Ergebnis-Karussell
 
 Die Ergebnisseite zeigt die Gruppen als Karussell. Mit den Pfeilen kann zwischen Gruppen gewechselt werden. Die Zufallsauswahl läuft automatisch 6 bis 12 Sekunden und stoppt dann zufällig bei einer Gruppe.
+
+## Update: Ergebnis-Karussell und Einzellöschung
+
+Diese Version enthält:
+- zentriertes Ergebnis-Karussell ohne sichtbaren Scrollbalken
+- aktive Gruppenkachel immer mittig, Seitenkacheln ausgeblendet/abgeblendet
+- Zufallsauswahl läuft im Kreis weiter und stoppt nach 6–12 Sekunden
+- Löschsymbol (×) pro Gruppeneintrag mit Passwortabfrage
+
+Wichtig für die Löschfunktion:
+1. `apps-script/Code.gs` in Apps Script vollständig ersetzen.
+2. `ADMIN_PASSWORD` im Apps Script setzen.
+3. Speichern.
+4. Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Neue Version → Bereitstellen.
+
+Ohne neue Apps-Script-Version kann GitHub noch die alte Löschlogik aufrufen.

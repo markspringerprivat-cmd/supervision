@@ -814,6 +814,19 @@ function initResults() {
   const randomBtn = document.getElementById("randomGroupBtn");
 
   if (deleteBtn) deleteBtn.addEventListener("click", deleteAllResults);
+  const resultsContent = document.getElementById("resultsContent");
+  if (resultsContent) {
+    resultsContent.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-delete-result]");
+      if (btn) {
+        event.preventDefault();
+        deleteSingleResult(Number(btn.dataset.deleteResult));
+      }
+    });
+    resultsContent.addEventListener("toggle", () => {
+      window.setTimeout(() => updateActiveResult(false), 40);
+    }, true);
+  }
   if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
   if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
   if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
@@ -858,10 +871,12 @@ function renderResults(rows) {
 function resultCardHtml(row, index) {
   const data = row.data || {};
   const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
+  const groupName = row.groupName || data.groupName || "Gruppe";
   return `<section class="card result-card" data-result-index="${index}">
+    <button class="result-delete" type="button" data-delete-result="${index}" title="Diesen Eintrag löschen" aria-label="Diesen Eintrag löschen">×</button>
     <div class="result-card-head">
       <div>
-        <h2>${escapeHtml(row.groupName || data.groupName || "Gruppe")}</h2>
+        <h2>${escapeHtml(groupName)}</h2>
         <p class="small result-meta">${escapeHtml(timestamp)}</p>
       </div>
       <span class="result-number">${index + 1}</span>
@@ -892,15 +907,23 @@ function moveResult(delta) {
 function updateActiveResult(smooth = true) {
   const cards = Array.from(document.querySelectorAll(".result-card[data-result-index]"));
   const carousel = document.getElementById("resultCarousel");
+  const track = document.getElementById("resultsContent");
   cards.forEach(card => {
     const active = Number(card.dataset.resultIndex) === currentResultIndex;
     card.classList.toggle("is-active", active);
     card.setAttribute("aria-current", active ? "true" : "false");
   });
   const activeCard = cards.find(card => Number(card.dataset.resultIndex) === currentResultIndex);
-  if (activeCard && carousel) {
-    const left = activeCard.offsetLeft - (carousel.clientWidth - activeCard.clientWidth) / 2;
-    carousel.scrollTo({ left: Math.max(0, left), behavior: smooth ? "smooth" : "auto" });
+  if (activeCard && carousel && track) {
+    track.style.transition = smooth ? "transform .36s cubic-bezier(.2,.8,.2,1)" : "none";
+    const activeCenter = activeCard.offsetLeft + activeCard.offsetWidth / 2;
+    const viewportCenter = carousel.clientWidth / 2;
+    const shift = viewportCenter - activeCenter;
+    track.style.transform = `translateX(${shift}px)`;
+    window.setTimeout(() => {
+      const height = Math.max(activeCard.offsetHeight + 30, 260);
+      carousel.style.minHeight = height + "px";
+    }, smooth ? 80 : 0);
   }
   updateCarouselCounter();
 }
@@ -917,6 +940,7 @@ function spinRandomGroup() {
   const btn = document.getElementById("randomGroupBtn");
   if (randomSpinTimer || randomSpinTimeout) return;
   const duration = 6000 + Math.floor(Math.random() * 6001); // 6–12 Sekunden
+  const intervalMs = 135;
   const start = Date.now();
   if (btn) {
     btn.disabled = true;
@@ -925,12 +949,12 @@ function spinRandomGroup() {
   randomSpinTimer = setInterval(() => {
     currentResultIndex = (currentResultIndex + 1) % resultRowsCache.length;
     updateActiveResult(true);
-  }, 130);
+  }, intervalMs);
   randomSpinTimeout = setTimeout(() => {
     clearInterval(randomSpinTimer);
     randomSpinTimer = null;
     randomSpinTimeout = null;
-    currentResultIndex = Math.floor(Math.random() * resultRowsCache.length);
+    // Kein Sprung am Ende: Das Karussell bleibt dort stehen, wo der Rundlauf stoppt.
     updateActiveResult(true);
     if (btn) {
       btn.disabled = false;
@@ -943,6 +967,74 @@ function spinRandomGroup() {
       }
     }
   }, Math.max(0, duration - (Date.now() - start)));
+}
+
+function deleteSingleResult(index) {
+  const row = resultRowsCache[index];
+  const url = getAppsScriptUrl();
+  const status = document.getElementById("resultsStatus");
+  if (!row || !url) {
+    if (status) {
+      status.className = "warning";
+      status.textContent = "Dieser Eintrag kann aktuell nicht gelöscht werden.";
+    }
+    return;
+  }
+  const rowNumber = row.rowNumber || row.id;
+  if (!rowNumber) {
+    if (status) {
+      status.className = "warning";
+      status.textContent = "Für diesen Eintrag wurde keine Tabellenzeile übermittelt.";
+    }
+    return;
+  }
+  const label = row.groupName || (row.data && row.data.groupName) || "diesen Eintrag";
+  const password = prompt(`Passwort zum Löschen von „${label}“ eingeben:`);
+  if (!password) return;
+  if (!confirm(`Eintrag „${label}“ wirklich löschen?`)) return;
+  if (status) {
+    status.className = "notice";
+    status.textContent = "Eintrag wird gelöscht …";
+  }
+  callAppsScriptJsonp(url, { action: "delete", rowNumber, password })
+    .then(response => {
+      if (!response || !response.ok) throw new Error((response && response.error) || "Löschen fehlgeschlagen.");
+      if (status) {
+        status.className = "success";
+        status.textContent = "Eintrag wurde gelöscht.";
+      }
+      return fetchResultsWithFallback(url);
+    })
+    .then(rows => {
+      resultRowsCache = rows || [];
+      if (currentResultIndex >= resultRowsCache.length) currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+      renderResults(resultRowsCache);
+    })
+    .catch(() => {
+      sendDeleteRowByHiddenFrame(url, rowNumber, password)
+        .then(() => fetchResultsWithFallback(url))
+        .then(rows => {
+          const before = resultRowsCache.length;
+          resultRowsCache = rows || [];
+          if (currentResultIndex >= resultRowsCache.length) currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+          renderResults(resultRowsCache);
+          if (status) {
+            if (resultRowsCache.length < before) {
+              status.className = "success";
+              status.textContent = "Eintrag wurde gelöscht.";
+            } else {
+              status.className = "warning";
+              status.textContent = "Löschversuch abgeschlossen, der Eintrag ist aber noch vorhanden. Prüfe Passwort und Apps-Script-Version.";
+            }
+          }
+        })
+        .catch(() => {
+          if (status) {
+            status.className = "warning";
+            status.textContent = "Verbindung zum Apps Script fehlgeschlagen. Prüfe, ob der neue Code.gs bereitgestellt wurde und der Zugriff auf 'Jeder' steht.";
+          }
+        });
+    });
 }
 
 function deleteAllResults() {
@@ -1009,6 +1101,19 @@ function sendDeleteByHiddenFrame(url, password) {
     const iframe = document.createElement("iframe");
     iframe.style.display = "none";
     iframe.src = `${url}?action=deleteall&password=${encodeURIComponent(password)}&_=${Date.now()}`;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      resolve();
+    }, 2500);
+  });
+}
+
+function sendDeleteRowByHiddenFrame(url, rowNumber, password) {
+  return new Promise(resolve => {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = `${url}?action=delete&rowNumber=${encodeURIComponent(rowNumber)}&password=${encodeURIComponent(password)}&_=${Date.now()}`;
     document.body.appendChild(iframe);
     setTimeout(() => {
       if (iframe.parentNode) iframe.parentNode.removeChild(iframe);

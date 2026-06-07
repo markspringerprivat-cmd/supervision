@@ -4943,3 +4943,98 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Alte lokale Layoutdaten werden bewusst nicht übernommen, damit beim Aktivieren des Bearbeitungsmodus nichts an den linken oberen Rand springt.
 })();
+
+/* FINAL PATCH: Präsentationsbearbeitung zurücksetzen */
+(function(){
+  const PRESENTATION_RESET_KEYS = [
+    'presentation_settings',
+    'presentation_extras',
+    'presentation_text_overrides',
+    'presentation_layout',
+    'presentation_layout_stable_v2',
+    'presentation_stickers_v1'
+  ];
+
+  function removeScopedPresentationKey(name) {
+    try {
+      if (typeof key === 'function') localStorage.removeItem(key(name));
+      localStorage.removeItem('sv_' + name);
+      localStorage.removeItem(name);
+    } catch (_) {}
+  }
+
+  function resetPresentationToDefaultsFinal() {
+    const ok = confirm('Präsentation wirklich auf Standardeinstellungen zurücksetzen?\n\nFarben, Muster, Hintergrundbild, Sticker, zusätzliche Textfelder, Verschiebungen, Drehungen und geänderte Überschriften/Beschreibungen werden zurückgesetzt. Die inhaltlichen Supervisionsdaten bleiben erhalten.');
+    if (!ok) return;
+
+    PRESENTATION_RESET_KEYS.forEach(removeScopedPresentationKey);
+
+    // Kompatibilität mit älteren Zwischenständen, falls einzelne Werte ohne Gruppenschlüssel gespeichert wurden.
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (/presentation_(settings|extras|text_overrides|layout|layout_stable_v2|stickers_v1)$/i.test(k)) {
+          if (!k.includes('_sup_') && !k.includes('_phase')) localStorage.removeItem(k);
+        }
+      });
+    } catch (_) {}
+
+    try { window.__currentPresentationLayout = {}; } catch (_) {}
+    try { window.__resultPresentationStableLayout = {}; } catch (_) {}
+    try { window.__resultPresentationStickersStable = []; } catch (_) {}
+
+    if (typeof summaryPresentationEditModeFinal !== 'undefined') summaryPresentationEditModeFinal = true;
+    if (typeof renderSummaryPresentationSlideFinal === 'function') renderSummaryPresentationSlideFinal(false);
+
+    const modal = document.getElementById('presentationPrepModal');
+    const btn = modal && modal.querySelector('#resetPresentationDefaultsBtn');
+    if (btn) {
+      const old = btn.textContent;
+      btn.textContent = 'Zurückgesetzt';
+      setTimeout(() => { btn.textContent = old; }, 1200);
+    }
+  }
+
+  function ensurePresentationResetButtonFinal() {
+    const modal = document.getElementById('presentationPrepModal');
+    const toolbar = modal && modal.querySelector('.presentation-prep-toolbar');
+    if (!toolbar) return;
+
+    let btn = toolbar.querySelector('#resetPresentationDefaultsBtn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = 'resetPresentationDefaultsBtn';
+      btn.className = 'secondary presentation-reset-defaults-btn';
+      btn.textContent = 'Zurücksetzen';
+      btn.title = 'Präsentation auf Standardeinstellungen zurücksetzen';
+      btn.addEventListener('click', resetPresentationToDefaultsFinal);
+      const close = toolbar.querySelector('#closePresentationPrep');
+      if (close) close.insertAdjacentElement('beforebegin', btn);
+      else toolbar.appendChild(btn);
+    }
+
+    const editing = (typeof summaryPresentationEditModeFinal !== 'undefined') ? !!summaryPresentationEditModeFinal : false;
+    btn.hidden = !editing;
+    btn.style.display = editing ? 'inline-flex' : 'none';
+
+    const close = toolbar.querySelector('#closePresentationPrep');
+    if (close) toolbar.appendChild(close);
+  }
+
+  const PREV_ENSURE_RESET_PRESENTATION = typeof ensurePresentationPrepModalFinal === 'function' ? ensurePresentationPrepModalFinal : null;
+  if (PREV_ENSURE_RESET_PRESENTATION) {
+    ensurePresentationPrepModalFinal = function(){
+      const modal = PREV_ENSURE_RESET_PRESENTATION();
+      ensurePresentationResetButtonFinal();
+      return modal;
+    };
+  }
+
+  const PREV_RENDER_RESET_PRESENTATION = typeof renderSummaryPresentationSlideFinal === 'function' ? renderSummaryPresentationSlideFinal : null;
+  if (PREV_RENDER_RESET_PRESENTATION) {
+    renderSummaryPresentationSlideFinal = function(updateControls = true){
+      PREV_RENDER_RESET_PRESENTATION(updateControls);
+      ensurePresentationResetButtonFinal();
+    };
+  }
+})();

@@ -1,8 +1,6 @@
 // Google-Sheet-Anbindung
-// 1. apps-script/Code.gs in Google Apps Script kopieren.
-// 2. Als Web-App veröffentlichen.
-// 3. Die Web-App-URL hier eintragen.
+// Diese URL ist deine veröffentlichte Google-Apps-Script-Web-App.
 window.SUPERVISION_CONFIG = {
-  APPS_SCRIPT_URL: "",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwP6wUvGYMAwlEvMPDCLPahCWj3gxn7k5FD_0t_mcPU4W4GJGl8swc_Tgm8iCErfHA/exec",
   ADMIN_PASSWORD_HINT: "Passwort wird im Apps Script gesetzt, nicht hier."
 };

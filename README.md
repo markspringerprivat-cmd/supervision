@@ -46,3 +46,23 @@ Danach können Ergebnisse über `zusammenfassung.html` an das Sheet gesendet und
 ## Hinweis zum Datenschutz
 
 Für den Seminarkontext sollten keine echten Schüler*innennamen und keine sensiblen personenbezogenen Daten eingetragen werden.
+
+
+## Google-Sheet-Anbindung – bereits vorbereitet
+
+In `js/config.js` ist die bereitgestellte Apps-Script-Web-App-URL bereits eingetragen:
+
+```js
+APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwP6wUvGYMAwlEvMPDCLPahCWj3gxn7k5FD_0t_mcPU4W4GJGl8swc_Tgm8iCErfHA/exec"
+```
+
+In `apps-script/Code.gs` ist die Google-Sheet-ID bereits eingetragen:
+
+```js
+const SPREADSHEET_ID = '1egAveElyXdI9nC4yQfZCtUUwqn8-byODELn4mvuzY';
+const SHEET_NAME = 'Ergebnisse';
+```
+
+Wichtig: `ADMIN_PASSWORD` im Apps Script selbst ersetzen und danach neu bereitstellen.
+
+Wenn du den Apps-Script-Code änderst, musst du in Apps Script erneut auf **Bereitstellen > Bereitstellungen verwalten > Bearbeiten > Neue Version > Bereitstellen** gehen.

@@ -33,3 +33,8 @@ Dort dein eigenes Passwort eintragen. Genau dieses Passwort wird für das Lösch
 ## Ergebnisübersicht
 
 `ergebnisse.html` zeigt die Gruppen als Karussell. Die Zufallsauswahl läuft im Kreis weiter und wird schrittweise langsamer. Nach der Auswahl erscheint ein kurzer Konfetti-Effekt.
+
+
+## Gruppenzuweisung
+
+Die Startseite enthält zusätzlich `gruppenzuweisung.html`. Dort kann eine vorbefüllte Teilnehmendenliste bearbeitet und zufällig in Gruppen mit mindestens vier Personen eingeteilt werden. Die Daten werden lokal im Browser gespeichert und können über die lokalen Reset-Funktionen gelöscht werden.

@@ -2507,3 +2507,149 @@ body.presentation-body.has-presentation-bg-image {
     padding: 8px !important;
   }
 }
+
+/* FINAL OVERRIDE: Präsentationseditor - Schriftgröße, freie Elemente, getrennte Muster */
+.presentation-table-wrap,
+.presentation-slide-mini .presentation-table-wrap,
+.presentation-slide .presentation-table-wrap {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+.presentation-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+.presentation-table th,
+.presentation-table td {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  hyphens: auto !important;
+  vertical-align: top !important;
+}
+.presentation-prep-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+.presentation-prep-toolbar .save-presentation-button-final {
+  order: -100 !important;
+  background: #2f7d32 !important;
+  color: #fff !important;
+}
+.presentation-prep-toolbar #closePresentationPrep {
+  margin-left: auto !important;
+  order: 999 !important;
+}
+.presentation-prep-toolbar #themeHueRange,
+.presentation-prep-toolbar input[type="range"]#themeHueRange {
+  display: none !important;
+}
+.presentation-prep-toolbar .font-size-control,
+.presentation-prep-toolbar .pattern-split-control {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+}
+.presentation-prep-toolbar input[type="number"].font-size-input {
+  width: 78px !important;
+  min-width: 78px !important;
+  padding: 10px 8px !important;
+  border-radius: 10px !important;
+  border: 0 !important;
+  font-weight: 800 !important;
+}
+.presentation-prep-toolbar input[type="color"] {
+  width: 48px !important;
+  height: 42px !important;
+  padding: 2px !important;
+}
+.presentation-slide-inner {
+  position: relative !important;
+  min-height: 100% !important;
+}
+.free-edit-element {
+  position: relative;
+}
+.is-editing-presentation .free-edit-element {
+  outline: 2px dashed rgba(37, 99, 235, 0.35);
+  outline-offset: 3px;
+  cursor: default;
+}
+.element-drag-handle,
+.element-resize-handle {
+  display: none;
+}
+.is-editing-presentation .element-drag-handle {
+  display: flex;
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #1e3a5f;
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  z-index: 50;
+  cursor: grab;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  user-select: none;
+}
+.is-editing-presentation .element-resize-handle {
+  display: block;
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: #2563eb;
+  border: 2px solid #fff;
+  z-index: 50;
+  cursor: nwse-resize;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+}
+.presentation-slide[data-presentation-pattern="dots"]::before,
+.presentation-prep-stage[data-presentation-pattern="dots"]::before,
+body.presentation-body[data-presentation-pattern="dots"]::before {
+  background-image: radial-gradient(var(--presentation-pattern-color) 1.3px, transparent 1.3px) !important;
+  background-size: 18px 18px !important;
+}
+.presentation-slide[data-presentation-pattern="grid"]::before,
+.presentation-prep-stage[data-presentation-pattern="grid"]::before,
+body.presentation-body[data-presentation-pattern="grid"]::before {
+  background-image: linear-gradient(var(--presentation-pattern-color) 1px, transparent 1px), linear-gradient(90deg, var(--presentation-pattern-color) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+.presentation-slide[data-presentation-pattern="diagonal"]::before,
+.presentation-prep-stage[data-presentation-pattern="diagonal"]::before,
+body.presentation-body[data-presentation-pattern="diagonal"]::before {
+  background-image: repeating-linear-gradient(135deg, transparent 0 12px, var(--presentation-pattern-color) 12px 14px) !important;
+}
+.presentation-slide[data-presentation-pattern="waves"]::before,
+.presentation-prep-stage[data-presentation-pattern="waves"]::before,
+body.presentation-body[data-presentation-pattern="waves"]::before {
+  background-image: radial-gradient(ellipse at top, var(--presentation-pattern-color) 0 16%, transparent 17%), radial-gradient(ellipse at bottom, var(--presentation-pattern-color) 0 14%, transparent 15%) !important;
+  background-size: 70px 34px !important;
+}
+.presentation-slide[data-presentation-pattern="none"]::before,
+.presentation-prep-stage[data-presentation-pattern="none"]::before,
+body.presentation-body[data-presentation-pattern="none"]::before {
+  background-image: none !important;
+}
+@media (max-width: 900px) {
+  .presentation-prep-toolbar #closePresentationPrep { margin-left: 0 !important; }
+  .presentation-prep-toolbar .font-size-control,
+  .presentation-prep-toolbar .pattern-split-control { flex: 1 1 100%; }
+}

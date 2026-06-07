@@ -4006,3 +4006,475 @@ window.addEventListener('DOMContentLoaded', () => {
     if (counter) counter.textContent = `${presentationIndexFinal + 1} / ${presentationSlidesFinal.length}`;
   };
 })();
+
+/* FINAL OVERRIDE: Schriftgröße, freie Elementpositionierung, getrennte Mustersteuerung */
+(function(){
+  function lsGet(key, fallback) {
+    try {
+      if (typeof loadObj === 'function') return loadObj(key, fallback);
+      const raw = localStorage.getItem('sv_' + key) || localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (_) { return fallback; }
+  }
+  function lsSave(key, value) {
+    try {
+      if (typeof saveObj === 'function') saveObj(key, value);
+      else localStorage.setItem('sv_' + key, JSON.stringify(value));
+    } catch (_) {}
+  }
+
+  function getPresentationLayoutFinal() {
+    const obj = lsGet('presentation_layout', {});
+    return obj && typeof obj === 'object' ? obj : {};
+  }
+  function savePresentationLayoutFinal(obj) {
+    lsSave('presentation_layout', obj && typeof obj === 'object' ? obj : {});
+  }
+  window.getPresentationLayoutFinal = getPresentationLayoutFinal;
+  window.savePresentationLayoutFinal = savePresentationLayoutFinal;
+
+  const OLD_GET_SETTINGS_5 = typeof getPresentationSettingsFinal === 'function' ? getPresentationSettingsFinal : null;
+  getPresentationSettingsFinal = function(){
+    const prior = OLD_GET_SETTINGS_5 ? OLD_GET_SETTINGS_5() : {};
+    const legacyPattern = prior.pattern || 'none';
+    const legacyTarget = prior.patternTarget || 'slide';
+    return Object.assign({
+      heading: '#1e3a5f',
+      text: '#0f172a',
+      background: '#0f172a',
+      slide: '#ffffff',
+      backgroundImage: '',
+      slidePattern: legacyTarget === 'slide' ? legacyPattern : 'none',
+      backgroundPattern: legacyTarget === 'background' ? legacyPattern : 'none',
+      slidePatternColor: prior.patternColor || '#e5e7eb',
+      backgroundPatternColor: prior.patternColor || '#1f2937'
+    }, prior || {});
+  };
+
+  const OLD_APPLY_THEME_5 = typeof applyPresentationThemeToNodeFinal === 'function' ? applyPresentationThemeToNodeFinal : null;
+  applyPresentationThemeToNodeFinal = function(host, settings){
+    const s = Object.assign({}, getPresentationSettingsFinal(), settings || {});
+    if (OLD_APPLY_THEME_5) OLD_APPLY_THEME_5(host, s);
+    if (!host) return;
+    host.style.setProperty('--presentation-heading-color', s.heading || '#1e3a5f');
+    host.style.setProperty('--presentation-text-color', s.text || '#0f172a');
+    host.style.setProperty('--presentation-background-color', s.background || '#0f172a');
+    host.style.setProperty('--presentation-slide-color', s.slide || '#ffffff');
+    host.style.setProperty('--presentation-background-image', s.backgroundImage ? `url("${s.backgroundImage}")` : 'none');
+    if (host.classList && host.classList.contains('presentation-slide')) {
+      host.dataset.presentationPattern = s.slidePattern || 'none';
+      host.style.setProperty('--presentation-pattern-color', s.slidePatternColor || '#e5e7eb');
+    } else if (host.classList && (host.classList.contains('presentation-prep-stage') || host.classList.contains('presentation-body')) || host === document.body) {
+      host.dataset.presentationPattern = s.backgroundPattern || 'none';
+      host.style.setProperty('--presentation-pattern-color', s.backgroundPatternColor || '#1f2937');
+      if (host.style) host.style.background = s.background || '#0f172a';
+    }
+    if (host.classList && (host.classList.contains('presentation-prep-stage') || host.classList.contains('presentation-body'))) {
+      host.classList.toggle('has-presentation-bg-image', !!s.backgroundImage);
+    }
+  };
+
+  function getCurrentSlideInner() {
+    const modal = document.getElementById('presentationPrepModal');
+    return modal ? modal.querySelector('#summaryPresentationSlide .presentation-slide-inner') : null;
+  }
+
+  function applyFontSizeToSelectionFinal(size) {
+    size = Math.max(8, Math.min(96, Number(size) || 18));
+    const modal = document.getElementById('presentationPrepModal');
+    const sel = window.getSelection && window.getSelection();
+    if (sel && sel.rangeCount && !sel.isCollapsed && modal && modal.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      const span = document.createElement('span');
+      span.style.fontSize = size + 'px';
+      try {
+        range.surroundContents(span);
+      } catch (_) {
+        const frag = range.extractContents();
+        span.appendChild(frag);
+        range.insertNode(span);
+      }
+      sel.removeAllRanges();
+      const nr = document.createRange();
+      nr.selectNodeContents(span);
+      sel.addRange(nr);
+      return;
+    }
+    const active = document.activeElement;
+    if (active && modal && modal.contains(active) && active.isContentEditable) {
+      active.style.fontSize = size + 'px';
+    }
+  }
+  window.applyFontSizeToSelectionFinal = applyFontSizeToSelectionFinal;
+
+  function addOrMoveToolbarControls(modal) {
+    if (!modal) return;
+    const toolbar = modal.querySelector('.presentation-prep-toolbar');
+    if (!toolbar) return;
+
+    toolbar.querySelectorAll('#themeHueRange, input[type="range"]#themeHueRange').forEach(el => el.remove());
+
+    let saveBtn = toolbar.querySelector('#savePresentationEditsBtn');
+    if (!saveBtn) {
+      saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.id = 'savePresentationEditsBtn';
+      saveBtn.className = 'secondary save-presentation-button-final';
+      saveBtn.textContent = 'Speichern';
+      saveBtn.addEventListener('click', () => {
+        if (typeof window.saveCurrentPresentationEditsFinal === 'function') window.saveCurrentPresentationEditsFinal();
+        persistPresentationLayoutFromDomFinal();
+        renderSummaryPresentationSlideFinal(false);
+        saveBtn.textContent = 'Gespeichert';
+        setTimeout(() => { saveBtn.textContent = 'Speichern'; }, 1100);
+      });
+    }
+    toolbar.prepend(saveBtn);
+
+    const closeBtn = toolbar.querySelector('#closePresentationPrep');
+    if (closeBtn) toolbar.appendChild(closeBtn);
+
+    if (!toolbar.querySelector('#presentationFontSizeInput')) {
+      const wrap = document.createElement('label');
+      wrap.className = 'font-size-control';
+      wrap.innerHTML = `Schriftgröße <input id="presentationFontSizeInput" class="font-size-input" type="number" min="8" max="96" step="1" value="18"> <button type="button" id="applyFontSizeBtn" class="secondary">Anwenden</button>`;
+      const addText = toolbar.querySelector('#addPresentationText');
+      (addText || saveBtn).insertAdjacentElement('afterend', wrap);
+      wrap.querySelector('#applyFontSizeBtn').addEventListener('click', () => {
+        applyFontSizeToSelectionFinal(wrap.querySelector('#presentationFontSizeInput').value);
+        if (typeof window.saveCurrentPresentationEditsFinal === 'function') window.saveCurrentPresentationEditsFinal();
+      });
+    }
+
+    let themeSelect = toolbar.querySelector('#themeTargetSelect');
+    let color = toolbar.querySelector('#themeColorPicker');
+    if (themeSelect && color) {
+      themeSelect.addEventListener('change', () => {
+        const s = getPresentationSettingsFinal();
+        color.value = s[themeSelect.value] || '#1e3a5f';
+      });
+      color.addEventListener('input', () => {
+        savePresentationSettingsFinal({ [themeSelect.value]: color.value });
+        renderSummaryPresentationSlideFinal(false);
+      });
+    }
+
+    toolbar.querySelectorAll('#presentationPatternSelect, #presentationPatternTargetSelect, #presentationPatternColorPicker').forEach(el => el.remove());
+    toolbar.querySelectorAll('.pattern-split-control').forEach(el => el.remove());
+    const patternWrap = document.createElement('label');
+    patternWrap.className = 'pattern-split-control';
+    patternWrap.innerHTML = `Muster
+      <select id="presentationPatternTargetSelect">
+        <option value="slide">Folie</option>
+        <option value="background">Hintergrund</option>
+      </select>
+      <select id="presentationPatternSelect">
+        <option value="none">Kein Muster</option>
+        <option value="dots">Punkte</option>
+        <option value="grid">Raster</option>
+        <option value="diagonal">Diagonal</option>
+        <option value="waves">Dezente Wellen</option>
+      </select>
+      <input id="presentationPatternColorPicker" type="color" value="#e5e7eb" aria-label="Musterfarbe wählen">`;
+    if (color) color.insertAdjacentElement('afterend', patternWrap);
+    else toolbar.appendChild(patternWrap);
+
+    const pt = patternWrap.querySelector('#presentationPatternTargetSelect');
+    const ps = patternWrap.querySelector('#presentationPatternSelect');
+    const pc = patternWrap.querySelector('#presentationPatternColorPicker');
+    const refreshPatternFields = () => {
+      const s = getPresentationSettingsFinal();
+      if (pt.value === 'background') {
+        ps.value = s.backgroundPattern || 'none';
+        pc.value = s.backgroundPatternColor || '#1f2937';
+      } else {
+        ps.value = s.slidePattern || 'none';
+        pc.value = s.slidePatternColor || '#e5e7eb';
+      }
+    };
+    pt.addEventListener('change', refreshPatternFields);
+    ps.addEventListener('change', () => {
+      if (pt.value === 'background') savePresentationSettingsFinal({ backgroundPattern: ps.value });
+      else savePresentationSettingsFinal({ slidePattern: ps.value });
+      renderSummaryPresentationSlideFinal(false);
+    });
+    pc.addEventListener('input', () => {
+      if (pt.value === 'background') savePresentationSettingsFinal({ backgroundPatternColor: pc.value });
+      else savePresentationSettingsFinal({ slidePatternColor: pc.value });
+      renderSummaryPresentationSlideFinal(false);
+    });
+    refreshPatternFields();
+  }
+
+  function elementKey(el, slideIndex) {
+    if (el.dataset.layoutKey) return el.dataset.layoutKey;
+    let type = 'element';
+    if (el.matches('h1')) type = 'title';
+    else if (el.matches('h2')) type = 'heading2';
+    else if (el.matches('.presentation-subtitle')) type = 'subtitle';
+    else if (el.matches('.presentation-kicker')) type = 'kicker';
+    else if (el.matches('.presentation-note')) type = 'note';
+    else if (el.matches('.presentation-table-wrap')) type = 'table';
+    else if (el.matches('.thanks-slide')) type = 'thanks';
+    const siblings = Array.from(el.parentElement ? el.parentElement.querySelectorAll('h1,h2,.presentation-subtitle,.presentation-kicker,.presentation-note,.presentation-table-wrap,.thanks-slide') : []);
+    const idx = siblings.filter(x => x.matches(type === 'table' ? '.presentation-table-wrap' : type === 'title' ? 'h1' : type === 'heading2' ? 'h2' : '.' + (type === 'thanks' ? 'thanks-slide' : 'presentation-' + type))).indexOf(el);
+    el.dataset.layoutKey = `s${slideIndex}_${type}_${Math.max(0, idx)}`;
+    return el.dataset.layoutKey;
+  }
+
+  function applySavedLayoutToElement(el, key, parent) {
+    const layout = getPresentationLayoutFinal()[key];
+    if (!layout || !parent) return;
+    el.style.position = 'absolute';
+    el.style.left = (Number(layout.x) || 0) + '%';
+    el.style.top = (Number(layout.y) || 0) + '%';
+    if (layout.w) el.style.width = Math.max(6, Number(layout.w)) + '%';
+    if (layout.h) el.style.minHeight = Math.max(3, Number(layout.h)) + '%';
+    el.style.zIndex = String(layout.z || 5);
+  }
+
+  function absoluteFromCurrentPosition(el, parent) {
+    if (!el || !parent || el.style.position === 'absolute') return;
+    const pr = parent.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const x = Math.max(0, ((r.left - pr.left) / pr.width) * 100);
+    const y = Math.max(0, ((r.top - pr.top) / pr.height) * 100);
+    const w = Math.max(8, (r.width / pr.width) * 100);
+    const h = Math.max(3, (r.height / pr.height) * 100);
+    el.style.position = 'absolute';
+    el.style.left = x + '%';
+    el.style.top = y + '%';
+    el.style.width = w + '%';
+    el.style.minHeight = h + '%';
+    el.style.zIndex = '8';
+  }
+
+  function persistElementLayout(el, parent) {
+    if (!el || !parent || !el.dataset.layoutKey) return;
+    const layout = getPresentationLayoutFinal();
+    layout[el.dataset.layoutKey] = {
+      x: parseFloat(el.style.left) || 0,
+      y: parseFloat(el.style.top) || 0,
+      w: Math.max(6, (el.offsetWidth / parent.clientWidth) * 100),
+      h: Math.max(3, (el.offsetHeight / parent.clientHeight) * 100),
+      z: parseInt(el.style.zIndex || '8', 10)
+    };
+    savePresentationLayoutFinal(layout);
+  }
+
+  function addElementHandles(el, parent) {
+    if (!el || !parent || el.dataset.freeHandles === 'true') return;
+    el.dataset.freeHandles = 'true';
+    el.classList.add('free-edit-element');
+    const drag = document.createElement('span');
+    drag.className = 'element-drag-handle';
+    drag.textContent = '↕';
+    drag.title = 'Element verschieben';
+    const resize = document.createElement('span');
+    resize.className = 'element-resize-handle';
+    resize.title = 'Elementgröße ändern';
+    el.appendChild(drag);
+    el.appendChild(resize);
+
+    let mode = null, sx = 0, sy = 0, sl = 0, st = 0, sw = 0, sh = 0;
+    const start = (e, nextMode) => {
+      if (!summaryPresentationEditModeFinal) return;
+      e.preventDefault(); e.stopPropagation();
+      absoluteFromCurrentPosition(el, parent);
+      mode = nextMode; sx = e.clientX; sy = e.clientY;
+      sl = parseFloat(el.style.left) || 0; st = parseFloat(el.style.top) || 0;
+      sw = (el.offsetWidth / parent.clientWidth) * 100;
+      sh = (el.offsetHeight / parent.clientHeight) * 100;
+      el.setPointerCapture && el.setPointerCapture(e.pointerId);
+    };
+    drag.addEventListener('pointerdown', e => start(e, 'move'));
+    resize.addEventListener('pointerdown', e => start(e, 'resize'));
+    el.addEventListener('pointermove', e => {
+      if (!mode) return;
+      const dx = ((e.clientX - sx) / parent.clientWidth) * 100;
+      const dy = ((e.clientY - sy) / parent.clientHeight) * 100;
+      if (mode === 'move') {
+        el.style.left = Math.max(0, Math.min(94, sl + dx)) + '%';
+        el.style.top = Math.max(0, Math.min(94, st + dy)) + '%';
+      } else {
+        el.style.width = Math.max(8, Math.min(100 - sl, sw + dx)) + '%';
+        el.style.minHeight = Math.max(3, sh + dy) + '%';
+      }
+    });
+    el.addEventListener('pointerup', () => {
+      if (!mode) return;
+      mode = null;
+      persistElementLayout(el, parent);
+    });
+    el.addEventListener('pointercancel', () => { mode = null; });
+  }
+
+  function enhanceFreeElementsFinal(slideHost, editable) {
+    const parent = slideHost && slideHost.querySelector('.presentation-slide-inner');
+    if (!parent) return;
+    const slideIndex = Number(typeof summaryPresentationIndexFinal !== 'undefined' ? summaryPresentationIndexFinal : (typeof presentationIndexFinal !== 'undefined' ? presentationIndexFinal : 0));
+    const elements = Array.from(parent.querySelectorAll(':scope > h1, :scope > h2, :scope > .presentation-subtitle, :scope > .presentation-kicker, :scope > .presentation-note, :scope > .presentation-table-wrap, :scope > .thanks-slide'));
+    elements.forEach(el => {
+      const key = elementKey(el, slideIndex);
+      applySavedLayoutToElement(el, key, parent);
+      if (editable) addElementHandles(el, parent);
+    });
+  }
+  window.enhanceFreeElementsFinal = enhanceFreeElementsFinal;
+
+  function persistPresentationLayoutFromDomFinal() {
+    const inner = getCurrentSlideInner();
+    if (!inner) return;
+    inner.querySelectorAll('[data-layout-key]').forEach(el => persistElementLayout(el, inner));
+  }
+  window.persistPresentationLayoutFromDomFinal = persistPresentationLayoutFromDomFinal;
+
+  const OLD_ENSURE_5 = typeof ensurePresentationPrepModalFinal === 'function' ? ensurePresentationPrepModalFinal : null;
+  if (OLD_ENSURE_5) {
+    ensurePresentationPrepModalFinal = function(){
+      const modal = OLD_ENSURE_5();
+      addOrMoveToolbarControls(modal);
+      return modal;
+    };
+  }
+
+  const OLD_RENDER_SUMMARY_5 = typeof renderSummaryPresentationSlideFinal === 'function' ? renderSummaryPresentationSlideFinal : null;
+  if (OLD_RENDER_SUMMARY_5) {
+    renderSummaryPresentationSlideFinal = function(updateControls = true){
+      if (typeof window.saveCurrentPresentationEditsFinal === 'function' && updateControls !== false) {
+        try { window.saveCurrentPresentationEditsFinal(); } catch (_) {}
+      }
+      OLD_RENDER_SUMMARY_5(updateControls);
+      const modal = document.getElementById('presentationPrepModal');
+      const slideHost = modal && modal.querySelector('#summaryPresentationSlide');
+      if (!modal || !slideHost) return;
+      addOrMoveToolbarControls(modal);
+      const settings = getPresentationSettingsFinal();
+      applyPresentationThemeToNodeFinal(modal.querySelector('.presentation-prep-stage'), settings);
+      applyPresentationThemeToNodeFinal(slideHost, settings);
+      enhanceFreeElementsFinal(slideHost, summaryPresentationEditModeFinal);
+    };
+  }
+
+  const OLD_SAVE_EDITS_5 = window.saveCurrentPresentationEditsFinal;
+  window.saveCurrentPresentationEditsFinal = function(){
+    if (typeof OLD_SAVE_EDITS_5 === 'function') OLD_SAVE_EDITS_5();
+    persistPresentationLayoutFromDomFinal();
+  };
+
+  const OLD_ADD_TEXT_5 = typeof addPresentationTextBoxFinal === 'function' ? addPresentationTextBoxFinal : null;
+  if (OLD_ADD_TEXT_5) {
+    addPresentationTextBoxFinal = function(){
+      OLD_ADD_TEXT_5();
+      setTimeout(() => {
+        const modal = document.getElementById('presentationPrepModal');
+        const slideHost = modal && modal.querySelector('#summaryPresentationSlide');
+        if (slideHost) enhanceFreeElementsFinal(slideHost, summaryPresentationEditModeFinal);
+      }, 0);
+    };
+  }
+
+  const OLD_BUILD_PAYLOAD_5 = typeof buildPayload === 'function' ? buildPayload : null;
+  if (OLD_BUILD_PAYLOAD_5) {
+    buildPayload = function(){
+      if (typeof window.saveCurrentPresentationEditsFinal === 'function') window.saveCurrentPresentationEditsFinal();
+      const data = OLD_BUILD_PAYLOAD_5();
+      data.presentationSettings = getPresentationSettingsFinal();
+      data.presentationExtras = typeof getPresentationExtrasFinal === 'function' ? getPresentationExtrasFinal() : [];
+      data.presentationTextOverrides = typeof getPresentationTextOverridesFinal === 'function' ? getPresentationTextOverridesFinal() : lsGet('presentation_text_overrides', {});
+      data.presentationLayout = getPresentationLayoutFinal();
+      return data;
+    };
+  }
+
+  const OLD_MERGE_5 = typeof mergePresentationRawDataFinal === 'function' ? mergePresentationRawDataFinal : null;
+  if (OLD_MERGE_5) {
+    mergePresentationRawDataFinal = function(row){
+      const data = OLD_MERGE_5(row);
+      const raw = (row && row.data && row.data.raw) || data.raw || {};
+      data.presentationLayout = raw.presentationLayout || data.presentationLayout || {};
+      data.presentationSettings = raw.presentationSettings || data.presentationSettings || getPresentationSettingsFinal();
+      return data;
+    };
+  }
+
+  const OLD_RENDER_PRESENTATION_5 = typeof renderPresentationSlideFinal === 'function' ? renderPresentationSlideFinal : null;
+  if (OLD_RENDER_PRESENTATION_5) {
+    renderPresentationSlideFinal = function(){
+      OLD_RENDER_PRESENTATION_5();
+      const slide = document.getElementById('presentationSlide');
+      if (!slide) return;
+      const settings = (typeof presentationThemeFinalRuntime !== 'undefined' && presentationThemeFinalRuntime) ? presentationThemeFinalRuntime : getPresentationSettingsFinal();
+      applyPresentationThemeToNodeFinal(document.body, settings);
+      applyPresentationThemeToNodeFinal(slide, settings);
+      const data = (typeof presentationSlidesFinal !== 'undefined' && presentationSlidesFinal[presentationIndexFinal]) ? null : null;
+      // Falls Layout aus Google-Rohdaten geladen wurde, liegt es in presentationThemeFinalRuntime nicht; buildPresentationSlides injiziert es über merge. Lokal anwenden, wenn vorhanden.
+      const rawLayout = (typeof window.__currentPresentationLayout === 'object') ? window.__currentPresentationLayout : getPresentationLayoutFinal();
+      if (rawLayout && Object.keys(rawLayout).length) {
+        const oldGet = window.getPresentationLayoutFinal;
+        window.getPresentationLayoutFinal = () => rawLayout;
+        enhanceFreeElementsFinal(slide, false);
+        window.getPresentationLayoutFinal = oldGet || getPresentationLayoutFinal;
+      } else {
+        enhanceFreeElementsFinal(slide, false);
+      }
+    };
+  }
+
+  // Präsentationslayout aus Ergebnisrohdaten merken, wenn eine Ergebnispräsentation gebaut wird.
+  const OLD_BUILD_SLIDES_5 = typeof buildPresentationSlides === 'function' ? buildPresentationSlides : null;
+  if (OLD_BUILD_SLIDES_5) {
+    buildPresentationSlides = function(row){
+      const data = (typeof mergePresentationRawDataFinal === 'function') ? mergePresentationRawDataFinal(row) : ((row && row.data) || {});
+      window.__currentPresentationLayout = data.presentationLayout || ((data.raw && data.raw.presentationLayout) || {});
+      return OLD_BUILD_SLIDES_5(row);
+    };
+  }
+})();
+
+/* FINAL PATCH: Layout-Anwendung in Ergebnispräsentation mit korrektem Folienindex */
+(function(){
+  function runtimeElementKey(el, slideIndex) {
+    if (el.dataset && el.dataset.layoutKey) return el.dataset.layoutKey;
+    let type = 'element';
+    if (el.matches('h1')) type = 'title';
+    else if (el.matches('h2')) type = 'heading2';
+    else if (el.matches('.presentation-subtitle')) type = 'subtitle';
+    else if (el.matches('.presentation-kicker')) type = 'kicker';
+    else if (el.matches('.presentation-note')) type = 'note';
+    else if (el.matches('.presentation-table-wrap')) type = 'table';
+    else if (el.matches('.thanks-slide')) type = 'thanks';
+    const selector = type === 'title' ? 'h1' : type === 'heading2' ? 'h2' : type === 'table' ? '.presentation-table-wrap' : type === 'thanks' ? '.thanks-slide' : '.presentation-' + type;
+    const same = Array.from(el.parentElement ? el.parentElement.querySelectorAll(selector) : []);
+    const idx = Math.max(0, same.indexOf(el));
+    const key = `s${slideIndex}_${type}_${idx}`;
+    if (el.dataset) el.dataset.layoutKey = key;
+    return key;
+  }
+  function applyLayoutMapToSlide(slideHost, slideIndex, layout) {
+    const parent = slideHost && slideHost.querySelector('.presentation-slide-inner');
+    if (!parent || !layout) return;
+    const elements = Array.from(parent.querySelectorAll(':scope > h1, :scope > h2, :scope > .presentation-subtitle, :scope > .presentation-kicker, :scope > .presentation-note, :scope > .presentation-table-wrap, :scope > .thanks-slide'));
+    elements.forEach(el => {
+      const key = runtimeElementKey(el, slideIndex);
+      const item = layout[key];
+      if (!item) return;
+      el.style.position = 'absolute';
+      el.style.left = (Number(item.x) || 0) + '%';
+      el.style.top = (Number(item.y) || 0) + '%';
+      if (item.w) el.style.width = Math.max(6, Number(item.w)) + '%';
+      if (item.h) el.style.minHeight = Math.max(3, Number(item.h)) + '%';
+      el.style.zIndex = String(item.z || 8);
+    });
+  }
+  const PREV_RENDER = typeof renderPresentationSlideFinal === 'function' ? renderPresentationSlideFinal : null;
+  if (PREV_RENDER) {
+    renderPresentationSlideFinal = function(){
+      PREV_RENDER();
+      const slide = document.getElementById('presentationSlide');
+      const idx = Number(typeof presentationIndexFinal !== 'undefined' ? presentationIndexFinal : 0) || 0;
+      const layout = window.__currentPresentationLayout || {};
+      applyLayoutMapToSlide(slide, idx, layout);
+    };
+  }
+})();

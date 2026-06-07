@@ -36,13 +36,9 @@ Dort dein eigenes Passwort eintragen. Genau dieses Passwort wird für das Lösch
 
 ## Lokales Zurücksetzen
 
-Oben am Bildschirmrand gibt es auf jeder Seite zwei lokale Reset-Optionen:
+Diese Version enthält zwei lokale Reset-Ebenen:
 
-- **Aktuelle Seite leeren** löscht die Eingaben auf der aktuell geöffneten Seite im Browser.
-- **Alles zurücksetzen** löscht alle lokal gespeicherten Website-Daten in diesem Browser, z. B. Rollen, Notizen, Phasenangaben, Zusammenfassung und Rundenmarkierungen. Google-Sheet-Einträge werden dadurch nicht gelöscht.
+- **Aktuelle Seite leeren**: löscht die lokal gespeicherten Eingaben der aktuell geöffneten HTML-Seite.
+- **Alles lokal zurücksetzen / Arbeitsseiten zurücksetzen**: löscht alle lokal gespeicherten Website-Daten im aktuellen Browser, also Rollenverteilung, Vorbereitungsnotizen, Phasennotizen, Zusammenfassung und Roulette-Runden. Die Google-Sheet-Ergebnisse werden dadurch nicht gelöscht.
 
-Auf der Ergebnisseite gibt es zusätzlich **Runden zurücksetzen**. Damit werden nur die bisherigen Roulette-/Zufallsrunden zurückgesetzt, nicht die gespeicherten Gruppenergebnisse.
-
-
-## Reset-Fix
-Auf der Ergebnisseite sind die lokalen Reset-Buttons zusätzlich direkt im blauen Header eingebaut. „Runden zurücksetzen“ löscht nur die Roulette-Auswahlrunden, nicht die Google-Sheet-Ergebnisse.
+Auf der Ergebnisseite gibt es zusätzlich **Runden zurücksetzen**. Dieser Button löscht nur die bereits gezogenen Roulette-Runden und macht alle Gruppen wieder für die Zufallsauswahl verfügbar. Die Google-Sheet-Ergebnisse bleiben erhalten.

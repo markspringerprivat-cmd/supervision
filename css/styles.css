@@ -770,122 +770,72 @@ body.is-mobile {
   }
 }
 
-/* Globale lokale Reset-Leiste */
-body.has-reset-toolbar { padding-top: 52px; }
-.global-reset-toolbar {
-  position: fixed;
-  z-index: 5000;
-  top: 0;
-  left: 0;
-  right: 0;
-  min-height: 52px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 18px;
-  background: rgba(255,255,255,0.94);
+/* Lokale Reset-Leiste auf allen Seiten */
+.local-reset-bar {
+  background: #ffffff;
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 16px rgba(22, 50, 79, 0.08);
+  box-shadow: 0 4px 14px rgba(22, 50, 79, 0.05);
+  padding: 8px 20px;
 }
-.global-reset-toolbar .global-reset-btn {
-  min-height: 34px;
-  padding: 7px 12px;
-  border-radius: 10px;
-  font-size: 0.86rem;
-}
-.global-reset-toolbar .global-reset-btn.secondary {
-  background: #edf2f7;
-  color: var(--primary-dark);
-}
-.global-reset-toolbar .global-reset-btn.danger {
-  background: #8a1f1f;
-  color: #fff;
-}
-#resetRoundsBtn {
-  background: #edf2f7;
-  color: var(--primary-dark);
-}
-#resetRoundsBtn:hover { background: #dce7f2; }
-@media (max-width: 620px) {
-  body.has-reset-toolbar { padding-top: 94px; }
-  .global-reset-toolbar {
-    flex-wrap: wrap;
-    justify-content: stretch;
-    padding: 8px 12px;
-  }
-  .global-reset-toolbar .global-reset-btn {
-    flex: 1 1 150px;
-    font-size: 0.82rem;
-  }
-}
-
-
-/* Fix: Ergebnis-Seite – sichtbare Reset-Aktionen, stabiler Runden-Reset und nebeneinander stehende Zähler */
-.results-topbar {
-  align-items: center;
-}
-.topbar-actions {
+.local-reset-inner {
+  max-width: 1120px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
 }
-.topbar-actions button {
-  margin: 0;
-  white-space: nowrap;
+.local-reset-label {
+  font-size: .88rem;
+  font-weight: 800;
+  color: var(--muted);
+  margin-right: 2px;
 }
-.carousel-controls {
-  align-items: flex-start !important;
+button.small-reset,
+.button.small-reset {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: .82rem;
+  width: auto;
 }
-.random-area {
-  flex: 1 1 auto;
-  min-width: 0;
+.local-reset-status {
+  font-size: .84rem;
+  color: var(--success);
+  font-weight: 700;
 }
-.carousel-nav {
-  flex: 0 0 auto;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-  gap: 10px !important;
-  flex-wrap: nowrap !important;
-  white-space: nowrap !important;
-  min-width: 150px;
+.reset-hero {
+  text-align: left;
+  width: auto;
+  min-height: 180px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  color: inherit;
+  background: var(--card);
+  font: inherit;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
 }
-.carousel-nav button {
-  flex: 0 0 auto !important;
-}
-#carouselCounter {
-  display: inline-block !important;
-  flex: 0 0 auto !important;
-  min-width: 52px;
-  text-align: center;
-  white-space: nowrap !important;
-}
-.round-badges {
-  flex: 1 1 auto;
-  min-width: 0;
-}
+.reset-hero:hover { background: #fbfdff; color: inherit; border-color: var(--primary); }
 #resetRoundsBtn {
+  background: #edf2f7;
+  color: var(--primary-dark);
   flex: 0 0 auto;
-  white-space: nowrap;
 }
-@media (max-width: 760px) {
-  .topbar-actions {
-    justify-content: stretch;
-  }
-  .topbar-actions button {
-    flex: 1 1 160px;
-    width: auto;
-  }
-  .carousel-controls {
-    flex-direction: column;
-  }
-  .carousel-nav {
-    width: 100%;
-    justify-content: center !important;
-  }
+#resetRoundsBtn:hover { background: #dce7f2; }
+.carousel-nav { flex-wrap: nowrap !important; }
+#carouselCounter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+@media (max-width: 700px) {
+  .local-reset-bar { padding: 8px 12px; }
+  .local-reset-inner { align-items: stretch; }
+  .local-reset-label { width: 100%; }
+  button.small-reset, .button.small-reset { width: 100%; }
+  .reset-hero { min-height: auto; width: 100%; }
 }

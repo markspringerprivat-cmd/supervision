@@ -170,88 +170,8 @@ function enhanceLinks() {
   });
 }
 
-
-function injectResetToolbar() {
-  if ((document.body.dataset.mode || '') === 'results') return;
-  if (document.querySelector('.global-reset-toolbar')) return;
-  const toolbar = document.createElement('div');
-  toolbar.className = 'global-reset-toolbar';
-  toolbar.innerHTML = `
-    <button type="button" class="global-reset-btn secondary" id="clearCurrentPageBtn" title="Eingaben auf dieser Seite leeren">Aktuelle Seite leeren</button>
-    <button type="button" class="global-reset-btn danger" id="resetAllPagesBtn" title="Alle lokal gespeicherten Eingaben zurücksetzen">Alles zurücksetzen</button>
-  `;
-  document.body.prepend(toolbar);
-  document.body.classList.add('has-reset-toolbar');
-
-  const currentBtn = toolbar.querySelector('#clearCurrentPageBtn');
-  const allBtn = toolbar.querySelector('#resetAllPagesBtn');
-
-  currentBtn.addEventListener('click', clearCurrentPageData);
-  allBtn.addEventListener('click', resetAllLocalPageData);
-}
-
-function clearCurrentPageData() {
-  const mode = document.body.dataset.mode || '';
-  const ok = window.confirm('Möchtest du alle Eingaben auf der aktuellen Seite leeren?');
-  if (!ok) return;
-
-  document.querySelectorAll('textarea[data-save], input[data-save], select[data-save]').forEach(el => {
-    const saveKey = el.dataset.save;
-    if (saveKey) localStorage.removeItem(key(saveKey));
-    if (el.tagName === 'SELECT') el.selectedIndex = 0;
-    else el.value = '';
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-
-  if (mode === 'roles') {
-    localStorage.removeItem(key('namesInput'));
-    localStorage.removeItem(key('assignments'));
-    const namesInput = document.getElementById('namesInput');
-    if (namesInput) namesInput.value = '';
-    const assignedBox = document.getElementById('assignedBox');
-    if (assignedBox) assignedBox.innerHTML = '';
-    const roleCards = document.getElementById('roleCards');
-    if (roleCards) roleCards.innerHTML = '';
-    const status = document.getElementById('assignStatus');
-    if (status) status.textContent = 'Diese Seite wurde geleert.';
-  }
-
-  if (mode === 'results') {
-    resetRouletteRounds();
-    const status = document.getElementById('resultsStatus');
-    if (status) {
-      status.className = 'notice';
-      status.textContent = 'Die Runden der Ergebnisübersicht wurden geleert.';
-    }
-  }
-
-  if (mode === 'summary') {
-    localStorage.removeItem(key('summary_group_name'));
-    const groupName = document.getElementById('groupName');
-    if (groupName) groupName.value = '';
-    const status = document.getElementById('submitStatus');
-    if (status) {
-      status.className = 'notice';
-      status.textContent = 'Die Eingaben dieser Seite wurden geleert.';
-    }
-  }
-}
-
-function resetAllLocalPageData() {
-  const ok = window.confirm('Möchtest du wirklich alle lokal gespeicherten Eingaben dieser Website löschen? Das betrifft Rollenzuweisung, Notizen, Phasen, Zusammenfassung und Rundenmarkierungen in diesem Browser. Google-Sheet-Ergebnisse werden dadurch nicht gelöscht.');
-  if (!ok) return;
-  const keysToRemove = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith('sv_')) keysToRemove.push(k);
-  }
-  keysToRemove.forEach(k => localStorage.removeItem(k));
-  window.location.href = 'index.html';
-}
-
 function initCommon() {
   hydrateFromQuery();
-  injectResetToolbar();
   const groupIdEl = document.querySelector("[data-group-id]");
   if (groupIdEl) groupIdEl.textContent = getGroupId();
   enhanceLinks();
@@ -897,17 +817,6 @@ function initResults() {
   const resetRoundsBtn = document.getElementById("resetRoundsBtn");
 
   if (deleteBtn) deleteBtn.addEventListener("click", deleteAllResults);
-  const clearCurrentResultsBtn = document.getElementById("clearCurrentPageBtnTop");
-  const resetAllResultsBtn = document.getElementById("resetAllPagesBtnTop");
-  if (clearCurrentResultsBtn) clearCurrentResultsBtn.addEventListener("click", clearCurrentPageData);
-  if (resetAllResultsBtn) resetAllResultsBtn.addEventListener("click", resetAllLocalPageData);
-  document.addEventListener("click", (event) => {
-    const resetBtn = event.target.closest && event.target.closest("#resetRoundsBtn");
-    if (resetBtn) {
-      event.preventDefault();
-      resetRouletteRounds();
-    }
-  });
   const resultsContent = document.getElementById("resultsContent");
   if (resultsContent) {
     resultsContent.addEventListener("click", (event) => {
@@ -924,7 +833,11 @@ function initResults() {
   if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
   if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
   if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
-  // Runden-Zurücksetzen wird zusätzlich per Event Delegation gebunden, damit es robust nach Neuladen der Ergebnisansicht funktioniert.
+  if (resetRoundsBtn) resetRoundsBtn.addEventListener("click", () => {
+    if (confirm("Alle bisherigen Roulette-Runden zurücksetzen? Die Google-Sheet-Ergebnisse bleiben erhalten.")) {
+      resetRouletteRounds(false);
+    }
+  });
   renderRoundBadges();
   window.addEventListener("resize", () => { if (resultRowsCache.length) renderCarouselAt(currentVirtualPosition, false); });
 
@@ -1252,24 +1165,6 @@ function registerRandomSelection(index) {
   setRoundHistory(history);
   renderRoundBadges(history.length);
   return history.length;
-}
-
-
-function resetRouletteRounds() {
-  setSelectedRandomKeys([]);
-  setRoundHistory([]);
-  // ältere lokale Varianten vorsorglich mitlöschen, damit keine alten Runden wieder auftauchen
-  localStorage.removeItem(SELECTED_RANDOM_KEY);
-  localStorage.removeItem(ROUND_HISTORY_KEY);
-  localStorage.removeItem('sv_results_selected_random_keys');
-  localStorage.removeItem('sv_results_round_history');
-  renderRoundBadges();
-  updateRandomAvailability();
-  const status = document.getElementById('resultsStatus');
-  if (status) {
-    status.className = 'notice';
-    status.textContent = 'Runden wurden zurückgesetzt. Alle Gruppen können wieder gezogen werden.';
-  }
 }
 
 function updateRandomAvailability() {
@@ -1613,6 +1508,125 @@ function initGoogleTest() {
 }
 
 
+
+// ------------------------------------------------------------
+// Lokale Reset-Funktionen
+// ------------------------------------------------------------
+function localStorageKeysStartingWith(prefix) {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(prefix)) keys.push(k);
+  }
+  return keys;
+}
+
+function clearAllLocalSupervisionData(options = {}) {
+  const keepGoogleSheet = true; // Google-Sheet-Daten liegen extern und werden hier nie gelöscht.
+  localStorageKeysStartingWith("sv_").forEach(k => localStorage.removeItem(k));
+  if (!options.silent) {
+    alert("Alle lokal gespeicherten Arbeitsdaten wurden gelöscht. Die Google-Sheet-Ergebnisse bleiben erhalten.");
+  }
+}
+
+function clearCurrentPageInputs() {
+  const mode = document.body.dataset.mode || "";
+  let changed = false;
+
+  document.querySelectorAll("textarea[data-save], input[data-save], select[data-save]").forEach(el => {
+    const suffix = el.dataset.save;
+    if (suffix) {
+      localStorage.removeItem(key(suffix));
+      changed = true;
+    }
+    if (el.tagName === "SELECT") el.selectedIndex = 0;
+    else el.value = "";
+  });
+
+  if (mode === "roles") {
+    localStorage.removeItem(key("namesInput"));
+    localStorage.removeItem(key("assignments"));
+    changed = true;
+    const namesInput = document.getElementById("namesInput");
+    const assignedBox = document.getElementById("assignedBox");
+    const roleCards = document.getElementById("roleCards");
+    const status = document.getElementById("assignStatus");
+    if (namesInput) namesInput.value = "";
+    if (assignedBox) assignedBox.innerHTML = "";
+    if (roleCards) { roleCards.innerHTML = ""; roleCards.style.display = "none"; }
+    if (status) { status.className = "notice"; status.textContent = "Die aktuelle Rollenverteilung wurde geleert."; }
+  }
+
+  if (mode === "summary") {
+    localStorage.removeItem(key("summary_group_name"));
+    changed = true;
+    const input = document.getElementById("groupNameInput");
+    if (input) input.value = "";
+    if (typeof renderSummary === "function") renderSummary();
+  }
+
+  if (mode === "results") {
+    resetRouletteRounds(false);
+    changed = true;
+  }
+
+  if (changed) {
+    const msg = document.getElementById("pageResetStatus");
+    if (msg) msg.textContent = "Aktuelle Seite wurde lokal geleert.";
+    else alert("Die lokalen Eingaben der aktuellen Seite wurden geleert.");
+  } else {
+    alert("Auf dieser Seite wurden keine lokalen Eingabefelder gefunden.");
+  }
+}
+
+function installLocalResetControls() {
+  const header = document.querySelector("header");
+  if (!header || document.querySelector(".local-reset-bar")) return;
+
+  const bar = document.createElement("div");
+  bar.className = "local-reset-bar";
+  bar.innerHTML = `
+    <div class="wrap local-reset-inner">
+      <span class="local-reset-label">Lokale Arbeitsdaten</span>
+      <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
+      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Alles lokal zurücksetzen</button>
+      <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
+    </div>`;
+  header.insertAdjacentElement("afterend", bar);
+
+  const clearPageBtn = document.getElementById("clearPageBtn");
+  const clearAllBtn = document.getElementById("clearAllLocalBtn");
+
+  if (clearPageBtn) {
+    clearPageBtn.addEventListener("click", () => {
+      if (confirm("Lokale Eingaben auf der aktuellen Seite leeren?")) clearCurrentPageInputs();
+    });
+  }
+
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", () => {
+      if (!confirm("Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.")) return;
+      clearAllLocalSupervisionData({ silent: true });
+      window.location.href = "index.html";
+    });
+  }
+}
+
+function resetRouletteRounds(showAlert = true) {
+  localStorage.removeItem(SELECTED_RANDOM_KEY);
+  localStorage.removeItem(ROUND_HISTORY_KEY);
+  renderRoundBadges();
+  updateRandomAvailability();
+  const status = document.getElementById("resultsStatus");
+  if (status) {
+    status.className = "success";
+    status.textContent = "Runden wurden zurückgesetzt. Alle Gruppen sind wieder für die Zufallsauswahl verfügbar.";
+  }
+  if (showAlert) {
+    // Kein alert auf der Ergebnisseite nötig; Status reicht.
+  }
+}
+
 function applyDeviceClass() {
   const mobileLike = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
   document.body.classList.toggle("is-mobile", !!mobileLike);
@@ -1623,6 +1637,7 @@ window.addEventListener("DOMContentLoaded", () => {
   applyDeviceClass();
   window.addEventListener("resize", applyDeviceClass);
   const mode = document.body.dataset.mode;
+  installLocalResetControls();
   if (mode === "landing") initLanding();
   if (mode === "roles") initRoleAssignment();
   if (mode === "rolecard") initRoleCard();

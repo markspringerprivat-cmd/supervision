@@ -121,6 +121,7 @@ function buildRow_(data) {
 function doGet(e) {
   const action = String(e.parameter.action || 'list').toLowerCase();
   if (action === 'list') return listEntries_(e);
+  if (action === 'deleteall') return deleteAllGet_(e);
   if (action === 'delete') return deleteRowGet_(e);
   if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.' });
   return jsonp_(e, { ok: true, message: 'Apps Script läuft.', hint: 'Nutze ?action=list zum Auslesen.' });
@@ -165,6 +166,16 @@ function rowToEntry_(row, rowNumber) {
     raw: raw
   };
   return { id: rowNumber, rowNumber: rowNumber, timestamp: formatDate_(row[0]), groupName: row[1] || '', data: reconstructed };
+}
+
+
+function deleteAllGet_(e) {
+  const password = e.parameter.password || '';
+  if (password !== ADMIN_PASSWORD) return jsonp_(e, { ok: false, error: 'Falsches Passwort.' });
+  const sheet = getSheet_();
+  if (sheet.getLastRow() > 1) sheet.deleteRows(2, sheet.getLastRow() - 1);
+  ensureHeader_(sheet);
+  return jsonp_(e, { ok: true, message: 'Alle Ergebnisse wurden gelöscht.' });
 }
 
 function deleteRowGet_(e) {
@@ -241,7 +252,7 @@ function pick_(values) {
 function formatDate_(value) {
   if (!value) return '';
   try {
-    return Utilities.formatDate(new Date(value), Session.getScriptTimeZone(), 'dd.MM.yyyy HH:mm');
+    return Utilities.formatDate(new Date(value), Session.getScriptTimeZone(), 'HH:mm:ss dd.MM.yyyy');
   } catch (err) {
     return String(value);
   }

@@ -621,18 +621,12 @@ function initSummary() {
   renderSummary(data);
   const submitBtn = document.getElementById("submitResults");
   if (submitBtn) submitBtn.addEventListener("click", submitResults);
-  const exportBtn = document.getElementById("downloadJson");
-  if (exportBtn) exportBtn.addEventListener("click", downloadJson);
 }
 
 function renderSummary(data) {
   const target = document.getElementById("summaryContent");
   if (!target) return;
   target.innerHTML = `
-    <section class="card">
-      <h2>Rollenverteilung</h2>
-      <ul class="tight">${Object.entries(data.assignments).map(([r,n]) => `<li><strong>${ROLES[r] || r}:</strong> ${escapeHtml(n)}</li>`).join("")}</ul>
-    </section>
     ${summarySection("Phase 1: Erstkontakt", data.p1)}
     ${summarySection("Phase 2: Problembeschreibung", data.p2)}
     ${summarySection("Phase 3: Zielformulierung", data.p3)}
@@ -686,14 +680,14 @@ async function submitResults() {
   const url = getAppsScriptUrl();
   if (!url) {
     status.className = "warning";
-    status.textContent = "Keine Apps-Script-URL gefunden. Prüfe js/config.js oder DEFAULT_APPS_SCRIPT_URL in js/app.js. Exportiere alternativ die JSON-Datei.";
+    status.textContent = "Keine Apps-Script-URL gefunden. Ergebnisse können nicht abgesendet werden.";
     return;
   }
   const payload = buildPayload();
   try {
     await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(payload), headers: { "Content-Type": "text/plain;charset=utf-8" } });
     status.className = "success";
-    status.textContent = "Die Daten wurden an Google Apps Script gesendet. Wegen Browser-Sicherheitsregeln kann die Antwort nicht geprüft werden.";
+    status.textContent = "Ergebnisse wurden abgesendet. Sie sind nun auf der Ergebnisseite sichtbar.";
   } catch (e) {
     status.className = "warning";
     status.textContent = "Senden fehlgeschlagen: " + e.message;
@@ -767,13 +761,53 @@ async function fetchResultsWithFallback(url) {
   }
 }
 
+
+function formatResultTimestamp(value) {
+  if (!value) return "";
+  const raw = String(value).trim();
+  const de = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (de) {
+    const [, d, m, y, hh, mm, ss] = de;
+    return `${String(hh).padStart(2,"0")}:${mm}:${String(ss || "00").padStart(2,"0")} ${String(d).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;
+  }
+  const alt = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (alt) {
+    const [, hh, mm, ss, d, m, y] = alt;
+    return `${String(hh).padStart(2,"0")}:${mm}:${String(ss || "00").padStart(2,"0")} ${String(d).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;
+  }
+  const date = new Date(raw);
+  if (!Number.isNaN(date.getTime())) {
+    return date.toLocaleString("de-DE", {
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      day: "2-digit", month: "2-digit", year: "numeric"
+    }).replace(",", "");
+  }
+  return raw;
+}
+
+function getRowTimestamp(row, data) {
+  return row.timestamp || data.timestamp || data.timestampLocal || "";
+}
+
+function phaseDetails(title, obj) {
+  return `<details class="phase-details"><summary>${escapeHtml(title)}</summary><div class="phase-content">${summaryInner(obj || {})}</div></details>`;
+}
+
+function summaryInner(obj) {
+  const entries = Object.entries(obj || {});
+  if (!entries.length) return `<div class="summary-block">Keine Einträge vorhanden.</div>`;
+  return entries.map(([k, v]) => `<div class="summary-block"><strong>${labelize(k)}</strong><br>${escapeHtml(v || "—")}</div>`).join("");
+}
+
 function initResults() {
   initCommon();
   const status = document.getElementById("resultsStatus");
   const url = getAppsScriptUrl();
+  const deleteBtn = document.getElementById("deleteAllBtn");
+  if (deleteBtn) deleteBtn.addEventListener("click", deleteAllResults);
   if (!url) {
     status.className = "warning";
-    status.textContent = "Keine Apps-Script-URL gefunden. Prüfe js/config.js oder DEFAULT_APPS_SCRIPT_URL in js/app.js.";
+    status.textContent = "Keine Apps-Script-URL gefunden. Ergebnisse können nicht geladen werden.";
     return;
   }
 
@@ -786,7 +820,7 @@ function initResults() {
     })
     .catch(err => {
       status.className = "warning";
-      status.textContent = err.message + " Prüfe die Web-App-URL, die Bereitstellung und den Zugriff 'Jeder'.";
+      status.textContent = err.message + " Prüfe die Web-App-Bereitstellung und den Zugriff 'Jeder'.";
     });
 }
 
@@ -799,19 +833,81 @@ function renderResults(rows) {
   }
   target.innerHTML = rows.slice().reverse().map((row) => {
     const data = row.data || {};
-    return `<section class="card">
+    const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
+    return `<section class="card result-card">
       <h2>${escapeHtml(row.groupName || data.groupName || "Gruppe")}</h2>
-      <p class="small">${escapeHtml(row.timestamp || data.timestampLocal || "")}</p>
-      <details>
-        <summary>Ergebnis anzeigen</summary>
-        ${summarySection("Phase 2: Problembeschreibung", data.p2 || {})}
-        ${summarySection("Phase 3: Zielformulierung", data.p3 || {})}
-        ${summarySection("Phase 4: Vertiefte Problembearbeitung", data.p4 || {})}
-        ${summarySection("Phase 5/6: Umsetzung", Object.assign({}, data.p5 || {}, data.p6 || {}))}
-        <section class="card"><h2>Rollen / Gruppe</h2><pre>${escapeHtml(JSON.stringify({ groupName: data.groupName, assignments: data.assignments }, null, 2))}</pre></section>
-      </details>
+      <p class="small result-meta">${escapeHtml(timestamp)}</p>
+      ${phaseDetails("Phase 2: Problembeschreibung", data.p2 || {})}
+      ${phaseDetails("Phase 3: Zielformulierung", data.p3 || {})}
+      ${phaseDetails("Phase 4: Vertiefte Problembearbeitung", data.p4 || {})}
+      ${phaseDetails("Phase 5 und 6: Umsetzung", Object.assign({}, data.p5 || {}, data.p6 || {}))}
     </section>`;
   }).join("");
+}
+
+function deleteAllResults() {
+  const url = getAppsScriptUrl();
+  const status = document.getElementById("resultsStatus");
+  if (!url) {
+    if (status) {
+      status.className = "warning";
+      status.textContent = "Keine Apps-Script-URL gefunden. Löschen ist nicht möglich.";
+    }
+    return;
+  }
+  const password = prompt("Passwort zum Löschen aller Ergebnisse eingeben:");
+  if (!password) return;
+  if (!confirm("Wirklich alle Ergebnisse aus dem Google Sheet löschen?")) return;
+  callAppsScriptJsonp(url, { action: "deleteAll", password })
+    .then(response => {
+      if (!response || !response.ok) throw new Error((response && response.error) || "Löschen fehlgeschlagen.");
+      if (status) {
+        status.className = "success";
+        status.textContent = "Alle Ergebnisse wurden gelöscht.";
+      }
+      renderResults([]);
+    })
+    .catch(err => {
+      if (status) {
+        status.className = "warning";
+        status.textContent = err.message;
+      }
+    });
+}
+
+function callAppsScriptJsonp(url, params) {
+  return new Promise((resolve, reject) => {
+    const cbName = "svActionCallback" + Date.now();
+    const script = document.createElement("script");
+    const query = new URLSearchParams(Object.assign({}, params, { callback: cbName, _: Date.now() }));
+    let done = false;
+    const timer = setTimeout(() => {
+      if (!done) {
+        done = true;
+        cleanup();
+        reject(new Error("Aktion konnte nicht ausgeführt werden."));
+      }
+    }, 8000);
+    function cleanup() {
+      clearTimeout(timer);
+      try { delete window[cbName]; } catch (_) { window[cbName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = function(response) {
+      if (done) return;
+      done = true;
+      cleanup();
+      resolve(response);
+    };
+    script.onerror = () => {
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error("Verbindung zum Apps Script fehlgeschlagen."));
+    };
+    script.src = `${url}?${query.toString()}`;
+    document.body.appendChild(script);
+  });
 }
 
 function initGoogleTest() {

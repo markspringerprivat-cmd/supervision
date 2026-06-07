@@ -1164,3 +1164,33 @@ body.public-results .public-list .result-card {
   .editable-name-list li { align-items: flex-start; }
   .name-index { margin-top: 2px; }
 }
+
+/* ============================================================
+   ROBUSTE KORREKTUREN: Admin-Sicht und Gruppenzuweisung
+   ============================================================ */
+body[data-mode="results"]:not(.is-admin-results) #resultsControls,
+body[data-mode="results"]:not(.is-admin-results) #deleteAllBtn,
+body[data-mode="results"]:not(.is-admin-results) .admin-only,
+body[data-mode="results"]:not(.is-admin-results) .result-delete {
+  display: none !important;
+  visibility: hidden !important;
+}
+body[data-mode="results"] #adminLoginBtn {
+  display: inline-flex !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 20;
+}
+body[data-mode="results"].is-admin-results #resultsControls {
+  display: flex !important;
+  visibility: visible !important;
+}
+body[data-mode="results"].is-admin-results #deleteAllBtn,
+body[data-mode="results"].is-admin-results .admin-only {
+  visibility: visible !important;
+}
+body[data-mode="results"].is-admin-results .result-delete {
+  display: inline-flex !important;
+  visibility: visible !important;
+}

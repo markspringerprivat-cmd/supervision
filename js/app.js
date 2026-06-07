@@ -1914,3 +1914,281 @@ window.addEventListener("DOMContentLoaded", () => {
   if (mode === "results") initResults();
   if (mode === "google-test") initGoogleTest();
 });
+
+/* ============================================================
+   ROBUSTE KORREKTUREN: Admin-Login Ergebnisse + Gruppenzuweisung
+   Diese Funktionen überschreiben ältere Definitionen im Prototyp.
+   ============================================================ */
+
+function applyResultsAdminState() {
+  document.body.classList.toggle("is-admin-results", !!resultsAdminActive);
+  document.body.classList.toggle("public-results", !resultsAdminActive);
+
+  document.querySelectorAll(".admin-only").forEach(el => {
+    if (resultsAdminActive) {
+      el.hidden = false;
+      el.style.display = "";
+    } else {
+      el.hidden = true;
+      el.style.display = "none";
+    }
+  });
+
+  document.querySelectorAll(".result-delete").forEach(el => {
+    el.style.display = resultsAdminActive ? "" : "none";
+  });
+
+  const adminBtn = document.getElementById("adminLoginBtn");
+  if (adminBtn) {
+    adminBtn.disabled = false;
+    adminBtn.style.pointerEvents = "auto";
+    adminBtn.textContent = resultsAdminActive ? "Administration aktiv" : "Administrator";
+    adminBtn.classList.toggle("success-btn", !!resultsAdminActive);
+  }
+}
+
+function initResults() {
+  initCommon();
+  const status = document.getElementById("resultsStatus");
+  const url = getAppsScriptUrl();
+  const adminBtn = document.getElementById("adminLoginBtn");
+  const deleteBtn = document.getElementById("deleteAllBtn");
+  const prevBtn = document.getElementById("prevGroupBtn");
+  const nextBtn = document.getElementById("nextGroupBtn");
+  const randomBtn = document.getElementById("randomGroupBtn");
+  const resetRoundsBtn = document.getElementById("resetRoundsBtn");
+  const resultsContent = document.getElementById("resultsContent");
+
+  // Admin-Modus wird bewusst NICHT dauerhaft gespeichert.
+  // Beim Öffnen der Seite sind Zufallsauswahl, Navigation und Löschen immer ausgeblendet.
+  sessionStorage.removeItem("sv_results_admin");
+  resultsAdminActive = false;
+  applyResultsAdminState();
+
+  if (adminBtn) {
+    adminBtn.onclick = () => {
+      if (resultsAdminActive) {
+        resultsAdminActive = false;
+        sessionStorage.removeItem("sv_results_admin");
+        applyResultsAdminState();
+        renderResults(resultRowsCache);
+        if (status) {
+          status.className = "notice";
+          status.textContent = "Administrationsmodus beendet.";
+        }
+        return;
+      }
+
+      const password = prompt("Administrator-Passwort eingeben:");
+      if (password === null) return;
+
+      if (password === "Mark123") {
+        resultsAdminActive = true;
+        applyResultsAdminState();
+        renderResults(resultRowsCache);
+        if (status) {
+          status.className = "success";
+          status.textContent = "Administrationsmodus aktiviert.";
+        }
+      } else {
+        resultsAdminActive = false;
+        applyResultsAdminState();
+        if (status) {
+          status.className = "warning";
+          status.textContent = "Falsches Passwort.";
+        }
+      }
+    };
+  }
+
+  if (deleteBtn) deleteBtn.onclick = deleteAllResults;
+  if (prevBtn) prevBtn.onclick = () => moveResult(-1);
+  if (nextBtn) nextBtn.onclick = () => moveResult(1);
+  if (randomBtn) randomBtn.onclick = spinRandomGroup;
+  if (resetRoundsBtn) {
+    resetRoundsBtn.onclick = () => {
+      if (confirm("Alle bisherigen Roulette-Runden zurücksetzen? Die Google-Sheet-Ergebnisse bleiben erhalten.")) {
+        resetRouletteRounds(false);
+      }
+    };
+  }
+
+  if (resultsContent) {
+    resultsContent.onclick = (event) => {
+      const btn = event.target.closest("[data-delete-result]");
+      if (!btn) return;
+      event.preventDefault();
+      if (!resultsAdminActive) return;
+      deleteSingleResult(Number(btn.dataset.deleteResult));
+    };
+    resultsContent.addEventListener("toggle", () => {
+      window.setTimeout(() => updateActiveResult(false), 40);
+    }, true);
+  }
+
+  renderRoundBadges();
+  window.addEventListener("resize", () => {
+    if (resultRowsCache.length && resultsAdminActive) renderCarouselAt(currentVirtualPosition, false);
+  });
+
+  if (!url) {
+    if (status) {
+      status.className = "warning";
+      status.textContent = "Keine Apps-Script-URL gefunden. Ergebnisse können nicht geladen werden.";
+    }
+    return;
+  }
+
+  if (status) {
+    status.className = "notice";
+    status.textContent = "Ergebnisse werden geladen …";
+  }
+
+  fetchResultsWithFallback(url)
+    .then(rows => {
+      resultRowsCache = rows || [];
+      currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+      currentVirtualIndex = currentResultIndex;
+      currentVirtualPosition = currentVirtualIndex;
+      if (status) status.textContent = "";
+      renderResults(resultRowsCache);
+    })
+    .catch(err => {
+      if (status) {
+        status.className = "warning";
+        status.textContent = err.message + " Prüfe die Web-App-Bereitstellung und den Zugriff 'Jeder'.";
+      }
+    });
+}
+
+function getGroupAssignmentNames() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(GROUP_ASSIGNMENT_NAMES_KEY) || "null");
+    // Wenn durch eine alte Version eine leere Liste gespeichert wurde, wird die Ursprungsliste wiederhergestellt.
+    if (Array.isArray(stored) && stored.length >= 4) return stored;
+  } catch (e) {}
+  localStorage.setItem(GROUP_ASSIGNMENT_NAMES_KEY, JSON.stringify(DEFAULT_GROUP_PARTICIPANTS));
+  return DEFAULT_GROUP_PARTICIPANTS.slice();
+}
+
+function initGroupAssignment() {
+  initCommon();
+  const list = document.getElementById("participantList");
+  const input = document.getElementById("participantName");
+  const addBtn = document.getElementById("addParticipantBtn");
+  const buildBtn = document.getElementById("buildGroupsBtn");
+  const resetBtn = document.getElementById("resetParticipantsBtn");
+  const clearBtn = document.getElementById("clearParticipantsBtn");
+  const output = document.getElementById("groupsOutput");
+  const count = document.getElementById("participantCount");
+  const status = document.getElementById("groupAssignStatus");
+  let names = getGroupAssignmentNames();
+
+  function setStatus(text, cls = "notice") {
+    if (!status) return;
+    status.className = cls;
+    status.textContent = text;
+  }
+
+  function persistNames() {
+    saveGroupAssignmentNames(names);
+  }
+
+  function renderNames() {
+    if (!list) return;
+    list.innerHTML = "";
+    names.forEach((name, index) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="name-index">${index + 1}</span><span class="name-text">${escapeHtml(name)}</span><button type="button" class="icon-remove" aria-label="${escapeHtml(name)} löschen">×</button>`;
+      const removeBtn = li.querySelector("button");
+      removeBtn.onclick = () => {
+        names.splice(index, 1);
+        persistNames();
+        saveGroupAssignmentGroups([]);
+        renderNames();
+        renderGroups([]);
+        setStatus("Name wurde gelöscht. Die Gruppen müssen neu gebildet werden.", "notice");
+      };
+      list.appendChild(li);
+    });
+    if (count) count.textContent = String(names.length);
+  }
+
+  function renderGroups(groups = getGroupAssignmentGroups()) {
+    if (!output) return;
+    output.innerHTML = "";
+    if (!groups.length) {
+      output.className = "group-output empty-state";
+      output.textContent = "Noch keine Gruppen gebildet.";
+      return;
+    }
+    output.className = "group-output";
+    groups.forEach((group, index) => {
+      const card = document.createElement("div");
+      card.className = "assignment-group-card";
+      const items = group.map(name => `<li>${escapeHtml(name)}</li>`).join("");
+      card.innerHTML = `<h3>Gruppe ${index + 1}<span class="group-size-pill">${group.length} Personen</span></h3><ol>${items}</ol>`;
+      output.appendChild(card);
+    });
+  }
+
+  function addName() {
+    const value = (input && input.value || "").trim();
+    if (!value) {
+      setStatus("Bitte zuerst einen Namen eintragen.", "warning");
+      return;
+    }
+    names.push(value);
+    persistNames();
+    saveGroupAssignmentGroups([]);
+    if (input) input.value = "";
+    renderNames();
+    renderGroups([]);
+    setStatus("Name wurde hinzugefügt. Du kannst die Gruppen neu bilden.", "success");
+  }
+
+  if (addBtn) addBtn.onclick = addName;
+  if (input) input.onkeydown = e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addName();
+    }
+  };
+
+  if (buildBtn) buildBtn.onclick = () => {
+    if (names.length < 4) {
+      setStatus("Für die Gruppenzuweisung werden mindestens 4 Personen benötigt.", "warning");
+      saveGroupAssignmentGroups([]);
+      renderGroups([]);
+      return;
+    }
+    const groups = buildMinimumFourGroups(names);
+    saveGroupAssignmentGroups(groups);
+    renderGroups(groups);
+    const sizes = groups.map(g => g.length).join(" / ");
+    setStatus(`Gruppen wurden zufällig gebildet. Gruppengrößen: ${sizes}.`, "success");
+  };
+
+  if (resetBtn) resetBtn.onclick = () => {
+    if (!confirm("Ursprungsliste neu laden? Eigene Änderungen an der Teilnehmendenliste gehen verloren.")) return;
+    names = DEFAULT_GROUP_PARTICIPANTS.slice();
+    persistNames();
+    saveGroupAssignmentGroups([]);
+    renderNames();
+    renderGroups([]);
+    setStatus("Ursprungsliste wurde geladen.", "success");
+  };
+
+  if (clearBtn) clearBtn.onclick = () => {
+    if (!confirm("Gesamte Teilnehmendenliste leeren?")) return;
+    names = [];
+    localStorage.setItem(GROUP_ASSIGNMENT_NAMES_KEY, JSON.stringify(names));
+    saveGroupAssignmentGroups([]);
+    renderNames();
+    renderGroups([]);
+    setStatus("Teilnehmendenliste wurde geleert. Mit 'Ursprungsliste laden' kannst du die vorbereiteten Namen wiederherstellen.", "notice");
+  };
+
+  renderNames();
+  renderGroups();
+}

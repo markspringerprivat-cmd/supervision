@@ -2192,3 +2192,427 @@ function initGroupAssignment() {
   renderNames();
   renderGroups();
 }
+
+/* ============================================================
+   FINAL OVERRIDE: globaler Adminmodus, geschützte Gruppenzuweisung,
+   Ergebnis-Carousel auch ohne Admin
+   ============================================================ */
+const GLOBAL_ADMIN_KEY_FINAL = "sv_global_admin_active";
+const GLOBAL_ADMIN_PASSWORD_FINAL = "Mark123";
+
+function isGlobalAdminActive() {
+  return sessionStorage.getItem(GLOBAL_ADMIN_KEY_FINAL) === "1";
+}
+
+function setGlobalAdminActive(value) {
+  if (value) sessionStorage.setItem(GLOBAL_ADMIN_KEY_FINAL, "1");
+  else sessionStorage.removeItem(GLOBAL_ADMIN_KEY_FINAL);
+  resultsAdminActive = isGlobalAdminActive();
+  updateGlobalAdminUi();
+  if (document.body.dataset.mode === "results") {
+    applyResultsAdminState();
+    if (Array.isArray(resultRowsCache)) renderResults(resultRowsCache);
+  }
+  if (document.body.dataset.mode === "groupassignment") {
+    updateGroupAssignmentAccess();
+  }
+}
+
+function handleGlobalAdminClick() {
+  if (isGlobalAdminActive()) {
+    if (confirm("Administrationsmodus beenden?")) {
+      setGlobalAdminActive(false);
+    }
+    return;
+  }
+  const password = prompt("Administrator-Passwort eingeben:");
+  if (password === null) return;
+  if (password === GLOBAL_ADMIN_PASSWORD_FINAL) {
+    setGlobalAdminActive(true);
+  } else {
+    alert("Falsches Passwort.");
+    setGlobalAdminActive(false);
+  }
+}
+
+function installGlobalAdminControlsFinal() {
+  // Vorhandene Administrator-Buttons auf Start-/Ergebnis-/Adminseiten an globale Logik anbinden.
+  let buttons = Array.from(document.querySelectorAll("#globalAdminBtn, #adminLoginBtn, [data-admin-login]"));
+
+  // Auf Seiten ohne eigenen Adminbutton oben im Header ergänzen.
+  if (!buttons.length) {
+    const headerWrap = document.querySelector("header .wrap");
+    if (headerWrap) {
+      headerWrap.classList.add("topbar");
+      let actions = headerWrap.querySelector(".header-actions");
+      if (!actions) {
+        actions = document.createElement("div");
+        actions.className = "header-actions";
+        headerWrap.appendChild(actions);
+      }
+      const btn = document.createElement("button");
+      btn.id = "globalAdminBtn";
+      btn.className = "secondary";
+      btn.type = "button";
+      btn.setAttribute("data-admin-login", "true");
+      btn.textContent = "Administrator";
+      actions.prepend(btn);
+      buttons = [btn];
+    }
+  }
+
+  buttons.forEach(btn => {
+    btn.disabled = false;
+    btn.style.pointerEvents = "auto";
+    btn.onclick = handleGlobalAdminClick;
+  });
+
+  updateGlobalAdminUi();
+}
+
+function updateGlobalAdminUi() {
+  const active = isGlobalAdminActive();
+  document.body.classList.toggle("is-global-admin", active);
+
+  document.querySelectorAll("#globalAdminBtn, #adminLoginBtn, [data-admin-login]").forEach(btn => {
+    btn.disabled = false;
+    btn.style.pointerEvents = "auto";
+    btn.textContent = active ? "Administration aktiv" : "Administrator";
+    btn.classList.toggle("success-btn", active);
+    btn.classList.toggle("secondary", !active);
+  });
+
+  let chip = document.getElementById("globalAdminStatusChip");
+  const resetInner = document.querySelector(".local-reset-inner");
+  const headerActions = document.querySelector("header .header-actions");
+  const host = resetInner || headerActions;
+  if (host) {
+    if (!chip) {
+      chip = document.createElement("span");
+      chip.id = "globalAdminStatusChip";
+      chip.className = "admin-session-chip is-off";
+      chip.setAttribute("aria-live", "polite");
+      host.prepend(chip);
+    }
+    chip.textContent = active ? "Adminmodus aktiv" : "Adminmodus aus";
+    chip.classList.toggle("is-off", !active);
+  }
+
+  updateAdminProtectedLinks();
+}
+
+function updateAdminProtectedLinks() {
+  const active = isGlobalAdminActive();
+  document.querySelectorAll("[data-admin-required]").forEach(el => {
+    el.classList.toggle("is-locked", !active);
+    el.setAttribute("aria-disabled", active ? "false" : "true");
+    el.title = active ? "" : "Nur im Administrationsmodus verfügbar";
+    el.onclick = (event) => {
+      if (isGlobalAdminActive()) return true;
+      event.preventDefault();
+      alert("Die Gruppenzuweisung ist nur im Administrationsmodus verfügbar. Bitte oben auf Administrator klicken und das Passwort eingeben.");
+      return false;
+    };
+  });
+}
+
+function applyResultsAdminState() {
+  resultsAdminActive = isGlobalAdminActive();
+  document.body.classList.toggle("is-admin-results", !!resultsAdminActive);
+  document.body.classList.toggle("public-results", !resultsAdminActive);
+
+  document.querySelectorAll(".admin-only").forEach(el => {
+    if (resultsAdminActive) {
+      el.hidden = false;
+      el.style.display = "";
+      el.style.visibility = "visible";
+    } else {
+      el.hidden = true;
+      el.style.display = "none";
+      el.style.visibility = "hidden";
+    }
+  });
+
+  document.querySelectorAll(".result-delete").forEach(el => {
+    el.style.display = resultsAdminActive ? "inline-flex" : "none";
+    el.style.visibility = resultsAdminActive ? "visible" : "hidden";
+  });
+
+  const controls = document.getElementById("resultsControls");
+  if (controls) {
+    controls.hidden = false;
+    controls.style.display = "flex";
+    controls.style.visibility = "visible";
+  }
+
+  const randomArea = document.querySelector(".random-area");
+  if (randomArea) {
+    randomArea.style.display = resultsAdminActive ? "inline-flex" : "none";
+    randomArea.style.visibility = resultsAdminActive ? "visible" : "hidden";
+  }
+
+  const deleteAll = document.getElementById("deleteAllBtn");
+  if (deleteAll) {
+    deleteAll.style.display = resultsAdminActive ? "inline-flex" : "none";
+    deleteAll.style.visibility = resultsAdminActive ? "visible" : "hidden";
+  }
+
+  updateGlobalAdminUi();
+}
+
+function initResults() {
+  initCommon();
+  installGlobalAdminControlsFinal();
+
+  const status = document.getElementById("resultsStatus");
+  const url = getAppsScriptUrl();
+  const deleteBtn = document.getElementById("deleteAllBtn");
+  const prevBtn = document.getElementById("prevGroupBtn");
+  const nextBtn = document.getElementById("nextGroupBtn");
+  const randomBtn = document.getElementById("randomGroupBtn");
+  const resetRoundsBtn = document.getElementById("resetRoundsBtn");
+  const resultsContent = document.getElementById("resultsContent");
+
+  resultsAdminActive = isGlobalAdminActive();
+  applyResultsAdminState();
+
+  if (deleteBtn) deleteBtn.onclick = deleteAllResults;
+  if (prevBtn) prevBtn.onclick = () => moveResult(-1);
+  if (nextBtn) nextBtn.onclick = () => moveResult(1);
+  if (randomBtn) randomBtn.onclick = spinRandomGroup;
+  if (resetRoundsBtn) {
+    resetRoundsBtn.onclick = () => {
+      if (confirm("Alle bisherigen Roulette-Runden zurücksetzen? Die Google-Sheet-Ergebnisse bleiben erhalten.")) {
+        resetRouletteRounds(false);
+      }
+    };
+  }
+
+  if (resultsContent) {
+    resultsContent.onclick = (event) => {
+      const btn = event.target.closest("[data-delete-result]");
+      if (!btn) return;
+      event.preventDefault();
+      if (!isGlobalAdminActive()) return;
+      deleteSingleResult(Number(btn.dataset.deleteResult));
+    };
+    resultsContent.addEventListener("toggle", () => {
+      window.setTimeout(() => updateActiveResult(false), 40);
+    }, true);
+  }
+
+  renderRoundBadges();
+  window.addEventListener("resize", () => {
+    if (resultRowsCache.length) renderCarouselAt(currentVirtualPosition, false);
+  });
+
+  if (!url) {
+    if (status) {
+      status.className = "warning";
+      status.textContent = "Keine Apps-Script-URL gefunden. Ergebnisse können nicht geladen werden.";
+    }
+    return;
+  }
+
+  if (status) {
+    status.className = "notice";
+    status.textContent = "Ergebnisse werden geladen …";
+  }
+
+  fetchResultsWithFallback(url)
+    .then(rows => {
+      resultRowsCache = rows || [];
+      currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+      currentVirtualIndex = currentResultIndex;
+      currentVirtualPosition = currentVirtualIndex;
+      if (status) status.textContent = "";
+      renderResults(resultRowsCache);
+    })
+    .catch(err => {
+      if (status) {
+        status.className = "warning";
+        status.textContent = err.message + " Prüfe die Web-App-Bereitstellung und den Zugriff 'Jeder'.";
+      }
+    });
+}
+
+function renderResults(rows) {
+  const target = document.getElementById("resultsContent");
+  const controls = document.getElementById("resultsControls");
+  if (!target) return;
+  resultRowsCache = rows || [];
+
+  applyResultsAdminState();
+
+  if (!resultRowsCache.length) {
+    if (controls) {
+      controls.hidden = false;
+      controls.style.display = "flex";
+    }
+    target.className = "result-track";
+    target.innerHTML = `<div class="notice empty-results">Noch keine Ergebnisse vorhanden.</div>`;
+    currentResultIndex = 0;
+    currentVirtualIndex = 0;
+    currentVirtualPosition = 0;
+    updateCarouselCounter();
+    syncRandomSelectionState();
+    return;
+  }
+
+  if (controls) {
+    controls.hidden = false;
+    controls.style.display = "flex";
+    controls.style.visibility = "visible";
+  }
+
+  target.className = "result-track slot-track";
+  if (!Number.isFinite(currentVirtualPosition)) currentVirtualPosition = resultRowsCache.length - 1;
+  currentVirtualIndex = Math.round(currentVirtualPosition);
+  currentResultIndex = mod(currentVirtualIndex, resultRowsCache.length);
+  buildSlotTrack(currentVirtualIndex - 4, currentVirtualIndex + 4);
+  positionSlotTrack(currentVirtualPosition, false);
+  syncRandomSelectionState();
+  applyResultsAdminState();
+}
+
+function updateGroupAssignmentAccess() {
+  const active = isGlobalAdminActive();
+  const protectedEls = document.querySelectorAll(".group-assignment-protected");
+  let access = document.getElementById("groupAssignmentAccessNotice");
+  if (!active) {
+    protectedEls.forEach(el => el.style.display = "none");
+    const main = document.querySelector("main.groupassignment-main") || document.querySelector("main");
+    if (main && !access) {
+      access = document.createElement("section");
+      access.id = "groupAssignmentAccessNotice";
+      access.className = "card warning admin-access-panel";
+      access.innerHTML = `<h2>Administrationsmodus erforderlich</h2><p>Die Gruppenzuweisung ist nur für die Seminarleitung vorgesehen.</p><button type="button" class="secondary" data-admin-login>Administrator aktivieren</button> <a class="button secondary" href="index.html">Zur Startseite</a>`;
+      main.prepend(access);
+      const btn = access.querySelector("[data-admin-login]");
+      if (btn) btn.onclick = handleGlobalAdminClick;
+    }
+  } else {
+    protectedEls.forEach(el => el.style.display = "");
+    if (access) access.remove();
+  }
+  updateGlobalAdminUi();
+}
+
+function initGroupAssignment() {
+  initCommon();
+  installGlobalAdminControlsFinal();
+  updateGroupAssignmentAccess();
+  if (!isGlobalAdminActive()) return;
+
+  const list = document.getElementById("participantList");
+  const input = document.getElementById("participantName");
+  const addBtn = document.getElementById("addParticipantBtn");
+  const buildBtn = document.getElementById("buildGroupsBtn");
+  const resetBtn = document.getElementById("resetParticipantsBtn");
+  const clearBtn = document.getElementById("clearParticipantsBtn");
+  const output = document.getElementById("groupsOutput");
+  const count = document.getElementById("participantCount");
+  const status = document.getElementById("groupAssignStatus");
+  let names = getGroupAssignmentNames();
+
+  function setStatus(text, cls = "notice") {
+    if (!status) return;
+    status.className = cls;
+    status.textContent = text;
+  }
+  function persistNames() { saveGroupAssignmentNames(names); }
+  function renderNames() {
+    if (!list) return;
+    list.innerHTML = "";
+    names.forEach((name, index) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="name-index">${index + 1}</span><span class="name-text">${escapeHtml(name)}</span><button type="button" class="icon-remove" aria-label="${escapeHtml(name)} löschen">×</button>`;
+      const removeBtn = li.querySelector("button");
+      removeBtn.onclick = () => {
+        names.splice(index, 1);
+        persistNames();
+        saveGroupAssignmentGroups([]);
+        renderNames();
+        renderGroups([]);
+        setStatus("Name wurde gelöscht. Die Gruppen müssen neu gebildet werden.", "notice");
+      };
+      list.appendChild(li);
+    });
+    if (count) count.textContent = String(names.length);
+  }
+  function renderGroups(groups = getGroupAssignmentGroups()) {
+    if (!output) return;
+    output.innerHTML = "";
+    if (!groups.length) {
+      output.className = "group-output empty-state";
+      output.textContent = "Noch keine Gruppen gebildet.";
+      return;
+    }
+    output.className = "group-output";
+    groups.forEach((group, index) => {
+      const card = document.createElement("div");
+      card.className = "assignment-group-card";
+      const items = group.map(name => `<li>${escapeHtml(name)}</li>`).join("");
+      card.innerHTML = `<h3>Gruppe ${index + 1}<span class="group-size-pill">${group.length} Personen</span></h3><ol>${items}</ol>`;
+      output.appendChild(card);
+    });
+  }
+  function addName() {
+    const value = (input && input.value || "").trim();
+    if (!value) { setStatus("Bitte zuerst einen Namen eintragen.", "warning"); return; }
+    names.push(value);
+    persistNames();
+    saveGroupAssignmentGroups([]);
+    if (input) input.value = "";
+    renderNames();
+    renderGroups([]);
+    setStatus("Name wurde hinzugefügt. Du kannst die Gruppen neu bilden.", "success");
+  }
+
+  if (addBtn) addBtn.onclick = addName;
+  if (input) input.onkeydown = e => {
+    if (e.key === "Enter") { e.preventDefault(); addName(); }
+  };
+  if (buildBtn) buildBtn.onclick = () => {
+    if (names.length < 4) {
+      setStatus("Für die Gruppenzuweisung werden mindestens 4 Personen benötigt.", "warning");
+      saveGroupAssignmentGroups([]);
+      renderGroups([]);
+      return;
+    }
+    const groups = buildMinimumFourGroups(names);
+    saveGroupAssignmentGroups(groups);
+    renderGroups(groups);
+    const sizes = groups.map(g => g.length).join(" / ");
+    setStatus(`Gruppen wurden zufällig gebildet. Gruppengrößen: ${sizes}.`, "success");
+  };
+  if (resetBtn) resetBtn.onclick = () => {
+    if (!confirm("Ursprungsliste neu laden? Eigene Änderungen an der Teilnehmendenliste gehen verloren.")) return;
+    names = DEFAULT_GROUP_PARTICIPANTS.slice();
+    persistNames();
+    saveGroupAssignmentGroups([]);
+    renderNames();
+    renderGroups([]);
+    setStatus("Ursprungsliste wurde geladen.", "success");
+  };
+  if (clearBtn) clearBtn.onclick = () => {
+    if (!confirm("Gesamte Teilnehmendenliste leeren?")) return;
+    names = [];
+    persistNames();
+    saveGroupAssignmentGroups([]);
+    renderNames();
+    renderGroups([]);
+    setStatus("Teilnehmendenliste wurde geleert. Mit 'Ursprungsliste laden' kannst du die vorbereiteten Namen wiederherstellen.", "notice");
+  };
+
+  renderNames();
+  renderGroups();
+}
+
+// Nach der ursprünglichen Initialisierung noch einmal globale Admin-UI synchronisieren.
+window.addEventListener("DOMContentLoaded", () => {
+  installGlobalAdminControlsFinal();
+  updateGlobalAdminUi();
+  if (document.body.dataset.mode === "groupassignment") updateGroupAssignmentAccess();
+  if (document.body.dataset.mode === "results") applyResultsAdminState();
+});

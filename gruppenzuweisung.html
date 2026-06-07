@@ -7,15 +7,15 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body data-mode="groupassignment">
-<header><div class="wrap"><h1>Gruppenzuweisung</h1><p>Teilnehmende verwalten und zufällig Gruppen bilden</p></div></header>
-<main>
-  <section class="card highlight">
+<header><div class="wrap topbar"><div><h1>Gruppenzuweisung</h1><p>Teilnehmende verwalten und zufällig Gruppen bilden</p></div><div class="header-actions"><button id="globalAdminBtn" class="secondary" type="button" data-admin-login>Administrator</button></div></div></header>
+<main class="wide-main groupassignment-main">
+  <section class="card highlight group-assignment-protected">
     <h2>Gruppen bilden</h2>
     <p>Die Liste ist vorbefüllt. Du kannst Namen hinzufügen oder löschen. Beim Bilden der Gruppen wird versucht, Gruppen mit mindestens vier Personen zu erstellen. Restpersonen werden auf bestehende Gruppen verteilt.</p>
     <div id="groupAssignStatus" class="notice">Bereit. Prüfe die Liste und starte die Gruppenzuweisung.</div>
   </section>
 
-  <section class="two-col" style="margin-top:18px">
+  <section class="two-col group-assignment-layout group-assignment-protected" style="margin-top:18px">
     <div class="card">
       <h2>Teilnehmende</h2>
       <div class="nav-row" style="align-items:flex-end">

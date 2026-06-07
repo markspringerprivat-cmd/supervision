@@ -7,16 +7,17 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body data-mode="landing">
-<header><div class="wrap"><h1>Simulation einer Gruppensupervision</h1><p>Teamteaching, ESE-Fall und Konfliktklärung im schulischen Kontext</p></div></header>
-<main>
+<header><div class="wrap topbar"><div><h1>Simulation einer Gruppensupervision</h1><p>Teamteaching, ESE-Fall und Konfliktklärung im schulischen Kontext</p></div><div class="header-actions"><button id="globalAdminBtn" class="secondary" type="button" data-admin-login>Administrator</button></div></div></header>
+<main class="wide-main">
   <div class="grid">
     <a class="card hero-card" href="rollen.html">
       <div class="big">Rollenverteilung starten</div>
       <p>Namen eintragen, Rollen zufällig zuweisen und QR-Codes für die vier Rollenkarten erzeugen.</p>
     </a>
-    <a class="card hero-card" href="gruppenzuweisung.html">
+    <a class="card hero-card admin-protected-card" href="gruppenzuweisung.html" data-admin-required="true">
       <div class="big">Gruppenzuweisung</div>
       <p>Teilnehmende verwalten und zufällig in Gruppen mit mindestens vier Personen einteilen.</p>
+      <p class="small admin-lock-note">Nur im Administrationsmodus verfügbar.</p>
     </a>
     <a class="card hero-card" href="ergebnisse.html">
       <div class="big">Ergebnisse ansehen</div>

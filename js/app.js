@@ -799,12 +799,25 @@ function summaryInner(obj) {
   return entries.map(([k, v]) => `<div class="summary-block"><strong>${labelize(k)}</strong><br>${escapeHtml(v || "—")}</div>`).join("");
 }
 
+let resultRowsCache = [];
+let currentResultIndex = 0;
+let randomSpinTimer = null;
+let randomSpinTimeout = null;
+
 function initResults() {
   initCommon();
   const status = document.getElementById("resultsStatus");
   const url = getAppsScriptUrl();
   const deleteBtn = document.getElementById("deleteAllBtn");
+  const prevBtn = document.getElementById("prevGroupBtn");
+  const nextBtn = document.getElementById("nextGroupBtn");
+  const randomBtn = document.getElementById("randomGroupBtn");
+
   if (deleteBtn) deleteBtn.addEventListener("click", deleteAllResults);
+  if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
+  if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
+  if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
+
   if (!url) {
     status.className = "warning";
     status.textContent = "Keine Apps-Script-URL gefunden. Ergebnisse können nicht geladen werden.";
@@ -816,7 +829,9 @@ function initResults() {
   fetchResultsWithFallback(url)
     .then(rows => {
       status.textContent = "";
-      renderResults(rows || []);
+      resultRowsCache = rows || [];
+      currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+      renderResults(resultRowsCache);
     })
     .catch(err => {
       status.className = "warning";
@@ -826,23 +841,108 @@ function initResults() {
 
 function renderResults(rows) {
   const target = document.getElementById("resultsContent");
+  const controls = document.getElementById("resultsControls");
   if (!target) return;
   if (!rows.length) {
-    target.innerHTML = `<div class="notice">Noch keine Ergebnisse vorhanden.</div>`;
+    if (controls) controls.hidden = true;
+    target.innerHTML = `<div class="notice empty-results">Noch keine Ergebnisse vorhanden.</div>`;
+    updateCarouselCounter();
     return;
   }
-  target.innerHTML = rows.slice().reverse().map((row) => {
-    const data = row.data || {};
-    const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
-    return `<section class="card result-card">
-      <h2>${escapeHtml(row.groupName || data.groupName || "Gruppe")}</h2>
-      <p class="small result-meta">${escapeHtml(timestamp)}</p>
-      ${phaseDetails("Phase 2: Problembeschreibung", data.p2 || {})}
-      ${phaseDetails("Phase 3: Zielformulierung", data.p3 || {})}
-      ${phaseDetails("Phase 4: Vertiefte Problembearbeitung", data.p4 || {})}
-      ${phaseDetails("Phase 5 und 6: Umsetzung", Object.assign({}, data.p5 || {}, data.p6 || {}))}
-    </section>`;
-  }).join("");
+  if (controls) controls.hidden = false;
+  target.innerHTML = rows.map((row, index) => resultCardHtml(row, index)).join("");
+  clampResultIndex();
+  updateActiveResult(false);
+}
+
+function resultCardHtml(row, index) {
+  const data = row.data || {};
+  const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
+  return `<section class="card result-card" data-result-index="${index}">
+    <div class="result-card-head">
+      <div>
+        <h2>${escapeHtml(row.groupName || data.groupName || "Gruppe")}</h2>
+        <p class="small result-meta">${escapeHtml(timestamp)}</p>
+      </div>
+      <span class="result-number">${index + 1}</span>
+    </div>
+    ${phaseDetails("Phase 2: Problembeschreibung", data.p2 || {})}
+    ${phaseDetails("Phase 3: Zielformulierung", data.p3 || {})}
+    ${phaseDetails("Phase 4: Vertiefte Problembearbeitung", data.p4 || {})}
+    ${phaseDetails("Phase 5 und 6: Umsetzung", Object.assign({}, data.p5 || {}, data.p6 || {}))}
+  </section>`;
+}
+
+function clampResultIndex() {
+  if (!resultRowsCache.length) {
+    currentResultIndex = 0;
+    return;
+  }
+  if (currentResultIndex < 0) currentResultIndex = resultRowsCache.length - 1;
+  if (currentResultIndex >= resultRowsCache.length) currentResultIndex = 0;
+}
+
+function moveResult(delta) {
+  if (!resultRowsCache.length) return;
+  currentResultIndex += delta;
+  clampResultIndex();
+  updateActiveResult(true);
+}
+
+function updateActiveResult(smooth = true) {
+  const cards = Array.from(document.querySelectorAll(".result-card[data-result-index]"));
+  const carousel = document.getElementById("resultCarousel");
+  cards.forEach(card => {
+    const active = Number(card.dataset.resultIndex) === currentResultIndex;
+    card.classList.toggle("is-active", active);
+    card.setAttribute("aria-current", active ? "true" : "false");
+  });
+  const activeCard = cards.find(card => Number(card.dataset.resultIndex) === currentResultIndex);
+  if (activeCard && carousel) {
+    const left = activeCard.offsetLeft - (carousel.clientWidth - activeCard.clientWidth) / 2;
+    carousel.scrollTo({ left: Math.max(0, left), behavior: smooth ? "smooth" : "auto" });
+  }
+  updateCarouselCounter();
+}
+
+function updateCarouselCounter() {
+  const counter = document.getElementById("carouselCounter");
+  if (!counter) return;
+  const total = resultRowsCache.length;
+  counter.textContent = total ? `${currentResultIndex + 1} / ${total}` : "0 / 0";
+}
+
+function spinRandomGroup() {
+  if (!resultRowsCache.length) return;
+  const btn = document.getElementById("randomGroupBtn");
+  if (randomSpinTimer || randomSpinTimeout) return;
+  const duration = 6000 + Math.floor(Math.random() * 6001); // 6–12 Sekunden
+  const start = Date.now();
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Zufallsauswahl läuft …";
+  }
+  randomSpinTimer = setInterval(() => {
+    currentResultIndex = (currentResultIndex + 1) % resultRowsCache.length;
+    updateActiveResult(true);
+  }, 130);
+  randomSpinTimeout = setTimeout(() => {
+    clearInterval(randomSpinTimer);
+    randomSpinTimer = null;
+    randomSpinTimeout = null;
+    currentResultIndex = Math.floor(Math.random() * resultRowsCache.length);
+    updateActiveResult(true);
+    if (btn) {
+      btn.disabled = false;
+      const chosen = resultRowsCache[currentResultIndex];
+      btn.textContent = "Zufallsauswahl starten";
+      const status = document.getElementById("resultsStatus");
+      if (status) {
+        status.className = "success";
+        status.textContent = "Ausgewählt: " + (chosen.groupName || (chosen.data && chosen.data.groupName) || "Gruppe");
+      }
+    }
+  }, Math.max(0, duration - (Date.now() - start)));
 }
 
 function deleteAllResults() {
@@ -858,26 +958,68 @@ function deleteAllResults() {
   const password = prompt("Passwort zum Löschen aller Ergebnisse eingeben:");
   if (!password) return;
   if (!confirm("Wirklich alle Ergebnisse aus dem Google Sheet löschen?")) return;
-  callAppsScriptJsonp(url, { action: "deleteAll", password })
+
+  if (status) {
+    status.className = "notice";
+    status.textContent = "Löschbefehl wird gesendet …";
+  }
+
+  callAppsScriptJsonp(url, { action: "deleteall", password })
     .then(response => {
       if (!response || !response.ok) throw new Error((response && response.error) || "Löschen fehlgeschlagen.");
       if (status) {
         status.className = "success";
         status.textContent = "Alle Ergebnisse wurden gelöscht.";
       }
+      resultRowsCache = [];
+      currentResultIndex = 0;
       renderResults([]);
     })
-    .catch(err => {
-      if (status) {
-        status.className = "warning";
-        status.textContent = err.message;
-      }
+    .catch(() => {
+      // Fallback ohne CORS/JSONP: lädt die Lösch-URL unsichtbar als iframe.
+      // Danach wird erneut ausgelesen. Das hilft, wenn Apps Script zwar löscht,
+      // aber die JSONP-Antwort vom Browser blockiert wird.
+      sendDeleteByHiddenFrame(url, password)
+        .then(() => fetchResultsWithFallback(url))
+        .then(rows => {
+          resultRowsCache = rows || [];
+          currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+          renderResults(resultRowsCache);
+          if (status) {
+            if (!resultRowsCache.length) {
+              status.className = "success";
+              status.textContent = "Alle Ergebnisse wurden gelöscht.";
+            } else {
+              status.className = "warning";
+              status.textContent = "Löschversuch abgeschlossen, es sind aber noch Einträge vorhanden. Prüfe Passwort und Apps-Script-Version.";
+            }
+          }
+        })
+        .catch(err => {
+          if (status) {
+            status.className = "warning";
+            status.textContent = "Verbindung zum Apps Script fehlgeschlagen. Prüfe, ob der neue Code.gs bereitgestellt wurde und der Zugriff auf 'Jeder' steht.";
+          }
+        });
     });
+}
+
+function sendDeleteByHiddenFrame(url, password) {
+  return new Promise(resolve => {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = `${url}?action=deleteall&password=${encodeURIComponent(password)}&_=${Date.now()}`;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      resolve();
+    }, 2500);
+  });
 }
 
 function callAppsScriptJsonp(url, params) {
   return new Promise((resolve, reject) => {
-    const cbName = "svActionCallback" + Date.now();
+    const cbName = "svActionCallback" + Date.now() + Math.floor(Math.random() * 100000);
     const script = document.createElement("script");
     const query = new URLSearchParams(Object.assign({}, params, { callback: cbName, _: Date.now() }));
     let done = false;
@@ -940,7 +1082,16 @@ function initGoogleTest() {
   });
 }
 
+
+function applyDeviceClass() {
+  const mobileLike = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+  document.body.classList.toggle("is-mobile", !!mobileLike);
+  document.body.classList.toggle("is-desktop", !mobileLike);
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+  applyDeviceClass();
+  window.addEventListener("resize", applyDeviceClass);
   const mode = document.body.dataset.mode;
   if (mode === "landing") initLanding();
   if (mode === "roles") initRoleAssignment();

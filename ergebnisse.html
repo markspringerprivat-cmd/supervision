@@ -11,10 +11,20 @@
 <main>
   <section class="card highlight">
     <h2>Zentrale Ergebnisübersicht</h2>
-    <p>Hier erscheinen die abgesendeten Gruppenergebnisse. Die einzelnen Phasen können pro Gruppe geöffnet werden.</p>
+    <p>Hier erscheinen die abgesendeten Gruppenergebnisse. Mit den Pfeilen kannst du zwischen den Gruppen wechseln oder eine Gruppe zufällig auswählen.</p>
     <p id="resultsStatus" class="small">Ergebnisse werden geladen …</p>
   </section>
-  <div id="resultsContent" class="grid" style="margin-top:18px"></div>
+  <section class="carousel-controls card compact" id="resultsControls" hidden>
+    <button id="randomGroupBtn" type="button">Zufallsauswahl starten</button>
+    <div class="carousel-nav">
+      <button id="prevGroupBtn" type="button" class="secondary" aria-label="Vorherige Gruppe">←</button>
+      <span id="carouselCounter" class="small">0 / 0</span>
+      <button id="nextGroupBtn" type="button" class="secondary" aria-label="Nächste Gruppe">→</button>
+    </div>
+  </section>
+  <section class="result-carousel" id="resultCarousel" aria-label="Gruppenergebnisse">
+    <div id="resultsContent" class="result-track"></div>
+  </section>
   <div class="nav-row"><a class="button secondary" href="index.html">Zur Startseite</a></div>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>

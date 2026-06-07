@@ -45,3 +45,13 @@ Die Startseite enthält zusätzlich `gruppenzuweisung.html`. Dort kann eine vorb
 - `Seite zurücksetzen` löscht lokale Arbeitsdaten und führt zurück zur Startseite.
 - Ergebnis-Karten enthalten `Präsentation starten`.
 - Neue Seite `presentation.html` zeigt ein Gruppenergebnis als Folienpräsentation mit Pfeiltasten, Leertaste und Vollbildmodus.
+
+## Update: Zusammenfassung und Präsentationsvorbereitung
+
+- Auf der Zusammenfassungsseite werden die Phasen jetzt unter dem einklappbaren Bereich **Übersicht** untereinander angezeigt.
+- Zwischen **Übermittlung** und **Übersicht** gibt es den Bereich **Präsentation**.
+- Dort kann eine kleine Präsentationsvorschau geöffnet werden.
+- Im Bearbeitungsmodus können Tabelleninhalte der Präsentation direkt verändert werden. Diese Änderungen werden lokal in denselben Feldern gespeichert, die beim Absenden an Google Sheets übertragen werden.
+- Die Präsentationsvorschau enthält eine Farbauswahl für Überschrift, Text, Hintergrund und Folie.
+- Zusätzliche Textfelder können eingefügt und verschoben werden; sie werden mit dem Gruppenergebnis gespeichert und später in der Präsentation wieder angezeigt.
+- **Ergebnisse ansehen** auf der Start- und Zusammenfassungsseite ist nur noch im Administrationsmodus zugänglich.

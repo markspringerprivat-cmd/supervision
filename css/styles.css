@@ -1876,3 +1876,187 @@ main.presentation-shell {
     padding: 26px !important;
   }
 }
+
+/* ------------------------------------------------------------
+   FINAL: Zusammenfassung, Präsentations-Vorschau und Bearbeitung
+   ------------------------------------------------------------ */
+.summary-accordion {
+  padding: 0 !important;
+  overflow: hidden;
+}
+.summary-toggle {
+  width: 100%;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 0;
+  border-radius: 0;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: clamp(1.05rem, 1.2vw, 1.25rem);
+  padding: 18px 22px;
+}
+.summary-toggle::before {
+  content: '▸';
+  margin-right: 10px;
+}
+.summary-toggle[aria-expanded="true"]::before { content: '▾'; }
+.summary-panel {
+  padding: 18px 22px 22px;
+}
+.summary-phase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.summary-phase-details {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.summary-phase-details > summary {
+  cursor: pointer;
+  padding: 14px 16px;
+  background: #f8fafc;
+  font-weight: 800;
+  color: #153150;
+}
+.summary-phase-content {
+  padding: 12px 16px 16px;
+}
+
+.presentation-prep-modal[hidden] { display: none !important; }
+.presentation-prep-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: grid;
+  place-items: center;
+}
+.presentation-prep-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(8px);
+}
+.presentation-prep-window {
+  position: relative;
+  z-index: 1;
+  width: min(96vw, 1280px);
+  height: min(94vh, 850px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #0f172a;
+  border-radius: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.35);
+  overflow: hidden;
+}
+.presentation-prep-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  color: white;
+  flex-wrap: wrap;
+}
+.presentation-prep-toolbar button,
+.presentation-prep-toolbar select,
+.presentation-prep-toolbar input[type="color"] {
+  min-height: 36px;
+}
+.theme-select {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+}
+.theme-control-label {
+  margin: 0 0 0 8px;
+  color: #e5edf7;
+}
+#themeHueRange { width: 130px; }
+.presentation-prep-stage {
+  display: grid;
+  place-items: center;
+  background: var(--presentation-background-color, #0f172a);
+  padding: 20px;
+  overflow: auto;
+}
+.presentation-slide-mini.presentation-slide {
+  width: min(100%, 1120px) !important;
+  height: min(100%, 640px) !important;
+  min-height: 560px !important;
+  background: var(--presentation-slide-color, #fff) !important;
+}
+.presentation-slide,
+.presentation-slide-inner {
+  color: var(--presentation-text-color, #0f172a) !important;
+}
+.presentation-slide h1,
+.presentation-slide h2,
+.thanks-slide h2 {
+  color: var(--presentation-heading-color, #1e3a5f) !important;
+}
+.presentation-subtitle,
+.presentation-note,
+.presentation-kicker {
+  color: var(--presentation-text-color, #475569) !important;
+}
+.presentation-prep-hint {
+  margin: 0;
+  padding: 10px 18px 14px;
+  color: #dbeafe;
+  background: rgba(15,23,42,.95);
+}
+.is-editing-presentation [data-edit-save] {
+  outline: 2px dashed #2563eb;
+  background: rgba(37, 99, 235, .08);
+  cursor: text;
+}
+.is-editing-presentation [data-edit-save]:focus {
+  outline: 3px solid #2563eb;
+  background: #fff;
+}
+.presentation-extras-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.presentation-slide-inner { position: relative; }
+.prep-extra-text {
+  position: absolute;
+  min-width: 160px;
+  max-width: 420px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(15,23,42,.18);
+  box-shadow: 0 12px 30px rgba(15,23,42,.16);
+  color: var(--presentation-text-color, #0f172a);
+  font-weight: 700;
+  pointer-events: auto;
+  z-index: 10;
+}
+.is-editing-presentation .prep-extra-text {
+  cursor: grab;
+  outline: 2px dashed #16a34a;
+}
+.result-extra-text { pointer-events: none; }
+
+body.presentation-body,
+.presentation-prep-stage {
+  background: var(--presentation-background-color, #0f172a) !important;
+}
+#presentationSlide.presentation-slide,
+.presentation-slide {
+  background: var(--presentation-slide-color, #ffffff) !important;
+}
+
+@media (max-width: 900px) {
+  .presentation-prep-window { width: 100vw; height: 100vh; border-radius: 0; }
+  .presentation-prep-stage { padding: 10px; }
+  .presentation-slide-mini.presentation-slide { min-height: 70vh !important; height: auto !important; }
+  .presentation-prep-toolbar { align-items: stretch; }
+  .presentation-prep-toolbar button, .presentation-prep-toolbar select { flex: 1 1 auto; }
+}

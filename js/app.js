@@ -2962,3 +2962,506 @@ window.addEventListener("DOMContentLoaded", () => {
     applyResultsAdminState();
   }
 });
+
+/* ------------------------------------------------------------
+   FINAL: Zusammenfassung mit Präsentationsvorbereitung,
+   editierbarer Vorschau und Übergabe an Google-Sheet-Payload
+   ------------------------------------------------------------ */
+const SV_PRESENTATION_THEME_DEFAULT = {
+  heading: '#1e3a5f',
+  text: '#0f172a',
+  background: '#0f172a',
+  slide: '#ffffff'
+};
+
+function getPresentationSettingsFinal() {
+  const saved = loadObj('presentation_settings', {});
+  return Object.assign({}, SV_PRESENTATION_THEME_DEFAULT, saved || {});
+}
+
+function savePresentationSettingsFinal(settings) {
+  saveObj('presentation_settings', Object.assign({}, getPresentationSettingsFinal(), settings || {}));
+}
+
+function getPresentationExtrasFinal() {
+  const extras = loadObj('presentation_extras', []);
+  return Array.isArray(extras) ? extras : [];
+}
+
+function savePresentationExtrasFinal(extras) {
+  saveObj('presentation_extras', Array.isArray(extras) ? extras : []);
+}
+
+function applyPresentationThemeToNodeFinal(host, settings) {
+  const s = Object.assign({}, SV_PRESENTATION_THEME_DEFAULT, settings || {});
+  if (!host) return;
+  host.style.setProperty('--presentation-heading-color', s.heading);
+  host.style.setProperty('--presentation-text-color', s.text);
+  host.style.setProperty('--presentation-background-color', s.background);
+  host.style.setProperty('--presentation-slide-color', s.slide);
+  if (host.classList && host.classList.contains('presentation-body')) {
+    host.style.background = s.background;
+  }
+}
+
+function buildPayload() {
+  const data = collectSupervisorData();
+  const groupName = loadText('summary_group_name') || data.groupName || data.groupId;
+  data.groupName = groupName;
+  data.timestampLocal = new Date().toLocaleString('de-DE');
+  data.presentationSettings = getPresentationSettingsFinal();
+  data.presentationExtras = getPresentationExtrasFinal();
+  return data;
+}
+
+function initSummary() {
+  initCommon();
+  installGlobalAdminControlsFinal();
+  const data = collectSupervisorData();
+  const groupNameInput = document.getElementById('groupName');
+  if (groupNameInput) {
+    groupNameInput.value = loadText('summary_group_name') || data.groupName || data.groupId;
+    groupNameInput.addEventListener('input', () => saveText('summary_group_name', groupNameInput.value));
+  }
+  initSummaryAccordionsFinal();
+  renderSummary(data);
+  const submitBtn = document.getElementById('submitResults');
+  if (submitBtn) submitBtn.onclick = submitResults;
+  const prepBtn = document.getElementById('openPresentationPrepBtn');
+  if (prepBtn) prepBtn.onclick = openPresentationPrepModalFinal;
+  updateGlobalAdminUi();
+}
+
+function initSummaryAccordionsFinal() {
+  document.querySelectorAll('[data-toggle-target]').forEach(btn => {
+    btn.onclick = () => {
+      const panel = document.getElementById(btn.dataset.toggleTarget);
+      if (!panel) return;
+      const isHidden = panel.hidden;
+      panel.hidden = !isHidden;
+      btn.setAttribute('aria-expanded', String(isHidden));
+    };
+  });
+}
+
+function renderSummary(data) {
+  const target = document.getElementById('summaryContent');
+  if (!target) return;
+  const phases = [
+    ['Erstkontakt', data.p1],
+    ['Problembeschreibung', data.p2],
+    ['Zielformulierung', data.p3],
+    ['Vertiefte Problembearbeitung', data.p4],
+    ['Ergebnissicherung', data.p5],
+    ['Reflexionstauglichkeit', data.p6]
+  ];
+  target.innerHTML = `<div class="summary-phase-list">${phases.map(([title, obj], i) => summaryPhaseDetailsFinal(i + 1, title, obj)).join('')}</div>`;
+}
+
+function summaryPhaseDetailsFinal(num, title, obj) {
+  return `<details class="summary-phase-details"><summary>Phase ${num}: ${escapeHtml(title)}</summary><div class="summary-phase-content">${Object.entries(obj).map(([k,v]) => `<div class="summary-block"><strong>${labelize(k)}</strong><br>${escapeHtml(v || '—')}</div>`).join('')}</div></details>`;
+}
+
+function localPresentationRowFinal() {
+  const payload = buildPayload();
+  return {
+    id: 'local',
+    rowNumber: 'local',
+    timestamp: payload.timestamp || new Date().toISOString(),
+    groupName: payload.groupName || 'Gruppe',
+    data: payload
+  };
+}
+
+let summaryPresentationIndexFinal = 0;
+let summaryPresentationEditModeFinal = false;
+
+function ensurePresentationPrepModalFinal() {
+  let modal = document.getElementById('presentationPrepModal');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'presentationPrepModal';
+  modal.className = 'presentation-prep-modal';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="presentation-prep-backdrop" data-close-prep></div>
+    <div class="presentation-prep-window" role="dialog" aria-modal="true" aria-label="Präsentation vorbereiten">
+      <div class="presentation-prep-toolbar">
+        <button type="button" id="closePresentationPrep" class="secondary">Schließen</button>
+        <button type="button" id="summaryPrevSlide" class="secondary">←</button>
+        <span id="summaryPresentationCounter" class="small">1 / 6</span>
+        <button type="button" id="summaryNextSlide" class="secondary">→</button>
+        <button type="button" id="togglePresentationEdit" class="secondary">Bearbeitungsmodus</button>
+        <button type="button" id="addPresentationText" class="secondary">Text hinzufügen</button>
+        <label class="theme-control-label" for="themeTargetSelect">Farbe</label>
+        <select id="themeTargetSelect" class="theme-select">
+          <option value="heading">Überschrift</option>
+          <option value="text">Text</option>
+          <option value="background">Hintergrund</option>
+          <option value="slide">Folie</option>
+        </select>
+        <input id="themeColorPicker" type="color" value="#1e3a5f" aria-label="Farbe wählen">
+        <input id="themeHueRange" type="range" min="0" max="360" value="210" aria-label="Farbton wählen">
+      </div>
+      <div class="presentation-prep-stage presentation-body">
+        <section id="summaryPresentationSlide" class="presentation-slide presentation-slide-mini"></section>
+      </div>
+      <p class="small presentation-prep-hint">Im Bearbeitungsmodus können Tabelleninhalte direkt angeklickt und geändert werden. Die Änderungen werden lokal gespeichert und beim Absenden übernommen.</p>
+    </div>`;
+  document.body.appendChild(modal);
+
+  modal.querySelector('[data-close-prep]').onclick = closePresentationPrepModalFinal;
+  modal.querySelector('#closePresentationPrep').onclick = closePresentationPrepModalFinal;
+  modal.querySelector('#summaryPrevSlide').onclick = () => moveSummaryPresentationFinal(-1);
+  modal.querySelector('#summaryNextSlide').onclick = () => moveSummaryPresentationFinal(1);
+  modal.querySelector('#togglePresentationEdit').onclick = () => {
+    summaryPresentationEditModeFinal = !summaryPresentationEditModeFinal;
+    renderSummaryPresentationSlideFinal();
+  };
+  modal.querySelector('#addPresentationText').onclick = () => addPresentationTextBoxFinal();
+  const select = modal.querySelector('#themeTargetSelect');
+  const color = modal.querySelector('#themeColorPicker');
+  const hue = modal.querySelector('#themeHueRange');
+  select.onchange = () => {
+    const settings = getPresentationSettingsFinal();
+    color.value = settings[select.value] || SV_PRESENTATION_THEME_DEFAULT[select.value];
+  };
+  color.oninput = () => {
+    savePresentationSettingsFinal({ [select.value]: color.value });
+    renderSummaryPresentationSlideFinal(false);
+  };
+  hue.oninput = () => {
+    const next = hslToHexFinal(Number(hue.value), 62, select.value === 'background' ? 12 : 42);
+    color.value = next;
+    savePresentationSettingsFinal({ [select.value]: next });
+    renderSummaryPresentationSlideFinal(false);
+  };
+  return modal;
+}
+
+function hslToHexFinal(h, s, l) {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const toHex = x => Math.round(255 * x).toString(16).padStart(2, '0');
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+
+function openPresentationPrepModalFinal() {
+  const modal = ensurePresentationPrepModalFinal();
+  summaryPresentationIndexFinal = 0;
+  modal.hidden = false;
+  renderSummaryPresentationSlideFinal();
+}
+
+function closePresentationPrepModalFinal() {
+  const modal = document.getElementById('presentationPrepModal');
+  if (modal) modal.hidden = true;
+  renderSummary(collectSupervisorData());
+}
+
+function moveSummaryPresentationFinal(delta) {
+  const slides = buildEditablePresentationSlidesFinal(localPresentationRowFinal());
+  summaryPresentationIndexFinal = Math.max(0, Math.min(slides.length - 1, summaryPresentationIndexFinal + delta));
+  renderSummaryPresentationSlideFinal();
+}
+
+function renderSummaryPresentationSlideFinal(updateControls = true) {
+  const modal = ensurePresentationPrepModalFinal();
+  const row = localPresentationRowFinal();
+  const slides = buildEditablePresentationSlidesFinal(row);
+  const slideHost = modal.querySelector('#summaryPresentationSlide');
+  if (!slideHost || !slides.length) return;
+  summaryPresentationIndexFinal = Math.max(0, Math.min(slides.length - 1, summaryPresentationIndexFinal));
+  const item = slides[summaryPresentationIndexFinal];
+  const titleHtml = item.title ? `<h1>${escapeHtml(item.title)}</h1>` : '';
+  slideHost.innerHTML = `<div class="presentation-slide-inner${item.title ? '' : ' no-title-slide'}">${titleHtml}${item.html}${renderPresentationExtrasForSlideFinal(summaryPresentationIndexFinal, true)}</div>`;
+  slideHost.classList.toggle('is-editing-presentation', summaryPresentationEditModeFinal);
+  applyPresentationThemeToNodeFinal(modal.querySelector('.presentation-prep-stage'), getPresentationSettingsFinal());
+  applyPresentationThemeToNodeFinal(slideHost, getPresentationSettingsFinal());
+  applyEditablePresentationStateFinal(slideHost);
+  if (updateControls) {
+    const counter = modal.querySelector('#summaryPresentationCounter');
+    if (counter) counter.textContent = `${summaryPresentationIndexFinal + 1} / ${slides.length}`;
+    const btn = modal.querySelector('#togglePresentationEdit');
+    if (btn) {
+      btn.textContent = summaryPresentationEditModeFinal ? 'Bearbeitung aktiv' : 'Bearbeitungsmodus';
+      btn.classList.toggle('success-btn', summaryPresentationEditModeFinal);
+    }
+    const select = modal.querySelector('#themeTargetSelect');
+    const color = modal.querySelector('#themeColorPicker');
+    if (select && color) color.value = getPresentationSettingsFinal()[select.value] || '#1e3a5f';
+  }
+}
+
+function editableCellFinal(value, saveKey) {
+  return `<td data-edit-save="${escapeHtml(saveKey)}">${presentValue(value)}</td>`;
+}
+
+function editablePresentationTableFinal(headers, rows) {
+  return `<div class="presentation-table-wrap"><table class="presentation-table"><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => Array.isArray(c) ? editableCellFinal(c[0], c[1]) : `<td>${presentValue(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+function buildEditablePresentationSlidesFinal(row) {
+  const data = row.data || {};
+  const p2 = data.p2 || {};
+  const p3 = data.p3 || {};
+  const p4 = data.p4 || {};
+  const p5 = data.p5 || {};
+  const p6 = data.p6 || {};
+  const assignments = data.assignments || {};
+  const groupName = data.groupName || row.groupName || 'Gruppe';
+  const timestamp = formatResultTimestamp(data.timestamp || row.timestamp || new Date().toISOString());
+  const roles = [
+    ['Supervisor*in', assignments.supervisor || '—'],
+    ['Schulleitung', assignments.schulleitung || '—'],
+    ['Lehrkraft A', assignments['lehrkraft-a'] || assignments.lehrkraftA || '—'],
+    ['Lehrkraft B', assignments['lehrkraft-b'] || assignments.lehrkraftB || '—']
+  ];
+  return [
+    { title: 'Gruppenvorstellung', html: `<p class="presentation-kicker">${escapeHtml(timestamp)}</p><h2>${escapeHtml(groupName)}</h2>${editablePresentationTableFinal(['Rolle', 'Name'], roles)}<p class="presentation-note">Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.</p>` },
+    { title: 'Problembeschreibung', html: `<p class="presentation-subtitle">Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.</p>` + editablePresentationTableFinal(['Rolle', 'Probleme / Beobachtung', 'Gefühle', 'Wünsche'], [
+      ['Schulleitung', [p2.slProbleme || '', 'sup_p2_sl_probleme'], [p2.slGefuehle || '', 'sup_p2_sl_gefuehle'], [p2.slWuensche || '', 'sup_p2_sl_wuensche']],
+      ['Lehrkraft A', [p2.aProbleme || '', 'sup_p2_a_probleme'], [p2.aGefuehle || '', 'sup_p2_a_gefuehle'], [p2.aWuensche || '', 'sup_p2_a_wuensche']],
+      ['Lehrkraft B', [p2.bProbleme || '', 'sup_p2_b_probleme'], [p2.bGefuehle || '', 'sup_p2_b_gefuehle'], [p2.bWuensche || '', 'sup_p2_b_wuensche']]
+    ]) },
+    { title: 'Zielformulierung', html: `<p class="presentation-subtitle">Hier werden die Einzelziele der Beteiligten, erkennbare Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.</p>` + editablePresentationTableFinal(['Bereich', 'Eintrag'], [
+      ['Ziel Schulleitung', [p3.zielSL || '', 'sup_p3_ziel_sl']],
+      ['Ziel Lehrkraft A', [p3.zielA || '', 'sup_p3_ziel_a']],
+      ['Ziel Lehrkraft B', [p3.zielB || '', 'sup_p3_ziel_b']],
+      ['Gefundene Gemeinsamkeiten', [p3.gemeinsamkeiten || '', 'sup_p3_gemeinsamkeiten']],
+      ['Gemeinsame Zielvereinbarung', [p3.gemeinsamesZiel || '', 'sup_p3_gemeinsames_ziel']]
+    ]) },
+    { title: 'Vertiefte Problembearbeitung', html: `<p class="presentation-subtitle">Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.</p>` + editablePresentationTableFinal(['Aspekt', 'Ergebnis'], [
+      ['Hilfreiche Kritik', [p4.kritik || '', 'sup_p4_kritik']],
+      ['Absprachen zum weiteren Vorgehen', [p4.absprachen || '', 'sup_p4_absprachen']]
+    ]) },
+    { title: 'Umsetzung', html: `<p class="presentation-subtitle">Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung der Vereinbarung.</p>` + editablePresentationTableFinal(['Aspekt', 'Ergebnis'], [
+      ['Zustimmung zur Vereinbarung', [p5.zustimmung || '', 'sup_p5_zustimmung']],
+      ['Einschätzung der Praxistauglichkeit durch die Schulleitung', [p6.praxistauglichkeit || '', 'sup_p6_praxistauglichkeit']],
+      ['Unterstützungsmöglichkeiten durch die Schulleitung', [p6.unterstuetzung || '', 'sup_p6_unterstuetzung']],
+      ['Erste konkrete Umsetzungsschritte', [p6.umsetzung || '', 'sup_p6_umsetzung']]
+    ]) },
+    { title: '', html: `<div class="thanks-slide"><h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p></div>` }
+  ];
+}
+
+function applyEditablePresentationStateFinal(host) {
+  const cells = host.querySelectorAll('[data-edit-save]');
+  cells.forEach(cell => {
+    cell.contentEditable = summaryPresentationEditModeFinal ? 'true' : 'false';
+    cell.classList.toggle('is-editable-cell', summaryPresentationEditModeFinal);
+    cell.addEventListener('blur', () => {
+      if (!summaryPresentationEditModeFinal) return;
+      const keyName = cell.dataset.editSave;
+      if (!keyName) return;
+      const text = cell.innerText.replace(/\u00a0/g, ' ').trim();
+      saveText(keyName, text === '—' ? '' : text);
+    });
+  });
+  host.querySelectorAll('.prep-extra-text').forEach(el => enableExtraTextDragFinal(el));
+}
+
+function addPresentationTextBoxFinal() {
+  const extras = getPresentationExtrasFinal();
+  extras.push({ slide: summaryPresentationIndexFinal, text: 'Zusätzlicher Hinweis', x: 10, y: 72 });
+  savePresentationExtrasFinal(extras);
+  summaryPresentationEditModeFinal = true;
+  renderSummaryPresentationSlideFinal();
+}
+
+function renderPresentationExtrasForSlideFinal(slideIndex, editable) {
+  const extras = getPresentationExtrasFinal().filter(x => Number(x.slide) === Number(slideIndex));
+  if (!extras.length) return '';
+  return `<div class="presentation-extras-layer">${extras.map((x, i) => `<div class="prep-extra-text" data-extra-index="${i}" contenteditable="${editable && summaryPresentationEditModeFinal ? 'true' : 'false'}" style="left:${Number(x.x)||10}%;top:${Number(x.y)||72}%">${escapeHtml(x.text || '')}</div>`).join('')}</div>`;
+}
+
+function enableExtraTextDragFinal(el) {
+  el.addEventListener('blur', () => {
+    const extras = getPresentationExtrasFinal().filter(x => Number(x.slide) === Number(summaryPresentationIndexFinal));
+    const all = getPresentationExtrasFinal();
+    const localIndex = Number(el.dataset.extraIndex);
+    const slideExtras = all.map((x, idx) => ({...x, _idx: idx})).filter(x => Number(x.slide) === Number(summaryPresentationIndexFinal));
+    const target = slideExtras[localIndex];
+    if (target) {
+      all[target._idx].text = el.innerText.trim();
+      savePresentationExtrasFinal(all);
+    }
+  });
+  let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+  el.addEventListener('pointerdown', e => {
+    if (!summaryPresentationEditModeFinal || e.target !== el) return;
+    dragging = true; startX = e.clientX; startY = e.clientY;
+    startLeft = parseFloat(el.style.left) || 10; startTop = parseFloat(el.style.top) || 72;
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const parent = el.closest('.presentation-slide-inner');
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const dx = (e.clientX - startX) / rect.width * 100;
+    const dy = (e.clientY - startY) / rect.height * 100;
+    el.style.left = Math.max(0, Math.min(86, startLeft + dx)) + '%';
+    el.style.top = Math.max(0, Math.min(92, startTop + dy)) + '%';
+  });
+  el.addEventListener('pointerup', e => {
+    if (!dragging) return;
+    dragging = false;
+    const all = getPresentationExtrasFinal();
+    const localIndex = Number(el.dataset.extraIndex);
+    const slideExtras = all.map((x, idx) => ({...x, _idx: idx})).filter(x => Number(x.slide) === Number(summaryPresentationIndexFinal));
+    const target = slideExtras[localIndex];
+    if (target) {
+      all[target._idx].x = parseFloat(el.style.left) || 10;
+      all[target._idx].y = parseFloat(el.style.top) || 72;
+      all[target._idx].text = el.innerText.trim();
+      savePresentationExtrasFinal(all);
+    }
+  });
+}
+
+const __svOldUpdateGlobalAdminUiAfterSummary = updateGlobalAdminUi;
+updateGlobalAdminUi = function() {
+  if (typeof __svOldUpdateGlobalAdminUiAfterSummary === 'function') __svOldUpdateGlobalAdminUiAfterSummary();
+  if (document.body.dataset.mode !== 'results') {
+    const active = isGlobalAdminActive();
+    document.querySelectorAll('.admin-only').forEach(el => {
+      el.hidden = !active;
+      el.style.display = active ? '' : 'none';
+      el.style.visibility = active ? 'visible' : 'hidden';
+    });
+  }
+};
+
+function mergePresentationRawDataFinal(row) {
+  const data = row.data || {};
+  const raw = data.raw || {};
+  const merged = Object.assign({}, raw, data);
+  ['assignments', 'p2', 'p3', 'p4', 'p5', 'p6'].forEach(k => {
+    merged[k] = Object.assign({}, raw[k] || {}, data[k] || {});
+  });
+  merged.presentationSettings = raw.presentationSettings || data.presentationSettings || SV_PRESENTATION_THEME_DEFAULT;
+  merged.presentationExtras = raw.presentationExtras || data.presentationExtras || [];
+  return merged;
+}
+
+function buildPresentationSlides(row) {
+  const data = mergePresentationRawDataFinal(row);
+  const p2 = data.p2 || {};
+  const p3 = data.p3 || {};
+  const p4 = data.p4 || {};
+  const p5 = data.p5 || {};
+  const p6 = data.p6 || {};
+  const assignments = data.assignments || {};
+  const groupName = row.groupName || data.groupName || 'Gruppe';
+  const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
+  const roles = [
+    ['Supervisor*in', assignments.supervisor || '—'],
+    ['Schulleitung', assignments.schulleitung || '—'],
+    ['Lehrkraft A', assignments['lehrkraft-a'] || assignments.lehrkraftA || '—'],
+    ['Lehrkraft B', assignments['lehrkraft-b'] || assignments.lehrkraftB || '—']
+  ];
+  const baseSlides = [
+    { title: 'Gruppenvorstellung', html: `<p class="presentation-kicker">${escapeHtml(timestamp)}</p><h2>${escapeHtml(groupName)}</h2>${presentationTable(['Rolle', 'Name'], roles)}<p class="presentation-note">Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.</p>` },
+    { title: 'Problembeschreibung', html: `<p class="presentation-subtitle">Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.</p>` + presentationTable(['Rolle', 'Probleme / Beobachtung', 'Gefühle', 'Wünsche'], [
+      ['Schulleitung', p2.slProbleme || p2.slProblem || '', p2.slGefuehle || '', p2.slWuensche || ''],
+      ['Lehrkraft A', p2.aProbleme || p2.aPerspektive || '', p2.aGefuehle || '', p2.aWuensche || ''],
+      ['Lehrkraft B', p2.bProbleme || p2.bPerspektive || '', p2.bGefuehle || '', p2.bWuensche || '']
+    ]) },
+    { title: 'Zielformulierung', html: `<p class="presentation-subtitle">Hier werden die Einzelziele der Beteiligten, erkennbare Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.</p>` + presentationTable(['Bereich', 'Eintrag'], [
+      ['Ziel Schulleitung', p3.zielSL || ''],
+      ['Ziel Lehrkraft A', p3.zielA || ''],
+      ['Ziel Lehrkraft B', p3.zielB || ''],
+      ['Gefundene Gemeinsamkeiten', p3.gemeinsamkeiten || ''],
+      ['Gemeinsame Zielvereinbarung', p3.gemeinsamesZiel || p3.gemeinsameZielformulierung || '']
+    ]) },
+    { title: 'Vertiefte Problembearbeitung', html: `<p class="presentation-subtitle">Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.</p>` + presentationTable(['Aspekt', 'Ergebnis'], [
+      ['Hilfreiche Kritik', p4.kritik || ''],
+      ['Absprachen zum weiteren Vorgehen', p4.absprachen || p4.weiteresVorgehen || '']
+    ]) },
+    { title: 'Umsetzung', html: `<p class="presentation-subtitle">Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung der Vereinbarung.</p>` + presentationTable(['Aspekt', 'Ergebnis'], [
+      ['Zustimmung zur Vereinbarung', p5.zustimmung || ''],
+      ['Einschätzung der Praxistauglichkeit durch die Schulleitung', p6.praxistauglichkeit || p6.einschaetzung || ''],
+      ['Unterstützungsmöglichkeiten durch die Schulleitung', p6.unterstuetzung || ''],
+      ['Erste konkrete Umsetzungsschritte', p6.umsetzung || p6.konkreteUmsetzungsschritte || '']
+    ]) },
+    { title: '', html: `<div class="thanks-slide"><h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p></div>` }
+  ];
+  const extras = Array.isArray(data.presentationExtras) ? data.presentationExtras : [];
+  return baseSlides.map((slide, idx) => {
+    const ex = extras.filter(x => Number(x.slide) === idx);
+    if (!ex.length) return slide;
+    return Object.assign({}, slide, { html: slide.html + `<div class="presentation-extras-layer">${ex.map(x => `<div class="prep-extra-text result-extra-text" style="left:${Number(x.x)||10}%;top:${Number(x.y)||72}%">${escapeHtml(x.text || '')}</div>`).join('')}</div>` });
+  });
+}
+
+let presentationThemeFinalRuntime = SV_PRESENTATION_THEME_DEFAULT;
+const __oldInitPresentationFinalForTheme = initPresentationFinal;
+initPresentationFinal = function() {
+  const status = document.getElementById('presentationStatus');
+  const url = getAppsScriptUrl();
+  const params = new URLSearchParams(window.location.search);
+  const rowParam = params.get('row');
+  const idxParam = params.get('i');
+  const exit = document.getElementById('presentationExitBtn');
+  const full = document.getElementById('presentationFullscreenBtn');
+  const prev = document.getElementById('presentationPrevBtn');
+  const next = document.getElementById('presentationNextBtn');
+  if (exit) exit.onclick = () => window.location.href = 'ergebnisse.html';
+  if (full) full.onclick = () => {
+    const root = document.documentElement;
+    if (!document.fullscreenElement && root.requestFullscreen) root.requestFullscreen();
+    else if (document.exitFullscreen) document.exitFullscreen();
+  };
+  if (prev) prev.onclick = () => movePresentationFinal(-1);
+  if (next) next.onclick = () => movePresentationFinal(1);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); movePresentationFinal(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); movePresentationFinal(-1); }
+    if (e.key === 'Escape') { window.location.href = 'ergebnisse.html'; }
+  });
+  if (!url) {
+    if (status) status.textContent = 'Keine Apps-Script-URL gefunden.';
+    return;
+  }
+  fetchResultsWithFallback(url).then(rows => {
+    let row = null;
+    if (rowParam !== null) row = (rows || []).find(r => String(r.rowNumber || r.id) === String(rowParam));
+    if (!row && idxParam !== null) row = (rows || [])[Number(idxParam)];
+    if (!row && rows && rows.length) row = rows[0];
+    if (!row) throw new Error('Kein Gruppenergebnis gefunden.');
+    const merged = mergePresentationRawDataFinal(row);
+    presentationThemeFinalRuntime = merged.presentationSettings || SV_PRESENTATION_THEME_DEFAULT;
+    applyPresentationThemeToNodeFinal(document.body, presentationThemeFinalRuntime);
+    presentationSlidesFinal = buildPresentationSlides(row);
+    presentationIndexFinal = 0;
+    if (status) status.hidden = true;
+    renderPresentationSlideFinal();
+  }).catch(err => {
+    if (status) {
+      status.className = 'presentation-status warning';
+      status.textContent = err.message || 'Präsentation konnte nicht geladen werden.';
+    }
+  });
+};
+
+const __oldRenderPresentationSlideFinalForTheme = renderPresentationSlideFinal;
+renderPresentationSlideFinal = function() {
+  const slide = document.getElementById('presentationSlide');
+  const counter = document.getElementById('presentationCounter');
+  if (!slide || !presentationSlidesFinal.length) return;
+  applyPresentationThemeToNodeFinal(document.body, presentationThemeFinalRuntime || SV_PRESENTATION_THEME_DEFAULT);
+  applyPresentationThemeToNodeFinal(slide, presentationThemeFinalRuntime || SV_PRESENTATION_THEME_DEFAULT);
+  const item = presentationSlidesFinal[presentationIndexFinal];
+  const titleHtml = item.title ? `<h1>${escapeHtml(item.title)}</h1>` : '';
+  slide.innerHTML = `<div class="presentation-slide-inner${item.title ? '' : ' no-title-slide'}">${titleHtml}${item.html}</div>`;
+  if (counter) counter.textContent = `${presentationIndexFinal + 1} / ${presentationSlidesFinal.length}`;
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (document.body.dataset.mode === 'summary') {
+    window.setTimeout(initSummary, 0);
+  }
+});

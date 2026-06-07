@@ -24,7 +24,7 @@
     <button type="button" class="summary-toggle" data-toggle-target="summaryPresentationPanel" aria-expanded="false">Präsentation</button>
     <div id="summaryPresentationPanel" class="summary-panel" hidden>
       <p class="small">Hier kann die Präsentation vor dem Absenden geprüft und vorbereitet werden. Änderungen an Tabellenfeldern werden in den lokalen Ergebnisdaten gespeichert und beim Absenden übernommen.</p>
-      <button type="button" id="openPresentationPrepBtnV4">Präsentation vorbereiten</button>
+      <button type="button" id="openPresentationPrepBtnSafe" data-open-prep-safe="1">Präsentation vorbereiten</button>
     </div>
   </section>
   <section class="summary-accordion card" id="summaryOverviewSection" style="margin-top:18px">
@@ -33,6 +33,38 @@
   </section>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
-<script src="js/config.js"></script><script src="js/app.js?v=editor-rebuild-2"></script>
+<script src="js/config.js"></script><script src="js/app.js?v=prep-button-fix"></script>
+<script>
+(function(){
+  function openPrepSafe(){
+    try {
+      if (typeof window.openPresentationPrepModalFinal === 'function') {
+        window.openPresentationPrepModalFinal();
+        return;
+      }
+      if (typeof window.ensurePresentationPrepModalFinal === 'function') {
+        var modal = window.ensurePresentationPrepModalFinal();
+        if (modal) { modal.hidden = false; return; }
+      }
+      alert('Die Präsentationsvorbereitung konnte nicht geöffnet werden. Bitte Seite neu laden.');
+    } catch (err) {
+      console.error('Präsentationsvorbereitung konnte nicht geöffnet werden:', err);
+      alert('Die Präsentationsvorbereitung konnte nicht geöffnet werden. Bitte die Seite neu laden und erneut versuchen.');
+    }
+  }
+  window.__openPresentationPrepSafe = openPrepSafe;
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('openPresentationPrepBtnSafe');
+    if (!btn) return;
+    btn.disabled = false;
+    btn.style.pointerEvents = 'auto';
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      openPrepSafe();
+    });
+  });
+})();
+</script>
 </body>
 </html>

@@ -821,3 +821,71 @@ body.has-reset-toolbar { padding-top: 52px; }
     font-size: 0.82rem;
   }
 }
+
+
+/* Fix: Ergebnis-Seite – sichtbare Reset-Aktionen, stabiler Runden-Reset und nebeneinander stehende Zähler */
+.results-topbar {
+  align-items: center;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.topbar-actions button {
+  margin: 0;
+  white-space: nowrap;
+}
+.carousel-controls {
+  align-items: flex-start !important;
+}
+.random-area {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.carousel-nav {
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  min-width: 150px;
+}
+.carousel-nav button {
+  flex: 0 0 auto !important;
+}
+#carouselCounter {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  min-width: 52px;
+  text-align: center;
+  white-space: nowrap !important;
+}
+.round-badges {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#resetRoundsBtn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .topbar-actions {
+    justify-content: stretch;
+  }
+  .topbar-actions button {
+    flex: 1 1 160px;
+    width: auto;
+  }
+  .carousel-controls {
+    flex-direction: column;
+  }
+  .carousel-nav {
+    width: 100%;
+    justify-content: center !important;
+  }
+}

@@ -42,3 +42,7 @@ Oben am Bildschirmrand gibt es auf jeder Seite zwei lokale Reset-Optionen:
 - **Alles zurücksetzen** löscht alle lokal gespeicherten Website-Daten in diesem Browser, z. B. Rollen, Notizen, Phasenangaben, Zusammenfassung und Rundenmarkierungen. Google-Sheet-Einträge werden dadurch nicht gelöscht.
 
 Auf der Ergebnisseite gibt es zusätzlich **Runden zurücksetzen**. Damit werden nur die bisherigen Roulette-/Zufallsrunden zurückgesetzt, nicht die gespeicherten Gruppenergebnisse.
+
+
+## Reset-Fix
+Auf der Ergebnisseite sind die lokalen Reset-Buttons zusätzlich direkt im blauen Header eingebaut. „Runden zurücksetzen“ löscht nur die Roulette-Auswahlrunden, nicht die Google-Sheet-Ergebnisse.

@@ -172,6 +172,7 @@ function enhanceLinks() {
 
 
 function injectResetToolbar() {
+  if ((document.body.dataset.mode || '') === 'results') return;
   if (document.querySelector('.global-reset-toolbar')) return;
   const toolbar = document.createElement('div');
   toolbar.className = 'global-reset-toolbar';
@@ -213,6 +214,15 @@ function clearCurrentPageData() {
     if (roleCards) roleCards.innerHTML = '';
     const status = document.getElementById('assignStatus');
     if (status) status.textContent = 'Diese Seite wurde geleert.';
+  }
+
+  if (mode === 'results') {
+    resetRouletteRounds();
+    const status = document.getElementById('resultsStatus');
+    if (status) {
+      status.className = 'notice';
+      status.textContent = 'Die Runden der Ergebnisübersicht wurden geleert.';
+    }
   }
 
   if (mode === 'summary') {
@@ -887,6 +897,17 @@ function initResults() {
   const resetRoundsBtn = document.getElementById("resetRoundsBtn");
 
   if (deleteBtn) deleteBtn.addEventListener("click", deleteAllResults);
+  const clearCurrentResultsBtn = document.getElementById("clearCurrentPageBtnTop");
+  const resetAllResultsBtn = document.getElementById("resetAllPagesBtnTop");
+  if (clearCurrentResultsBtn) clearCurrentResultsBtn.addEventListener("click", clearCurrentPageData);
+  if (resetAllResultsBtn) resetAllResultsBtn.addEventListener("click", resetAllLocalPageData);
+  document.addEventListener("click", (event) => {
+    const resetBtn = event.target.closest && event.target.closest("#resetRoundsBtn");
+    if (resetBtn) {
+      event.preventDefault();
+      resetRouletteRounds();
+    }
+  });
   const resultsContent = document.getElementById("resultsContent");
   if (resultsContent) {
     resultsContent.addEventListener("click", (event) => {
@@ -903,7 +924,7 @@ function initResults() {
   if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
   if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
   if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
-  if (resetRoundsBtn) resetRoundsBtn.addEventListener("click", resetRouletteRounds);
+  // Runden-Zurücksetzen wird zusätzlich per Event Delegation gebunden, damit es robust nach Neuladen der Ergebnisansicht funktioniert.
   renderRoundBadges();
   window.addEventListener("resize", () => { if (resultRowsCache.length) renderCarouselAt(currentVirtualPosition, false); });
 
@@ -1237,6 +1258,11 @@ function registerRandomSelection(index) {
 function resetRouletteRounds() {
   setSelectedRandomKeys([]);
   setRoundHistory([]);
+  // ältere lokale Varianten vorsorglich mitlöschen, damit keine alten Runden wieder auftauchen
+  localStorage.removeItem(SELECTED_RANDOM_KEY);
+  localStorage.removeItem(ROUND_HISTORY_KEY);
+  localStorage.removeItem('sv_results_selected_random_keys');
+  localStorage.removeItem('sv_results_round_history');
   renderRoundBadges();
   updateRandomAvailability();
   const status = document.getElementById('resultsStatus');

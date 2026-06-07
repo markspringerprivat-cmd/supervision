@@ -246,3 +246,5 @@ pre {
   .card { padding: 16px; border-radius: 15px; }
   .two-col { grid-template-columns: 1fr; }
 }
+
+.codebox{white-space:pre-wrap;word-break:break-all;background:#f4f6f8;border:1px solid #d7dde3;border-radius:10px;padding:12px;font-size:.9rem}

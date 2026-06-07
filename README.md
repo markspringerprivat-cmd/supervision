@@ -66,3 +66,18 @@ const SHEET_NAME = 'Ergebnisse';
 Wichtig: `ADMIN_PASSWORD` im Apps Script selbst ersetzen und danach neu bereitstellen.
 
 Wenn du den Apps-Script-Code änderst, musst du in Apps Script erneut auf **Bereitstellen > Bereitstellungen verwalten > Bearbeiten > Neue Version > Bereitstellen** gehen.
+
+
+## Fehlerbehebung Google Sheet
+
+Wenn beim Speichern die Meldung erscheint, dass keine Apps-Script-URL gefunden wurde, lädt der Browser vermutlich noch eine alte Version oder `js/config.js` wurde nicht mit hochgeladen. In dieser Version ist die URL zusätzlich fest in `js/app.js` als `DEFAULT_APPS_SCRIPT_URL` hinterlegt.
+
+Teste nach dem Hochladen die Seite `google-test.html`. Dort wird angezeigt, welche URL die Website wirklich verwendet.
+
+Wenn die direkte Apps-Script-URL eine Google-Drive-Fehlermeldung zeigt, liegt das nicht an GitHub Pages, sondern an der Apps-Script-Bereitstellung. Dann in Apps Script neu bereitstellen:
+
+- Bereitstellen > Bereitstellungen verwalten > Bearbeiten
+- Zugriff: Jeder
+- Ausführen als: Ich
+- Version: Neue Version
+- Danach die neue `/exec`-URL kopieren und in `js/config.js` ersetzen.

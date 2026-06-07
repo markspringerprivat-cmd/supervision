@@ -1,3 +1,13 @@
+
+// Fallback: Damit die Google-Sheet-Anbindung auch funktioniert, wenn js/config.js
+// versehentlich nicht mit hochgeladen oder vom Browser noch gecacht wurde.
+const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwP6wUvGYMAwlEvMPDCLPahCWj3gxn7k5FD_0t_mcPU4W4GJGl8swc_Tgm8iCErfHA/exec";
+
+function getAppsScriptUrl() {
+  const fromConfig = window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL;
+  return (fromConfig || DEFAULT_APPS_SCRIPT_URL || "").trim();
+}
+
 const ROLES = {
   supervisor: "Supervisor*in",
   schulleitung: "Schulleitung",
@@ -610,10 +620,10 @@ function buildPayload() {
 
 async function submitResults() {
   const status = document.getElementById("submitStatus");
-  const url = (window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL) || "";
+  const url = getAppsScriptUrl();
   if (!url) {
     status.className = "warning";
-    status.textContent = "Keine Apps-Script-URL in js/config.js eingetragen. Exportiere alternativ die JSON-Datei.";
+    status.textContent = "Keine Apps-Script-URL gefunden. Prüfe js/config.js oder DEFAULT_APPS_SCRIPT_URL in js/app.js. Exportiere alternativ die JSON-Datei.";
     return;
   }
   const payload = buildPayload();
@@ -642,10 +652,10 @@ function initResults() {
   initCommon();
   const target = document.getElementById("resultsContent");
   const status = document.getElementById("resultsStatus");
-  const url = (window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL) || "";
+  const url = getAppsScriptUrl();
   if (!url) {
     status.className = "warning";
-    status.textContent = "Keine Apps-Script-URL in js/config.js eingetragen. Ergebnisse können erst nach der Google-Sheet-Anbindung geladen werden.";
+    status.textContent = "Keine Apps-Script-URL gefunden. Prüfe js/config.js oder DEFAULT_APPS_SCRIPT_URL in js/app.js.";
     return;
   }
   const cbName = "svResultsCallback" + Date.now();
@@ -682,6 +692,41 @@ function renderResults(rows) {
   }).join("");
 }
 
+function initGoogleTest() {
+  initCommon();
+  const url = getAppsScriptUrl();
+  const out = document.getElementById("configuredUrl");
+  const status = document.getElementById("testStatus");
+  const link = document.getElementById("openScriptLink");
+  if (out) out.textContent = url || "Keine URL gefunden";
+  if (link) link.href = url || "#";
+  const btn = document.getElementById("testListBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    if (!url) {
+      status.className = "warning";
+      status.textContent = "Keine Apps-Script-URL gefunden.";
+      return;
+    }
+    status.className = "notice";
+    status.textContent = "Teste Verbindung ...";
+    const cbName = "svGoogleTest" + Date.now();
+    window[cbName] = function(rows) {
+      status.className = "success";
+      status.textContent = "Verbindung funktioniert. Empfangene Einträge: " + (Array.isArray(rows) ? rows.length : "Antwort erhalten");
+      delete window[cbName];
+    };
+    const script = document.createElement("script");
+    script.src = `${url}?action=list&callback=${cbName}&_=${Date.now()}`;
+    script.onerror = () => {
+      status.className = "warning";
+      status.textContent = "Verbindung fehlgeschlagen. Prüfe: Apps Script als Web-App bereitgestellt, Zugriff = Jeder, richtige /exec-URL, Apps Script neu bereitgestellt.";
+      delete window[cbName];
+    };
+    document.body.appendChild(script);
+  });
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   const mode = document.body.dataset.mode;
   if (mode === "landing") initLanding();
@@ -691,4 +736,5 @@ window.addEventListener("DOMContentLoaded", () => {
   if (mode === "phase") initPhase();
   if (mode === "summary") initSummary();
   if (mode === "results") initResults();
+  if (mode === "google-test") initGoogleTest();
 });

@@ -800,9 +800,11 @@ function summaryInner(obj) {
 let resultRowsCache = [];
 let currentResultIndex = 0;
 let currentVirtualIndex = 0;
-let randomSpinTimer = null;
+let currentVirtualPosition = 0;
+let rouletteFrame = null;
 let randomSpinTimeout = null;
 let randomSpinActive = false;
+let carouselAnimationFrame = null;
 
 function initResults() {
   initCommon();
@@ -830,7 +832,7 @@ function initResults() {
   if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
   if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
   if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
-  window.addEventListener("resize", () => { if (resultRowsCache.length) renderCarouselWindow(false); });
+  window.addEventListener("resize", () => { if (resultRowsCache.length) renderCarouselAt(currentVirtualPosition, false); });
 
   if (!url) {
     status.className = "warning";
@@ -845,6 +847,8 @@ function initResults() {
       status.textContent = "";
       resultRowsCache = rows || [];
       currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+      currentVirtualIndex = currentResultIndex;
+      currentVirtualPosition = currentVirtualIndex;
       renderResults(resultRowsCache);
     })
     .catch(err => {
@@ -862,29 +866,30 @@ function renderResults(rows) {
     target.innerHTML = `<div class="notice empty-results">Noch keine Ergebnisse vorhanden.</div>`;
     currentResultIndex = 0;
     currentVirtualIndex = 0;
+    currentVirtualPosition = 0;
     updateCarouselCounter();
     return;
   }
   if (controls) controls.hidden = false;
   clampResultIndex();
-  currentVirtualIndex = currentResultIndex;
-  renderCarouselWindow(false);
+  currentVirtualPosition = currentVirtualIndex;
+  renderCarouselAt(currentVirtualPosition, false);
 }
 
 function mod(n, m) {
   return ((n % m) + m) % m;
 }
 
-function resultCardHtml(row, index, slot = 0) {
+function resultCardHtml(row, index, slot = 0, active = false) {
   const data = row.data || {};
   const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
   const groupName = row.groupName || data.groupName || "Gruppe";
   const offset = carouselOffsetForSlot(slot);
-  const scale = slot === 0 ? 1 : (Math.abs(slot) === 1 ? 0.88 : 0.78);
-  const opacity = slot === 0 ? 1 : (Math.abs(slot) === 1 ? 0.34 : 0.12);
-  const z = 10 - Math.abs(slot);
-  const active = slot === 0;
-  return `<section class="card result-card ${active ? 'is-active' : 'is-side'}" data-result-index="${index}" data-slot="${slot}" aria-current="${active ? 'true' : 'false'}" style="--x:${offset}px;--scale:${scale};--opacity:${opacity};--z:${z};">
+  const abs = Math.min(3, Math.abs(slot));
+  const scale = active ? 1 : Math.max(0.74, 1 - abs * 0.105);
+  const opacity = active ? 1 : Math.max(0.07, 0.48 - abs * 0.15);
+  const z = active ? 30 : Math.max(1, 18 - Math.round(abs * 4));
+  return `<section class="card result-card ${active ? 'is-active' : 'is-side'}" data-result-index="${index}" data-slot="${slot.toFixed(3)}" aria-current="${active ? 'true' : 'false'}" style="--x:${offset}px;--scale:${scale};--opacity:${opacity};--z:${z};">
     <button class="result-delete" type="button" data-delete-result="${index}" title="Diesen Eintrag löschen" aria-label="Diesen Eintrag löschen">×</button>
     <div class="result-card-head">
       <div>
@@ -902,11 +907,11 @@ function resultCardHtml(row, index, slot = 0) {
 
 function carouselOffsetForSlot(slot) {
   const vw = Math.max(320, window.innerWidth || 1024);
-  const cardDistance = Math.min(620, Math.max(270, vw * 0.54));
+  const cardDistance = Math.min(660, Math.max(300, vw * 0.56));
   return Math.round(slot * cardDistance);
 }
 
-function renderCarouselWindow(smooth = true) {
+function renderCarouselAt(position, smooth = false) {
   const target = document.getElementById("resultsContent");
   if (!target) return;
   const n = resultRowsCache.length;
@@ -915,43 +920,89 @@ function renderCarouselWindow(smooth = true) {
     updateCarouselCounter();
     return;
   }
-  currentResultIndex = mod(currentVirtualIndex, n);
-  const slots = n === 1 ? [0] : [-2, -1, 0, 1, 2];
-  target.classList.toggle("is-smooth", !!smooth);
-  target.innerHTML = slots.map(slot => {
-    const idx = mod(currentVirtualIndex + slot, n);
-    return resultCardHtml(resultRowsCache[idx], idx, slot);
-  }).join("");
-  updateActiveResult(smooth);
+  currentVirtualPosition = position;
+  const focusedVirtual = Math.round(position);
+  currentVirtualIndex = focusedVirtual;
+  currentResultIndex = mod(focusedVirtual, n);
+  const maxSide = n === 1 ? 0 : 3;
+  const pieces = [];
+  for (let rel = -maxSide; rel <= maxSide; rel++) {
+    const virtual = focusedVirtual + rel;
+    const slot = virtual - position;
+    const idx = mod(virtual, n);
+    const active = virtual === focusedVirtual;
+    pieces.push(resultCardHtml(resultRowsCache[idx], idx, slot, active));
+  }
+  target.classList.toggle("is-smooth", !!smooth && !randomSpinActive);
+  target.classList.toggle("is-spinning", !!randomSpinActive);
+  target.innerHTML = pieces.join("");
+  updateActiveResult(smooth && !randomSpinActive);
+}
+
+function renderCarouselWindow(smooth = true) {
+  renderCarouselAt(currentVirtualPosition, smooth);
 }
 
 function clampResultIndex() {
   if (!resultRowsCache.length) {
     currentResultIndex = 0;
     currentVirtualIndex = 0;
+    currentVirtualPosition = 0;
     return;
   }
   currentResultIndex = mod(currentResultIndex, resultRowsCache.length);
   currentVirtualIndex = currentResultIndex;
+  currentVirtualPosition = currentVirtualIndex;
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function easeOutQuart(t) {
+  return 1 - Math.pow(1 - t, 4);
+}
+
+function animateCarouselTo(targetPosition, duration = 520, easing = easeOutCubic, onDone) {
+  if (!resultRowsCache.length) return;
+  if (carouselAnimationFrame) cancelAnimationFrame(carouselAnimationFrame);
+  const startPosition = currentVirtualPosition;
+  const start = performance.now();
+  function frame(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = easing(t);
+    const pos = startPosition + (targetPosition - startPosition) * eased;
+    renderCarouselAt(pos, false);
+    if (t < 1) {
+      carouselAnimationFrame = requestAnimationFrame(frame);
+      return;
+    }
+    carouselAnimationFrame = null;
+    currentVirtualPosition = Math.round(targetPosition);
+    currentVirtualIndex = Math.round(targetPosition);
+    currentResultIndex = mod(currentVirtualIndex, resultRowsCache.length);
+    renderCarouselAt(currentVirtualPosition, true);
+    if (typeof onDone === "function") onDone();
+  }
+  carouselAnimationFrame = requestAnimationFrame(frame);
 }
 
 function moveResult(delta) {
-  if (!resultRowsCache.length) return;
-  currentVirtualIndex += delta;
-  currentResultIndex = mod(currentVirtualIndex, resultRowsCache.length);
-  renderCarouselWindow(true);
+  if (!resultRowsCache.length || randomSpinActive) return;
+  const target = Math.round(currentVirtualPosition) + delta;
+  animateCarouselTo(target, 460, easeOutCubic);
 }
 
 function updateActiveResult(smooth = true) {
   const carousel = document.getElementById("resultCarousel");
   const track = document.getElementById("resultsContent");
   const activeCard = document.querySelector(".result-card.is-active");
-  if (track) track.classList.toggle("is-smooth", !!smooth);
+  if (track) track.classList.toggle("is-smooth", !!smooth && !randomSpinActive);
   if (activeCard && carousel) {
     window.setTimeout(() => {
-      const height = Math.max(activeCard.offsetHeight + 36, 330);
+      const height = Math.max(activeCard.offsetHeight + 110, 430);
       carousel.style.minHeight = height + "px";
-    }, smooth ? 120 : 0);
+    }, smooth ? 80 : 0);
   }
   updateCarouselCounter();
 }
@@ -967,52 +1018,54 @@ function spinRandomGroup() {
   if (!resultRowsCache.length) return;
   const btn = document.getElementById("randomGroupBtn");
   if (randomSpinActive) return;
+  if (carouselAnimationFrame) cancelAnimationFrame(carouselAnimationFrame);
   randomSpinActive = true;
+  const n = resultRowsCache.length;
   const duration = 6000 + Math.floor(Math.random() * 6001); // 6–12 Sekunden
+  const startPosition = currentVirtualPosition;
+  const loops = Math.max(6, Math.ceil(duration / 1200));
+  const randomOffset = Math.floor(Math.random() * n);
+  const targetPosition = Math.ceil(startPosition) + loops * n + randomOffset;
   const start = performance.now();
-  let tickNo = 0;
+
   if (btn) {
     btn.disabled = true;
     btn.textContent = "Zufallsauswahl läuft …";
   }
-
-  function intervalForElapsed(elapsed) {
-    // Wird etwa alle zwei Sekunden spürbar langsamer.
-    if (elapsed < 2000) return 115;
-    if (elapsed < 4000) return 170;
-    if (elapsed < 6000) return 250;
-    if (elapsed < 8000) return 360;
-    if (elapsed < 10000) return 500;
-    return 680;
+  const status = document.getElementById("resultsStatus");
+  if (status) {
+    status.className = "notice";
+    status.textContent = "Das Rad läuft …";
   }
 
-  function tick() {
-    const elapsed = performance.now() - start;
-    moveResult(1); // immer nach rechts: 1–2–3–1–2–3 …
-    tickNo += 1;
-    const nextInterval = intervalForElapsed(elapsed);
-    if (elapsed + nextInterval < duration) {
-      randomSpinTimeout = setTimeout(tick, nextInterval);
+  function frame(now) {
+    const t = Math.min(1, (now - start) / duration);
+    // kontinuierliche Bewegung nach links: die Positionszahl steigt; die Kacheln wandern links vorbei.
+    const eased = easeOutQuart(t);
+    const pos = startPosition + (targetPosition - startPosition) * eased;
+    renderCarouselAt(pos, false);
+    if (t < 1) {
+      rouletteFrame = requestAnimationFrame(frame);
       return;
     }
-    randomSpinTimeout = setTimeout(() => {
-      randomSpinActive = false;
-      randomSpinTimeout = null;
-      updateActiveResult(true);
-      const chosen = resultRowsCache[currentResultIndex];
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = "Zufallsauswahl starten";
-      }
-      const status = document.getElementById("resultsStatus");
-      if (status) {
-        status.className = "success";
-        status.textContent = "Ausgewählt: " + (chosen.groupName || (chosen.data && chosen.data.groupName) || "Gruppe");
-      }
-      startConfetti(6000);
-    }, nextInterval);
+    rouletteFrame = null;
+    randomSpinActive = false;
+    currentVirtualPosition = Math.round(targetPosition);
+    currentVirtualIndex = Math.round(targetPosition);
+    currentResultIndex = mod(currentVirtualIndex, n);
+    renderCarouselAt(currentVirtualPosition, true);
+    const chosen = resultRowsCache[currentResultIndex];
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Zufallsauswahl starten";
+    }
+    if (status) {
+      status.className = "success";
+      status.textContent = "Ausgewählt: " + (chosen.groupName || (chosen.data && chosen.data.groupName) || "Gruppe");
+    }
+    startConfetti(6000);
   }
-  tick();
+  rouletteFrame = requestAnimationFrame(frame);
 }
 
 function startConfetti(durationMs = 6000) {

@@ -4478,3 +4478,468 @@ window.addEventListener('DOMContentLoaded', () => {
     };
   }
 })();
+
+/* FINAL PATCH: stabiler Bearbeitungsmodus, Sticker, Auswahl/Löschen/Drehen */
+(function(){
+  const STICKER_FILES = [
+    'team4.png','team2.png','team3.png','brainstorm.png','team2reading.png','team3working.png','notices.png','worktogether.png','worktogether3.png'
+  ];
+  const STICKER_PATH = 'assets/stickers/';
+  const LAYOUT_KEY = 'presentation_layout_stable_v2';
+  const STICKER_KEY = 'presentation_stickers_v1';
+  let selectedEditElement = null;
+
+  function getStoredObj(key, fallback){
+    try {
+      if (typeof loadObj === 'function') return loadObj(key, fallback);
+      const raw = localStorage.getItem('sv_' + key) || localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch(_) { return fallback; }
+  }
+  function saveStoredObj(key, value){
+    try {
+      if (typeof saveObj === 'function') saveObj(key, value);
+      else localStorage.setItem('sv_' + key, JSON.stringify(value));
+    } catch(_) {}
+  }
+  function getStableLayout(){
+    const obj = getStoredObj(LAYOUT_KEY, {});
+    return obj && typeof obj === 'object' ? obj : {};
+  }
+  function saveStableLayout(obj){ saveStoredObj(LAYOUT_KEY, obj && typeof obj === 'object' ? obj : {}); }
+  function getStickers(){
+    const arr = getStoredObj(STICKER_KEY, []);
+    return Array.isArray(arr) ? arr : [];
+  }
+  function saveStickers(arr){ saveStoredObj(STICKER_KEY, Array.isArray(arr) ? arr : []); }
+  window.getPresentationStickersFinal = getStickers;
+  window.savePresentationStickersFinal = saveStickers;
+
+  function esc(s){ return (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  function coreElements(inner){
+    if (!inner) return [];
+    return Array.from(inner.querySelectorAll(':scope > h1, :scope > h2, :scope > .presentation-subtitle, :scope > .presentation-kicker, :scope > .presentation-note, :scope > .presentation-table-wrap, :scope > .thanks-slide'));
+  }
+  function stableKeyForCore(el, slideIndex){
+    let type = 'element';
+    if (el.matches('h1')) type = 'title';
+    else if (el.matches('h2')) type = 'heading2';
+    else if (el.matches('.presentation-subtitle')) type = 'subtitle';
+    else if (el.matches('.presentation-kicker')) type = 'kicker';
+    else if (el.matches('.presentation-note')) type = 'note';
+    else if (el.matches('.presentation-table-wrap')) type = 'table';
+    else if (el.matches('.thanks-slide')) type = 'thanks';
+    const selector = type === 'title' ? 'h1' : type === 'heading2' ? 'h2' : type === 'table' ? '.presentation-table-wrap' : type === 'thanks' ? '.thanks-slide' : '.presentation-' + type;
+    const same = Array.from(el.parentElement ? el.parentElement.querySelectorAll(selector) : []);
+    return `s${slideIndex}_${type}_${Math.max(0, same.indexOf(el))}`;
+  }
+  function clearPositionStyles(el){
+    ['position','left','top','width','height','minHeight','zIndex','transform'].forEach(p => el.style.removeProperty(p));
+    el.style.removeProperty('display');
+  }
+  function applyLayoutToElement(el, layout, parent){
+    if (!el || !layout) return;
+    if (layout.hidden) { el.style.display = 'none'; return; }
+    el.style.position = 'absolute';
+    el.style.left = `${Number(layout.x) || 0}%`;
+    el.style.top = `${Number(layout.y) || 0}%`;
+    if (layout.w) el.style.width = `${Math.max(6, Number(layout.w))}%`;
+    if (layout.h) el.style.minHeight = `${Math.max(3, Number(layout.h))}%`;
+    el.style.zIndex = String(layout.z || 20);
+    el.style.transform = `rotate(${Number(layout.rot) || 0}deg)`;
+  }
+  function makeAbsoluteFromCurrent(el, parent){
+    if (!el || !parent) return;
+    if (el.style.position === 'absolute') return;
+    const pr = parent.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const x = ((r.left - pr.left) / Math.max(1, pr.width)) * 100;
+    const y = ((r.top - pr.top) / Math.max(1, pr.height)) * 100;
+    const w = (r.width / Math.max(1, pr.width)) * 100;
+    const h = (r.height / Math.max(1, pr.height)) * 100;
+    el.style.position = 'absolute';
+    el.style.left = `${Math.max(0, Math.min(96, x))}%`;
+    el.style.top = `${Math.max(0, Math.min(96, y))}%`;
+    el.style.width = `${Math.max(6, Math.min(100, w))}%`;
+    el.style.minHeight = `${Math.max(3, h)}%`;
+    el.style.zIndex = '30';
+  }
+  function storeCoreLayout(el, parent){
+    const key = el.dataset.stableLayoutKey;
+    if (!key || !parent) return;
+    const map = getStableLayout();
+    map[key] = Object.assign({}, map[key] || {}, {
+      x: parseFloat(el.style.left) || 0,
+      y: parseFloat(el.style.top) || 0,
+      w: Math.max(6, (el.offsetWidth / Math.max(1, parent.clientWidth)) * 100),
+      h: Math.max(3, (el.offsetHeight / Math.max(1, parent.clientHeight)) * 100),
+      z: parseInt(el.style.zIndex || '30', 10),
+      rot: Number((map[key] && map[key].rot) || 0)
+    });
+    saveStableLayout(map);
+  }
+  function selectElement(el){
+    if (selectedEditElement && selectedEditElement.classList) selectedEditElement.classList.remove('is-selected-edit-element');
+    selectedEditElement = el || null;
+    if (selectedEditElement && selectedEditElement.classList) selectedEditElement.classList.add('is-selected-edit-element');
+  }
+
+  function removeOldHandles(el){
+    el.querySelectorAll('.element-drag-handle,.element-resize-handle,.presentation-stable-handle').forEach(h => h.remove());
+  }
+  function addStableHandles(el, parent, kind){
+    if (!el || !parent || el.dataset.stableHandles === 'true') return;
+    el.dataset.stableHandles = 'true';
+    const drag = document.createElement('span');
+    drag.className = 'presentation-stable-handle presentation-stable-drag';
+    drag.textContent = '↕';
+    drag.title = 'Verschieben';
+    const resize = document.createElement('span');
+    resize.className = 'presentation-stable-handle presentation-stable-resize';
+    resize.title = 'Größe ändern';
+    el.appendChild(drag); el.appendChild(resize);
+
+    let mode = null, sx = 0, sy = 0, sl = 0, st = 0, sw = 0, sh = 0;
+    function start(e, m){
+      if (!summaryPresentationEditModeFinal) return;
+      e.preventDefault(); e.stopPropagation();
+      makeAbsoluteFromCurrent(el, parent);
+      selectElement(el);
+      mode = m; sx = e.clientX; sy = e.clientY;
+      sl = parseFloat(el.style.left) || 0; st = parseFloat(el.style.top) || 0;
+      sw = Math.max(6, (el.offsetWidth / Math.max(1, parent.clientWidth)) * 100);
+      sh = Math.max(3, (el.offsetHeight / Math.max(1, parent.clientHeight)) * 100);
+      try { el.setPointerCapture(e.pointerId); } catch(_) {}
+    }
+    function move(e){
+      if (!mode) return;
+      e.preventDefault(); e.stopPropagation();
+      const dx = ((e.clientX - sx) / Math.max(1, parent.clientWidth)) * 100;
+      const dy = ((e.clientY - sy) / Math.max(1, parent.clientHeight)) * 100;
+      if (mode === 'move') {
+        el.style.left = `${Math.max(0, Math.min(96, sl + dx))}%`;
+        el.style.top = `${Math.max(0, Math.min(96, st + dy))}%`;
+      } else {
+        el.style.width = `${Math.max(6, Math.min(100 - sl, sw + dx))}%`;
+        el.style.minHeight = `${Math.max(3, sh + dy)}%`;
+        if (kind === 'sticker') el.style.height = `${Math.max(6, sh + dy)}%`;
+      }
+    }
+    function end(){
+      if (!mode) return;
+      mode = null;
+      persistElement(el, parent, kind);
+    }
+    drag.addEventListener('pointerdown', e => start(e, 'move'));
+    resize.addEventListener('pointerdown', e => start(e, 'resize'));
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('click', e => { if (summaryPresentationEditModeFinal) { e.stopPropagation(); selectElement(el); } });
+  }
+  function persistElement(el, parent, kind){
+    if (kind === 'sticker') {
+      const idx = Number(el.dataset.stickerGlobalIndex);
+      const arr = getStickers();
+      if (Number.isFinite(idx) && arr[idx]) {
+        arr[idx].x = parseFloat(el.style.left) || arr[idx].x || 8;
+        arr[idx].y = parseFloat(el.style.top) || arr[idx].y || 8;
+        arr[idx].w = Math.max(6, (el.offsetWidth / Math.max(1, parent.clientWidth)) * 100);
+        arr[idx].h = Math.max(6, (el.offsetHeight / Math.max(1, parent.clientHeight)) * 100);
+        arr[idx].rot = Number(arr[idx].rot || 0);
+        saveStickers(arr);
+      }
+      return;
+    }
+    if (kind === 'extra') {
+      const idx = Number(el.dataset.extraGlobalIndex);
+      const arr = typeof getPresentationExtrasFinal === 'function' ? getPresentationExtrasFinal() : [];
+      if (Number.isFinite(idx) && arr[idx]) {
+        arr[idx].text = el.innerText.trim();
+        arr[idx].x = parseFloat(el.style.left) || arr[idx].x || 10;
+        arr[idx].y = parseFloat(el.style.top) || arr[idx].y || 72;
+        arr[idx].w = Math.max(6, (el.offsetWidth / Math.max(1, parent.clientWidth)) * 100);
+        arr[idx].h = Math.max(3, (el.offsetHeight / Math.max(1, parent.clientHeight)) * 100);
+        arr[idx].rot = Number(arr[idx].rot || 0);
+        if (typeof savePresentationExtrasFinal === 'function') savePresentationExtrasFinal(arr);
+      }
+      return;
+    }
+    storeCoreLayout(el, parent);
+  }
+
+  function addStickerLayer(inner, slideIndex, editable){
+    if (!inner) return;
+    inner.querySelectorAll('.presentation-stickers-layer').forEach(x => x.remove());
+    const items = getStickers().map((x, i) => Object.assign({}, x, { _globalIndex: i })).filter(x => Number(x.slide) === Number(slideIndex));
+    if (!items.length) return;
+    const layer = document.createElement('div');
+    layer.className = 'presentation-stickers-layer';
+    items.forEach(st => {
+      const box = document.createElement('div');
+      box.className = 'prep-sticker';
+      box.dataset.stickerGlobalIndex = String(st._globalIndex);
+      box.style.left = `${Number(st.x) || 60}%`;
+      box.style.top = `${Number(st.y) || 12}%`;
+      box.style.width = `${Number(st.w) || 20}%`;
+      box.style.height = `${Number(st.h) || 20}%`;
+      box.style.transform = `rotate(${Number(st.rot) || 0}deg)`;
+      box.style.zIndex = String(st.z || 46);
+      box.innerHTML = `<img src="${esc(st.src)}" alt="Sticker">`;
+      layer.appendChild(box);
+    });
+    inner.appendChild(layer);
+    if (editable) {
+      layer.querySelectorAll('.prep-sticker').forEach(el => addStableHandles(el, inner, 'sticker'));
+    }
+  }
+
+  function stabilizeAfterRender(){
+    const modal = document.getElementById('presentationPrepModal');
+    const slideHost = modal && modal.querySelector('#summaryPresentationSlide');
+    const inner = slideHost && slideHost.querySelector('.presentation-slide-inner');
+    if (!modal || !slideHost || !inner) return;
+    const idx = Number(summaryPresentationIndexFinal) || 0;
+    const editing = !!summaryPresentationEditModeFinal;
+    slideHost.classList.toggle('is-editing-presentation', editing);
+
+    const stableMap = getStableLayout();
+    coreElements(inner).forEach(el => {
+      removeOldHandles(el);
+      el.dataset.stableHandles = '';
+      const key = stableKeyForCore(el, idx);
+      el.dataset.stableLayoutKey = key;
+      el.classList.add('stable-edit-element');
+      const saved = stableMap[key];
+      if (saved) applyLayoutToElement(el, saved, inner);
+      else clearPositionStyles(el); // verhindert alte Top-Left-Layouts beim Aktivieren des Bearbeitungsmodus
+      if (editing) addStableHandles(el, inner, 'core');
+      if (editing && (el.matches('h1,h2,.presentation-subtitle,.presentation-kicker,.presentation-note,.thanks-slide'))) {
+        el.contentEditable = 'true';
+      }
+    });
+    inner.querySelectorAll('.prep-extra-text').forEach(el => {
+      removeOldHandles(el);
+      el.dataset.stableHandles = '';
+      el.style.transform = `rotate(${Number((typeof getPresentationExtrasFinal === 'function' ? (getPresentationExtrasFinal()[Number(el.dataset.extraGlobalIndex)] || {}).rot : 0) || 0)}deg)`;
+      if (editing) addStableHandles(el, inner, 'extra');
+    });
+    addStickerLayer(inner, idx, editing);
+    if (!editing) selectElement(null);
+  }
+
+  function openStickerPicker(){
+    let picker = document.getElementById('presentationStickerPicker');
+    if (!picker) {
+      picker = document.createElement('div');
+      picker.id = 'presentationStickerPicker';
+      picker.className = 'presentation-sticker-picker';
+      picker.hidden = true;
+      picker.innerHTML = `<div class="presentation-sticker-dialog">
+        <div class="presentation-sticker-dialog-head"><h2>Sticker hinzufügen</h2><button type="button" id="closeStickerPicker" class="secondary">Schließen</button></div>
+        <div class="presentation-sticker-grid">${STICKER_FILES.map(f => `<button type="button" class="presentation-sticker-option" data-sticker-file="${esc(f)}"><img src="${STICKER_PATH + esc(f)}" alt="${esc(f)}"></button>`).join('')}</div>
+      </div>`;
+      document.body.appendChild(picker);
+      picker.addEventListener('click', e => { if (e.target === picker) picker.hidden = true; });
+      picker.querySelector('#closeStickerPicker').addEventListener('click', () => { picker.hidden = true; });
+      picker.querySelectorAll('[data-sticker-file]').forEach(btn => btn.addEventListener('click', () => {
+        const file = btn.dataset.stickerFile;
+        const arr = getStickers();
+        arr.push({ slide: Number(summaryPresentationIndexFinal) || 0, src: STICKER_PATH + file, x: 62, y: 14, w: 22, h: 22, rot: 0, z: 46 });
+        saveStickers(arr);
+        summaryPresentationEditModeFinal = true;
+        picker.hidden = true;
+        renderSummaryPresentationSlideFinal(false);
+      }));
+    }
+    picker.hidden = false;
+  }
+
+  function ensureFinalToolbar(){
+    const modal = document.getElementById('presentationPrepModal');
+    const toolbar = modal && modal.querySelector('.presentation-prep-toolbar');
+    if (!toolbar) return;
+    let stickerBtn = toolbar.querySelector('#addPresentationStickerBtn');
+    if (!stickerBtn) {
+      stickerBtn = document.createElement('button');
+      stickerBtn.type = 'button';
+      stickerBtn.id = 'addPresentationStickerBtn';
+      stickerBtn.className = 'secondary presentation-sticker-btn';
+      stickerBtn.textContent = 'Sticker hinzufügen';
+      const addText = toolbar.querySelector('#addPresentationText') || toolbar.firstElementChild;
+      addText.insertAdjacentElement('afterend', stickerBtn);
+      stickerBtn.addEventListener('click', openStickerPicker);
+    }
+    let deleteBtn = toolbar.querySelector('#deleteSelectedPresentationElementBtn');
+    if (!deleteBtn) {
+      deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.id = 'deleteSelectedPresentationElementBtn';
+      deleteBtn.className = 'secondary presentation-delete-btn';
+      deleteBtn.textContent = '✕ Löschen';
+      stickerBtn.insertAdjacentElement('afterend', deleteBtn);
+      deleteBtn.addEventListener('click', () => deleteSelectedElement());
+    }
+    let rotateBtn = toolbar.querySelector('#rotateSelectedPresentationElementBtn');
+    if (!rotateBtn) {
+      rotateBtn = document.createElement('button');
+      rotateBtn.type = 'button';
+      rotateBtn.id = 'rotateSelectedPresentationElementBtn';
+      rotateBtn.className = 'secondary presentation-rotate-btn';
+      rotateBtn.textContent = '⟳ Drehen';
+      deleteBtn.insertAdjacentElement('afterend', rotateBtn);
+      rotateBtn.addEventListener('click', () => rotateSelectedElement());
+    }
+    const save = toolbar.querySelector('#savePresentationEditsBtn') || toolbar.querySelector('#savePresentationPrepBtn');
+    if (save) toolbar.prepend(save);
+    const close = toolbar.querySelector('#closePresentationPrep');
+    if (close) toolbar.appendChild(close);
+  }
+
+  function deleteSelectedElement(){
+    if (!selectedEditElement) { alert('Bitte zuerst ein Element auf der Folie auswählen.'); return; }
+    const el = selectedEditElement;
+    const inner = el.closest('.presentation-slide-inner');
+    if (el.classList.contains('prep-sticker')) {
+      const idx = Number(el.dataset.stickerGlobalIndex);
+      const arr = getStickers();
+      if (Number.isFinite(idx)) { arr.splice(idx, 1); saveStickers(arr); }
+    } else if (el.classList.contains('prep-extra-text')) {
+      const idx = Number(el.dataset.extraGlobalIndex);
+      const arr = typeof getPresentationExtrasFinal === 'function' ? getPresentationExtrasFinal() : [];
+      if (Number.isFinite(idx)) { arr.splice(idx, 1); if (typeof savePresentationExtrasFinal === 'function') savePresentationExtrasFinal(arr); }
+    } else if (el.dataset.stableLayoutKey) {
+      const map = getStableLayout();
+      map[el.dataset.stableLayoutKey] = Object.assign({}, map[el.dataset.stableLayoutKey] || {}, { hidden: true });
+      saveStableLayout(map);
+    }
+    selectElement(null);
+    renderSummaryPresentationSlideFinal(false);
+  }
+
+  function rotateSelectedElement(){
+    if (!selectedEditElement) { alert('Bitte zuerst ein Element auf der Folie auswählen.'); return; }
+    const el = selectedEditElement;
+    if (el.classList.contains('prep-sticker')) {
+      const idx = Number(el.dataset.stickerGlobalIndex);
+      const arr = getStickers();
+      if (Number.isFinite(idx) && arr[idx]) {
+        arr[idx].rot = (Number(arr[idx].rot) || 0) + 15;
+        saveStickers(arr);
+      }
+    } else if (el.classList.contains('prep-extra-text')) {
+      const idx = Number(el.dataset.extraGlobalIndex);
+      const arr = typeof getPresentationExtrasFinal === 'function' ? getPresentationExtrasFinal() : [];
+      if (Number.isFinite(idx) && arr[idx]) {
+        arr[idx].rot = (Number(arr[idx].rot) || 0) + 15;
+        if (typeof savePresentationExtrasFinal === 'function') savePresentationExtrasFinal(arr);
+      }
+    } else if (el.dataset.stableLayoutKey) {
+      const map = getStableLayout();
+      const cur = map[el.dataset.stableLayoutKey] || {};
+      map[el.dataset.stableLayoutKey] = Object.assign({}, cur, { rot: (Number(cur.rot) || 0) + 15 });
+      saveStableLayout(map);
+    }
+    renderSummaryPresentationSlideFinal(false);
+  }
+
+  function appendStaticStickersToResult(slideHost, slideIndex, stickers){
+    const inner = slideHost && slideHost.querySelector('.presentation-slide-inner');
+    if (!inner) return;
+    inner.querySelectorAll('.presentation-stickers-layer').forEach(x => x.remove());
+    const items = (Array.isArray(stickers) ? stickers : []).filter(x => Number(x.slide) === Number(slideIndex));
+    if (!items.length) return;
+    const layer = document.createElement('div');
+    layer.className = 'presentation-stickers-layer';
+    items.forEach(st => {
+      const box = document.createElement('div');
+      box.className = 'prep-sticker result-sticker';
+      box.style.left = `${Number(st.x) || 60}%`;
+      box.style.top = `${Number(st.y) || 12}%`;
+      box.style.width = `${Number(st.w) || 20}%`;
+      box.style.height = `${Number(st.h) || 20}%`;
+      box.style.transform = `rotate(${Number(st.rot) || 0}deg)`;
+      box.style.zIndex = String(st.z || 46);
+      box.innerHTML = `<img src="${esc(st.src)}" alt="Sticker">`;
+      layer.appendChild(box);
+    });
+    inner.appendChild(layer);
+  }
+
+  function applyStableLayoutToResult(slideHost, slideIndex, layout){
+    const inner = slideHost && slideHost.querySelector('.presentation-slide-inner');
+    if (!inner || !layout) return;
+    coreElements(inner).forEach(el => {
+      const key = stableKeyForCore(el, slideIndex);
+      const item = layout[key];
+      if (!item) return;
+      applyLayoutToElement(el, item, inner);
+    });
+  }
+
+  const PREV_ENSURE_STABLE = typeof ensurePresentationPrepModalFinal === 'function' ? ensurePresentationPrepModalFinal : null;
+  if (PREV_ENSURE_STABLE) {
+    ensurePresentationPrepModalFinal = function(){
+      const modal = PREV_ENSURE_STABLE();
+      ensureFinalToolbar();
+      return modal;
+    };
+  }
+
+  const PREV_RENDER_STABLE = typeof renderSummaryPresentationSlideFinal === 'function' ? renderSummaryPresentationSlideFinal : null;
+  if (PREV_RENDER_STABLE) {
+    renderSummaryPresentationSlideFinal = function(updateControls = true){
+      PREV_RENDER_STABLE(updateControls);
+      ensureFinalToolbar();
+      stabilizeAfterRender();
+    };
+  }
+
+  const PREV_SAVE_STABLE = window.saveCurrentPresentationEditsFinal;
+  window.saveCurrentPresentationEditsFinal = function(){
+    if (typeof PREV_SAVE_STABLE === 'function') PREV_SAVE_STABLE();
+    const modal = document.getElementById('presentationPrepModal');
+    const inner = modal && modal.querySelector('#summaryPresentationSlide .presentation-slide-inner');
+    if (inner) {
+      inner.querySelectorAll('.stable-edit-element[data-stable-layout-key]').forEach(el => {
+        if (el.style.position === 'absolute') storeCoreLayout(el, inner);
+      });
+    }
+  };
+
+  const PREV_BUILD_PAYLOAD_STABLE = typeof buildPayload === 'function' ? buildPayload : null;
+  if (PREV_BUILD_PAYLOAD_STABLE) {
+    buildPayload = function(){
+      if (window.saveCurrentPresentationEditsFinal) window.saveCurrentPresentationEditsFinal();
+      const data = PREV_BUILD_PAYLOAD_STABLE();
+      data.presentationStickers = getStickers();
+      data.presentationStableLayout = getStableLayout();
+      return data;
+    };
+  }
+
+  const PREV_BUILD_SLIDES_STABLE = typeof buildPresentationSlides === 'function' ? buildPresentationSlides : null;
+  if (PREV_BUILD_SLIDES_STABLE) {
+    buildPresentationSlides = function(row){
+      const data = (typeof mergePresentationRawDataFinal === 'function') ? mergePresentationRawDataFinal(row) : ((row && row.data) || {});
+      const raw = (data && data.raw) || (row && row.data && row.data.raw) || {};
+      window.__resultPresentationStickersStable = data.presentationStickers || raw.presentationStickers || [];
+      window.__resultPresentationStableLayout = data.presentationStableLayout || raw.presentationStableLayout || {};
+      return PREV_BUILD_SLIDES_STABLE(row);
+    };
+  }
+
+  const PREV_RENDER_PRESENTATION_STABLE = typeof renderPresentationSlideFinal === 'function' ? renderPresentationSlideFinal : null;
+  if (PREV_RENDER_PRESENTATION_STABLE) {
+    renderPresentationSlideFinal = function(){
+      PREV_RENDER_PRESENTATION_STABLE();
+      const slide = document.getElementById('presentationSlide');
+      const idx = Number(typeof presentationIndexFinal !== 'undefined' ? presentationIndexFinal : 0) || 0;
+      applyStableLayoutToResult(slide, idx, window.__resultPresentationStableLayout || {});
+      appendStaticStickersToResult(slide, idx, window.__resultPresentationStickersStable || []);
+    };
+  }
+
+  // Alte lokale Layoutdaten werden bewusst nicht übernommen, damit beim Aktivieren des Bearbeitungsmodus nichts an den linken oberen Rand springt.
+})();

@@ -55,3 +55,17 @@ Die Startseite enthält zusätzlich `gruppenzuweisung.html`. Dort kann eine vorb
 - Die Präsentationsvorschau enthält eine Farbauswahl für Überschrift, Text, Hintergrund und Folie.
 - Zusätzliche Textfelder können eingefügt und verschoben werden; sie werden mit dem Gruppenergebnis gespeichert und später in der Präsentation wieder angezeigt.
 - **Ergebnisse ansehen** auf der Start- und Zusammenfassungsseite ist nur noch im Administrationsmodus zugänglich.
+
+## Update: stabilisierte Präsentationsbearbeitung
+
+Diese Version enthält eine überarbeitete Präsentationsbearbeitung in der Zusammenfassung:
+
+- Änderungen werden erst übernommen, wenn im Präsentationseditor auf **Speichern** geklickt wird.
+- Beim Schließen mit ungespeicherten Änderungen wird gefragt, ob gespeichert oder verworfen werden soll.
+- **Zurücksetzen** stellt den zuletzt gespeicherten Stand wieder her.
+- Der Bearbeitungsmodus verschiebt Elemente nicht mehr automatisch an den linken oberen Rand.
+- Es gibt zwei Ebenen: eine Design-Leiste und eine Kontext-Leiste für das ausgewählte Element.
+- Schriftgröße und Textfarbe können für das ausgewählte Element bzw. markierten Text angepasst werden.
+- Elemente, Tabellen, Überschriften, Textboxen und Sticker können verschoben und skaliert werden.
+- Sticker können über den Drehgriff oder die Drehen-Funktion rotiert werden.
+- Sticker wurden mit transparentem Hintergrund aufbereitet.

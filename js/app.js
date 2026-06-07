@@ -5038,3 +5038,584 @@ window.addEventListener('DOMContentLoaded', () => {
     };
   }
 })();
+
+/* FINAL EDITOR REBUILD 2: Transaktionaler Präsentationseditor mit stabiler Toolbar */
+(function(){
+  const SETTINGS_KEY = 'presentation_settings';
+  const EXTRAS_KEY = 'presentation_extras';
+  const STICKERS_KEY = 'presentation_stickers_v1';
+  const LAYOUT_KEY = 'presentation_layout_stable_v2';
+  const TEXT_OVERRIDES_KEY = 'presentation_text_overrides';
+  const SAVE_KEYS = [
+    'sup_p2_sl_probleme','sup_p2_sl_gefuehle','sup_p2_sl_wuensche',
+    'sup_p2_a_probleme','sup_p2_a_gefuehle','sup_p2_a_wuensche',
+    'sup_p2_b_probleme','sup_p2_b_gefuehle','sup_p2_b_wuensche',
+    'sup_p3_ziel_sl','sup_p3_ziel_a','sup_p3_ziel_b','sup_p3_gemeinsamkeiten','sup_p3_gemeinsames_ziel',
+    'sup_p4_kritik','sup_p4_absprachen','sup_p5_zustimmung','sup_p6_praxistauglichkeit','sup_p6_unterstuetzung','sup_p6_umsetzung',
+    'summary_group_name'
+  ];
+  const THEME_DEFAULT = {
+    heading: '#1e3a5f',
+    text: '#0f172a',
+    background: '#0f172a',
+    slide: '#ffffff',
+    slidePattern: 'none',
+    slidePatternColor: '#e5e7eb',
+    backgroundPattern: 'none',
+    backgroundPatternColor: '#1f2937',
+    backgroundImage: ''
+  };
+  const STICKER_FILES = ['team4.png','team2.png','team3.png','brainstorm.png','team2reading.png','team3working.png','notices.png','worktogether.png','worktogether3.png'];
+  const STICKER_PATH = 'assets/stickers/';
+
+  let draft = null;
+  let baseSnapshot = null;
+  let isDirty = false;
+  let editMode = false;
+  let slideIndex = 0;
+  let selectedElement = null;
+  let dragState = null;
+
+  function clone(v){ return JSON.parse(JSON.stringify(v || {})); }
+  function esc(s){ return (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function loadScopedObj(name, fallback){ try { return (typeof loadObj === 'function') ? loadObj(name, fallback) : JSON.parse(localStorage.getItem(name) || 'null') || fallback; } catch(_) { return fallback; } }
+  function saveScopedObj(name, obj){ try { if (typeof saveObj === 'function') saveObj(name, obj); else localStorage.setItem(name, JSON.stringify(obj)); } catch(_){} }
+  function loadScopedText(name){ try { return (typeof loadText === 'function') ? loadText(name) : (localStorage.getItem(name) || ''); } catch(_) { return ''; } }
+  function saveScopedText(name, value){ try { if (typeof saveText === 'function') saveText(name, value || ''); else localStorage.setItem(name, value || ''); } catch(_){} }
+  function snapshotFromStorage(){
+    const values = {};
+    SAVE_KEYS.forEach(k => values[k] = loadScopedText(k));
+    return {
+      settings: Object.assign({}, THEME_DEFAULT, loadScopedObj(SETTINGS_KEY, {})),
+      extras: loadScopedObj(EXTRAS_KEY, []),
+      stickers: loadScopedObj(STICKERS_KEY, []),
+      layout: loadScopedObj(LAYOUT_KEY, {}),
+      textOverrides: loadScopedObj(TEXT_OVERRIDES_KEY, {}),
+      values
+    };
+  }
+  function markDirty(){ isDirty = true; updateDirtyBadge(); }
+  function updateDirtyBadge(){
+    const modal = document.getElementById('presentationPrepModal');
+    if (!modal) return;
+    const save = modal.querySelector('#savePresentationPrepBtn');
+    if (save) save.textContent = isDirty ? 'Speichern *' : 'Speichern';
+  }
+  function commitDraft(){
+    if (!draft) return;
+    saveScopedObj(SETTINGS_KEY, draft.settings || {});
+    saveScopedObj(EXTRAS_KEY, Array.isArray(draft.extras) ? draft.extras : []);
+    saveScopedObj(STICKERS_KEY, Array.isArray(draft.stickers) ? draft.stickers : []);
+    saveScopedObj(LAYOUT_KEY, draft.layout || {});
+    saveScopedObj(TEXT_OVERRIDES_KEY, draft.textOverrides || {});
+    Object.entries(draft.values || {}).forEach(([k,v]) => saveScopedText(k, v || ''));
+    baseSnapshot = clone(draft);
+    isDirty = false;
+    updateDirtyBadge();
+    if (typeof renderSummary === 'function' && typeof collectSupervisorData === 'function') renderSummary(collectSupervisorData());
+  }
+
+  // Öffentliche Getter geben immer gespeicherte Daten zurück; während des Bearbeitens wird erst mit Speichern geschrieben.
+  window.getPresentationSettingsFinal = function(){ return Object.assign({}, THEME_DEFAULT, loadScopedObj(SETTINGS_KEY, {})); };
+  window.savePresentationSettingsFinal = function(settings){ saveScopedObj(SETTINGS_KEY, Object.assign({}, window.getPresentationSettingsFinal(), settings || {})); };
+  window.getPresentationExtrasFinal = function(){ const x = loadScopedObj(EXTRAS_KEY, []); return Array.isArray(x) ? x : []; };
+  window.savePresentationExtrasFinal = function(x){ saveScopedObj(EXTRAS_KEY, Array.isArray(x) ? x : []); };
+  window.getPresentationStickersFinal = function(){ const x = loadScopedObj(STICKERS_KEY, []); return Array.isArray(x) ? x : []; };
+  window.savePresentationStickersFinal = function(x){ saveScopedObj(STICKERS_KEY, Array.isArray(x) ? x : []); };
+  window.getPresentationTextOverridesFinal = function(){ const x = loadScopedObj(TEXT_OVERRIDES_KEY, {}); return x && typeof x === 'object' ? x : {}; };
+
+  function patternCss(kind, color){
+    const c = color || '#e5e7eb';
+    if (kind === 'dots') return {img:`radial-gradient(${c} 1.3px, transparent 1.3px)`, size:'18px 18px'};
+    if (kind === 'grid') return {img:`linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`, size:'28px 28px'};
+    if (kind === 'diagonal') return {img:`repeating-linear-gradient(135deg, transparent 0 12px, ${c} 12px 14px)`, size:'24px 24px'};
+    if (kind === 'waves') return {img:`radial-gradient(ellipse at top, ${c} 0 16%, transparent 17%), radial-gradient(ellipse at bottom, ${c} 0 14%, transparent 15%)`, size:'70px 34px'};
+    return {img:'none', size:'24px 24px'};
+  }
+  window.applyPresentationThemeToNodeFinal = function(host, settings){
+    const s = Object.assign({}, THEME_DEFAULT, settings || {});
+    if (!host) return;
+    host.style.setProperty('--presentation-heading-color', s.heading);
+    host.style.setProperty('--presentation-text-color', s.text);
+    host.style.setProperty('--presentation-background-color', s.background);
+    host.style.setProperty('--presentation-slide-color', s.slide);
+    host.style.setProperty('--presentation-background-image', s.backgroundImage ? `url("${s.backgroundImage}")` : 'none');
+    const sp = patternCss(s.slidePattern || 'none', s.slidePatternColor || '#e5e7eb');
+    const bp = patternCss(s.backgroundPattern || 'none', s.backgroundPatternColor || '#1f2937');
+    host.style.setProperty('--slide-pattern-image', sp.img);
+    host.style.setProperty('--slide-pattern-size', sp.size);
+    host.style.setProperty('--background-pattern-image', bp.img);
+    host.style.setProperty('--background-pattern-size', bp.size);
+    if (host.classList.contains('presentation-body') || host.classList.contains('presentation-prep-stage')) {
+      host.style.backgroundColor = s.background;
+      if (s.backgroundImage) host.classList.add('has-presentation-bg-image'); else host.classList.remove('has-presentation-bg-image');
+    }
+    if (host.classList.contains('presentation-slide')) host.style.backgroundColor = s.slide;
+  };
+
+  function ensurePresentationPrepModalFinalRebuilt(){
+    let old = document.getElementById('presentationPrepModal');
+    if (old && old.classList.contains('rebuilt-editor')) return old;
+    if (old) old.remove();
+    const modal = document.createElement('div');
+    modal.id = 'presentationPrepModal';
+    modal.className = 'presentation-prep-modal rebuilt-editor';
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="presentation-prep-backdrop"></div>
+      <div class="presentation-prep-window" role="dialog" aria-modal="true" aria-label="Präsentation vorbereiten">
+        <div class="presentation-prep-toolbar">
+          <button type="button" id="savePresentationPrepBtn" class="save-presentation-button-final">Speichern</button>
+          <button type="button" id="summaryPrevSlide" class="soft-action">←</button>
+          <span id="summaryPresentationCounter" class="small">1 / 6</span>
+          <button type="button" id="summaryNextSlide" class="soft-action">→</button>
+          <button type="button" id="togglePresentationEdit" class="soft-action">Bearbeitungsmodus</button>
+          <button type="button" id="addPresentationText" class="soft-action">Text hinzufügen</button>
+          <button type="button" id="addPresentationStickerBtn" class="soft-action">Sticker hinzufügen</button>
+          <label>Farbe <select id="themeTargetSelect"><option value="heading">Überschrift</option><option value="text">Text</option><option value="background">Hintergrund</option><option value="slide">Folie</option></select></label>
+          <input id="themeColorPicker" type="color" value="#1e3a5f" aria-label="Farbe wählen">
+          <label>Muster <select id="patternTargetSelect"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+          <select id="patternSelect"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Dezente Wellen</option></select>
+          <input id="patternColorPicker" type="color" value="#e5e7eb" aria-label="Musterfarbe wählen">
+          <input id="presentationBgImageInput" type="file" accept="image/*" hidden>
+          <button type="button" id="presentationBgImageBtn" class="soft-action">Hintergrundbild</button>
+          <button type="button" id="removePresentationBgImage" class="soft-action">Bild entfernen</button>
+          <button type="button" id="resetPresentationDefaultsBtn" class="soft-action">Zurücksetzen</button>
+          <button type="button" id="closePresentationPrep" class="soft-action">Schließen</button>
+        </div>
+        <div id="presentationContextToolbar" class="context-toolbar">
+          <button type="button" id="deleteSelectedPresentationElement" class="danger-action">Auswahl löschen</button>
+          <button type="button" id="rotateSelectedPresentationElement" class="soft-action" title="Gedrückt halten und Maus nach links/rechts bewegen">↻ Drehen</button>
+          <label>Schriftgröße <input id="selectedFontSizeInput" type="number" min="8" max="96" step="1" value="22"> px</label>
+          <button type="button" id="applySelectedFontSize" class="soft-action">Anwenden</button>
+          <label>Textfarbe <input id="selectedTextColorInput" type="color" value="#0f172a"></label>
+        </div>
+        <div class="presentation-prep-stage presentation-body">
+          <section id="summaryPresentationSlide" class="presentation-slide presentation-slide-mini"></section>
+        </div>
+        <p class="small presentation-prep-hint">Änderungen werden erst übernommen, wenn auf Speichern gedrückt wird. Beim Schließen kann gespeichert oder verworfen werden.</p>
+      </div>`;
+    document.body.appendChild(modal);
+    bindModalControls(modal);
+    return modal;
+  }
+
+  function bindModalControls(modal){
+    modal.querySelector('#savePresentationPrepBtn').addEventListener('click', () => { commitDraft(); flashButton('#savePresentationPrepBtn','Gespeichert'); });
+    modal.querySelector('#closePresentationPrep').addEventListener('click', closePresentationPrepModalFinalRebuilt);
+    modal.querySelector('#summaryPrevSlide').addEventListener('click', () => moveSummaryPresentationFinalRebuilt(-1));
+    modal.querySelector('#summaryNextSlide').addEventListener('click', () => moveSummaryPresentationFinalRebuilt(1));
+    modal.querySelector('#togglePresentationEdit').addEventListener('click', () => { editMode = !editMode; renderSummaryPresentationSlideFinalRebuilt(); });
+    modal.querySelector('#addPresentationText').addEventListener('click', addTextBox);
+    modal.querySelector('#addPresentationStickerBtn').addEventListener('click', openStickerPicker);
+    modal.querySelector('#resetPresentationDefaultsBtn').addEventListener('click', () => {
+      if (!baseSnapshot) return;
+      draft = clone(baseSnapshot);
+      isDirty = false;
+      selectedElement = null;
+      renderSummaryPresentationSlideFinalRebuilt();
+    });
+    const target = modal.querySelector('#themeTargetSelect');
+    const color = modal.querySelector('#themeColorPicker');
+    target.addEventListener('change', () => { color.value = draft.settings[target.value] || THEME_DEFAULT[target.value] || '#000000'; });
+    color.addEventListener('input', () => { draft.settings[target.value] = color.value; markDirty(); renderSummaryPresentationSlideFinalRebuilt(false); });
+    const pTarget = modal.querySelector('#patternTargetSelect');
+    const pSelect = modal.querySelector('#patternSelect');
+    const pColor = modal.querySelector('#patternColorPicker');
+    function syncPatternControls(){
+      const t = pTarget.value;
+      pSelect.value = t === 'background' ? (draft.settings.backgroundPattern || 'none') : (draft.settings.slidePattern || 'none');
+      pColor.value = t === 'background' ? (draft.settings.backgroundPatternColor || '#1f2937') : (draft.settings.slidePatternColor || '#e5e7eb');
+    }
+    pTarget.addEventListener('change', syncPatternControls);
+    pSelect.addEventListener('change', () => { const t=pTarget.value; if (t==='background') draft.settings.backgroundPattern=pSelect.value; else draft.settings.slidePattern=pSelect.value; markDirty(); renderSummaryPresentationSlideFinalRebuilt(false); });
+    pColor.addEventListener('input', () => { const t=pTarget.value; if (t==='background') draft.settings.backgroundPatternColor=pColor.value; else draft.settings.slidePatternColor=pColor.value; markDirty(); renderSummaryPresentationSlideFinalRebuilt(false); });
+    modal.querySelector('#presentationBgImageBtn').addEventListener('click', () => modal.querySelector('#presentationBgImageInput').click());
+    modal.querySelector('#presentationBgImageInput').addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { draft.settings.backgroundImage = String(reader.result || ''); markDirty(); renderSummaryPresentationSlideFinalRebuilt(false); };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+    modal.querySelector('#removePresentationBgImage').addEventListener('click', () => { draft.settings.backgroundImage=''; markDirty(); renderSummaryPresentationSlideFinalRebuilt(false); });
+    modal.querySelector('#deleteSelectedPresentationElement').addEventListener('click', deleteSelectedElement);
+    modal.querySelector('#applySelectedFontSize').addEventListener('click', () => applyStyleToSelectionOrElement('fontSize', `${Number(modal.querySelector('#selectedFontSizeInput').value)||22}px`));
+    modal.querySelector('#selectedTextColorInput').addEventListener('input', e => applyStyleToSelectionOrElement('color', e.target.value));
+    const rotateBtn = modal.querySelector('#rotateSelectedPresentationElement');
+    rotateBtn.addEventListener('pointerdown', startToolbarRotate);
+  }
+
+  function flashButton(selector, text){
+    const btn = document.querySelector(selector); if (!btn) return;
+    const old = btn.textContent; btn.textContent = text; btn.classList.add('mode-active');
+    setTimeout(() => { btn.textContent = old; btn.classList.remove('mode-active'); }, 900);
+  }
+
+  function openPresentationPrepModalFinalRebuilt(){
+    const modal = ensurePresentationPrepModalFinalRebuilt();
+    baseSnapshot = snapshotFromStorage();
+    draft = clone(baseSnapshot);
+    isDirty = false;
+    editMode = false;
+    slideIndex = 0;
+    selectedElement = null;
+    modal.hidden = false;
+    renderSummaryPresentationSlideFinalRebuilt();
+  }
+
+  function closePresentationPrepModalFinalRebuilt(){
+    const modal = document.getElementById('presentationPrepModal');
+    if (!modal) return;
+    if (isDirty) {
+      if (confirm('Änderungen speichern, bevor die Präsentationsbearbeitung geschlossen wird?')) {
+        commitDraft();
+      } else {
+        if (!confirm('Ohne zu speichern schließen? Nicht gespeicherte Änderungen gehen verloren.')) return;
+        draft = clone(baseSnapshot);
+        isDirty = false;
+      }
+    }
+    modal.hidden = true;
+    selectedElement = null;
+    if (typeof renderSummary === 'function' && typeof collectSupervisorData === 'function') renderSummary(collectSupervisorData());
+  }
+
+  function moveSummaryPresentationFinalRebuilt(delta){
+    persistVisibleDraftEdits();
+    const slides = buildDraftSlides();
+    slideIndex = Math.max(0, Math.min(slides.length - 1, slideIndex + delta));
+    selectedElement = null;
+    renderSummaryPresentationSlideFinalRebuilt();
+  }
+
+  function getOverride(idx, type, fallback){
+    const key = `s${idx}_${type}`;
+    const v = draft && draft.textOverrides ? draft.textOverrides[key] : '';
+    return v !== undefined && v !== null && String(v).trim() !== '' ? String(v) : fallback;
+  }
+
+  function buildDraftSlides(){
+    const row = (typeof localPresentationRowFinal === 'function') ? localPresentationRowFinal() : { data: (typeof buildPayload === 'function' ? buildPayload() : {}) };
+    const slides = (typeof buildEditablePresentationSlidesFinal === 'function') ? buildEditablePresentationSlidesFinal(row) : [];
+    return slides.map((s, i) => {
+      const title = getOverride(i, 'title', s.title || '');
+      let html = s.html || '';
+      const subtitleFallbacks = [
+        '',
+        'Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.',
+        'Hier werden die Einzelziele der Beteiligten, erkennbare Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.',
+        'Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.',
+        'Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung der Vereinbarung.',
+        ''
+      ];
+      if (i > 0 && i < 5) {
+        const sub = getOverride(i, 'subtitle', subtitleFallbacks[i]);
+        html = html.replace(/<p class="presentation-subtitle">[\s\S]*?<\/p>/, `<p class="presentation-subtitle">${esc(sub)}</p>`);
+      }
+      return { title, html };
+    });
+  }
+
+  function renderSummaryPresentationSlideFinalRebuilt(updateControls = true){
+    const modal = ensurePresentationPrepModalFinalRebuilt();
+    if (!draft) { baseSnapshot = snapshotFromStorage(); draft = clone(baseSnapshot); }
+    const slides = buildDraftSlides();
+    const slideHost = modal.querySelector('#summaryPresentationSlide');
+    if (!slides.length || !slideHost) return;
+    slideIndex = Math.max(0, Math.min(slides.length - 1, slideIndex));
+    const item = slides[slideIndex];
+    const titleHtml = item.title ? `<h1 data-title-index="${slideIndex}">${esc(item.title)}</h1>` : '';
+    slideHost.innerHTML = `<div class="presentation-slide-inner${item.title ? '' : ' no-title-slide'}">${titleHtml}${item.html}${renderExtrasLayer()}${renderStickersLayer()}</div>`;
+    slideHost.closest('.presentation-prep-modal').classList.toggle('is-editing-active', editMode);
+    applyPresentationThemeToNodeFinal(modal.querySelector('.presentation-prep-stage'), draft.settings);
+    applyPresentationThemeToNodeFinal(slideHost, draft.settings);
+    setupSlideInteractivity(slideHost);
+    updateControlsUI(modal, updateControls);
+  }
+
+  function updateControlsUI(modal, updateControls){
+    modal.querySelector('#summaryPresentationCounter').textContent = `${slideIndex + 1} / ${buildDraftSlides().length}`;
+    const edit = modal.querySelector('#togglePresentationEdit');
+    edit.textContent = editMode ? 'Bearbeitung aktiv' : 'Bearbeitungsmodus';
+    edit.classList.toggle('mode-active', editMode);
+    modal.querySelector('#themeColorPicker').value = draft.settings[modal.querySelector('#themeTargetSelect').value] || '#000000';
+    const pt = modal.querySelector('#patternTargetSelect').value;
+    modal.querySelector('#patternSelect').value = pt === 'background' ? (draft.settings.backgroundPattern || 'none') : (draft.settings.slidePattern || 'none');
+    modal.querySelector('#patternColorPicker').value = pt === 'background' ? (draft.settings.backgroundPatternColor || '#1f2937') : (draft.settings.slidePatternColor || '#e5e7eb');
+    updateContextToolbar();
+    updateDirtyBadge();
+  }
+
+  function renderExtrasLayer(){
+    const extras = (draft.extras || []).map((x,i) => Object.assign({}, x, {_i:i})).filter(x => Number(x.slide) === slideIndex);
+    return `<div class="presentation-extras-layer">${extras.map(x => `<div class="prep-extra-text" data-extra-index="${x._i}" data-edit-id="extra_${x._i}" style="left:${Number(x.x)||10}%;top:${Number(x.y)||70}%;width:${Number(x.w)||22}%;min-height:${Number(x.h)||7}%;transform:rotate(${Number(x.rot)||0}deg);font-size:${Number(x.fontSize)||18}px;color:${x.color||''};">${esc(x.text||'')}</div>`).join('')}</div>`;
+  }
+  function renderStickersLayer(){
+    const stickers = (draft.stickers || []).map((x,i) => Object.assign({}, x, {_i:i})).filter(x => Number(x.slide) === slideIndex);
+    return `<div class="presentation-stickers-layer">${stickers.map(x => `<div class="prep-sticker" data-sticker-index="${x._i}" data-edit-id="sticker_${x._i}" style="left:${Number(x.x)||58}%;top:${Number(x.y)||52}%;width:${Number(x.w)||24}%;height:${Number(x.h)||22}%;transform:rotate(${Number(x.rot)||0}deg);"><img src="${esc(x.src||'')}" alt="Sticker"></div>`).join('')}</div>`;
+  }
+
+  function setupSlideInteractivity(host){
+    const inner = host.querySelector('.presentation-slide-inner');
+    if (!inner) return;
+    const core = Array.from(inner.children).filter(el => !el.classList.contains('presentation-extras-layer') && !el.classList.contains('presentation-stickers-layer'));
+    core.forEach((el, i) => {
+      if (el.tagName === 'SCRIPT') return;
+      const id = coreIdFor(el, i);
+      prepareEditableElement(el, id, inner, 'core');
+    });
+    inner.querySelectorAll('.prep-extra-text').forEach(el => prepareEditableElement(el, el.dataset.editId, inner, 'extra'));
+    inner.querySelectorAll('.prep-sticker').forEach(el => prepareEditableElement(el, el.dataset.editId, inner, 'sticker'));
+    inner.querySelectorAll('[data-edit-save]').forEach(cell => {
+      const k = cell.dataset.editSave;
+      if (draft.values && Object.prototype.hasOwnProperty.call(draft.values, k)) cell.innerText = draft.values[k] || '—';
+      cell.contentEditable = editMode ? 'true' : 'false';
+      cell.classList.toggle('is-editable-cell', editMode);
+      cell.addEventListener('input', () => { draft.values[k] = cell.innerText.trim() === '—' ? '' : cell.innerText.trim(); markDirty(); });
+      cell.addEventListener('click', () => { if (editMode) selectEditableElement(cell.closest('.editable-slide-element') || cell); });
+    });
+    const h1 = inner.querySelector('h1[data-title-index]');
+    if (h1) {
+      h1.contentEditable = editMode ? 'true' : 'false';
+      h1.addEventListener('input', () => { draft.textOverrides[`s${slideIndex}_title`] = h1.innerText.trim(); markDirty(); });
+    }
+    const subtitle = inner.querySelector('.presentation-subtitle');
+    if (subtitle) {
+      subtitle.contentEditable = editMode ? 'true' : 'false';
+      subtitle.addEventListener('input', () => { draft.textOverrides[`s${slideIndex}_subtitle`] = subtitle.innerText.trim(); markDirty(); });
+    }
+    host.addEventListener('click', e => { if (!editMode) return; if (e.target === host || e.target === inner) selectEditableElement(null); });
+  }
+
+  function coreIdFor(el, index){
+    if (el.matches('h1')) return `s${slideIndex}_title`;
+    if (el.matches('h2')) return `s${slideIndex}_heading2_${index}`;
+    if (el.matches('.presentation-subtitle')) return `s${slideIndex}_subtitle`;
+    if (el.matches('.presentation-kicker')) return `s${slideIndex}_kicker`;
+    if (el.matches('.presentation-note')) return `s${slideIndex}_note`;
+    if (el.matches('.presentation-table-wrap')) return `s${slideIndex}_table_${index}`;
+    if (el.matches('.thanks-slide')) return `s${slideIndex}_thanks`;
+    return `s${slideIndex}_el_${index}`;
+  }
+
+  function prepareEditableElement(el, id, parent, type){
+    el.classList.add('editable-slide-element');
+    el.dataset.editId = id;
+    el.dataset.editType = type;
+    const layout = draft.layout && draft.layout[id];
+    if (layout) applyLayout(el, layout);
+    addElementHandles(el, parent);
+    el.addEventListener('click', e => { if (!editMode) return; selectEditableElement(el); e.stopPropagation(); });
+  }
+  function applyLayout(el, l){
+    el.style.position = 'absolute';
+    el.style.left = `${Number(l.x)||0}%`;
+    el.style.top = `${Number(l.y)||0}%`;
+    if (l.w) el.style.width = `${Number(l.w)}%`;
+    if (l.h) el.style.minHeight = `${Number(l.h)}%`;
+    if (l.fontSize) el.style.fontSize = `${Number(l.fontSize)}px`;
+    if (l.color) el.style.color = l.color;
+    el.style.transform = `rotate(${Number(l.rot)||0}deg)`;
+    el.style.zIndex = String(l.z || 40);
+  }
+  function ensureAbsolute(el, parent){
+    if (!el || !parent || el.style.position === 'absolute') return;
+    const pr = parent.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const x = ((r.left - pr.left) / Math.max(1, pr.width))*100;
+    const y = ((r.top - pr.top) / Math.max(1, pr.height))*100;
+    const w = (r.width / Math.max(1, pr.width))*100;
+    const h = (r.height / Math.max(1, pr.height))*100;
+    const l = draft.layout[el.dataset.editId] || {};
+    Object.assign(l, {x:Math.max(0,x), y:Math.max(0,y), w:Math.max(6,w), h:Math.max(3,h), rot:Number(l.rot)||0, z:50});
+    draft.layout[el.dataset.editId] = l;
+    applyLayout(el, l);
+  }
+  function saveLayoutFromElement(el, parent){
+    if (!el || !parent || !el.dataset.editId) return;
+    const l = draft.layout[el.dataset.editId] || {};
+    Object.assign(l, {
+      x: parseFloat(el.style.left)||0,
+      y: parseFloat(el.style.top)||0,
+      w: Math.max(5, (el.offsetWidth / Math.max(1,parent.clientWidth))*100),
+      h: Math.max(3, (el.offsetHeight / Math.max(1,parent.clientHeight))*100),
+      rot: getRotation(el),
+      z: parseInt(el.style.zIndex||'50',10)
+    });
+    draft.layout[el.dataset.editId] = l;
+    if (el.classList.contains('prep-extra-text')) {
+      const i = Number(el.dataset.extraIndex); if (draft.extras[i]) Object.assign(draft.extras[i], l, {text:el.innerText.trim()});
+    }
+    if (el.classList.contains('prep-sticker')) {
+      const i = Number(el.dataset.stickerIndex); if (draft.stickers[i]) Object.assign(draft.stickers[i], l);
+    }
+    markDirty();
+  }
+  function getRotation(el){
+    const id = el.dataset.editId;
+    return Number((draft.layout[id] && draft.layout[id].rot) || 0);
+  }
+
+  function addElementHandles(el, parent){
+    if (el.querySelector(':scope > .element-drag-handle')) return;
+    const drag = document.createElement('span'); drag.className = 'element-drag-handle'; drag.title = 'Verschieben';
+    const resize = document.createElement('span'); resize.className = 'element-resize-handle'; resize.title = 'Größe ändern';
+    const rotate = document.createElement('span'); rotate.className = 'element-rotate-handle'; rotate.textContent = '↻'; rotate.title = 'Drehen';
+    el.appendChild(drag); el.appendChild(resize); el.appendChild(rotate);
+    drag.addEventListener('pointerdown', e => startDrag(e, el, parent));
+    resize.addEventListener('pointerdown', e => startResize(e, el, parent));
+    rotate.addEventListener('pointerdown', e => startRotate(e, el, parent));
+  }
+  function startDrag(e, el, parent){
+    if (!editMode) return; e.preventDefault(); e.stopPropagation(); selectEditableElement(el); ensureAbsolute(el,parent);
+    const l = draft.layout[el.dataset.editId];
+    dragState = {mode:'drag', el, parent, sx:e.clientX, sy:e.clientY, x:l.x, y:l.y};
+    window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp, {once:true});
+  }
+  function startResize(e, el, parent){
+    if (!editMode) return; e.preventDefault(); e.stopPropagation(); selectEditableElement(el); ensureAbsolute(el,parent);
+    const l = draft.layout[el.dataset.editId];
+    dragState = {mode:'resize', el, parent, sx:e.clientX, sy:e.clientY, w:l.w||20, h:l.h||10};
+    window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp, {once:true});
+  }
+  function startRotate(e, el, parent){
+    if (!editMode) return; e.preventDefault(); e.stopPropagation(); selectEditableElement(el); ensureAbsolute(el,parent);
+    const l = draft.layout[el.dataset.editId] || {};
+    dragState = {mode:'rotate', el, parent, sx:e.clientX, sy:e.clientY, rot:Number(l.rot)||0};
+    window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp, {once:true});
+  }
+  function startToolbarRotate(e){
+    if (!selectedElement || !editMode) return; e.preventDefault();
+    const inner = selectedElement.closest('.presentation-slide-inner'); if (!inner) return;
+    ensureAbsolute(selectedElement, inner);
+    const l = draft.layout[selectedElement.dataset.editId] || {};
+    dragState = {mode:'rotate', el:selectedElement, parent:inner, sx:e.clientX, sy:e.clientY, rot:Number(l.rot)||0};
+    window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp, {once:true});
+  }
+  function onPointerMove(e){
+    if (!dragState) return;
+    const {mode, el, parent, sx, sy} = dragState;
+    const pr = parent.getBoundingClientRect();
+    const dx = ((e.clientX - sx) / Math.max(1, pr.width))*100;
+    const dy = ((e.clientY - sy) / Math.max(1, pr.height))*100;
+    const l = draft.layout[el.dataset.editId] || {};
+    if (mode === 'drag') { l.x = Math.max(-20, Math.min(120, dragState.x + dx)); l.y = Math.max(-20, Math.min(120, dragState.y + dy)); }
+    if (mode === 'resize') { l.w = Math.max(5, Math.min(120, dragState.w + dx)); l.h = Math.max(3, Math.min(100, dragState.h + dy)); }
+    if (mode === 'rotate') { l.rot = dragState.rot + (e.clientX - sx) * .55; }
+    draft.layout[el.dataset.editId] = l; applyLayout(el,l); updateContextToolbar(); markDirty();
+  }
+  function onPointerUp(){ if (dragState) saveLayoutFromElement(dragState.el, dragState.parent); dragState=null; window.removeEventListener('pointermove', onPointerMove); }
+
+  function selectEditableElement(el){
+    const modal = document.getElementById('presentationPrepModal');
+    if (selectedElement && selectedElement.classList) selectedElement.classList.remove('selected');
+    selectedElement = el || null;
+    if (selectedElement && selectedElement.classList) selectedElement.classList.add('selected');
+    updateContextToolbar();
+  }
+  function updateContextToolbar(){
+    const modal = document.getElementById('presentationPrepModal'); if (!modal) return;
+    const bar = modal.querySelector('#presentationContextToolbar');
+    if (!bar) return;
+    bar.classList.toggle('has-selection', !!(editMode && selectedElement));
+    if (!selectedElement) return;
+    const fs = modal.querySelector('#selectedFontSizeInput');
+    const tc = modal.querySelector('#selectedTextColorInput');
+    const l = draft.layout[selectedElement.dataset.editId] || {};
+    if (fs) fs.value = Math.round(Number(l.fontSize) || parseFloat(getComputedStyle(selectedElement).fontSize) || 22);
+    if (tc) tc.value = rgbToHex(l.color || getComputedStyle(selectedElement).color || '#0f172a');
+  }
+  function rgbToHex(c){
+    if (!c) return '#0f172a'; if (c.startsWith('#')) return c;
+    const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (!m) return '#0f172a';
+    return '#' + [m[1],m[2],m[3]].map(n => Math.max(0,Math.min(255,Number(n))).toString(16).padStart(2,'0')).join('');
+  }
+  function applyStyleToSelectionOrElement(prop, value){
+    if (!selectedElement || !editMode) return;
+    const sel = window.getSelection && window.getSelection();
+    if (sel && sel.rangeCount && !sel.isCollapsed && selectedElement.contains(sel.anchorNode) && selectedElement.contains(sel.focusNode)) {
+      const range = sel.getRangeAt(0);
+      const span = document.createElement('span'); span.style[prop] = value;
+      try { range.surroundContents(span); }
+      catch(_) { const frag = range.extractContents(); span.appendChild(frag); range.insertNode(span); }
+      sel.removeAllRanges();
+    } else {
+      selectedElement.style[prop] = value;
+      const id = selectedElement.dataset.editId;
+      if (id) { draft.layout[id] = Object.assign({}, draft.layout[id] || {}, { [prop]: prop === 'fontSize' ? parseFloat(value) : value }); }
+    }
+    markDirty();
+  }
+  function deleteSelectedElement(){
+    if (!selectedElement) return;
+    const id = selectedElement.dataset.editId || '';
+    if (id.startsWith('extra_')) { const i=Number(selectedElement.dataset.extraIndex); if (Number.isFinite(i)) draft.extras.splice(i,1); }
+    else if (id.startsWith('sticker_')) { const i=Number(selectedElement.dataset.stickerIndex); if (Number.isFinite(i)) draft.stickers.splice(i,1); }
+    else { draft.layout[id] = Object.assign({}, draft.layout[id] || {}, {hidden:true}); }
+    selectedElement = null; markDirty(); renderSummaryPresentationSlideFinalRebuilt();
+  }
+  function addTextBox(){
+    if (!editMode) { editMode = true; }
+    draft.extras.push({slide:slideIndex,text:'Neuer Text',x:12,y:68,w:24,h:8,rot:0,fontSize:18,color:draft.settings.text});
+    markDirty(); renderSummaryPresentationSlideFinalRebuilt();
+  }
+  function openStickerPicker(){
+    let picker = document.getElementById('presentationStickerPickerRebuilt');
+    if (!picker) {
+      picker = document.createElement('div'); picker.id='presentationStickerPickerRebuilt'; picker.className='presentation-sticker-picker'; picker.hidden=true;
+      picker.innerHTML = `<div class="presentation-sticker-dialog"><div class="presentation-sticker-dialog-head"><h2>Sticker hinzufügen</h2><button type="button" id="closeStickerPickerRebuilt" class="secondary">Schließen</button></div><div class="presentation-sticker-grid">${STICKER_FILES.map(f => `<button type="button" class="presentation-sticker-option" data-sticker="${esc(f)}"><img src="${STICKER_PATH+esc(f)}" alt="${esc(f)}"></button>`).join('')}</div></div>`;
+      document.body.appendChild(picker);
+      picker.querySelector('#closeStickerPickerRebuilt').addEventListener('click', () => { picker.hidden=true; });
+      picker.querySelectorAll('[data-sticker]').forEach(btn => btn.addEventListener('click', () => {
+        const f = btn.dataset.sticker;
+        draft.stickers.push({slide:slideIndex, src:STICKER_PATH+f, x:58, y:48, w:24, h:22, rot:0});
+        picker.hidden=true; markDirty(); renderSummaryPresentationSlideFinalRebuilt();
+      }));
+    }
+    picker.hidden=false;
+  }
+  function persistVisibleDraftEdits(){
+    const modal = document.getElementById('presentationPrepModal'); if (!modal || !draft) return;
+    modal.querySelectorAll('[data-edit-save]').forEach(cell => { const k=cell.dataset.editSave; if(k) draft.values[k]=cell.innerText.trim()==='—'?'':cell.innerText.trim(); });
+    modal.querySelectorAll('.prep-extra-text').forEach(el => { const i=Number(el.dataset.extraIndex); if (draft.extras[i]) draft.extras[i].text=el.innerText.trim(); });
+    const h1 = modal.querySelector('[data-title-index]'); if (h1) draft.textOverrides[`s${slideIndex}_title`] = h1.innerText.trim();
+    const sub = modal.querySelector('.presentation-subtitle'); if (sub) draft.textOverrides[`s${slideIndex}_subtitle`] = sub.innerText.trim();
+  }
+
+  // Exportiere neue Implementierung global.
+  window.ensurePresentationPrepModalFinal = ensurePresentationPrepModalFinalRebuilt;
+  window.openPresentationPrepModalFinal = openPresentationPrepModalFinalRebuilt;
+  window.closePresentationPrepModalFinal = closePresentationPrepModalFinalRebuilt;
+  window.moveSummaryPresentationFinal = moveSummaryPresentationFinalRebuilt;
+  window.renderSummaryPresentationSlideFinal = renderSummaryPresentationSlideFinalRebuilt;
+  window.saveCurrentPresentationEditsFinal = function(){ if (draft) { persistVisibleDraftEdits(); commitDraft(); } };
+
+  // Buttons, die bereits durch ältere Initialisierung gebunden wurden, auf die neue Implementierung umlenken.
+  document.addEventListener('click', function(e){
+    const btn = e.target && e.target.closest && e.target.closest('#openPresentationPrepBtn');
+    if (btn) { e.preventDefault(); e.stopImmediatePropagation(); openPresentationPrepModalFinalRebuilt(); }
+  }, true);
+
+  const OLD_BUILD_PAYLOAD_REBUILT = typeof buildPayload === 'function' ? buildPayload : null;
+  buildPayload = function(){
+    if (draft && isDirty) { /* bewusst nicht automatisch speichern */ }
+    const data = OLD_BUILD_PAYLOAD_REBUILT ? OLD_BUILD_PAYLOAD_REBUILT() : (typeof collectSupervisorData === 'function' ? collectSupervisorData() : {});
+    data.presentationSettings = window.getPresentationSettingsFinal();
+    data.presentationExtras = window.getPresentationExtrasFinal();
+    data.presentationTextOverrides = window.getPresentationTextOverridesFinal();
+    data.presentationLayout = loadScopedObj(LAYOUT_KEY, {});
+    data.presentationStickers = window.getPresentationStickersFinal();
+    return data;
+  };
+})();
+
+/* Bind rebuilt editor functions to global identifiers as well */
+try {
+  ensurePresentationPrepModalFinal = window.ensurePresentationPrepModalFinal;
+  openPresentationPrepModalFinal = window.openPresentationPrepModalFinal;
+  closePresentationPrepModalFinal = window.closePresentationPrepModalFinal;
+  moveSummaryPresentationFinal = window.moveSummaryPresentationFinal;
+  renderSummaryPresentationSlideFinal = window.renderSummaryPresentationSlideFinal;
+} catch (_) {}

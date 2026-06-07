@@ -2984,3 +2984,26 @@ body.presentation-body[data-presentation-pattern="none"]::before {
 /* Layer indicator for presentation editor */
 .v6-layer-indicator{display:inline-flex;align-items:center;gap:4px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#e5edf7;font-weight:700;white-space:nowrap}
 .v6-layer-indicator strong{min-width:22px;text-align:center;color:#fff}
+
+/* Editor UI patch: structured toolbars, stable colour inheritance and layer controls */
+.v6-mainbar{gap:10px;align-items:center;flex-wrap:nowrap;overflow-x:auto;min-height:52px}
+.v6-dock{background:#0a1728;border-bottom:1px solid rgba(255,255,255,.10);gap:10px;align-items:center;min-height:48px}
+.v6-dock[hidden]{display:none!important}
+.v6-sep{display:inline-block;width:1px;height:30px;background:rgba(255,255,255,.22);margin:0 6px}
+.v6-layer-control{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.v6-layer-control .secondary{min-width:40px;padding-left:10px;padding-right:10px}
+.v6-slide-nav{display:flex;justify-content:center;gap:12px;padding:10px 16px;background:#071323;border-top:1px solid rgba(255,255,255,.08);position:relative;z-index:20}
+.v6-slide-nav button{min-width:54px}
+.v6-type-title{color:var(--v6-heading-color,#1e3a5f)}
+.v6-type-title .v6-editable-text{font-weight:800;font-size:inherit;color:inherit!important}
+.v6-type-thanks{color:var(--v6-heading-color,#1e3a5f)}
+.v6-type-thanks .v6-editable-text{color:inherit!important}
+.v6-type-subtitle .v6-editable-text,.v6-type-note .v6-editable-text,.v6-type-kicker .v6-editable-text{color:inherit!important}
+.v6-el.is-selected{outline:2px dashed #2563eb!important;outline-offset:2px!important}
+.v6-el.is-selected::before{display:none!important}
+.v6-handle{font-weight:800;user-select:none;-webkit-user-select:none}
+.v6-move::after{content:'•'}
+.v6-move{font-size:0}.v6-move::after{font-size:16px}
+.v6-contextbar label,.v6-dock label{display:inline-flex;align-items:center;gap:7px;color:#e5edf7;font-weight:700}
+.v6-contextbar input[type="color"],.v6-dock input[type="color"]{width:40px;height:34px;padding:0;border:2px solid #dbe4ef;border-radius:6px;background:#fff}
+.v6-contextbar select,.v6-dock select{background:#fff;color:#0f172a;border:0;border-radius:9px;padding:10px 12px;font-weight:700}

@@ -25,6 +25,7 @@
   let undoStack = [];
   let drag = null;
   let picker = null;
+  let activePanel = null;
 
   function getGroup(){
     try { return (typeof getGroupId === 'function' ? getGroupId() : (localStorage.getItem('sv_current_group') || 'default')); }
@@ -257,37 +258,49 @@
       <div class="v6-shell">
         <div class="v6-toolbar v6-mainbar" data-editor-toolbar>
           <button type="button" id="v6Save" class="success-btn">Speichern</button>
-          <button type="button" id="v6Prev" class="secondary">←</button>
           <span id="v6Counter" class="small">1 / 6</span>
-          <button type="button" id="v6Next" class="secondary">→</button>
           <button type="button" id="v6Edit" class="secondary">Bearbeitungsmodus</button>
           <span class="v6-edittools" hidden>
             <button type="button" id="v6Undo" class="secondary">Rückgängig</button>
-            <button type="button" id="v6AddText" class="secondary">Text hinzufügen</button>
-            <button type="button" id="v6AddSticker" class="secondary">Sticker hinzufügen</button>
-            <label>Farbe <select id="v6DesignTarget"><option value="heading">Überschrift</option><option value="text">Text</option><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
-            <input id="v6DesignColor" type="color" value="#1e3a5f">
-            <label>Musterziel <select id="v6PatternTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
-            <label>Muster <select id="v6PatternType"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Wellen</option></select></label>
-            <input id="v6PatternColor" type="color" value="#dbe4ef">
-            <input id="v6BgInput" type="file" accept="image/*" hidden>
-            <button type="button" id="v6BgBtn" class="secondary">Hintergrundbild</button>
-            <button type="button" id="v6BgRemove" class="secondary">Bild entfernen</button>
+            <button type="button" id="v6AddMenu" class="secondary">Hinzufügen</button>
+            <button type="button" id="v6DesignMenu" class="secondary">Design</button>
             <button type="button" id="v6Reset" class="warning-btn">Zurücksetzen</button>
           </span>
           <span class="v6-spacer"></span>
           <button type="button" id="v6Close" class="secondary">Schließen</button>
         </div>
+        <div class="v6-toolbar v6-dock" id="v6AddDock" data-editor-toolbar hidden>
+          <button type="button" id="v6AddText" class="secondary">Text</button>
+          <button type="button" id="v6AddSticker" class="secondary">Sticker</button>
+          <input id="v6BgInput" type="file" accept="image/*" hidden>
+          <button type="button" id="v6BgBtn" class="secondary">Hintergrundbild</button>
+          <button type="button" id="v6BgRemove" class="secondary">Bild entfernen</button>
+        </div>
+        <div class="v6-toolbar v6-dock" id="v6DesignDock" data-editor-toolbar hidden>
+          <label>Farbe <select id="v6DesignTarget"><option value="heading">Überschrift</option><option value="text">Text</option><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+          <input id="v6DesignColor" type="color" value="#1e3a5f">
+          <span class="v6-sep"></span>
+          <label>Musterziel <select id="v6PatternTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+          <label>Muster <select id="v6PatternType"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Wellen</option></select></label>
+          <label>Musterfarbe <input id="v6PatternColor" type="color" value="#dbe4ef"></label>
+        </div>
         <div class="v6-toolbar v6-contextbar" id="v6Context" data-editor-toolbar hidden>
-          <strong>Auswahl</strong>
           <label>Schriftgröße <input id="v6FontSize" type="number" min="8" max="140" value="22"> px</label>
           <label>Textfarbe <input id="v6TextColor" type="color" value="#0f172a"></label>
-          <span class="v6-layer-indicator">Ebene: <strong id="v6LayerLevel">—</strong></span>
-          <button type="button" id="v6Front" class="secondary">Nach vorn</button>
-          <button type="button" id="v6Back" class="secondary">Nach hinten</button>
+          <span class="v6-layer-control" aria-label="Ebenensteuerung">
+            <button type="button" id="v6AllBack" class="secondary" title="Ganz nach hinten">&lt;&lt;</button>
+            <button type="button" id="v6Back" class="secondary" title="Eine Ebene nach hinten">&lt;</button>
+            <span class="v6-layer-indicator">Ebene: <strong id="v6LayerLevel">—</strong></span>
+            <button type="button" id="v6Front" class="secondary" title="Eine Ebene nach vorne">&gt;</button>
+            <button type="button" id="v6AllFront" class="secondary" title="Ganz nach vorne">&gt;&gt;</button>
+          </span>
           <button type="button" id="v6Delete" class="danger" disabled>Auswahl löschen</button>
         </div>
         <div id="v6Stage" class="v6-stage"><section id="v6Slide" class="v6-slide"></section></div>
+        <div class="v6-slide-nav" data-editor-toolbar>
+          <button type="button" id="v6Prev" class="secondary">←</button>
+          <button type="button" id="v6Next" class="secondary">→</button>
+        </div>
         <div id="v6Toast" class="v6-toast" hidden></div>
       </div>`;
     document.body.appendChild(modal);
@@ -301,8 +314,10 @@
     $('#v6Close').addEventListener('click', close);
     $('#v6Prev').addEventListener('click', () => { slideIndex = clamp(slideIndex-1,0,SLIDE_COUNT-1); select(null); renderSlide(); });
     $('#v6Next').addEventListener('click', () => { slideIndex = clamp(slideIndex+1,0,SLIDE_COUNT-1); select(null); renderSlide(); });
-    $('#v6Edit').addEventListener('click', () => { editMode = !editMode; renderSlide(); });
+    $('#v6Edit').addEventListener('click', () => { editMode = !editMode; if(!editMode){ activePanel=null; select(null); } updateToolbar(); renderSlide(); });
     $('#v6Undo').addEventListener('click', undo);
+    $('#v6AddMenu').addEventListener('click', () => { if(!editMode) return; activePanel = activePanel === 'add' ? null : 'add'; updateToolbar(); });
+    $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); updateToolbar(); });
     $('#v6AddText').addEventListener('click', addTextBox);
     $('#v6AddSticker').addEventListener('click', openStickerPicker);
     $('#v6Reset').addEventListener('click', () => { if(confirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?')) resetToBaseline(); });
@@ -316,8 +331,10 @@
     $('#v6BgInput').addEventListener('change', (e) => { const f=e.target.files && e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ pushUndo(); draft.settings.backgroundImage=String(r.result||''); dirty=true; applyTheme(); }; r.readAsDataURL(f); e.target.value=''; });
     $('#v6FontSize').addEventListener('input', () => { if(!selectedId) return; pushUndoOnce('fontsize_'+selectedId); setSelectedStyle({fontSize: clamp(num($('#v6FontSize').value,22),8,140)}); });
     $('#v6TextColor').addEventListener('input', () => { if(!selectedId) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
-    $('#v6Front').addEventListener('click', () => { if(!selectedId) return; pushUndo(); changeZ(10); });
-    $('#v6Back').addEventListener('click', () => { if(!selectedId) return; pushUndo(); changeZ(-10); });
+    $('#v6Front').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer(1); });
+    $('#v6Back').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer(-1); });
+    $('#v6AllFront').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer('front'); });
+    $('#v6AllBack').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer('back'); });
     $('#v6Delete').addEventListener('click', deleteSelected);
   }
   function syncDesignInputs(){ const t=modal.querySelector('#v6DesignTarget').value; modal.querySelector('#v6DesignColor').value = draft.settings[t] || THEME_DEFAULT[t] || '#000000'; }
@@ -326,7 +343,7 @@
     ensureModal();
     draft = clone(getSaved());
     savedAtOpen = clone(draft);
-    dirty = false; editMode = false; slideIndex = 0; selectedId = null; undoStack = [];
+    dirty = false; editMode = false; slideIndex = 0; selectedId = null; undoStack = []; activePanel = null;
     modal.hidden = false;
     document.documentElement.classList.add('v6-modal-open');
     renderAll();
@@ -412,7 +429,29 @@
   }
   function endTransform(){ window.removeEventListener('pointermove', onTransformMove); drag = null; updateToolbar(); }
   function setSelectedStyle(changes){ const el = selectedId ? getElement(selectedId) : null; if(!el) return; setElLayout(el, changes); markDirty(); }
-  function changeZ(delta){ const el = selectedId ? getElement(selectedId) : null; if(!el) return; const l=getElLayout(el); setElLayout(el,{z: clamp(num(l.z,20)+delta,1,999)}); markDirty(); }
+  function orderedElements(){
+    const slide = modal && modal.querySelector('#v6Slide');
+    if(!slide) return [];
+    return Array.from(slide.querySelectorAll('.v6-el')).map((node, i) => ({node, z:num(getElLayout(node).z,20), i})).sort((a,b)=>(a.z-b.z)||(a.i-b.i));
+  }
+  function normalizeLayers(items){
+    items.forEach((item, i) => setElLayout(item.node, {z: 10 + (i+1)*10}));
+  }
+  function moveLayer(direction){
+    const el = selectedId ? getElement(selectedId) : null;
+    if(!el) return;
+    const items = orderedElements();
+    const idx = items.findIndex(item => item.node === el);
+    if(idx < 0) return;
+    const [current] = items.splice(idx, 1);
+    let target = idx;
+    if(direction === 'front') target = items.length;
+    else if(direction === 'back') target = 0;
+    else target = clamp(idx + Number(direction || 0), 0, items.length);
+    items.splice(target, 0, current);
+    normalizeLayers(items);
+    markDirty(); updateToolbar();
+  }
   function deleteSelected(){
     const el = selectedId ? getElement(selectedId) : null; if(!el || el.dataset.v6Deletable !== 'true') return;
     pushUndo();
@@ -451,7 +490,7 @@
       if(levelEl) levelEl.textContent = getLayerLevel(el);
       modal.querySelector('#v6Delete').disabled = el.dataset.v6Deletable !== 'true';
     }
-    syncDesignInputs(); syncPatternInputs();
+    if(activePanel === 'design'){ syncDesignInputs(); syncPatternInputs(); }
   }
   function toHex(c){ if(!c) return '#0f172a'; if(String(c).startsWith('#')) return c; const m=String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(!m) return '#0f172a'; return '#'+[m[1],m[2],m[3]].map(v=>(+v).toString(16).padStart(2,'0')).join(''); }
 
@@ -459,10 +498,7 @@
     if(!el) return '—';
     const slide = modal && modal.querySelector('#v6Slide');
     if(!slide) return '—';
-    const elements = Array.from(slide.querySelectorAll('.v6-el')).map((node, i) => {
-      const layout = getElLayout(node);
-      return {node, z: num(layout.z, 20), i};
-    }).sort((a,b) => (a.z - b.z) || (a.i - b.i));
+    const elements = orderedElements();
     const idx = elements.findIndex(item => item.node === el);
     return idx >= 0 ? String(idx + 1) : '—';
   }

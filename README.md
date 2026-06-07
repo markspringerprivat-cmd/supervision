@@ -1,94 +1,53 @@
-# Gruppensupervision ESE – Website-Prototyp
+# Supervision-Prototyp für GitHub Pages
 
-Statischer Prototyp für GitHub Pages mit HTML, CSS und JavaScript.
+Diese Version ist auf die aktualisierte Google-Sheet-Tabelle abgestimmt.
 
-## Inhalt
+## Enthalten
 
-- `index.html` – Startseite
-- `rollen.html` – Namen eintragen, Rollen zufällig verteilen, QR-Codes erzeugen
-- `rolle-*.html` – Rollenkarten für Supervisor*in, Schulleitung, Lehrkraft A, Lehrkraft B
-- `gedanken-*.html` – Vorbereitungsnotizen je Rolle
-- `phase1-*.html` bis `phase6-*.html` – 24 Phasenseiten je Rolle
-- `zusammenfassung.html` – Ergebnissicherung für Supervisor*in
-- `ergebnisse.html` – zentrale Übersicht aus Google Sheet
-- `apps-script/Code.gs` – Google Apps Script für Google Sheet
+- `index.html` direkt im Root für GitHub Pages
+- Rollenverteilung mit QR-Codes
+- Rollenkarten und Vorbereitungsseiten
+- 6 Phasen für 4 Rollen
+- Supervisor-Seiten mit Eingabefeldern für die spätere Tabelle
+- `zusammenfassung.html` zum Prüfen und Speichern der Ergebnisse
+- `ergebnisse.html` zum Auslesen der gespeicherten Gruppen
+- `google-test.html` zum Verbindungstest
+- `apps-script/Code.gs` mit neuer Tabellenstruktur
 
-## Lokale Speicherung
+## Google Apps Script aktualisieren
 
-Notizen werden im Browser mit `localStorage` gespeichert. Das ist zuverlässiger als Cookies, weil die Notizen länger sein können. Die Speicherung bleibt lokal auf dem jeweiligen Gerät.
-
-## QR-Codes
-
-Die QR-Codes werden über `api.qrserver.com` erzeugt. Die QR-Links enthalten Gruppen-ID und Rollenverteilung als URL-Parameter, damit Handys nach dem Scannen die richtige Rollenkarte öffnen.
-
-## Veröffentlichung auf GitHub Pages
-
-1. Neues GitHub Repository erstellen.
-2. Alle Dateien dieses Ordners hochladen.
-3. Repository Settings > Pages.
-4. Branch `main`, Ordner `/root` auswählen.
-5. Speichern und die GitHub-Pages-URL abwarten.
-
-## Google Sheet einrichten
-
-1. Neues Google Sheet erstellen.
-2. Erweiterungen > Apps Script öffnen.
-3. Inhalt aus `apps-script/Code.gs` einfügen.
+1. Öffne dein Apps-Script-Projekt.
+2. Ersetze den kompletten Inhalt von `Code.gs` durch den Inhalt aus `apps-script/Code.gs` dieser ZIP.
+3. Trage dein Admin-Passwort in `ADMIN_PASSWORD` ein.
 4. Speichern.
-5. Bereitstellen > Neue Bereitstellung > Web-App.
-6. Ausführen als: Ich.
-7. Zugriff: Jeder mit dem Link.
-8. Web-App-URL kopieren.
-9. In `js/config.js` bei `APPS_SCRIPT_URL` eintragen.
+5. `Bereitstellen` → `Bereitstellungen verwalten` → bestehende Web-App bearbeiten.
+6. Bei Version `Neue Version` wählen.
+7. Bereitstellen.
 
-Danach können Ergebnisse über `zusammenfassung.html` an das Sheet gesendet und über `ergebnisse.html` angezeigt werden.
+## Tabelle neu aufsetzen
 
-## Hinweis zum Datenschutz
+Damit die Überschriften sauber gesetzt werden:
 
-Für den Seminarkontext sollten keine echten Schüler*innennamen und keine sensiblen personenbezogenen Daten eingetragen werden.
+1. In Apps Script die Funktion `resetSheet` auswählen.
+2. Einmal ausführen.
+3. Danach enthält das Tabellenblatt `Ergebnisse` die neuen Spalten.
 
+Achtung: `resetSheet` löscht vorhandene Testdaten.
 
-## Google-Sheet-Anbindung – bereits vorbereitet
+## Gespeicherte Spalten
 
-In `js/config.js` ist die bereitgestellte Apps-Script-Web-App-URL bereits eingetragen:
+Die Website sendet jetzt u. a. diese Felder:
 
-```js
-APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxCznTmGdJvYBpa7WUzAyR6BEv55pZ9I9vLrRxQKyHv5H6-i3tZKzyYV5X6jKM4plcg/exec"
-```
+- Probleme / Beobachtungen, Gefühle und Wünsche getrennt nach Schulleitung, Lehrkraft A und Lehrkraft B
+- individuelle Ziele und gemeinsame Zielvereinbarung
+- Brainstorming / hilfreiche Kritik
+- Anerkennungsrunde / Perspektiven
+- Absprachen zum weiteren Vorgehen
+- Zustimmung / Rückmeldung
+- Unterstützung durch Schulleitung
+- erste konkrete Umsetzungsschritte
+- Einschätzung der Praxistauglichkeit
 
-In `apps-script/Code.gs` ist die Google-Sheet-ID bereits eingetragen:
+## GitHub Pages
 
-```js
-const SPREADSHEET_ID = '1egAveElyXdI9nC4yQfZCtUUwqn8-byODELn4mvuzY';
-const SHEET_NAME = 'Ergebnisse';
-```
-
-Wichtig: `ADMIN_PASSWORD` im Apps Script selbst ersetzen und danach neu bereitstellen.
-
-Wenn du den Apps-Script-Code änderst, musst du in Apps Script erneut auf **Bereitstellen > Bereitstellungen verwalten > Bearbeiten > Neue Version > Bereitstellen** gehen.
-
-
-## Fehlerbehebung Google Sheet
-
-Wenn beim Speichern die Meldung erscheint, dass keine Apps-Script-URL gefunden wurde, lädt der Browser vermutlich noch eine alte Version oder `js/config.js` wurde nicht mit hochgeladen. In dieser Version ist die URL zusätzlich fest in `js/app.js` als `DEFAULT_APPS_SCRIPT_URL` hinterlegt.
-
-Teste nach dem Hochladen die Seite `google-test.html`. Dort wird angezeigt, welche URL die Website wirklich verwendet.
-
-Wenn die direkte Apps-Script-URL eine Google-Drive-Fehlermeldung zeigt, liegt das nicht an GitHub Pages, sondern an der Apps-Script-Bereitstellung. Dann in Apps Script neu bereitstellen:
-
-- Bereitstellen > Bereitstellungen verwalten > Bearbeiten
-- Zugriff: Jeder
-- Ausführen als: Ich
-- Version: Neue Version
-- Danach die neue `/exec`-URL kopieren und in `js/config.js` ersetzen.
-
-
-## Aktuelle Google-Sheet-Anbindung
-
-Diese ZIP ist bereits auf diese Web-App-URL eingestellt:
-
-`https://script.google.com/macros/s/AKfycbxCznTmGdJvYBpa7WUzAyR6BEv55pZ9I9vLrRxQKyHv5H6-i3tZKzyYV5X6jKM4plcg/exec`
-
-Die Ergebnisübersicht nutzt zuerst normales JSON-Auslesen und fällt bei Bedarf auf JSONP zurück. Dadurch funktioniert sie sowohl mit dem einfachen Apps-Script-Code, der `{ ok: true, entries: [...] }` ausgibt, als auch mit dem beiliegenden `apps-script/Code.gs`.
-
-Falls du den Code im Apps Script änderst, danach immer: **Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Neue Version → Bereitstellen**.
+Den Inhalt der ZIP direkt in dein Repository hochladen. `index.html` muss auf oberster Ebene liegen.

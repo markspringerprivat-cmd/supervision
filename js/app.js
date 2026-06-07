@@ -337,7 +337,7 @@ function prepFields(role) {
 }
 
 function setupSaving() {
-  document.querySelectorAll("textarea[data-save], input[data-save]").forEach(el => {
+  document.querySelectorAll("textarea[data-save], input[data-save], select[data-save]").forEach(el => {
     const k = el.dataset.save;
     el.value = loadText(k);
     el.addEventListener("input", () => saveText(k, el.value));
@@ -404,13 +404,26 @@ function supervisorPhase(phase) {
         </ol>
       </section>
       <section class="card">
-        <h2>Stichpunkte Problembeschreibung</h2>
-        ${noteArea("Schulleitung: Gefühle", "sup_p2_sl_gefuehle")}
-        ${noteArea("Schulleitung: Wünsche", "sup_p2_sl_wuensche")}
-        ${noteArea("Lehrkraft A: Gefühle", "sup_p2_a_gefuehle")}
-        ${noteArea("Lehrkraft A: Wünsche", "sup_p2_a_wuensche")}
-        ${noteArea("Lehrkraft B: Gefühle", "sup_p2_b_gefuehle")}
-        ${noteArea("Lehrkraft B: Wünsche", "sup_p2_b_wuensche")}
+        <h2>Stichpunkte für die Tabelle</h2>
+        <p class="small">Halte die Aussagen so fest, dass sie später sauber in der Ergebnistabelle erscheinen: Problem/Beobachtung, Gefühle und Wünsche jeweils getrennt nach Rolle.</p>
+        <div class="role-note-block">
+          <h3>Schulleitung</h3>
+          ${noteArea("Problem / Beobachtung", "sup_p2_sl_probleme")}
+          ${noteArea("Gefühle", "sup_p2_sl_gefuehle")}
+          ${noteArea("Wünsche", "sup_p2_sl_wuensche")}
+        </div>
+        <div class="role-note-block">
+          <h3>Lehrkraft A</h3>
+          ${noteArea("Problem / Perspektive", "sup_p2_a_probleme")}
+          ${noteArea("Gefühle", "sup_p2_a_gefuehle")}
+          ${noteArea("Wünsche", "sup_p2_a_wuensche")}
+        </div>
+        <div class="role-note-block">
+          <h3>Lehrkraft B</h3>
+          ${noteArea("Problem / Perspektive", "sup_p2_b_probleme")}
+          ${noteArea("Gefühle", "sup_p2_b_gefuehle")}
+          ${noteArea("Wünsche", "sup_p2_b_wuensche")}
+        </div>
       </section>
     </div>`;
   if (phase === 3) return `
@@ -470,6 +483,13 @@ function supervisorPhase(phase) {
       <section class="card">
         <h2>Automatische Zwischenergebnisse</h2>
         ${miniSummaryHtml()}
+        <label>Zustimmung erfolgt?</label>
+        <select data-save="sup_p5_zustimmung_status">
+          <option value="">Bitte auswählen</option>
+          <option value="Alle stimmen zu">Alle stimmen zu</option>
+          <option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option>
+          <option value="Keine Zustimmung">Keine Zustimmung</option>
+        </select>
         ${noteArea("Rückmeldungen / Zustimmung / offene Punkte", "sup_p5_zustimmung")}
       </section>
     </div>`;
@@ -541,10 +561,21 @@ function prepHtml(items) {
 
 function miniSummaryHtml() {
   const data = collectSupervisorData();
+  const roleRows = [
+    ["Schulleitung", data.p2.slProbleme, data.p2.slGefuehle, data.p2.slWuensche],
+    ["Lehrkraft A", data.p2.aProbleme, data.p2.aGefuehle, data.p2.aWuensche],
+    ["Lehrkraft B", data.p2.bProbleme, data.p2.bGefuehle, data.p2.bWuensche]
+  ];
   return `
-    <div class="summary-block"><strong>Probleme / Gefühle / Wünsche:</strong><br>${escapeHtml(shortLine([data.p2.slGefuehle, data.p2.slWuensche, data.p2.aGefuehle, data.p2.aWuensche, data.p2.bGefuehle, data.p2.bWuensche]))}</div>
-    <div class="summary-block"><strong>Gemeinsames Ziel:</strong><br>${escapeHtml(data.p3.gemeinsamesZiel || "Noch nicht notiert.")}</div>
-    <div class="summary-block"><strong>Brainstorming / Absprachen:</strong><br>${escapeHtml(shortLine([data.p4.kritik, data.p4.anerkennung, data.p4.absprachen]))}</div>
+    <div class="table-wrap">
+      <table class="summary-table">
+        <thead><tr><th>Rolle</th><th>Problem / Perspektive</th><th>Gefühle</th><th>Wünsche</th></tr></thead>
+        <tbody>${roleRows.map(r => `<tr><td><strong>${escapeHtml(r[0])}</strong></td><td>${escapeHtml(r[1] || "—")}</td><td>${escapeHtml(r[2] || "—")}</td><td>${escapeHtml(r[3] || "—")}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <div class="summary-block"><strong>Gemeinsame Zielvereinbarung:</strong><br>${escapeHtml(data.p3.gemeinsamesZiel || "Noch nicht notiert.")}</div>
+    <div class="summary-block"><strong>Brainstorming / hilfreiche Kritik:</strong><br>${escapeHtml(data.p4.kritik || "Noch nicht notiert.")}</div>
+    <div class="summary-block"><strong>Absprachen zum weiteren Vorgehen:</strong><br>${escapeHtml(data.p4.absprachen || "Noch nicht notiert.")}</div>
   `;
 }
 
@@ -559,16 +590,22 @@ function collectSupervisorData() {
     timestamp: new Date().toISOString(),
     p1: { rahmen: loadText("sup_p1_rahmen") },
     p2: {
-      slGefuehle: loadText("sup_p2_sl_gefuehle"), slWuensche: loadText("sup_p2_sl_wuensche"),
-      aGefuehle: loadText("sup_p2_a_gefuehle"), aWuensche: loadText("sup_p2_a_wuensche"),
-      bGefuehle: loadText("sup_p2_b_gefuehle"), bWuensche: loadText("sup_p2_b_wuensche")
+      slProbleme: loadText("sup_p2_sl_probleme"),
+      slGefuehle: loadText("sup_p2_sl_gefuehle"),
+      slWuensche: loadText("sup_p2_sl_wuensche"),
+      aProbleme: loadText("sup_p2_a_probleme"),
+      aGefuehle: loadText("sup_p2_a_gefuehle"),
+      aWuensche: loadText("sup_p2_a_wuensche"),
+      bProbleme: loadText("sup_p2_b_probleme"),
+      bGefuehle: loadText("sup_p2_b_gefuehle"),
+      bWuensche: loadText("sup_p2_b_wuensche")
     },
     p3: {
       zielSL: loadText("sup_p3_ziel_sl"), zielA: loadText("sup_p3_ziel_a"), zielB: loadText("sup_p3_ziel_b"),
       gemeinsamkeiten: loadText("sup_p3_gemeinsamkeiten"), gemeinsamesZiel: loadText("sup_p3_gemeinsames_ziel")
     },
     p4: { kritik: loadText("sup_p4_kritik"), anerkennung: loadText("sup_p4_anerkennung"), absprachen: loadText("sup_p4_absprachen") },
-    p5: { zustimmung: loadText("sup_p5_zustimmung") },
+    p5: { zustimmung: [loadText("sup_p5_zustimmung_status"), loadText("sup_p5_zustimmung")].filter(Boolean).join("\n\n") },
     p6: { praxistauglichkeit: loadText("sup_p6_praxistauglichkeit"), unterstuetzung: loadText("sup_p6_unterstuetzung"), umsetzung: loadText("sup_p6_umsetzung") }
   };
 }
@@ -608,7 +645,33 @@ function renderSummary(data) {
 function summarySection(title, obj) {
   return `<section class="card"><h2>${title}</h2>${Object.entries(obj).map(([k,v]) => `<div class="summary-block"><strong>${labelize(k)}</strong><br>${escapeHtml(v || "—")}</div>`).join("")}</section>`;
 }
-function labelize(s) { return s.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()); }
+function labelize(s) {
+  const labels = {
+    rahmen: "Rahmen / Gesprächsregeln / Bereitschaft",
+    slProbleme: "Schulleitung - Probleme / Beobachtung",
+    slGefuehle: "Schulleitung - Gefühle",
+    slWuensche: "Schulleitung - Wünsche",
+    aProbleme: "Lehrkraft A - Probleme / Perspektive",
+    aGefuehle: "Lehrkraft A - Gefühle",
+    aWuensche: "Lehrkraft A - Wünsche",
+    bProbleme: "Lehrkraft B - Probleme / Perspektive",
+    bGefuehle: "Lehrkraft B - Gefühle",
+    bWuensche: "Lehrkraft B - Wünsche",
+    zielSL: "Ziel Schulleitung",
+    zielA: "Ziel Lehrkraft A",
+    zielB: "Ziel Lehrkraft B",
+    gemeinsamkeiten: "Gemeinsamkeiten",
+    gemeinsamesZiel: "Gemeinsame Zielvereinbarung",
+    kritik: "Brainstorming / hilfreiche Kritik",
+    anerkennung: "Anerkennungsrunde / Perspektiven",
+    absprachen: "Absprachen zum weiteren Vorgehen",
+    zustimmung: "Zustimmung / Rückmeldung",
+    praxistauglichkeit: "Einschätzung der Praxistauglichkeit",
+    unterstuetzung: "Unterstützung durch Schulleitung",
+    umsetzung: "Erste konkrete Umsetzungsschritte"
+  };
+  return labels[s] || s.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase());
+}
 
 function buildPayload() {
   const data = collectSupervisorData();

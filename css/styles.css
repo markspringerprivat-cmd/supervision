@@ -839,3 +839,61 @@ button.small-reset,
   button.small-reset, .button.small-reset { width: 100%; }
   .reset-hero { min-height: auto; width: 100%; }
 }
+
+/* Update: breiterer Roulette-Sichtbereich, damit die Fokus-Kachel nicht in den Blur-Fade läuft */
+.result-carousel {
+  width: min(1720px, calc(100vw - 28px)) !important;
+  max-width: none !important;
+  margin-left: 50% !important;
+  margin-right: 0 !important;
+  transform: translateX(-50%) !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  overflow: hidden !important;
+}
+.result-carousel::before,
+.result-carousel::after {
+  width: clamp(30px, 4.5vw, 86px) !important;
+  backdrop-filter: blur(.9px) !important;
+  -webkit-backdrop-filter: blur(.9px) !important;
+  opacity: .92 !important;
+}
+.result-carousel::before {
+  left: 0 !important;
+  background: linear-gradient(
+    to right,
+    rgba(245,247,251,1) 0%,
+    rgba(245,247,251,.82) 34%,
+    rgba(245,247,251,.28) 72%,
+    rgba(245,247,251,0) 100%
+  ) !important;
+}
+.result-carousel::after {
+  right: 0 !important;
+  background: linear-gradient(
+    to left,
+    rgba(245,247,251,1) 0%,
+    rgba(245,247,251,.82) 34%,
+    rgba(245,247,251,.28) 72%,
+    rgba(245,247,251,0) 100%
+  ) !important;
+}
+.result-track {
+  --slot-gap: 64px !important;
+}
+.result-card.is-active {
+  filter: none !important;
+  opacity: 1 !important;
+}
+@media (max-width: 900px) {
+  .result-carousel {
+    width: calc(100vw - 16px) !important;
+  }
+  .result-carousel::before,
+  .result-carousel::after {
+    width: 28px !important;
+    backdrop-filter: blur(.55px) !important;
+    -webkit-backdrop-filter: blur(.55px) !important;
+  }
+  .result-track { --slot-gap: 24px !important; }
+}

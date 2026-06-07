@@ -1740,3 +1740,139 @@ body.presentation-body {
   .presentation-table { font-size: 0.9rem; }
   .presentation-table th, .presentation-table td { padding: 10px; }
 }
+
+/* ------------------------------------------------------------
+   ABSCHLIESSENDER FIX: Präsentationsmodus wirklich zentrieren
+   ------------------------------------------------------------ */
+html:has(body.presentation-body),
+body.presentation-body {
+  width: 100vw !important;
+  min-width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #0f172a !important;
+}
+
+main.presentation-shell {
+  max-width: none !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 56px minmax(0, 1fr) 64px !important;
+  justify-items: center !important;
+  align-items: center !important;
+}
+
+.presentation-toolbar {
+  grid-row: 1 !important;
+  width: 100vw !important;
+  max-width: none !important;
+  margin: 0 !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+}
+
+#presentationSlide.presentation-slide,
+.presentation-slide {
+  grid-row: 2 !important;
+  width: min(92vw, 1720px) !important;
+  height: min(78vh, calc(100vh - 150px)) !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 auto !important;
+  align-self: center !important;
+  justify-self: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 28px !important;
+}
+
+.presentation-slide-inner {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: stretch !important;
+  padding: clamp(34px, 4.8vh, 72px) clamp(48px, 6.2vw, 112px) !important;
+}
+
+.presentation-slide h1,
+.presentation-slide h2,
+.presentation-kicker,
+.presentation-note,
+.presentation-subtitle {
+  text-align: left !important;
+}
+
+.presentation-slide h1 {
+  margin-bottom: 1cm !important;
+}
+
+.presentation-slide h1 + .presentation-subtitle {
+  margin-top: 0 !important;
+}
+
+.presentation-table-wrap {
+  width: 100% !important;
+  max-height: none !important;
+  flex: 0 1 auto !important;
+}
+
+.presentation-nav {
+  grid-row: 3 !important;
+  width: 100vw !important;
+  max-width: none !important;
+  margin: 0 !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+:fullscreen main.presentation-shell,
+:fullscreen .presentation-shell {
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+:fullscreen #presentationSlide.presentation-slide,
+:fullscreen .presentation-slide {
+  width: min(92vw, 1720px) !important;
+  height: min(78vh, calc(100vh - 150px)) !important;
+  align-self: center !important;
+  justify-self: center !important;
+}
+
+@media (max-width: 900px) {
+  body.presentation-body {
+    overflow: auto !important;
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+  main.presentation-shell {
+    min-height: 100vh !important;
+    height: auto !important;
+    grid-template-rows: auto minmax(72vh, auto) auto !important;
+  }
+  #presentationSlide.presentation-slide,
+  .presentation-slide {
+    width: calc(100vw - 20px) !important;
+    height: auto !important;
+    min-height: 72vh !important;
+    margin: 10px auto !important;
+  }
+  .presentation-slide-inner {
+    justify-content: flex-start !important;
+    padding: 26px !important;
+  }
+}

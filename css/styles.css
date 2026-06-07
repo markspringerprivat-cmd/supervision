@@ -3007,3 +3007,19 @@ body.presentation-body[data-presentation-pattern="none"]::before {
 .v6-contextbar label,.v6-dock label{display:inline-flex;align-items:center;gap:7px;color:#e5edf7;font-weight:700}
 .v6-contextbar input[type="color"],.v6-dock input[type="color"]{width:40px;height:34px;padding:0;border:2px solid #dbe4ef;border-radius:6px;background:#fff}
 .v6-contextbar select,.v6-dock select{background:#fff;color:#0f172a;border:0;border-radius:9px;padding:10px 12px;font-weight:700}
+
+/* Stabilisierung Präsentationseditor: klarere Ausgangslayouts und Dock-Wechsel */
+.v6-shell{height:100dvh;min-height:100vh;}
+.v6-mainbar{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;min-height:58px;padding-top:8px;padding-bottom:8px;}
+.v6-dock,.v6-contextbar{min-height:56px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;}
+.v6-dock[hidden],.v6-contextbar[hidden],.v6-edittools[hidden]{display:none!important;}
+.v6-stage{padding:28px 32px 20px;}
+.v6-slide{width:min(90vw,1360px);height:min(73vh,760px);}
+.v6-type-title .v6-editable-text{line-height:1.05;}
+.v6-type-groupName .v6-editable-text{line-height:1.06;}
+.v6-table{height:100%;}
+.v6-type-table{overflow:hidden;}
+.v6-type-table .v6-table{height:auto;max-height:100%;}
+.v6-table th,.v6-table td{overflow-wrap:anywhere;word-break:normal;line-height:1.25;}
+.v6-toolbar .success-btn{filter:none;}
+.v6-toolbar button{white-space:nowrap;}

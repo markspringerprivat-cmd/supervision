@@ -3,8 +3,8 @@
   'use strict';
 
   const ADMIN_PASSWORD = 'Mark123';
-  const STATE_KEY_BASE = 'presentation_v6_state';
-  const BASELINE_KEY_BASE = 'presentation_v6_baseline';
+  const STATE_KEY_BASE = 'presentation_v7_state';
+  const BASELINE_KEY_BASE = 'presentation_v7_baseline';
   const LEGACY_STATE_KEY = 'sv_presentation_v5_state';
   const STICKER_PATH = 'assets/stickers/';
   const STICKERS = ['team4.png','team2.png','team3.png','brainstorm.png','team2reading.png','team3working.png','notices.png','worktogether.png','worktogether3.png'];
@@ -111,13 +111,19 @@
   function resetToBaseline(){ draft = clone(getBaseline()); selectedId = null; undoStack = []; dirty = true; renderAll(); }
 
   function defaultLayout(type, slide){
-    if(type === 'title') return {x:7,y:8,w:82,h:12,rot:0,z:20,fontSize:44,color:null};
-    if(type === 'kicker') return {x:7,y:22,w:50,h:5,rot:0,z:20,fontSize:14,color:null};
-    if(type === 'groupName') return {x:7,y:30,w:80,h:12,rot:0,z:20,fontSize:34,color:null};
-    if(type === 'subtitle') return {x:7,y:21,w:78,h:8,rot:0,z:20,fontSize:16,color:null};
-    if(type === 'table') return {x:7,y:34,w:86,h:42,rot:0,z:20,fontSize:16,color:null};
-    if(type === 'note') return {x:7,y:82,w:70,h:6,rot:0,z:20,fontSize:14,color:null};
-    if(type === 'thanks') return {x:12,y:38,w:76,h:18,rot:0,z:20,fontSize:48,color:null};
+    // Die Startlayouts sind bewusst großzügig gesetzt, damit Überschrift,
+    // Gruppenname und Tabellen nicht ineinanderlaufen. Alle Werte sind Prozent
+    // der Folie und bleiben dadurch auf unterschiedlichen Bildschirmgrößen stabil.
+    if(type === 'title') return {x:7,y:7,w:86,h:12,rot:0,z:20,fontSize:40,color:null};
+    if(type === 'kicker') return {x:7,y:22,w:50,h:5,rot:0,z:20,fontSize:13,color:null};
+    if(type === 'groupName') return {x:7,y:29,w:82,h:8,rot:0,z:20,fontSize:30,color:null};
+    if(type === 'subtitle') return {x:7,y:21,w:82,h:8,rot:0,z:20,fontSize:15,color:null};
+    if(type === 'table') {
+      if(Number(slide) === 0) return {x:7,y:43,w:86,h:34,rot:0,z:20,fontSize:15,color:null};
+      return {x:7,y:34,w:86,h:42,rot:0,z:20,fontSize:15,color:null};
+    }
+    if(type === 'note') return {x:7,y:84,w:72,h:6,rot:0,z:20,fontSize:13,color:null};
+    if(type === 'thanks') return {x:12,y:38,w:76,h:18,rot:0,z:20,fontSize:46,color:null};
     if(type === 'textbox') return {x:12,y:74,w:25,h:10,rot:0,z:80,fontSize:18,color:null};
     if(type === 'sticker') return {x:60,y:48,w:24,h:22,rot:0,z:90};
     return {x:7,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null};
@@ -316,8 +322,8 @@
     $('#v6Next').addEventListener('click', () => { slideIndex = clamp(slideIndex+1,0,SLIDE_COUNT-1); select(null); renderSlide(); });
     $('#v6Edit').addEventListener('click', () => { editMode = !editMode; if(!editMode){ activePanel=null; select(null); } updateToolbar(); renderSlide(); });
     $('#v6Undo').addEventListener('click', undo);
-    $('#v6AddMenu').addEventListener('click', () => { if(!editMode) return; activePanel = activePanel === 'add' ? null : 'add'; updateToolbar(); });
-    $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); updateToolbar(); });
+    $('#v6AddMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'add' ? null : 'add'; updateToolbar(); });
+    $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); updateToolbar(); });
     $('#v6AddText').addEventListener('click', addTextBox);
     $('#v6AddSticker').addEventListener('click', openStickerPicker);
     $('#v6Reset').addEventListener('click', () => { if(confirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?')) resetToBaseline(); });
@@ -390,7 +396,15 @@
       const rotate = el.querySelector('.v6-rotate'); if(rotate) rotate.addEventListener('pointerdown', e => startTransform(e, el, 'rotate'));
     });
   }
-  function select(id){ selectedId = id; if(modal) { modal.querySelectorAll('.v6-el').forEach(el => el.classList.toggle('is-selected', el.dataset.v6Id === id)); } updateToolbar(); }
+  function select(id){
+    selectedId = id;
+    if(id) activePanel = 'context';
+    else if(activePanel === 'context') activePanel = null;
+    if(modal) {
+      modal.querySelectorAll('.v6-el').forEach(el => el.classList.toggle('is-selected', el.dataset.v6Id === id));
+    }
+    updateToolbar();
+  }
   function getElement(id){ return modal ? modal.querySelector(`[data-v6-id="${cssEscape(id)}"]`) : null; }
   function getElType(el){ return el.dataset.v6Type || 'main'; }
   function getElLayout(el){
@@ -477,9 +491,14 @@
     modal.querySelector('#v6Edit').classList.toggle('success-btn', editMode);
     modal.querySelector('.v6-edittools').hidden = !editMode;
     modal.querySelector('#v6Undo').disabled = undoStack.length === 0;
+    if(!editMode) activePanel = null;
+    const addDock = modal.querySelector('#v6AddDock');
+    const designDock = modal.querySelector('#v6DesignDock');
+    if(addDock) addDock.hidden = !(editMode && activePanel === 'add');
+    if(designDock) designDock.hidden = !(editMode && activePanel === 'design');
     const ctx = modal.querySelector('#v6Context');
     const el = selectedId ? getElement(selectedId) : null;
-    const showCtx = editMode && !!el;
+    const showCtx = editMode && !!el && activePanel === 'context';
     ctx.hidden = !showCtx;
     if(!showCtx){ const levelEl = modal.querySelector('#v6LayerLevel'); if(levelEl) levelEl.textContent = '—'; }
     if(showCtx){
@@ -490,6 +509,10 @@
       if(levelEl) levelEl.textContent = getLayerLevel(el);
       modal.querySelector('#v6Delete').disabled = el.dataset.v6Deletable !== 'true';
     }
+    const addBtn = modal.querySelector('#v6AddMenu');
+    const designBtn = modal.querySelector('#v6DesignMenu');
+    if(addBtn) addBtn.classList.toggle('success-btn', editMode && activePanel === 'add');
+    if(designBtn) designBtn.classList.toggle('success-btn', editMode && activePanel === 'design');
     if(activePanel === 'design'){ syncDesignInputs(); syncPatternInputs(); }
   }
   function toHex(c){ if(!c) return '#0f172a'; if(String(c).startsWith('#')) return c; const m=String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(!m) return '#0f172a'; return '#'+[m[1],m[2],m[3]].map(v=>(+v).toString(16).padStart(2,'0')).join(''); }

@@ -5620,489 +5620,432 @@ try {
   renderSummaryPresentationSlideFinal = window.renderSummaryPresentationSlideFinal;
 } catch (_) {}
 
-/* ============================================================
-   FINAL EDITOR REBUILD 3: stabiler Präsentationseditor
-   - Bedienelemente nur im Bearbeitungsmodus
-   - Änderungen erst mit Speichern übernehmen
-   - Reset auf initiales Abbild beim ersten Öffnen
-   - robuste Sticker/Elementauswahl/Löschen/Drehen
-   ============================================================ */
+/* EDITOR V4: Undo, stabile Auswahl, Sticker-Resize/Move/Rotate, robuster Hintergrundbild-Import */
 (function(){
-  const STICKER_FILES = ['team4.png','team2.png','team3.png','brainstorm.png','team2reading.png','team3working.png','notices.png','worktogether.png','worktogether3.png'];
+  const SETTINGS_KEY = 'presentation_settings';
+  const EXTRAS_KEY = 'presentation_extras';
+  const STICKERS_KEY = 'presentation_stickers_v1';
+  const LAYOUT_KEY = 'presentation_layout_stable_v2';
+  const TEXT_KEY = 'presentation_text_overrides';
+  const DEFAULT_KEY = 'presentation_default_snapshot_v4';
   const STICKER_PATH = 'assets/stickers/';
-  const KEY_STATE = 'presentation_editor_state_v3';
-  const KEY_BASELINE = 'presentation_editor_baseline_v3';
-  const LEGACY_SETTINGS = 'presentation_settings';
-  const LEGACY_EXTRAS = 'presentation_extras';
-  const LEGACY_TEXT = 'presentation_text_overrides_v1';
-  const LEGACY_LAYOUT = 'presentation_layout_stable_v2';
-  const LEGACY_STICKERS = 'presentation_stickers_v1';
+  const STICKER_FILES = ['team4.png','team2.png','team3.png','brainstorm.png','team2reading.png','team3working.png','notices.png','worktogether.png','worktogether3.png'];
+  const SUPER_KEYS = [
+    'sup_p2_sl_probleme','sup_p2_sl_gefuehle','sup_p2_sl_wuensche',
+    'sup_p2_a_probleme','sup_p2_a_gefuehle','sup_p2_a_wuensche',
+    'sup_p2_b_probleme','sup_p2_b_gefuehle','sup_p2_b_wuensche',
+    'sup_p3_ziel_sl','sup_p3_ziel_a','sup_p3_ziel_b','sup_p3_gemeinsamkeiten','sup_p3_gemeinsames_ziel',
+    'sup_p4_kritik','sup_p4_absprachen','sup_p5_zustimmung','sup_p6_praxistauglichkeit','sup_p6_unterstuetzung','sup_p6_umsetzung','summary_group_name'
+  ];
+  const THEME_DEFAULT = {heading:'#1e3a5f', text:'#0f172a', background:'#0f172a', slide:'#ffffff', slidePattern:'none', slidePatternColor:'#e5e7eb', backgroundPattern:'none', backgroundPatternColor:'#1f2937', backgroundImage:''};
 
-  let modal = null;
   let draft = null;
-  let initialSavedOnOpen = null;
+  let savedAtOpen = null;
+  let undoStack = [];
   let dirty = false;
   let editMode = false;
   let slideIndex = 0;
-  let selected = null;
-  let drag = null;
+  let selectedId = null;
+  let dragState = null;
+  let suppressTextUndo = false;
 
-  const DEFAULT_SETTINGS = {
-    heading:'#1e3a5f', text:'#0f172a', background:'#0f172a', slide:'#ffffff',
-    slidePattern:'none', bgPattern:'none', slidePatternColor:'#e2e8f0', bgPatternColor:'#1e293b', bgImage:''
+  const clone = obj => JSON.parse(JSON.stringify(obj || {}));
+  const esc = s => (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function lObj(k, fb){ try { return (typeof loadObj === 'function') ? loadObj(k, fb) : (JSON.parse(localStorage.getItem(k) || 'null') || fb); } catch(_) { return fb; } }
+  function sObj(k, v){ try { if (typeof saveObj === 'function') saveObj(k, v); else localStorage.setItem(k, JSON.stringify(v)); } catch(_){} }
+  function lTxt(k){ try { return (typeof loadText === 'function') ? loadText(k) : (localStorage.getItem(k) || ''); } catch(_) { return ''; } }
+  function sTxt(k, v){ try { if (typeof saveText === 'function') saveText(k, v || ''); else localStorage.setItem(k, v || ''); } catch(_){} }
+  function snapshotStorage(){
+    const values = {}; SUPER_KEYS.forEach(k => values[k] = lTxt(k));
+    return {settings:Object.assign({}, THEME_DEFAULT, lObj(SETTINGS_KEY, {})), extras:arr(lObj(EXTRAS_KEY, [])), stickers:arr(lObj(STICKERS_KEY, [])), layout:lObj(LAYOUT_KEY, {}), text:lObj(TEXT_KEY, {}), values};
+  }
+  function saveSnapshotToStorage(snap){
+    if (!snap) return;
+    sObj(SETTINGS_KEY, Object.assign({}, THEME_DEFAULT, snap.settings || {}));
+    sObj(EXTRAS_KEY, arr(snap.extras));
+    sObj(STICKERS_KEY, arr(snap.stickers));
+    sObj(LAYOUT_KEY, snap.layout || {});
+    sObj(TEXT_KEY, snap.text || {});
+    Object.entries(snap.values || {}).forEach(([k,v]) => sTxt(k, v || ''));
+  }
+  function arr(x){ return Array.isArray(x) ? x : []; }
+  function markDirty(){ dirty = true; updateToolbarState(); }
+  function pushUndo(){
+    if (!draft) return;
+    undoStack.push(clone(draft));
+    if (undoStack.length > 3) undoStack.shift();
+    updateToolbarState();
+  }
+  function undo(){
+    if (!undoStack.length || !draft) return;
+    draft = undoStack.pop();
+    dirty = true;
+    selectedId = null;
+    renderSlide();
+  }
+  function commit(){
+    if (!draft) return;
+    persistDOMText();
+    saveSnapshotToStorage(draft);
+    savedAtOpen = clone(draft);
+    dirty = false;
+    undoStack = [];
+    updateToolbarState();
+    try { if (typeof renderSummary === 'function' && typeof collectSupervisorData === 'function') renderSummary(collectSupervisorData()); } catch(_){}
+  }
+  function ensureDefaultSnapshot(){
+    const existing = lObj(DEFAULT_KEY, null);
+    if (existing && typeof existing === 'object') return existing;
+    const snap = snapshotStorage();
+    sObj(DEFAULT_KEY, snap);
+    return snap;
+  }
+
+  window.getPresentationSettingsFinal = () => Object.assign({}, THEME_DEFAULT, lObj(SETTINGS_KEY, {}));
+  window.getPresentationExtrasFinal = () => arr(lObj(EXTRAS_KEY, []));
+  window.getPresentationStickersFinal = () => arr(lObj(STICKERS_KEY, []));
+  window.getPresentationTextOverridesFinal = () => lObj(TEXT_KEY, {});
+  window.savePresentationSettingsFinal = settings => sObj(SETTINGS_KEY, Object.assign({}, window.getPresentationSettingsFinal(), settings || {}));
+  window.savePresentationExtrasFinal = x => sObj(EXTRAS_KEY, arr(x));
+  window.savePresentationStickersFinal = x => sObj(STICKERS_KEY, arr(x));
+
+  function patternCss(kind, color){
+    const c = color || '#e5e7eb';
+    if (kind === 'dots') return {img:`radial-gradient(${c} 1.4px, transparent 1.4px)`, size:'18px 18px'};
+    if (kind === 'grid') return {img:`linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`, size:'28px 28px'};
+    if (kind === 'diagonal') return {img:`repeating-linear-gradient(135deg, transparent 0 12px, ${c} 12px 14px)`, size:'24px 24px'};
+    if (kind === 'waves') return {img:`radial-gradient(ellipse at top, ${c} 0 16%, transparent 17%), radial-gradient(ellipse at bottom, ${c} 0 14%, transparent 15%)`, size:'70px 34px'};
+    return {img:'none', size:'24px 24px'};
+  }
+  window.applyPresentationThemeToNodeFinal = function(host, settings){
+    if (!host) return;
+    const s = Object.assign({}, THEME_DEFAULT, settings || {});
+    host.style.setProperty('--presentation-heading-color', s.heading);
+    host.style.setProperty('--presentation-text-color', s.text);
+    host.style.setProperty('--presentation-background-color', s.background);
+    host.style.setProperty('--presentation-slide-color', s.slide);
+    host.style.setProperty('--presentation-background-image', s.backgroundImage ? `url("${s.backgroundImage}")` : 'none');
+    const sp = patternCss(s.slidePattern, s.slidePatternColor);
+    const bp = patternCss(s.backgroundPattern, s.backgroundPatternColor);
+    host.style.setProperty('--slide-pattern-image', sp.img); host.style.setProperty('--slide-pattern-size', sp.size);
+    host.style.setProperty('--background-pattern-image', bp.img); host.style.setProperty('--background-pattern-size', bp.size);
+    if (host.classList && (host.classList.contains('presentation-prep-stage') || host.classList.contains('presentation-body') || host.classList.contains('v4-stage'))) {
+      host.style.backgroundColor = s.background;
+      if (s.backgroundImage) host.classList.add('has-presentation-bg-image'); else host.classList.remove('has-presentation-bg-image');
+    }
+    if (host.classList && host.classList.contains('presentation-slide')) host.style.backgroundColor = s.slide;
   };
 
-  function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-  function clone(o){ try { return JSON.parse(JSON.stringify(o || {})); } catch(_) { return {}; } }
-  function getLS(k, fallback){
-    try {
-      if (typeof loadObj === 'function') return clone(loadObj(k, fallback));
-      const raw = localStorage.getItem('sv_' + k) || localStorage.getItem(k);
-      return raw ? JSON.parse(raw) : clone(fallback);
-    } catch(_) { return clone(fallback); }
-  }
-  function setLS(k, v){
-    try {
-      if (typeof saveObj === 'function') saveObj(k, v);
-      else localStorage.setItem('sv_' + k, JSON.stringify(v));
-    } catch(_) {}
-  }
-  function rmLS(k){ try { localStorage.removeItem('sv_'+k); localStorage.removeItem(k); } catch(_){} }
-  function getTextLS(k){
-    try {
-      if (typeof loadText === 'function') return loadText(k) || '';
-      return localStorage.getItem('sv_'+k) || localStorage.getItem(k) || '';
-    } catch(_) { return ''; }
-  }
-  function setTextLS(k, v){
-    try {
-      if (typeof saveText === 'function') saveText(k, v || '');
-      else localStorage.setItem('sv_'+k, v || '');
-    } catch(_) {}
-  }
-
-  function currentValuesFromLocal(){
-    const keys = [
-      'sup_p2_sl_probleme','sup_p2_sl_gefuehle','sup_p2_sl_wuensche','sup_p2_a_probleme','sup_p2_a_gefuehle','sup_p2_a_wuensche','sup_p2_b_probleme','sup_p2_b_gefuehle','sup_p2_b_wuensche',
-      'sup_p3_zielSL','sup_p3_zielA','sup_p3_zielB','sup_p3_gemeinsamkeiten','sup_p3_gemeinsamesZiel',
-      'sup_p4_kritik','sup_p4_absprachen','sup_p5_zustimmung','sup_p6_praxistauglichkeit','sup_p6_unterstuetzung','sup_p6_umsetzung'
-    ];
-    const out = {};
-    keys.forEach(k => out[k] = getTextLS(k));
-    return out;
-  }
-
-  function stateFromLocal(){
-    const saved = getLS(KEY_STATE, null);
-    if (saved && typeof saved === 'object' && saved.settings) return normalizeState(saved);
-    return normalizeState({
-      settings: Object.assign({}, DEFAULT_SETTINGS, getLS(LEGACY_SETTINGS, {})),
-      values: currentValuesFromLocal(),
-      textOverrides: getLS(LEGACY_TEXT, {}),
-      extras: getLS(LEGACY_EXTRAS, []),
-      stickers: getLS(LEGACY_STICKERS, []),
-      layout: getLS(LEGACY_LAYOUT, {})
-    });
-  }
-
-  function normalizeState(s){
-    s = s || {};
-    return {
-      settings: Object.assign({}, DEFAULT_SETTINGS, s.settings || {}),
-      values: Object.assign({}, currentValuesFromLocal(), s.values || {}),
-      textOverrides: Object.assign({}, s.textOverrides || {}),
-      extras: Array.isArray(s.extras) ? s.extras : [],
-      stickers: Array.isArray(s.stickers) ? s.stickers : [],
-      layout: Object.assign({}, s.layout || {})
-    };
-  }
-
-  function saveStateToLocal(state){
-    state = normalizeState(state);
-    setLS(KEY_STATE, state);
-    setLS(LEGACY_SETTINGS, state.settings);
-    setLS(LEGACY_EXTRAS, state.extras);
-    setLS(LEGACY_TEXT, state.textOverrides);
-    setLS(LEGACY_LAYOUT, state.layout);
-    setLS(LEGACY_STICKERS, state.stickers);
-    Object.entries(state.values || {}).forEach(([k,v]) => setTextLS(k, v || ''));
-  }
-
-  function ensureBaseline(){
-    let baseline = getLS(KEY_BASELINE, null);
-    if (!baseline || !baseline.settings) {
-      baseline = stateFromLocal();
-      setLS(KEY_BASELINE, baseline);
-    }
-    return normalizeState(baseline);
-  }
-
-  window.getPresentationSettingsFinal = function(){ return stateFromLocal().settings; };
-  window.getPresentationExtrasFinal = function(){ return stateFromLocal().extras; };
-  window.getPresentationTextOverridesFinal = function(){ return stateFromLocal().textOverrides; };
-  window.getPresentationStickersFinal = function(){ return stateFromLocal().stickers; };
-  window.getPresentationLayoutFinal = function(){ return stateFromLocal().layout; };
-
-  function groupInfo(){
-    let d = {};
-    try { d = typeof collectSupervisorData === 'function' ? collectSupervisorData() : {}; } catch(_) {}
-    const assignments = d.assignments || {};
-    return {
-      groupName: getTextLS('summary_group_name') || d.groupName || d.groupId || 'Gruppe',
-      timestamp: new Date().toLocaleString('de-DE'),
-      roles: [
-        ['Supervisor*in', assignments.supervisor || '—'],
-        ['Schulleitung', assignments.schulleitung || '—'],
-        ['Lehrkraft A', assignments['lehrkraft-a'] || assignments.lehrkraftA || '—'],
-        ['Lehrkraft B', assignments['lehrkraft-b'] || assignments.lehrkraftB || '—']
-      ]
-    };
-  }
-
-  function val(k){ return (draft && draft.values && draft.values[k]) || ''; }
-  function ov(k, fallback){ return (draft && draft.textOverrides && draft.textOverrides[k]) || fallback; }
-  function cell(k){ return `<td data-save-key="${esc(k)}" contenteditable="${editMode ? 'true' : 'false'}">${esc(val(k) || '—')}</td>`; }
-  function table(headers, rows, key){
-    return `<div class="presentation-table-wrap" data-edit-kind="core" data-core-key="${key}"><table class="presentation-table"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>Array.isArray(c)?cell(c[0]):`<td>${esc(c||'—')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-  }
-
-  function slides(){
-    const g = groupInfo();
-    return [
-      { id:'s0', title: 'Gruppenvorstellung', html:`<p class="presentation-kicker" data-edit-kind="core" data-core-key="s0_kicker">${esc(g.timestamp)}</p><h2 data-edit-kind="core" data-core-key="s0_h2">${esc(g.groupName)}</h2>${table(['Rolle','Name'], g.roles, 's0_table')}<p class="presentation-note" data-edit-kind="core" data-core-key="s0_note">Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.</p>` },
-      { id:'s1', title:'Problembeschreibung', desc:'Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.', html: table(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], [
-        ['Schulleitung',['sup_p2_sl_probleme'],['sup_p2_sl_gefuehle'],['sup_p2_sl_wuensche']],
-        ['Lehrkraft A',['sup_p2_a_probleme'],['sup_p2_a_gefuehle'],['sup_p2_a_wuensche']],
-        ['Lehrkraft B',['sup_p2_b_probleme'],['sup_p2_b_gefuehle'],['sup_p2_b_wuensche']]
-      ], 's1_table') },
-      { id:'s2', title:'Zielformulierung', desc:'Hier werden Einzelziele, Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.', html: table(['Bereich','Eintrag'], [
-        ['Ziel Schulleitung',['sup_p3_zielSL']], ['Ziel Lehrkraft A',['sup_p3_zielA']], ['Ziel Lehrkraft B',['sup_p3_zielB']], ['Gemeinsamkeiten',['sup_p3_gemeinsamkeiten']], ['Gemeinsame Zielvereinbarung',['sup_p3_gemeinsamesZiel']]
-      ], 's2_table') },
-      { id:'s3', title:'Vertiefte Problembearbeitung', desc:'Diese Folie fasst hilfreiche Kritik und Absprachen für die weitere Zusammenarbeit zusammen.', html: table(['Aspekt','Ergebnis'], [
-        ['Hilfreiche Kritik',['sup_p4_kritik']], ['Absprachen zum weiteren Vorgehen',['sup_p4_absprachen']]
-      ], 's3_table') },
-      { id:'s4', title:'Umsetzung', desc:'Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung.', html: table(['Aspekt','Ergebnis'], [
-        ['Zustimmung zur Vereinbarung',['sup_p5_zustimmung']], ['Einschätzung der Praxistauglichkeit durch die Schulleitung',['sup_p6_praxistauglichkeit']], ['Unterstützungsmöglichkeiten durch die Schulleitung',['sup_p6_unterstuetzung']], ['Erste konkrete Umsetzungsschritte',['sup_p6_umsetzung']]
-      ], 's4_table') },
-      { id:'s5', title:'', html:`<div class="thanks-slide" data-edit-kind="core" data-core-key="s5_thanks"><h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p></div>` }
-    ];
-  }
-
   function ensureModal(){
-    let old = document.getElementById('presentationPrepModal');
-    if (old) old.remove();
-    modal = document.createElement('div');
-    modal.id = 'presentationPrepModal';
-    modal.className = 'presentation-prep-modal v3';
+    let old = document.getElementById('presentationPrepModalV4');
+    if (old) return old;
+    const modal = document.createElement('div');
+    modal.id = 'presentationPrepModalV4';
+    modal.hidden = true;
     modal.innerHTML = `
-      <div class="presentation-prep-window fullscreen-v3" role="dialog" aria-modal="true">
-        <div class="presentation-prep-toolbar v3-mainbar">
-          <button type="button" id="savePresentationV3" class="success">Speichern</button>
-          <button type="button" id="prevSlideV3" class="secondary">←</button><span id="counterV3" class="small">1 / 6</span><button type="button" id="nextSlideV3" class="secondary">→</button>
-          <button type="button" id="toggleEditV3" class="success">Bearbeitung aktiv</button>
-          <span class="edit-only-v3 divider"></span>
-          <button type="button" id="addTextV3" class="secondary edit-only-v3">Text hinzufügen</button>
-          <button type="button" id="addStickerV3" class="secondary edit-only-v3">Sticker hinzufügen</button>
-          <button type="button" id="deleteSelectedV3" class="danger-soft edit-only-v3" disabled>Element löschen</button>
-          <button type="button" id="rotateSelectedV3" class="secondary edit-only-v3" disabled>↻ Drehen</button>
-          <label class="edit-only-v3">Design <select id="designTargetV3"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
-          <input class="edit-only-v3" id="designColorV3" type="color" value="#ffffff" title="Farbe">
-          <label class="edit-only-v3">Muster <select id="patternSelectV3"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Dezente Wellen</option></select></label>
-          <input class="edit-only-v3" id="patternColorV3" type="color" value="#e2e8f0" title="Musterfarbe">
-          <label class="button secondary edit-only-v3 file-label">Hintergrundbild<input id="bgImageV3" type="file" accept="image/*" hidden></label>
-          <button type="button" id="removeBgImageV3" class="secondary edit-only-v3">Bild entfernen</button>
-          <button type="button" id="resetDefaultsV3" class="soft-action edit-only-v3">Zurücksetzen</button>
-          <button type="button" id="closeV3" class="secondary close-right-v3">Schließen</button>
-        </div>
-        <div class="presentation-context-toolbar-v3 edit-only-v3" id="contextBarV3" hidden>
-          <strong>Auswahl</strong>
-          <label>Schriftgröße <input id="fontSizeV3" type="number" min="8" max="96" step="1" value="22"></label>
-          <button type="button" id="applyFontV3" class="secondary">Anwenden</button>
-          <label>Textfarbe <input id="textColorV3" type="color" value="#0f172a"></label>
-          <span id="selectionHintV3" class="small"></span>
-        </div>
-        <div class="presentation-prep-stage presentation-body"><section id="slideV3" class="presentation-slide presentation-slide-mini"></section></div>
-        <p class="small presentation-prep-hint">Änderungen werden erst mit „Speichern“ übernommen. „Zurücksetzen“ lädt den ursprünglichen Standardstand der Präsentation.</p>
-      </div>`;
+      <div class="v4-toolbar">
+        <button type="button" id="v4Save" class="primary v4-edit-only" hidden>Speichern</button>
+        <button type="button" id="v4Prev">←</button><span id="v4Counter" class="v4-status">1 / 6</span><button type="button" id="v4Next">→</button>
+        <button type="button" id="v4EditToggle">Bearbeitungsmodus</button>
+        <button type="button" id="v4Undo" class="v4-edit-only" hidden>↶ Rückgängig</button>
+        <button type="button" id="v4AddText" class="v4-edit-only" hidden>Text hinzufügen</button>
+        <button type="button" id="v4AddSticker" class="v4-edit-only" hidden>Sticker hinzufügen</button>
+        <label class="v4-edit-only" hidden>Design <select id="v4ThemeTarget"><option value="heading">Überschrift</option><option value="text">Text</option><option value="background">Hintergrund</option><option value="slide">Folie</option></select></label>
+        <input class="v4-edit-only" hidden id="v4ThemeColor" type="color" value="#1e3a5f" aria-label="Farbe wählen">
+        <label class="v4-edit-only" hidden>Muster <select id="v4PatternTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+        <select class="v4-edit-only" hidden id="v4Pattern"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Dezente Wellen</option></select>
+        <input class="v4-edit-only" hidden id="v4PatternColor" type="color" value="#e5e7eb" aria-label="Musterfarbe">
+        <input id="v4BgInput" type="file" accept="image/*" hidden>
+        <button type="button" id="v4BgButton" class="v4-edit-only" hidden>Hintergrundbild</button>
+        <button type="button" id="v4BgRemove" class="v4-edit-only" hidden>Bild entfernen</button>
+        <button type="button" id="v4Reset" class="v4-edit-only" hidden>Zurücksetzen</button>
+        <span class="v4-spacer"></span>
+        <button type="button" id="v4Close" class="close-right">Schließen</button>
+      </div>
+      <div id="v4Context" class="v4-contextbar" hidden>
+        <button type="button" id="v4Delete" class="danger">Auswahl löschen</button>
+        <button type="button" id="v4Rotate">↻ Drehen</button>
+        <label>Schriftgröße <input id="v4FontSize" type="number" min="8" max="120" step="1" value="22"> px</label>
+        <button type="button" id="v4ApplyFont">Anwenden</button>
+        <label>Textfarbe <input id="v4TextColor" type="color" value="#0f172a"></label>
+      </div>
+      <div class="v4-stage presentation-prep-stage presentation-body"><section id="summaryPresentationSlideV4" class="presentation-slide presentation-slide-mini"></section></div>`;
     document.body.appendChild(modal);
-    bindToolbar();
+    bindModal(modal);
     return modal;
   }
-
-  function bindToolbar(){
-    modal.querySelector('#savePresentationV3').onclick = saveDraft;
-    modal.querySelector('#closeV3').onclick = closeModal;
-    modal.querySelector('#prevSlideV3').onclick = () => moveSlide(-1);
-    modal.querySelector('#nextSlideV3').onclick = () => moveSlide(1);
-    modal.querySelector('#toggleEditV3').onclick = () => { editMode = !editMode; render(); };
-    modal.querySelector('#addTextV3').onclick = () => { addText(); };
-    modal.querySelector('#addStickerV3').onclick = openStickerPicker;
-    modal.querySelector('#deleteSelectedV3').onclick = deleteSelected;
-    modal.querySelector('#rotateSelectedV3').addEventListener('pointerdown', startToolbarRotate);
-    modal.querySelector('#applyFontV3').onclick = () => applyTextStyle('fontSize', (modal.querySelector('#fontSizeV3').value || '22') + 'px');
-    modal.querySelector('#textColorV3').oninput = e => applyTextStyle('color', e.target.value);
-    modal.querySelector('#designTargetV3').onchange = syncDesignControls;
-    modal.querySelector('#designColorV3').oninput = e => {
-      const t = modal.querySelector('#designTargetV3').value;
-      if (t === 'slide') draft.settings.slide = e.target.value;
-      else draft.settings.background = e.target.value;
-      markDirty(); render(false);
-    };
-    modal.querySelector('#patternSelectV3').onchange = e => {
-      const t = modal.querySelector('#designTargetV3').value;
-      if (t === 'slide') draft.settings.slidePattern = e.target.value;
-      else draft.settings.bgPattern = e.target.value;
-      markDirty(); render(false);
-    };
-    modal.querySelector('#patternColorV3').oninput = e => {
-      const t = modal.querySelector('#designTargetV3').value;
-      if (t === 'slide') draft.settings.slidePatternColor = e.target.value;
-      else draft.settings.bgPatternColor = e.target.value;
-      markDirty(); render(false);
-    };
-    modal.querySelector('#bgImageV3').onchange = e => {
-      const f = e.target.files && e.target.files[0];
-      if (!f) return;
-      const reader = new FileReader();
-      reader.onload = () => { draft.settings.bgImage = reader.result; markDirty(); render(false); };
-      reader.readAsDataURL(f);
-    };
-    modal.querySelector('#removeBgImageV3').onclick = () => { draft.settings.bgImage = ''; markDirty(); render(false); };
-    modal.querySelector('#resetDefaultsV3').onclick = () => {
-      if (!confirm('Präsentation auf den ursprünglichen Standardstand zurücksetzen?')) return;
-      draft = ensureBaseline(); dirty = true; selected = null; render();
-    };
-    modal.querySelector('#slideV3').addEventListener('click', e => {
-      if (!editMode) return;
-      const target = e.target.closest('[data-editor-id]');
-      if (!target) select(null);
-    });
+  function bindModal(modal){
+    modal.querySelector('#v4Save').addEventListener('click', () => { commit(); flash('v4Save','Gespeichert'); });
+    modal.querySelector('#v4Close').addEventListener('click', closeModal);
+    modal.querySelector('#v4Prev').addEventListener('click', () => moveSlide(-1));
+    modal.querySelector('#v4Next').addEventListener('click', () => moveSlide(1));
+    modal.querySelector('#v4EditToggle').addEventListener('click', () => { editMode = !editMode; selectedId = null; renderSlide(); });
+    modal.querySelector('#v4Undo').addEventListener('click', undo);
+    modal.querySelector('#v4AddText').addEventListener('click', () => { if(!editMode) return; pushUndo(); draft.extras.push({slide:slideIndex,text:'Neuer Text',x:12,y:68,w:24,h:8,rot:0,fontSize:18,color:draft.settings.text}); markDirty(); renderSlide('extra_'+(draft.extras.length-1)); });
+    modal.querySelector('#v4AddSticker').addEventListener('click', openStickerPicker);
+    modal.querySelector('#v4Reset').addEventListener('click', () => { if(!confirm('Präsentation auf den ursprünglichen Standardstand zurücksetzen?')) return; pushUndo(); draft = clone(ensureDefaultSnapshot()); dirty = true; selectedId = null; renderSlide(); });
+    const target = modal.querySelector('#v4ThemeTarget'); const color = modal.querySelector('#v4ThemeColor');
+    target.addEventListener('change', () => { color.value = draft.settings[target.value] || THEME_DEFAULT[target.value] || '#000000'; });
+    color.addEventListener('input', e => { pushUndoOnce('theme'); draft.settings[target.value] = e.target.value; markDirty(); renderSlide(selectedId, true); });
+    const pt = modal.querySelector('#v4PatternTarget'), ps = modal.querySelector('#v4Pattern'), pc = modal.querySelector('#v4PatternColor');
+    function syncPattern(){ const t=pt.value; ps.value=t==='background'?(draft.settings.backgroundPattern||'none'):(draft.settings.slidePattern||'none'); pc.value=t==='background'?(draft.settings.backgroundPatternColor||'#1f2937'):(draft.settings.slidePatternColor||'#e5e7eb'); }
+    pt.addEventListener('change', syncPattern);
+    ps.addEventListener('change', () => { pushUndoOnce('pattern'); if(pt.value==='background') draft.settings.backgroundPattern=ps.value; else draft.settings.slidePattern=ps.value; markDirty(); renderSlide(selectedId, true); });
+    pc.addEventListener('input', e => { pushUndoOnce('patternColor'); if(pt.value==='background') draft.settings.backgroundPatternColor=e.target.value; else draft.settings.slidePatternColor=e.target.value; markDirty(); renderSlide(selectedId, true); });
+    modal.querySelector('#v4BgButton').addEventListener('click', () => modal.querySelector('#v4BgInput').click());
+    modal.querySelector('#v4BgInput').addEventListener('change', e => { const file=e.target.files&&e.target.files[0]; if(!file) return; pushUndo(); const reader=new FileReader(); reader.onload = () => { draft.settings.backgroundImage=String(reader.result||''); markDirty(); renderSlide(selectedId, true); }; reader.onerror = () => alert('Das Hintergrundbild konnte nicht gelesen werden.'); reader.readAsDataURL(file); e.target.value=''; });
+    modal.querySelector('#v4BgRemove').addEventListener('click', () => { pushUndo(); draft.settings.backgroundImage=''; markDirty(); renderSlide(selectedId, true); });
+    modal.querySelector('#v4Delete').addEventListener('click', deleteSelected);
+    modal.querySelector('#v4ApplyFont').addEventListener('click', () => applyStyle('fontSize', (Number(modal.querySelector('#v4FontSize').value)||22)+'px'));
+    modal.querySelector('#v4TextColor').addEventListener('input', e => applyStyle('color', e.target.value));
+    modal.querySelector('#v4Rotate').addEventListener('pointerdown', e => startToolbarRotate(e));
+    modal.querySelector('.v4-toolbar').addEventListener('pointerdown', e => e.stopPropagation());
+    modal.querySelector('#v4Context').addEventListener('pointerdown', e => e.stopPropagation());
   }
-
+  let lastUndoToken='';
+  function pushUndoOnce(token){ if (lastUndoToken !== token) { pushUndo(); lastUndoToken = token; setTimeout(()=>{ if(lastUndoToken===token) lastUndoToken=''; }, 450); } }
+  function flash(id, text){ const b=document.getElementById(id); if(!b) return; const old=b.textContent; b.textContent=text; setTimeout(()=>b.textContent=old,900); }
   function openModal(){
-    ensureBaseline();
-    draft = stateFromLocal();
-    initialSavedOnOpen = clone(draft);
-    dirty = false; editMode = false; selected = null; slideIndex = 0;
-    ensureModal();
-    document.body.classList.add('presentation-modal-open');
-    render();
+    const modal = ensureModal();
+    ensureDefaultSnapshot();
+    savedAtOpen = snapshotStorage();
+    draft = clone(savedAtOpen);
+    undoStack = [];
+    dirty = false; editMode = false; slideIndex = 0; selectedId = null; dragState = null;
+    modal.hidden = false;
+    renderSlide();
   }
   function closeModal(){
     if (dirty) {
-      if (confirm('Ungespeicherte Änderungen speichern?')) { saveDraft(); }
-      else if (!confirm('Ohne Speichern schließen?')) return;
-      else { draft = clone(initialSavedOnOpen); dirty = false; }
+      const save = confirm('Änderungen speichern, bevor die Präsentationsbearbeitung geschlossen wird?');
+      if (save) commit();
+      else if (!confirm('Ohne zu speichern schließen? Nicht gespeicherte Änderungen gehen verloren.')) return;
+      else { draft = clone(savedAtOpen); dirty = false; }
     }
-    if (modal) modal.remove(); modal = null;
-    document.body.classList.remove('presentation-modal-open');
-    try { if (typeof renderSummary === 'function') renderSummary(typeof collectSupervisorData === 'function' ? collectSupervisorData() : {}); } catch(_) {}
+    const modal = document.getElementById('presentationPrepModalV4'); if (modal) modal.hidden = true;
+    selectedId = null;
+    try { if (typeof renderSummary === 'function' && typeof collectSupervisorData === 'function') renderSummary(collectSupervisorData()); } catch(_){}
   }
-  function saveDraft(){
-    persistCurrentSlideEdits();
-    saveStateToLocal(draft);
-    initialSavedOnOpen = clone(draft);
-    dirty = false;
-    setStatus('Gespeichert.');
-  }
-  function setStatus(msg){
-    let s = modal && modal.querySelector('#editorStatusV3');
-    if (!s && modal) { s = document.createElement('span'); s.id='editorStatusV3'; s.className='small'; modal.querySelector('.v3-mainbar').appendChild(s); }
-    if (s) { s.textContent = msg; setTimeout(()=>{ if(s) s.textContent=''; }, 2000); }
-  }
-  function markDirty(){ dirty = true; }
-  function moveSlide(d){ persistCurrentSlideEdits(); slideIndex = Math.max(0, Math.min(5, slideIndex + d)); selected = null; render(); }
+  function moveSlide(delta){ persistDOMText(); slideIndex = Math.max(0, Math.min(buildSlides().length-1, slideIndex+delta)); selectedId = null; renderSlide(); }
 
-  function render(updateControls=true){
-    if (!modal || !draft) return;
-    const host = modal.querySelector('#slideV3');
-    const s = slides()[slideIndex];
-    const title = ov(`${s.id}_title`, s.title || '');
-    const desc = ov(`${s.id}_desc`, s.desc || '');
-    const titleHtml = title ? `<h1 data-edit-kind="core" data-core-key="${s.id}_title" contenteditable="${editMode}">${esc(title)}</h1>` : '';
-    const descHtml = desc ? `<p class="presentation-subtitle" data-edit-kind="core" data-core-key="${s.id}_desc" contenteditable="${editMode}">${esc(desc)}</p>` : '';
-    host.innerHTML = `<div class="presentation-slide-inner${title ? '' : ' no-title-slide'}">${titleHtml}${descHtml}${s.html}${renderExtras()}${renderStickers()}</div>`;
-    applyTheme();
-    setupEditableElements();
-    modal.querySelector('#counterV3').textContent = `${slideIndex + 1} / 6`;
-    modal.querySelector('#toggleEditV3').textContent = editMode ? 'Bearbeitung aktiv' : 'Bearbeitungsmodus';
-    modal.querySelectorAll('.edit-only-v3').forEach(el => { el.hidden = !editMode; el.style.display = editMode ? '' : 'none'; });
-    syncDesignControls(); updateContextBar();
-  }
-
-  function applyTheme(){
-    const st = draft.settings || DEFAULT_SETTINGS;
-    const stage = modal.querySelector('.presentation-prep-stage');
-    const slide = modal.querySelector('#slideV3');
-    const inner = modal.querySelector('.presentation-slide-inner');
-    if (!stage || !slide || !inner) return;
-    stage.style.backgroundColor = st.background;
-    stage.style.backgroundImage = [patternCss(st.bgPattern, st.bgPatternColor), st.bgImage ? `url("${st.bgImage}")` : ''].filter(Boolean).join(', ');
-    stage.style.backgroundSize = [patternSize(st.bgPattern), st.bgImage ? 'cover' : ''].filter(Boolean).join(', ');
-    stage.style.backgroundPosition = 'center';
-    slide.style.setProperty('--presentation-heading-color', st.heading);
-    slide.style.setProperty('--presentation-text-color', st.text);
-    slide.style.backgroundColor = st.slide;
-    slide.style.backgroundImage = patternCss(st.slidePattern, st.slidePatternColor);
-    slide.style.backgroundSize = patternSize(st.slidePattern);
-  }
-  function patternCss(type, color){
-    const c = color || '#e2e8f0';
-    if (type === 'dots') return `radial-gradient(${c} 1.2px, transparent 1.4px)`;
-    if (type === 'grid') return `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`;
-    if (type === 'diagonal') return `repeating-linear-gradient(135deg, transparent 0 12px, ${c} 12px 14px)`;
-    if (type === 'waves') return `radial-gradient(ellipse at top, ${c} 0 1px, transparent 2px)`;
-    return '';
-  }
-  function patternSize(type){ if(type==='dots') return '18px 18px'; if(type==='grid') return '24px 24px'; if(type==='diagonal') return '24px 24px'; if(type==='waves') return '36px 18px'; return ''; }
-  function syncDesignControls(){
-    if (!modal || !draft) return;
-    const t = modal.querySelector('#designTargetV3').value;
-    modal.querySelector('#designColorV3').value = t === 'slide' ? (draft.settings.slide || '#ffffff') : (draft.settings.background || '#0f172a');
-    modal.querySelector('#patternSelectV3').value = t === 'slide' ? (draft.settings.slidePattern || 'none') : (draft.settings.bgPattern || 'none');
-    modal.querySelector('#patternColorV3').value = t === 'slide' ? (draft.settings.slidePatternColor || '#e2e8f0') : (draft.settings.bgPatternColor || '#1e293b');
-  }
-
-  function renderExtras(){ return (draft.extras||[]).map((x,i) => Number(x.slide)===slideIndex ? `<div class="editor-extra editor-free-text" data-editor-id="extra_${i}" data-extra-index="${i}" contenteditable="${editMode}" style="${styleFor(x)}">${esc(x.text || '')}</div>` : '').join(''); }
-  function renderStickers(){ return (draft.stickers||[]).map((x,i) => Number(x.slide)===slideIndex ? `<img class="editor-extra editor-sticker" data-editor-id="sticker_${i}" data-sticker-index="${i}" src="${esc(x.src || '')}" alt="Sticker" style="${styleFor(x)}">` : '').join(''); }
-  function styleFor(x){
-    const st = [`left:${Number(x.x)||10}%`,`top:${Number(x.y)||10}%`,`width:${Number(x.w)||20}%`,`min-height:${Number(x.h)||5}%`,`transform:rotate(${Number(x.rot)||0}deg)`,`z-index:${Number(x.z)||50}`];
-    if (x.fontSize) st.push(`font-size:${Number(x.fontSize)}px`); if (x.color) st.push(`color:${x.color}`); return st.join(';');
-  }
-
-  function setupEditableElements(){
-    const inner = modal.querySelector('.presentation-slide-inner'); if (!inner) return;
-    const core = Array.from(inner.querySelectorAll('[data-edit-kind="core"]'));
-    core.forEach(el => {
-      const id = el.dataset.coreKey; el.dataset.editorId = id; el.dataset.deletable = 'false';
-      if (draft.layout[id]) applyLayout(el, draft.layout[id]); else clearManagedPosition(el);
-      if (editMode) attachElementUi(el, inner);
-      if (el.matches('[contenteditable]')) el.addEventListener('input', markDirty);
+  function rowForSlides(){ return (typeof localPresentationRowFinal === 'function') ? localPresentationRowFinal() : {data:{}}; }
+  function buildSlides(){
+    let slides = [];
+    try { slides = (typeof buildEditablePresentationSlidesFinal === 'function') ? buildEditablePresentationSlidesFinal(rowForSlides()) : []; } catch(_) {}
+    if (!slides.length) slides = [{title:'Gruppenvorstellung', html:'<p>Keine Daten vorhanden.</p>'}];
+    return slides.map((s,i)=>{
+      const title = ((draft && draft.text && draft.text[`s${i}_title`]) || s.title || '');
+      let html = s.html || '';
+      const sub = draft && draft.text ? draft.text[`s${i}_subtitle`] : '';
+      if (sub) html = html.replace(/<p class="presentation-subtitle">[\s\S]*?<\/p>/, `<p class="presentation-subtitle">${esc(sub)}</p>`);
+      return {title, html};
     });
-    Array.from(inner.querySelectorAll('.editor-extra')).forEach(el => { el.dataset.deletable = 'true'; if (editMode) attachElementUi(el, inner); });
-    Array.from(inner.querySelectorAll('[data-save-key]')).forEach(td => td.addEventListener('input', markDirty));
   }
-  function clearManagedPosition(el){ ['position','left','top','width','min-height','height','transform','z-index'].forEach(p=>el.style.removeProperty(p)); }
-  function applyLayout(el, l){
-    if (!l) return; if (l.hidden) { el.style.display='none'; return; }
-    el.style.position='absolute'; el.style.left=(Number(l.x)||0)+'%'; el.style.top=(Number(l.y)||0)+'%'; if(l.w) el.style.width=Number(l.w)+'%'; if(l.h) el.style.minHeight=Number(l.h)+'%'; el.style.transform=`rotate(${Number(l.rot)||0}deg)`; el.style.zIndex=String(l.z||30); if(l.fontSize) el.style.fontSize=Number(l.fontSize)+'px'; if(l.color) el.style.color=l.color;
+  function renderSlide(keepSelectedId, noPersist){
+    if (!noPersist) persistDOMText();
+    const modal = ensureModal();
+    const host = modal.querySelector('#summaryPresentationSlideV4');
+    const slides = buildSlides();
+    slideIndex = Math.max(0, Math.min(slides.length-1, slideIndex));
+    const item = slides[slideIndex];
+    const title = item.title ? `<h1 data-v4-role="title">${esc(item.title)}</h1>` : '';
+    host.innerHTML = `<div class="presentation-slide-inner${item.title ? '' : ' no-title-slide'}">${title}${item.html}${renderExtras()}${renderStickers()}</div>`;
+    host.classList.toggle('is-editing', editMode);
+    modal.classList.toggle('is-editing', editMode);
+    applyPresentationThemeToNodeFinal(modal.querySelector('.v4-stage'), draft.settings);
+    applyPresentationThemeToNodeFinal(host, draft.settings);
+    setupInteractivity(host);
+    selectedId = keepSelectedId || selectedId;
+    if (selectedId) selectById(selectedId);
+    updateToolbarState();
   }
-  function attachElementUi(el, inner){
-    el.classList.add('editable-slide-element-v3');
-    el.addEventListener('pointerdown', e => { if (!editMode) return; select(el); });
-    if (!el.querySelector(':scope > .v3-drag-handle')) {
-      const dragH = document.createElement('span'); dragH.className='v3-drag-handle'; dragH.title='Verschieben';
-      const resizeH = document.createElement('span'); resizeH.className='v3-resize-handle'; resizeH.title='Größe ändern';
-      const rotateH = document.createElement('span'); rotateH.className='v3-rotate-handle'; rotateH.textContent='↻'; rotateH.title='Drehen';
-      el.append(dragH, resizeH, rotateH);
-      dragH.addEventListener('pointerdown', e => startDrag(e, el, inner));
-      resizeH.addEventListener('pointerdown', e => startResize(e, el, inner));
-      rotateH.addEventListener('pointerdown', e => startRotate(e, el, inner));
-    }
+  function renderExtras(){
+    return `<div class="presentation-extras-layer">${arr(draft.extras).map((x,i)=>Object.assign({},x,{_i:i})).filter(x=>Number(x.slide)===slideIndex).map(x=>`<div class="prep-extra-text" data-edit-id="extra_${x._i}" data-extra-index="${x._i}" style="left:${num(x.x,10)}%;top:${num(x.y,70)}%;width:${num(x.w,22)}%;min-height:${num(x.h,7)}%;transform:rotate(${num(x.rot,0)}deg);font-size:${num(x.fontSize,18)}px;color:${x.color||''};">${esc(x.text||'')}</div>`).join('')}</div>`;
   }
-  function select(el){
-    if (selected) selected.classList.remove('is-selected-edit-element');
-    selected = el || null; if (selected) selected.classList.add('is-selected-edit-element'); updateContextBar();
+  function renderStickers(){
+    return `<div class="presentation-stickers-layer">${arr(draft.stickers).map((x,i)=>Object.assign({},x,{_i:i})).filter(x=>Number(x.slide)===slideIndex).map(x=>`<div class="prep-sticker" data-edit-id="sticker_${x._i}" data-sticker-index="${x._i}" style="left:${num(x.x,58)}%;top:${num(x.y,48)}%;width:${num(x.w,24)}%;height:${num(x.h,22)}%;transform:rotate(${num(x.rot,0)}deg);"><img src="${esc(x.src||'')}" alt="Sticker"></div>`).join('')}</div>`;
   }
-  function updateContextBar(){
-    if (!modal) return; const bar=modal.querySelector('#contextBarV3'); if (!bar) return;
-    bar.hidden = !(editMode && selected); bar.style.display = (editMode && selected) ? '' : 'none';
-    const del=modal.querySelector('#deleteSelectedV3'), rot=modal.querySelector('#rotateSelectedV3');
-    const canDel = !!(selected && selected.dataset.deletable === 'true');
-    if(del){ del.disabled = !canDel; del.classList.toggle('is-disabled', !canDel); }
-    if(rot) rot.disabled = !selected;
-    if (!selected) return;
-    const fs=modal.querySelector('#fontSizeV3'), col=modal.querySelector('#textColorV3');
-    if (fs) fs.value = Math.round(parseFloat(selected.style.fontSize || getComputedStyle(selected).fontSize) || 22);
-    if (col) col.value = rgbToHex(selected.style.color || getComputedStyle(selected).color || '#0f172a');
-    const hint=modal.querySelector('#selectionHintV3'); if(hint) hint.textContent = canDel ? 'Löschbar' : 'Basis-Element: nicht löschbar';
-  }
-  function rgbToHex(c){ if(!c) return '#0f172a'; if(c.startsWith('#')) return c; const m=c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(!m) return '#0f172a'; return '#' + [m[1],m[2],m[3]].map(n=>Number(n).toString(16).padStart(2,'0')).join(''); }
-
-  function makeAbsolute(el, inner){
-    if (el.style.position === 'absolute') return;
-    const pr=inner.getBoundingClientRect(), r=el.getBoundingClientRect();
-    el.style.position='absolute'; el.style.left=((r.left-pr.left)/pr.width*100)+'%'; el.style.top=((r.top-pr.top)/pr.height*100)+'%'; el.style.width=(r.width/pr.width*100)+'%'; el.style.minHeight=Math.max(3,r.height/pr.height*100)+'%'; el.style.zIndex='40';
-  }
-  function startDrag(e, el, inner){ if(!editMode) return; e.preventDefault(); e.stopPropagation(); select(el); makeAbsolute(el, inner); drag={mode:'drag', el, inner, sx:e.clientX, sy:e.clientY, x:parseFloat(el.style.left)||0, y:parseFloat(el.style.top)||0}; window.addEventListener('pointermove', moveDrag); window.addEventListener('pointerup', endDrag, {once:true}); }
-  function startResize(e, el, inner){ if(!editMode) return; e.preventDefault(); e.stopPropagation(); select(el); makeAbsolute(el, inner); drag={mode:'resize', el, inner, sx:e.clientX, sy:e.clientY, w:parseFloat(el.style.width)||20, h:parseFloat(el.style.minHeight)||6}; window.addEventListener('pointermove', moveDrag); window.addEventListener('pointerup', endDrag, {once:true}); }
-  function startRotate(e, el, inner){ if(!editMode) return; e.preventDefault(); e.stopPropagation(); select(el); makeAbsolute(el, inner); drag={mode:'rotate', el, inner, sx:e.clientX, rot:getRot(el)}; window.addEventListener('pointermove', moveDrag); window.addEventListener('pointerup', endDrag, {once:true}); }
-  function startToolbarRotate(e){ if(!selected || !editMode) return; const inner=selected.closest('.presentation-slide-inner'); startRotate(e, selected, inner); }
-  function getRot(el){ const m=(el.style.transform||'').match(/rotate\((-?[\d.]+)deg\)/); return m?Number(m[1]):0; }
-  function moveDrag(e){
-    if(!drag) return; const {mode,el,inner}=drag; const pr=inner.getBoundingClientRect(); const dx=(e.clientX-drag.sx)/pr.width*100, dy=(e.clientY-drag.sy)/pr.height*100;
-    if(mode==='drag'){ el.style.left=Math.max(-10,Math.min(110,drag.x+dx))+'%'; el.style.top=Math.max(-10,Math.min(110,drag.y+dy))+'%'; }
-    if(mode==='resize'){ el.style.width=Math.max(5,Math.min(120,drag.w+dx))+'%'; el.style.minHeight=Math.max(3,Math.min(100,drag.h+dy))+'%'; }
-    if(mode==='rotate'){ el.style.transform=`rotate(${drag.rot + (e.clientX-drag.sx)*0.6}deg)`; }
-    markDirty(); updateDraftLayoutFromEl(el, inner);
-  }
-  function endDrag(){ if(drag){ updateDraftLayoutFromEl(drag.el, drag.inner); } drag=null; window.removeEventListener('pointermove', moveDrag); }
-  function updateDraftLayoutFromEl(el, inner){
-    if(!el || !inner) return; const id=el.dataset.editorId; if(!id) return;
-    const item={x:parseFloat(el.style.left)||0,y:parseFloat(el.style.top)||0,w:parseFloat(el.style.width)||20,h:parseFloat(el.style.minHeight)||6,rot:getRot(el),z:parseInt(el.style.zIndex||'40',10)};
-    if (el.style.fontSize) item.fontSize=parseFloat(el.style.fontSize); if (el.style.color) item.color=el.style.color;
-    if(id.startsWith('extra_')){ const i=Number(el.dataset.extraIndex); Object.assign(draft.extras[i], item, {text:el.innerText.trim()}); }
-    else if(id.startsWith('sticker_')){ const i=Number(el.dataset.stickerIndex); Object.assign(draft.stickers[i], item); }
-    else draft.layout[id]=Object.assign({}, draft.layout[id]||{}, item);
-  }
-  function persistCurrentSlideEdits(){
-    if(!modal || !draft) return;
-    modal.querySelectorAll('[data-save-key]').forEach(td => { draft.values[td.dataset.saveKey] = td.innerText.trim()==='—'?'':td.innerText.trim(); });
-    modal.querySelectorAll('[data-core-key]').forEach(el => {
-      const key=el.dataset.coreKey; if(key.endsWith('_title')) draft.textOverrides[key]=el.innerText.trim();
-      else if(key.endsWith('_desc')) draft.textOverrides[key]=el.innerText.trim();
-      const inner=el.closest('.presentation-slide-inner'); if(el.style.position==='absolute') updateDraftLayoutFromEl(el, inner);
+  function num(v, fb){ v=Number(v); return Number.isFinite(v)?v:fb; }
+  function setupInteractivity(host){
+    const inner = host.querySelector('.presentation-slide-inner'); if(!inner) return;
+    const core = Array.from(inner.children).filter(el => !el.classList.contains('presentation-extras-layer') && !el.classList.contains('presentation-stickers-layer'));
+    core.forEach((el,i)=>prepare(el, coreId(el,i), 'core'));
+    inner.querySelectorAll('.prep-extra-text').forEach(el=>prepare(el, el.dataset.editId, 'extra'));
+    inner.querySelectorAll('.prep-sticker').forEach(el=>prepare(el, el.dataset.editId, 'sticker'));
+    inner.querySelectorAll('[data-edit-save]').forEach(cell=>{
+      const k=cell.dataset.editSave;
+      if (k && draft.values && Object.prototype.hasOwnProperty.call(draft.values,k)) cell.innerText = draft.values[k] || '—';
+      cell.contentEditable = editMode ? 'true':'false';
+      cell.addEventListener('focus',()=>{ if(editMode && !cell.dataset.undoFocus){ pushUndo(); cell.dataset.undoFocus='1'; }});
+      cell.addEventListener('blur',()=>{ delete cell.dataset.undoFocus; });
+      cell.addEventListener('input',()=>{ if(k){ draft.values[k]=cell.innerText.trim()==='—'?'':cell.innerText.trim(); markDirty(); }});
     });
-    modal.querySelectorAll('.editor-free-text').forEach(el=>{ const i=Number(el.dataset.extraIndex); if(draft.extras[i]) { draft.extras[i].text=el.innerText.trim(); const inner=el.closest('.presentation-slide-inner'); updateDraftLayoutFromEl(el, inner); }});
+    const title = inner.querySelector('h1[data-v4-role="title"]');
+    if (title) { title.contentEditable = editMode?'true':'false'; title.addEventListener('focus',()=>{ if(editMode && !title.dataset.undoFocus){ pushUndo(); title.dataset.undoFocus='1'; }}); title.addEventListener('input',()=>{ draft.text[`s${slideIndex}_title`]=title.innerText.trim(); markDirty(); }); }
+    const subtitle = inner.querySelector('.presentation-subtitle');
+    if (subtitle) { subtitle.contentEditable = editMode?'true':'false'; subtitle.addEventListener('focus',()=>{ if(editMode && !subtitle.dataset.undoFocus){ pushUndo(); subtitle.dataset.undoFocus='1'; }}); subtitle.addEventListener('input',()=>{ draft.text[`s${slideIndex}_subtitle`]=subtitle.innerText.trim(); markDirty(); }); }
+    inner.addEventListener('pointerdown', e => { if(!editMode) return; if(e.target === inner) { selectedId = null; selectById(null); } });
   }
-  function applyTextStyle(prop, value){
-    if(!editMode || !selected) return;
-    const selection = window.getSelection && window.getSelection();
-    if(selection && selection.rangeCount && !selection.isCollapsed && selected.contains(selection.anchorNode) && selected.contains(selection.focusNode)){
-      const span=document.createElement('span'); span.style[prop]=value;
-      const range=selection.getRangeAt(0);
-      try{ range.surroundContents(span); } catch(_){ const frag=range.extractContents(); span.appendChild(frag); range.insertNode(span); }
-      selection.removeAllRanges();
+  function coreId(el,i){ if(el.matches('h1')) return `core_${slideIndex}_title`; if(el.matches('h2')) return `core_${slideIndex}_h2_${i}`; if(el.matches('.presentation-subtitle')) return `core_${slideIndex}_subtitle`; if(el.matches('.presentation-table-wrap')) return `core_${slideIndex}_table_${i}`; if(el.matches('.presentation-kicker')) return `core_${slideIndex}_kicker_${i}`; if(el.matches('.presentation-note')) return `core_${slideIndex}_note_${i}`; if(el.matches('.thanks-slide')) return `core_${slideIndex}_thanks`; return `core_${slideIndex}_el_${i}`; }
+  function prepare(el,id,type){
+    el.classList.add('v4-editable'); el.dataset.editId=id; el.dataset.editType=type;
+    const layout = draft.layout && draft.layout[id]; if(layout) applyLayout(el, layout);
+    if (editMode) addHandles(el);
+    el.addEventListener('pointerdown', e => { if(!editMode) return; selectById(id); if(type==='sticker' && !e.target.classList.contains('v4-handle')) { startTransform(e, el, parent, 'move'); return; } e.stopPropagation(); });
+  }
+  function addHandles(el){
+    if (el.querySelector(':scope > .v4-handle')) return;
+    const drag = document.createElement('span'); drag.className='v4-handle v4-drag'; drag.title='Verschieben';
+    const resize = document.createElement('span'); resize.className='v4-handle v4-resize'; resize.title='Größe ändern';
+    const rotate = document.createElement('span'); rotate.className='v4-handle v4-rotate'; rotate.textContent='↻'; rotate.title='Drehen';
+    el.appendChild(drag); el.appendChild(resize); el.appendChild(rotate);
+    const inner = el.closest('.presentation-slide-inner');
+    drag.addEventListener('pointerdown', e=>startTransform(e, el, inner, 'move'));
+    resize.addEventListener('pointerdown', e=>startTransform(e, el, inner, 'resize'));
+    rotate.addEventListener('pointerdown', e=>startTransform(e, el, inner, 'rotate'));
+  }
+  function selectById(id){
+    const modal = document.getElementById('presentationPrepModalV4');
+    if (!modal) return;
+    modal.querySelectorAll('.v4-selected').forEach(x=>x.classList.remove('v4-selected'));
+    selectedId = id;
+    const el = id ? modal.querySelector(`[data-edit-id="${CSS.escape(id)}"]`) : null;
+    if (el) el.classList.add('v4-selected');
+    updateToolbarState();
+  }
+  function ensureAbs(el,parent){
+    if(!el || !parent) return;
+    if(el.style.position === 'absolute') return;
+    const pr=parent.getBoundingClientRect(), r=el.getBoundingClientRect();
+    const l = Object.assign({}, draft.layout[el.dataset.editId] || {}, {x:((r.left-pr.left)/pr.width)*100, y:((r.top-pr.top)/pr.height)*100, w:(r.width/pr.width)*100, h:(r.height/pr.height)*100, rot:num((draft.layout[el.dataset.editId]||{}).rot,0), z:60});
+    draft.layout[el.dataset.editId]=l; applyLayout(el,l);
+  }
+  function applyLayout(el,l){
+    if(!l) return;
+    el.style.position='absolute'; el.style.left=num(l.x,0)+'%'; el.style.top=num(l.y,0)+'%'; if(l.w) el.style.width=num(l.w,20)+'%'; if(l.h){ if(el.classList.contains('prep-sticker')) el.style.height=num(l.h,20)+'%'; else el.style.minHeight=num(l.h,6)+'%'; }
+    if(l.fontSize) el.style.fontSize=num(l.fontSize,18)+'px'; if(l.color) el.style.color=l.color; el.style.transform=`rotate(${num(l.rot,0)}deg)`; el.style.zIndex=String(num(l.z,60));
+  }
+  function startTransform(e,el,parent,mode){
+    if(!editMode || !el || !parent) return;
+    e.preventDefault(); e.stopPropagation(); pushUndo(); selectById(el.dataset.editId); ensureAbs(el,parent);
+    const l = draft.layout[el.dataset.editId] || {};
+    dragState = {mode, el, parent, sx:e.clientX, sy:e.clientY, x:num(l.x,0), y:num(l.y,0), w:num(l.w,(el.offsetWidth/parent.clientWidth)*100), h:num(l.h,(el.offsetHeight/parent.clientHeight)*100), rot:num(l.rot,0)};
+    window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp, {once:true});
+  }
+  function startToolbarRotate(e){ const el = selectedId && document.querySelector(`#presentationPrepModalV4 [data-edit-id="${CSS.escape(selectedId)}"]`); if(!el) return; const inner=el.closest('.presentation-slide-inner'); startTransform(e,el,inner,'rotate'); }
+  function onMove(e){
+    if(!dragState) return;
+    const {mode,el,parent,sx,sy}=dragState; const pr=parent.getBoundingClientRect();
+    const dx=((e.clientX-sx)/pr.width)*100, dy=((e.clientY-sy)/pr.height)*100;
+    const l = draft.layout[el.dataset.editId] || {};
+    if(mode==='move'){ l.x=Math.max(-20,Math.min(120,dragState.x+dx)); l.y=Math.max(-20,Math.min(120,dragState.y+dy)); }
+    if(mode==='resize'){ l.w=Math.max(5,Math.min(120,dragState.w+dx)); l.h=Math.max(3,Math.min(110,dragState.h+dy)); }
+    if(mode==='rotate'){ l.rot=dragState.rot+(e.clientX-sx)*.55; }
+    draft.layout[el.dataset.editId]=l; applyLayout(el,l); syncItemFromLayout(el); markDirty();
+  }
+  function onUp(){ window.removeEventListener('pointermove', onMove); dragState=null; }
+  function syncItemFromLayout(el){
+    if(!el || !draft) return; const id=el.dataset.editId; const l=draft.layout[id]||{};
+    if(id && id.startsWith('extra_')){ const i=Number(el.dataset.extraIndex); if(draft.extras[i]) Object.assign(draft.extras[i], l); }
+    if(id && id.startsWith('sticker_')){ const i=Number(el.dataset.stickerIndex); if(draft.stickers[i]) Object.assign(draft.stickers[i], l); }
+  }
+  function persistDOMText(){
+    const modal=document.getElementById('presentationPrepModalV4'); if(!modal || !draft) return;
+    modal.querySelectorAll('[data-edit-save]').forEach(cell=>{ const k=cell.dataset.editSave; if(k) draft.values[k]=cell.innerText.trim()==='—'?'':cell.innerText.trim(); });
+    modal.querySelectorAll('.prep-extra-text').forEach(el=>{ const i=Number(el.dataset.extraIndex); if(draft.extras[i]) draft.extras[i].text=el.innerText.trim(); });
+    const title=modal.querySelector('h1[data-v4-role="title"]'); if(title) draft.text[`s${slideIndex}_title`]=title.innerText.trim();
+    const sub=modal.querySelector('.presentation-subtitle'); if(sub) draft.text[`s${slideIndex}_subtitle`]=sub.innerText.trim();
+  }
+  function applyStyle(prop,value){
+    if(!editMode || !selectedId) return;
+    const el=document.querySelector(`#presentationPrepModalV4 [data-edit-id="${CSS.escape(selectedId)}"]`); if(!el) return;
+    pushUndo();
+    const sel=window.getSelection&&window.getSelection();
+    if(sel && sel.rangeCount && !sel.isCollapsed && el.contains(sel.anchorNode) && el.contains(sel.focusNode)){
+      const range=sel.getRangeAt(0); const span=document.createElement('span'); span.style[prop]=value;
+      try{ range.surroundContents(span); }catch(_){ const frag=range.extractContents(); span.appendChild(frag); range.insertNode(span); }
+      sel.removeAllRanges();
     } else {
-      selected.style[prop]=value;
-      const id=selected.dataset.editorId; if(id && !id.startsWith('extra_') && !id.startsWith('sticker_')) draft.layout[id]=Object.assign({}, draft.layout[id]||{}, {[prop]: prop==='fontSize'?parseFloat(value):value});
+      el.style[prop]=value;
+      const l=draft.layout[selectedId]||{}; l[prop]=prop==='fontSize'?parseFloat(value):value; draft.layout[selectedId]=l; syncItemFromLayout(el);
     }
-    persistCurrentSlideEdits(); markDirty(); updateContextBar();
+    markDirty(); updateToolbarState();
   }
   function deleteSelected(){
-    if(!selected || selected.dataset.deletable !== 'true') return;
-    const id=selected.dataset.editorId || '';
-    if(id.startsWith('extra_')) draft.extras.splice(Number(selected.dataset.extraIndex),1);
-    if(id.startsWith('sticker_')) draft.stickers.splice(Number(selected.dataset.stickerIndex),1);
-    selected=null; markDirty(); render();
+    if(!editMode || !selectedId || !draft) return;
+    if(!isDeletable(selectedId)) return;
+    pushUndo();
+    if(selectedId.startsWith('extra_')){ const i=Number(selectedId.split('_')[1]); if(Number.isFinite(i)) draft.extras.splice(i,1); }
+    else if(selectedId.startsWith('sticker_')){ const i=Number(selectedId.split('_')[1]); if(Number.isFinite(i)) draft.stickers.splice(i,1); }
+    selectedId=null; markDirty(); renderSlide();
   }
-  function addText(){ draft.extras.push({slide:slideIndex,text:'Neuer Text',x:12,y:68,w:24,h:8,rot:0,fontSize:18,color:draft.settings.text,z:60}); markDirty(); render(); }
+  function isDeletable(id){ return /^extra_\d+$/.test(id||'') || /^sticker_\d+$/.test(id||''); }
   function openStickerPicker(){
     if(!editMode) return;
-    let p=document.getElementById('stickerPickerV3'); if(p) p.remove();
-    p=document.createElement('div'); p.id='stickerPickerV3'; p.className='presentation-sticker-picker';
-    p.innerHTML=`<div class="presentation-sticker-dialog"><div class="presentation-sticker-dialog-head"><h2>Sticker hinzufügen</h2><button type="button" class="secondary" id="closeStickerV3">Schließen</button></div><div class="presentation-sticker-grid">${STICKER_FILES.map(f=>`<button type="button" class="presentation-sticker-option" data-file="${esc(f)}"><img src="${STICKER_PATH+esc(f)}" alt="${esc(f)}"></button>`).join('')}</div></div>`;
-    document.body.appendChild(p); p.querySelector('#closeStickerV3').onclick=()=>p.remove();
-    p.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>{ draft.stickers.push({slide:slideIndex,src:STICKER_PATH+b.dataset.file,x:56,y:48,w:24,h:20,rot:0,z:70}); p.remove(); markDirty(); render(); });
+    let p=document.getElementById('presentationStickerPickerV4');
+    if(!p){
+      p=document.createElement('div'); p.id='presentationStickerPickerV4'; p.hidden=true;
+      p.innerHTML=`<div class="picker-box"><div class="picker-head"><h2>Sticker hinzufügen</h2><button type="button" id="v4ClosePicker">Schließen</button></div><div class="picker-grid">${STICKER_FILES.map(f=>`<button type="button" data-sticker="${esc(f)}"><img src="${STICKER_PATH+esc(f)}" alt="${esc(f)}"></button>`).join('')}</div></div>`;
+      document.body.appendChild(p);
+      p.addEventListener('click',e=>{ if(e.target===p) p.hidden=true; });
+      p.querySelector('#v4ClosePicker').addEventListener('click',()=>p.hidden=true);
+      p.querySelectorAll('[data-sticker]').forEach(btn=>btn.addEventListener('click',()=>{ pushUndo(); const f=btn.dataset.sticker; draft.stickers.push({slide:slideIndex,src:STICKER_PATH+f,x:58,y:48,w:24,h:22,rot:0}); p.hidden=true; markDirty(); renderSlide('sticker_'+(draft.stickers.length-1)); }));
+    }
+    p.hidden=false;
   }
-
-  window.openPresentationPrepModalFinal = openModal;
-  window.ensurePresentationPrepModalFinal = ensureModal;
-  window.closePresentationPrepModalFinal = closeModal;
-  window.moveSummaryPresentationFinal = moveSlide;
-  window.renderSummaryPresentationSlideFinal = render;
+  function updateToolbarState(){
+    const modal=document.getElementById('presentationPrepModalV4'); if(!modal) return;
+    modal.querySelectorAll('.v4-edit-only').forEach(el=>{ el.hidden=!editMode; el.disabled=!editMode; });
+    modal.querySelector('#v4EditToggle').textContent=editMode?'Bearbeitung aktiv':'Bearbeitungsmodus';
+    modal.querySelector('#v4EditToggle').classList.toggle('primary', editMode);
+    modal.querySelector('#v4Counter').textContent=`${slideIndex+1} / ${buildSlides().length}${dirty?' · ungespeichert':''}`;
+    const undo=modal.querySelector('#v4Undo'); if(undo) undo.disabled=!editMode || undoStack.length===0;
+    const context=modal.querySelector('#v4Context');
+    const hasSel=editMode && !!selectedId;
+    context.hidden=!hasSel;
+    if(hasSel){
+      const el=modal.querySelector(`[data-edit-id="${CSS.escape(selectedId)}"]`); const l=(draft.layout&&draft.layout[selectedId])||{};
+      modal.querySelector('#v4FontSize').value=Math.round(num(l.fontSize, el?parseFloat(getComputedStyle(el).fontSize):22));
+      modal.querySelector('#v4TextColor').value=rgbToHex(l.color || (el?getComputedStyle(el).color:'#0f172a'));
+      modal.querySelector('#v4Delete').disabled=!isDeletable(selectedId);
+    }
+    if(draft){
+      const tt=modal.querySelector('#v4ThemeTarget'); modal.querySelector('#v4ThemeColor').value=draft.settings[tt.value]||THEME_DEFAULT[tt.value]||'#000000';
+      const pt=modal.querySelector('#v4PatternTarget').value;
+      modal.querySelector('#v4Pattern').value=pt==='background'?(draft.settings.backgroundPattern||'none'):(draft.settings.slidePattern||'none');
+      modal.querySelector('#v4PatternColor').value=pt==='background'?(draft.settings.backgroundPatternColor||'#1f2937'):(draft.settings.slidePatternColor||'#e5e7eb');
+    }
+  }
+  function rgbToHex(c){ if(!c) return '#0f172a'; if(c.startsWith('#')) return c; const m=c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(!m) return '#0f172a'; return '#'+[m[1],m[2],m[3]].map(n=>(+n).toString(16).padStart(2,'0')).join(''); }
 
   const oldBuildPayload = typeof buildPayload === 'function' ? buildPayload : null;
   buildPayload = function(){
     const data = oldBuildPayload ? oldBuildPayload() : (typeof collectSupervisorData === 'function' ? collectSupervisorData() : {});
-    const st = stateFromLocal();
-    data.presentationSettings = st.settings; data.presentationExtras = st.extras; data.presentationTextOverrides = st.textOverrides; data.presentationLayout = st.layout; data.presentationStickers = st.stickers;
+    data.presentationSettings = window.getPresentationSettingsFinal();
+    data.presentationExtras = window.getPresentationExtrasFinal();
+    data.presentationStickers = window.getPresentationStickersFinal();
+    data.presentationTextOverrides = window.getPresentationTextOverridesFinal();
+    data.presentationLayout = lObj(LAYOUT_KEY, {});
     return data;
   };
 
-  // Intercept before older document-level handlers.
-  window.addEventListener('click', function(e){
-    const btn = e.target && e.target.closest && e.target.closest('#openPresentationPrepBtn');
-    if(btn){ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); openModal(); }
+  document.addEventListener('DOMContentLoaded', () => {
+    const old = document.getElementById('openPresentationPrepBtn');
+    if (old) old.id = 'openPresentationPrepBtnV4';
+    const btn = document.getElementById('openPresentationPrepBtnV4');
+    if (btn) {
+      const clean = btn.cloneNode(true);
+      btn.replaceWith(clean);
+      clean.addEventListener('click', e => { e.preventDefault(); openModal(); });
+    }
+  });
+  document.addEventListener('click', e => {
+    const btn=e.target&&e.target.closest&&e.target.closest('#openPresentationPrepBtnV4');
+    if(btn){ e.preventDefault(); e.stopImmediatePropagation(); openModal(); }
   }, true);
+
+  window.openPresentationPrepModalFinal = openModal;
+  window.ensurePresentationPrepModalFinal = ensureModal;
+  window.closePresentationPrepModalFinal = closeModal;
+  window.renderSummaryPresentationSlideFinal = renderSlide;
 })();

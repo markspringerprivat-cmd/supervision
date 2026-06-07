@@ -69,3 +69,15 @@ Diese Version enthält eine überarbeitete Präsentationsbearbeitung in der Zusa
 - Elemente, Tabellen, Überschriften, Textboxen und Sticker können verschoben und skaliert werden.
 - Sticker können über den Drehgriff oder die Drehen-Funktion rotiert werden.
 - Sticker wurden mit transparentem Hintergrund aufbereitet.
+
+## Aktualisierung: Präsentationseditor
+
+Der Präsentationseditor wurde überarbeitet:
+
+- Bearbeitungswerkzeuge erscheinen erst im Bearbeitungsmodus.
+- Die letzten drei Änderungen können über „Rückgängig“ zurückgenommen werden.
+- Sticker können eingefügt, verschoben, skaliert und über das Drehsymbol gedreht werden.
+- Die Auswahl bleibt aktiv, wenn in der Bearbeitungsleiste Einstellungen geändert werden.
+- Änderungen werden erst durch „Speichern“ übernommen.
+- Hintergrundbilder werden über den Dateiauswahldialog in die Präsentationsvorschau geladen.
+- Sticker wurden mit transparenterem Hintergrund neu aufbereitet.

@@ -263,16 +263,14 @@
     modal.innerHTML = `
       <div class="v6-shell">
         <div class="v6-toolbar v6-mainbar" data-editor-toolbar>
-          <button type="button" id="v6Save" class="success-btn">Speichern</button>
-          <span id="v6Counter" class="small">1 / 6</span>
           <button type="button" id="v6Edit" class="secondary">Bearbeitungsmodus</button>
-          <span class="v6-edittools" hidden>
-            <button type="button" id="v6Undo" class="secondary">Rückgängig</button>
-            <button type="button" id="v6AddMenu" class="secondary">Hinzufügen</button>
-            <button type="button" id="v6DesignMenu" class="secondary">Design</button>
-            <button type="button" id="v6Reset" class="warning-btn">Zurücksetzen</button>
-          </span>
+          <button type="button" id="v6Undo" class="secondary" disabled>Rückgängig</button>
+          <button type="button" id="v6AddMenu" class="secondary" disabled>Hinzufügen</button>
+          <button type="button" id="v6DesignMenu" class="secondary" disabled>Design</button>
+          <button type="button" id="v6DeleteTop" class="danger" disabled>Löschen</button>
+          <button type="button" id="v6Reset" class="warning-btn" disabled>Zurücksetzen</button>
           <span class="v6-spacer"></span>
+          <button type="button" id="v6Save" class="success-btn">Speichern</button>
           <button type="button" id="v6Close" class="secondary">Schließen</button>
         </div>
         <div class="v6-toolbar v6-dock" id="v6AddDock" data-editor-toolbar hidden>
@@ -283,9 +281,9 @@
           <button type="button" id="v6BgRemove" class="secondary">Bild entfernen</button>
         </div>
         <div class="v6-toolbar v6-dock" id="v6DesignDock" data-editor-toolbar hidden>
-          <label>Farbe <select id="v6DesignTarget"><option value="heading">Überschrift</option><option value="text">Text</option><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
-          <input id="v6DesignColor" type="color" value="#1e3a5f">
-          <span class="v6-sep"></span>
+          <label>Farbe <select id="v6DesignTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+          <input id="v6DesignColor" type="color" value="#ffffff" aria-label="Farbe wählen">
+          <span class="v6-sep-neon" aria-hidden="true"></span>
           <label>Musterziel <select id="v6PatternTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
           <label>Muster <select id="v6PatternType"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Wellen</option></select></label>
           <label>Musterfarbe <input id="v6PatternColor" type="color" value="#dbe4ef"></label>
@@ -293,6 +291,7 @@
         <div class="v6-toolbar v6-contextbar" id="v6Context" data-editor-toolbar hidden>
           <label>Schriftgröße <input id="v6FontSize" type="number" min="8" max="140" value="22"> px</label>
           <label>Textfarbe <input id="v6TextColor" type="color" value="#0f172a"></label>
+          <span class="v6-sep-neon" aria-hidden="true"></span>
           <span class="v6-layer-control" aria-label="Ebenensteuerung">
             <button type="button" id="v6AllBack" class="secondary" title="Ganz nach hinten">&lt;&lt;</button>
             <button type="button" id="v6Back" class="secondary" title="Eine Ebene nach hinten">&lt;</button>
@@ -300,11 +299,13 @@
             <button type="button" id="v6Front" class="secondary" title="Eine Ebene nach vorne">&gt;</button>
             <button type="button" id="v6AllFront" class="secondary" title="Ganz nach vorne">&gt;&gt;</button>
           </span>
+          <span class="v6-sep-neon" aria-hidden="true"></span>
           <button type="button" id="v6Delete" class="danger" disabled>Auswahl löschen</button>
         </div>
         <div id="v6Stage" class="v6-stage"><section id="v6Slide" class="v6-slide"></section></div>
         <div class="v6-slide-nav" data-editor-toolbar>
           <button type="button" id="v6Prev" class="secondary">←</button>
+          <span id="v6Counter" class="v6-bottom-counter">1 / 6</span>
           <button type="button" id="v6Next" class="secondary">→</button>
         </div>
         <div id="v6Toast" class="v6-toast" hidden></div>
@@ -326,25 +327,55 @@
     $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); updateToolbar(); });
     $('#v6AddText').addEventListener('click', addTextBox);
     $('#v6AddSticker').addEventListener('click', openStickerPicker);
-    $('#v6Reset').addEventListener('click', () => { if(confirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?')) resetToBaseline(); });
+    $('#v6Reset').addEventListener('click', () => { if(!editMode) return; if(confirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?')) resetToBaseline(); });
     $('#v6DesignTarget').addEventListener('change', syncDesignInputs);
-    $('#v6DesignColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('design'); const t=$('#v6DesignTarget').value; draft.settings[t] = $('#v6DesignColor').value; dirty=true; applyTheme(); });
+    $('#v6DesignColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('design_'+$('#v6DesignTarget').value); const t=$('#v6DesignTarget').value; if(t !== 'slide' && t !== 'background') return; draft.settings[t] = $('#v6DesignColor').value; dirty=true; applyTheme(); });
     $('#v6PatternTarget').addEventListener('change', syncPatternInputs);
-    $('#v6PatternType').addEventListener('change', () => { if(!editMode) return; pushUndoOnce('pattern'); const t=$('#v6PatternTarget').value; if(t==='background') draft.settings.backgroundPattern = $('#v6PatternType').value; else draft.settings.slidePattern = $('#v6PatternType').value; dirty=true; applyTheme(); });
-    $('#v6PatternColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('patternColor'); const t=$('#v6PatternTarget').value; if(t==='background') draft.settings.backgroundPatternColor = $('#v6PatternColor').value; else draft.settings.slidePatternColor = $('#v6PatternColor').value; dirty=true; applyTheme(); });
-    $('#v6BgBtn').addEventListener('click', () => $('#v6BgInput').click());
-    $('#v6BgRemove').addEventListener('click', () => { if(!editMode) return; pushUndo(); draft.settings.backgroundImage=''; dirty=true; applyTheme(); });
-    $('#v6BgInput').addEventListener('change', (e) => { const f=e.target.files && e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ pushUndo(); draft.settings.backgroundImage=String(r.result||''); dirty=true; applyTheme(); }; r.readAsDataURL(f); e.target.value=''; });
-    $('#v6FontSize').addEventListener('input', () => { if(!selectedId) return; pushUndoOnce('fontsize_'+selectedId); setSelectedStyle({fontSize: clamp(num($('#v6FontSize').value,22),8,140)}); });
-    $('#v6TextColor').addEventListener('input', () => { if(!selectedId) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
-    $('#v6Front').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer(1); });
-    $('#v6Back').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer(-1); });
-    $('#v6AllFront').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer('front'); });
-    $('#v6AllBack').addEventListener('click', () => { if(!selectedId) return; pushUndo(); moveLayer('back'); });
+    $('#v6PatternType').addEventListener('change', () => { if(!editMode) return; pushUndoOnce('pattern_'+$('#v6PatternTarget').value); setPatternFromControls(); });
+    $('#v6PatternColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('patternColor_'+$('#v6PatternTarget').value); setPatternFromControls(); });
+    $('#v6BgBtn').addEventListener('click', () => { if(!editMode) return; $('#v6BgInput').click(); });
+    $('#v6BgRemove').addEventListener('click', () => { if(!editMode) return; pushUndo(); draft.settings.backgroundImage=''; dirty=true; applyTheme(); updateToolbar(); });
+    $('#v6BgInput').addEventListener('change', (e) => { const f=e.target.files && e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ pushUndo(); draft.settings.backgroundImage=String(r.result||''); dirty=true; applyTheme(); updateToolbar(); }; r.readAsDataURL(f); e.target.value=''; });
+    $('#v6FontSize').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('fontsize_'+selectedId); setSelectedStyle({fontSize: clamp(num($('#v6FontSize').value,22),8,140)}); });
+    $('#v6TextColor').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
+    $('#v6Front').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(1); });
+    $('#v6Back').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(-1); });
+    $('#v6AllFront').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer('front'); });
+    $('#v6AllBack').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer('back'); });
     $('#v6Delete').addEventListener('click', deleteSelected);
+    $('#v6DeleteTop').addEventListener('click', deleteSelected);
   }
-  function syncDesignInputs(){ const t=modal.querySelector('#v6DesignTarget').value; modal.querySelector('#v6DesignColor').value = draft.settings[t] || THEME_DEFAULT[t] || '#000000'; }
-  function syncPatternInputs(){ const t=modal.querySelector('#v6PatternTarget').value; modal.querySelector('#v6PatternType').value = t==='background' ? (draft.settings.backgroundPattern||'none') : (draft.settings.slidePattern||'none'); modal.querySelector('#v6PatternColor').value = t==='background' ? (draft.settings.backgroundPatternColor||'#12372d') : (draft.settings.slidePatternColor||'#dbe4ef'); }
+  function syncDesignInputs(){
+    const t=modal.querySelector('#v6DesignTarget').value;
+    const val = (t === 'background') ? (draft.settings.background || THEME_DEFAULT.background) : (draft.settings.slide || THEME_DEFAULT.slide);
+    modal.querySelector('#v6DesignColor').value = val || '#ffffff';
+  }
+  function syncPatternInputs(){
+    const t=modal.querySelector('#v6PatternTarget').value;
+    const typeEl = modal.querySelector('#v6PatternType');
+    const colorEl = modal.querySelector('#v6PatternColor');
+    if(t==='background') {
+      typeEl.value = draft.settings.backgroundPattern || 'none';
+      colorEl.value = draft.settings.backgroundPatternColor || '#12372d';
+    } else {
+      typeEl.value = draft.settings.slidePattern || 'none';
+      colorEl.value = draft.settings.slidePatternColor || '#dbe4ef';
+    }
+  }
+  function setPatternFromControls(){
+    const target = modal.querySelector('#v6PatternTarget').value;
+    const pattern = modal.querySelector('#v6PatternType').value || 'none';
+    const color = modal.querySelector('#v6PatternColor').value || '#dbe4ef';
+    if(target === 'background') {
+      draft.settings.backgroundPattern = pattern;
+      draft.settings.backgroundPatternColor = color;
+    } else {
+      draft.settings.slidePattern = pattern;
+      draft.settings.slidePatternColor = color;
+    }
+    dirty = true;
+    applyTheme();
+  }
   function open(){
     ensureModal();
     draft = clone(getSaved());
@@ -486,34 +517,50 @@
   }
   function updateToolbar(){
     if(!modal || !draft) return;
-    modal.querySelector('#v6Counter').textContent = `${slideIndex+1} / ${SLIDE_COUNT}${dirty ? ' · ungespeichert' : ''}`;
-    modal.querySelector('#v6Edit').textContent = editMode ? 'Bearbeitung aktiv' : 'Bearbeitungsmodus';
-    modal.querySelector('#v6Edit').classList.toggle('success-btn', editMode);
-    modal.querySelector('.v6-edittools').hidden = !editMode;
-    modal.querySelector('#v6Undo').disabled = undoStack.length === 0;
+    const counter = modal.querySelector('#v6Counter');
+    if(counter) counter.textContent = `${slideIndex+1} / ${SLIDE_COUNT}${dirty ? ' · ungespeichert' : ''}`;
+    const editBtn = modal.querySelector('#v6Edit');
+    editBtn.textContent = editMode ? 'Bearbeitung aktiv' : 'Bearbeitungsmodus';
+    editBtn.classList.toggle('success-btn', editMode);
+
+    const addMenu = modal.querySelector('#v6AddMenu');
+    const designMenu = modal.querySelector('#v6DesignMenu');
+    const resetBtn = modal.querySelector('#v6Reset');
+    const undoBtn = modal.querySelector('#v6Undo');
+    const deleteTop = modal.querySelector('#v6DeleteTop');
+    const el = selectedId ? getElement(selectedId) : null;
+    const canDelete = !!(editMode && el && el.dataset.v6Deletable === 'true');
+
+    if(addMenu) addMenu.disabled = !editMode;
+    if(designMenu) designMenu.disabled = !editMode;
+    if(resetBtn) resetBtn.disabled = !editMode;
+    if(undoBtn) undoBtn.disabled = !editMode || undoStack.length === 0;
+    if(deleteTop) deleteTop.disabled = !canDelete;
+
     if(!editMode) activePanel = null;
     const addDock = modal.querySelector('#v6AddDock');
     const designDock = modal.querySelector('#v6DesignDock');
     if(addDock) addDock.hidden = !(editMode && activePanel === 'add');
     if(designDock) designDock.hidden = !(editMode && activePanel === 'design');
+
     const ctx = modal.querySelector('#v6Context');
-    const el = selectedId ? getElement(selectedId) : null;
     const showCtx = editMode && !!el && activePanel === 'context';
     ctx.hidden = !showCtx;
-    if(!showCtx){ const levelEl = modal.querySelector('#v6LayerLevel'); if(levelEl) levelEl.textContent = '—'; }
+    if(!showCtx){
+      const levelEl = modal.querySelector('#v6LayerLevel');
+      if(levelEl) levelEl.textContent = '—';
+    }
     if(showCtx){
       const l = getElLayout(el);
       modal.querySelector('#v6FontSize').value = Math.round(num(l.fontSize, parseFloat(getComputedStyle(el).fontSize) || 22));
       modal.querySelector('#v6TextColor').value = toHex(l.color || getComputedStyle(el).color || '#0f172a');
       const levelEl = modal.querySelector('#v6LayerLevel');
       if(levelEl) levelEl.textContent = getLayerLevel(el);
-      modal.querySelector('#v6Delete').disabled = el.dataset.v6Deletable !== 'true';
+      const d = modal.querySelector('#v6Delete');
+      if(d) d.disabled = !canDelete;
     }
-    const addBtn = modal.querySelector('#v6AddMenu');
-    const designBtn = modal.querySelector('#v6DesignMenu');
-    if(addBtn) addBtn.classList.toggle('success-btn', editMode && activePanel === 'add');
-    if(designBtn) designBtn.classList.toggle('success-btn', editMode && activePanel === 'design');
-    if(activePanel === 'design'){ syncDesignInputs(); syncPatternInputs(); }
+    if(addMenu) addMenu.classList.toggle('success-btn', editMode && activePanel === 'add');
+    if(designMenu) designMenu.classList.toggle('success-btn', editMode && activePanel === 'design');
   }
   function toHex(c){ if(!c) return '#0f172a'; if(String(c).startsWith('#')) return c; const m=String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(!m) return '#0f172a'; return '#'+[m[1],m[2],m[3]].map(v=>(+v).toString(16).padStart(2,'0')).join(''); }
 

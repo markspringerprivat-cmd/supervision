@@ -3023,3 +3023,16 @@ body.presentation-body[data-presentation-pattern="none"]::before {
 .v6-table th,.v6-table td{overflow-wrap:anywhere;word-break:normal;line-height:1.25;}
 .v6-toolbar .success-btn{filter:none;}
 .v6-toolbar button{white-space:nowrap;}
+
+/* Editor toolbar refinements: pattern/design fix */
+.v6-mainbar{gap:10px;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;min-height:56px}
+.v6-dock,.v6-contextbar{gap:12px;align-items:center;min-height:54px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap}
+.v6-spacer{flex:1 1 auto;min-width:28px}
+.v6-toolbar button:disabled,.v6-toolbar select:disabled,.v6-toolbar input:disabled{opacity:.42;cursor:not-allowed;filter:grayscale(.25)}
+.v6-sep-neon{display:inline-block;width:3px;height:34px;border-radius:999px;background:#eaff00;box-shadow:0 0 10px rgba(234,255,0,.85);margin:0 14px;flex:0 0 auto}
+.v6-bottom-counter{display:inline-flex;align-items:center;justify-content:center;min-width:112px;height:40px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-weight:800;color:#f8fafc;white-space:nowrap}
+.v6-slide-nav{gap:14px;align-items:center;justify-content:center}
+.v6-layer-control{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.v6-layer-indicator{min-width:92px;justify-content:center}
+.v6-type-title .v6-editable-text,.v6-type-thanks .v6-editable-text{color:inherit!important}
+.v6-el.is-selected{outline:2px dashed #2563eb!important;outline-offset:2px!important}

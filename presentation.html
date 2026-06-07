@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Präsentation Gruppenergebnis</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-mode="presentation" class="presentation-body">
+  <main class="presentation-shell">
+    <div class="presentation-toolbar" role="toolbar" aria-label="Präsentationssteuerung">
+      <button id="presentationExitBtn" type="button" class="secondary">Präsentation abbrechen</button>
+      <button id="presentationFullscreenBtn" type="button">Vollbildmodus</button>
+      <span id="presentationCounter" class="presentation-counter">1 / 1</span>
+    </div>
+    <section id="presentationStatus" class="presentation-status">Präsentation wird geladen …</section>
+    <section id="presentationSlide" class="presentation-slide" aria-live="polite"></section>
+    <div class="presentation-nav">
+      <button id="presentationPrevBtn" class="secondary" type="button" aria-label="Zurück">←</button>
+      <button id="presentationNextBtn" type="button" aria-label="Weiter">→</button>
+    </div>
+  </main>
+  <script src="js/config.js"></script><script src="js/app.js"></script>
+</body>
+</html>

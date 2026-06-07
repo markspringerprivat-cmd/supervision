@@ -38,3 +38,10 @@ Dort dein eigenes Passwort eintragen. Genau dieses Passwort wird für das Lösch
 ## Gruppenzuweisung
 
 Die Startseite enthält zusätzlich `gruppenzuweisung.html`. Dort kann eine vorbefüllte Teilnehmendenliste bearbeitet und zufällig in Gruppen mit mindestens vier Personen eingeteilt werden. Die Daten werden lokal im Browser gespeichert und können über die lokalen Reset-Funktionen gelöscht werden.
+
+
+## Letzte Änderungen
+- Globaler Administrationsmodus über die obere Leiste mit Passwortmaske, Sternchen-Eingabe und Augen-Schalter.
+- `Seite zurücksetzen` löscht lokale Arbeitsdaten und führt zurück zur Startseite.
+- Ergebnis-Karten enthalten `Präsentation starten`.
+- Neue Seite `presentation.html` zeigt ein Gruppenergebnis als Folienpräsentation mit Pfeiltasten, Leertaste und Vollbildmodus.

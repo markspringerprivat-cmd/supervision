@@ -2616,3 +2616,348 @@ window.addEventListener("DOMContentLoaded", () => {
   if (document.body.dataset.mode === "groupassignment") updateGroupAssignmentAccess();
   if (document.body.dataset.mode === "results") applyResultsAdminState();
 });
+
+
+/* ============================================================
+   FINAL REQUEST OVERRIDE: global admin bar, password modal,
+   result presentation mode
+   ============================================================ */
+const GLOBAL_ADMIN_PASSWORD_VISIBLE_FINAL = "Mark123";
+
+function ensureAdminPasswordModalFinal() {
+  let modal = document.getElementById("adminPasswordModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.id = "adminPasswordModal";
+  modal.className = "admin-modal";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="admin-modal-backdrop" data-admin-cancel></div>
+    <div class="admin-modal-card" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle">
+      <h2 id="adminModalTitle">Administrationsmodus aktivieren</h2>
+      <p>Bitte Passwort eingeben.</p>
+      <label class="password-label" for="adminPasswordInput">Passwort</label>
+      <div class="password-row">
+        <input id="adminPasswordInput" type="password" autocomplete="current-password" spellcheck="false">
+        <button id="toggleAdminPassword" type="button" class="secondary eye-button" aria-label="Passwort anzeigen">👁</button>
+      </div>
+      <p id="adminPasswordError" class="warning admin-modal-error" hidden>Falsches Passwort.</p>
+      <div class="admin-modal-actions">
+        <button id="cancelAdminPassword" type="button" class="secondary">Abbrechen</button>
+        <button id="submitAdminPassword" type="button">Aktivieren</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function showAdminPasswordDialogFinal() {
+  return new Promise(resolve => {
+    const modal = ensureAdminPasswordModalFinal();
+    const input = modal.querySelector("#adminPasswordInput");
+    const toggle = modal.querySelector("#toggleAdminPassword");
+    const submit = modal.querySelector("#submitAdminPassword");
+    const cancel = modal.querySelector("#cancelAdminPassword");
+    const error = modal.querySelector("#adminPasswordError");
+    const backdrop = modal.querySelector("[data-admin-cancel]");
+
+    function close(value) {
+      modal.hidden = true;
+      document.removeEventListener("keydown", onKey);
+      resolve(value);
+    }
+    function trySubmit() {
+      const ok = input.value === GLOBAL_ADMIN_PASSWORD_VISIBLE_FINAL;
+      if (!ok) {
+        error.hidden = false;
+        input.select();
+        return;
+      }
+      close(true);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") close(false);
+      if (e.key === "Enter") trySubmit();
+    }
+
+    input.value = "";
+    input.type = "password";
+    error.hidden = true;
+    modal.hidden = false;
+    window.setTimeout(() => input.focus(), 30);
+
+    toggle.onclick = () => {
+      const visible = input.type === "text";
+      input.type = visible ? "password" : "text";
+      toggle.setAttribute("aria-label", visible ? "Passwort anzeigen" : "Passwort ausblenden");
+      toggle.classList.toggle("is-visible", !visible);
+      input.focus();
+    };
+    submit.onclick = trySubmit;
+    cancel.onclick = () => close(false);
+    backdrop.onclick = () => close(false);
+    document.addEventListener("keydown", onKey);
+  });
+}
+
+function handleGlobalAdminClick() {
+  if (isGlobalAdminActive()) {
+    setGlobalAdminActive(false);
+    return;
+  }
+  showAdminPasswordDialogFinal().then(ok => {
+    if (ok) setGlobalAdminActive(true);
+    else updateGlobalAdminUi();
+  });
+}
+
+function installLocalResetControls() {
+  const header = document.querySelector("header");
+  if (!header) return;
+  let bar = document.querySelector(".local-reset-bar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.className = "local-reset-bar";
+    header.insertAdjacentElement("afterend", bar);
+  }
+  bar.innerHTML = `
+    <div class="wrap local-reset-inner admin-reset-inner">
+      <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
+      <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
+      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+      <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
+    </div>`;
+  const statusBtn = document.getElementById("globalAdminStatusBtn");
+  const clearPageBtn = document.getElementById("clearPageBtn");
+  const clearAllBtn = document.getElementById("clearAllLocalBtn");
+  if (statusBtn) statusBtn.onclick = handleGlobalAdminClick;
+  if (clearPageBtn) clearPageBtn.onclick = () => {
+    if (confirm("Lokale Eingaben auf der aktuellen Seite leeren?")) clearCurrentPageInputs();
+  };
+  if (clearAllBtn) clearAllBtn.onclick = () => {
+    if (!confirm("Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.")) return;
+    clearAllLocalSupervisionData({ silent: true });
+    window.location.href = "index.html";
+  };
+  updateGlobalAdminUi();
+}
+
+function installGlobalAdminControlsFinal() {
+  installLocalResetControls();
+  document.querySelectorAll("#globalAdminBtn, #adminLoginBtn, [data-admin-login]").forEach(btn => {
+    if (btn.id === "globalAdminStatusBtn" || btn.dataset.adminStatusButton !== undefined) return;
+    btn.style.display = "none";
+    btn.setAttribute("aria-hidden", "true");
+    btn.onclick = null;
+  });
+  const statusBtn = document.getElementById("globalAdminStatusBtn");
+  if (statusBtn) statusBtn.onclick = handleGlobalAdminClick;
+  updateGlobalAdminUi();
+}
+
+function updateGlobalAdminUi() {
+  const active = isGlobalAdminActive();
+  document.body.classList.toggle("is-global-admin", active);
+  const statusBtn = document.getElementById("globalAdminStatusBtn");
+  if (statusBtn) {
+    statusBtn.disabled = false;
+    statusBtn.style.pointerEvents = "auto";
+    statusBtn.textContent = active ? "Admin-Modus aktiv" : "Admin-Modus deaktiviert";
+    statusBtn.classList.toggle("is-active", active);
+    statusBtn.classList.toggle("is-inactive", !active);
+    statusBtn.title = active ? "Adminmodus deaktivieren" : "Adminmodus aktivieren";
+  }
+  document.querySelectorAll("#globalAdminBtn, #adminLoginBtn, [data-admin-login]").forEach(btn => {
+    if (btn.id === "globalAdminStatusBtn" || btn.dataset.adminStatusButton !== undefined) return;
+    btn.style.display = "none";
+    btn.setAttribute("aria-hidden", "true");
+  });
+  updateAdminProtectedLinks();
+}
+
+function applyResultsAdminState() {
+  resultsAdminActive = isGlobalAdminActive();
+  document.body.classList.toggle("is-admin-results", !!resultsAdminActive);
+  document.body.classList.toggle("public-results", !resultsAdminActive);
+  document.querySelectorAll(".admin-only").forEach(el => {
+    el.hidden = !resultsAdminActive;
+    el.style.display = resultsAdminActive ? "" : "none";
+    el.style.visibility = resultsAdminActive ? "visible" : "hidden";
+  });
+  document.querySelectorAll(".result-delete").forEach(el => {
+    el.style.display = resultsAdminActive ? "inline-flex" : "none";
+    el.style.visibility = resultsAdminActive ? "visible" : "hidden";
+  });
+  const controls = document.getElementById("resultsControls");
+  if (controls) {
+    controls.hidden = false;
+    controls.style.display = "flex";
+    controls.style.visibility = "visible";
+  }
+  const randomArea = document.querySelector(".random-area");
+  if (randomArea) {
+    randomArea.style.display = resultsAdminActive ? "inline-flex" : "none";
+    randomArea.style.visibility = resultsAdminActive ? "visible" : "hidden";
+  }
+  const deleteAll = document.getElementById("deleteAllBtn");
+  if (deleteAll) {
+    deleteAll.textContent = "Alle Gruppenergebnisse löschen";
+    deleteAll.style.display = resultsAdminActive ? "inline-flex" : "none";
+    deleteAll.style.visibility = resultsAdminActive ? "visible" : "hidden";
+  }
+  updateGlobalAdminUi();
+}
+
+function resultCardHtml(row, index, virtualIndex = index) {
+  const data = row.data || {};
+  const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
+  const groupName = row.groupName || data.groupName || "Gruppe";
+  const presentationId = encodeURIComponent(String(row.rowNumber || row.id || index));
+  return `<section class="card result-card slot-card" data-result-index="${index}" data-virtual-index="${virtualIndex}" aria-current="false">
+    <button class="result-delete" type="button" data-delete-result="${index}" title="Diesen Eintrag löschen" aria-label="Diesen Eintrag löschen">×</button>
+    <div class="result-card-head">
+      <div>
+        <h2>${escapeHtml(groupName)}</h2>
+        <p class="small result-meta">${escapeHtml(timestamp)}</p>
+      </div>
+      <div class="result-card-actions">
+        <a class="button secondary presentation-start" href="presentation.html?row=${presentationId}">Präsentation starten</a>
+        <span class="result-number">${index + 1}</span>
+      </div>
+    </div>
+    ${phaseDetails("Phase 2: Problembeschreibung", data.p2 || {})}
+    ${phaseDetails("Phase 3: Zielformulierung", data.p3 || {})}
+    ${phaseDetails("Phase 4: Vertiefte Problembearbeitung", data.p4 || {})}
+    ${phaseDetails("Phase 5 und 6: Umsetzung", Object.assign({}, data.p5 || {}, data.p6 || {}))}
+  </section>`;
+}
+
+function presentValue(value) {
+  const text = (value === null || value === undefined || String(value).trim() === "") ? "—" : String(value);
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
+function presentPath(obj, path, fallback = "") {
+  const val = path_(obj, path);
+  return val || fallback || "";
+}
+
+function presentationTable(headers, rows) {
+  return `<div class="presentation-table-wrap"><table class="presentation-table"><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${presentValue(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+function buildPresentationSlides(row) {
+  const data = row.data || {};
+  const p2 = data.p2 || {};
+  const p3 = data.p3 || {};
+  const p4 = data.p4 || {};
+  const p5 = data.p5 || {};
+  const p6 = data.p6 || {};
+  const assignments = data.assignments || {};
+  const groupName = row.groupName || data.groupName || "Gruppe";
+  const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
+  const roles = [
+    ["Supervisor*in", assignments.supervisor || "—"],
+    ["Schulleitung", assignments.schulleitung || "—"],
+    ["Lehrkraft A", assignments["lehrkraft-a"] || assignments.lehrkraftA || "—"],
+    ["Lehrkraft B", assignments["lehrkraft-b"] || assignments.lehrkraftB || "—"]
+  ];
+  return [
+    { title: "Gruppenvorstellung", html: `<p class="presentation-kicker">${escapeHtml(timestamp)}</p><h2>${escapeHtml(groupName)}</h2>${presentationTable(["Rolle", "Name"], roles)}<p class="presentation-note">Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.</p>` },
+    { title: "Phase 2: Problembeschreibung", html: presentationTable(["Rolle", "Probleme / Beobachtung", "Gefühle", "Wünsche"], [
+      ["Schulleitung", p2.slProbleme || p2.slProblem || "", p2.slGefuehle || "", p2.slWuensche || ""],
+      ["Lehrkraft A", p2.aProbleme || p2.aPerspektive || "", p2.aGefuehle || "", p2.aWuensche || ""],
+      ["Lehrkraft B", p2.bProbleme || p2.bPerspektive || "", p2.bGefuehle || "", p2.bWuensche || ""]
+    ]) },
+    { title: "Phase 3: Zielformulierung", html: presentationTable(["Bereich", "Eintrag"], [
+      ["Ziel Schulleitung", p3.zielSL || ""],
+      ["Ziel Lehrkraft A", p3.zielA || ""],
+      ["Ziel Lehrkraft B", p3.zielB || ""],
+      ["Gefundene Gemeinsamkeiten", p3.gemeinsamkeiten || ""],
+      ["Gemeinsame Zielvereinbarung", p3.gemeinsamesZiel || p3.gemeinsameZielformulierung || ""]
+    ]) },
+    { title: "Phase 4: Vertiefte Problembearbeitung", html: presentationTable(["Aspekt", "Ergebnis"], [
+      ["Hilfreiche Kritik", p4.kritik || ""],
+      ["Absprachen zum weiteren Vorgehen", p4.absprachen || p4.weiteresVorgehen || ""]
+    ]) },
+    { title: "Phase 5 und 6: Umsetzung", html: presentationTable(["Aspekt", "Ergebnis"], [
+      ["Zustimmung zur Vereinbarung", p5.zustimmung || ""],
+      ["Einschätzung der Praxistauglichkeit durch die Schulleitung", p6.praxistauglichkeit || p6.einschaetzung || ""],
+      ["Unterstützungsmöglichkeiten durch die Schulleitung", p6.unterstuetzung || ""],
+      ["Erste konkrete Umsetzungsschritte", p6.umsetzung || p6.konkreteUmsetzungsschritte || ""]
+    ]) },
+    { title: "Vielen Dank fürs Zuhören", html: `<div class="thanks-slide"><h2>Vielen Dank fürs Zuhören</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p></div>` }
+  ];
+}
+
+let presentationSlidesFinal = [];
+let presentationIndexFinal = 0;
+function renderPresentationSlideFinal() {
+  const slide = document.getElementById("presentationSlide");
+  const counter = document.getElementById("presentationCounter");
+  if (!slide || !presentationSlidesFinal.length) return;
+  const item = presentationSlidesFinal[presentationIndexFinal];
+  slide.innerHTML = `<div class="presentation-slide-inner"><h1>${escapeHtml(item.title)}</h1>${item.html}</div>`;
+  if (counter) counter.textContent = `${presentationIndexFinal + 1} / ${presentationSlidesFinal.length}`;
+}
+function movePresentationFinal(delta) {
+  if (!presentationSlidesFinal.length) return;
+  presentationIndexFinal = Math.max(0, Math.min(presentationSlidesFinal.length - 1, presentationIndexFinal + delta));
+  renderPresentationSlideFinal();
+}
+function initPresentationFinal() {
+  const status = document.getElementById("presentationStatus");
+  const url = getAppsScriptUrl();
+  const params = new URLSearchParams(window.location.search);
+  const rowParam = params.get("row");
+  const idxParam = params.get("i");
+  const exit = document.getElementById("presentationExitBtn");
+  const full = document.getElementById("presentationFullscreenBtn");
+  const prev = document.getElementById("presentationPrevBtn");
+  const next = document.getElementById("presentationNextBtn");
+  if (exit) exit.onclick = () => window.location.href = "ergebnisse.html";
+  if (full) full.onclick = () => {
+    const root = document.documentElement;
+    if (!document.fullscreenElement && root.requestFullscreen) root.requestFullscreen();
+    else if (document.exitFullscreen) document.exitFullscreen();
+  };
+  if (prev) prev.onclick = () => movePresentationFinal(-1);
+  if (next) next.onclick = () => movePresentationFinal(1);
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); movePresentationFinal(1); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); movePresentationFinal(-1); }
+    if (e.key === "Escape") { window.location.href = "ergebnisse.html"; }
+  });
+  if (!url) {
+    if (status) status.textContent = "Keine Apps-Script-URL gefunden.";
+    return;
+  }
+  fetchResultsWithFallback(url).then(rows => {
+    let row = null;
+    if (rowParam !== null) row = (rows || []).find(r => String(r.rowNumber || r.id) === String(rowParam));
+    if (!row && idxParam !== null) row = (rows || [])[Number(idxParam)];
+    if (!row && rows && rows.length) row = rows[0];
+    if (!row) throw new Error("Kein Gruppenergebnis gefunden.");
+    presentationSlidesFinal = buildPresentationSlides(row);
+    presentationIndexFinal = 0;
+    if (status) status.hidden = true;
+    renderPresentationSlideFinal();
+  }).catch(err => {
+    if (status) {
+      status.className = "presentation-status warning";
+      status.textContent = err.message || "Präsentation konnte nicht geladen werden.";
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  installLocalResetControls();
+  installGlobalAdminControlsFinal();
+  updateGlobalAdminUi();
+  if (document.body.dataset.mode === "presentation") initPresentationFinal();
+  if (document.body.dataset.mode === "results") {
+    const deleteAll = document.getElementById("deleteAllBtn");
+    if (deleteAll) deleteAll.textContent = "Alle Gruppenergebnisse löschen";
+    applyResultsAdminState();
+  }
+});

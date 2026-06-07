@@ -777,10 +777,8 @@ function formatResultTimestamp(value) {
   }
   const date = new Date(raw);
   if (!Number.isNaN(date.getTime())) {
-    return date.toLocaleString("de-DE", {
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      day: "2-digit", month: "2-digit", year: "numeric"
-    }).replace(",", "");
+    const pad = n => String(n).padStart(2, "0");
+    return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())} ${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
   }
   return raw;
 }
@@ -801,8 +799,10 @@ function summaryInner(obj) {
 
 let resultRowsCache = [];
 let currentResultIndex = 0;
+let currentVirtualIndex = 0;
 let randomSpinTimer = null;
 let randomSpinTimeout = null;
+let randomSpinActive = false;
 
 function initResults() {
   initCommon();
@@ -830,6 +830,7 @@ function initResults() {
   if (prevBtn) prevBtn.addEventListener("click", () => moveResult(-1));
   if (nextBtn) nextBtn.addEventListener("click", () => moveResult(1));
   if (randomBtn) randomBtn.addEventListener("click", spinRandomGroup);
+  window.addEventListener("resize", () => { if (resultRowsCache.length) renderCarouselWindow(false); });
 
   if (!url) {
     status.className = "warning";
@@ -859,20 +860,31 @@ function renderResults(rows) {
   if (!rows.length) {
     if (controls) controls.hidden = true;
     target.innerHTML = `<div class="notice empty-results">Noch keine Ergebnisse vorhanden.</div>`;
+    currentResultIndex = 0;
+    currentVirtualIndex = 0;
     updateCarouselCounter();
     return;
   }
   if (controls) controls.hidden = false;
-  target.innerHTML = rows.map((row, index) => resultCardHtml(row, index)).join("");
   clampResultIndex();
-  updateActiveResult(false);
+  currentVirtualIndex = currentResultIndex;
+  renderCarouselWindow(false);
 }
 
-function resultCardHtml(row, index) {
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
+function resultCardHtml(row, index, slot = 0) {
   const data = row.data || {};
   const timestamp = formatResultTimestamp(getRowTimestamp(row, data));
   const groupName = row.groupName || data.groupName || "Gruppe";
-  return `<section class="card result-card" data-result-index="${index}">
+  const offset = carouselOffsetForSlot(slot);
+  const scale = slot === 0 ? 1 : (Math.abs(slot) === 1 ? 0.88 : 0.78);
+  const opacity = slot === 0 ? 1 : (Math.abs(slot) === 1 ? 0.34 : 0.12);
+  const z = 10 - Math.abs(slot);
+  const active = slot === 0;
+  return `<section class="card result-card ${active ? 'is-active' : 'is-side'}" data-result-index="${index}" data-slot="${slot}" aria-current="${active ? 'true' : 'false'}" style="--x:${offset}px;--scale:${scale};--opacity:${opacity};--z:${z};">
     <button class="result-delete" type="button" data-delete-result="${index}" title="Diesen Eintrag löschen" aria-label="Diesen Eintrag löschen">×</button>
     <div class="result-card-head">
       <div>
@@ -888,42 +900,58 @@ function resultCardHtml(row, index) {
   </section>`;
 }
 
+function carouselOffsetForSlot(slot) {
+  const vw = Math.max(320, window.innerWidth || 1024);
+  const cardDistance = Math.min(620, Math.max(270, vw * 0.54));
+  return Math.round(slot * cardDistance);
+}
+
+function renderCarouselWindow(smooth = true) {
+  const target = document.getElementById("resultsContent");
+  if (!target) return;
+  const n = resultRowsCache.length;
+  if (!n) {
+    target.innerHTML = `<div class="notice empty-results">Noch keine Ergebnisse vorhanden.</div>`;
+    updateCarouselCounter();
+    return;
+  }
+  currentResultIndex = mod(currentVirtualIndex, n);
+  const slots = n === 1 ? [0] : [-2, -1, 0, 1, 2];
+  target.classList.toggle("is-smooth", !!smooth);
+  target.innerHTML = slots.map(slot => {
+    const idx = mod(currentVirtualIndex + slot, n);
+    return resultCardHtml(resultRowsCache[idx], idx, slot);
+  }).join("");
+  updateActiveResult(smooth);
+}
+
 function clampResultIndex() {
   if (!resultRowsCache.length) {
     currentResultIndex = 0;
+    currentVirtualIndex = 0;
     return;
   }
-  if (currentResultIndex < 0) currentResultIndex = resultRowsCache.length - 1;
-  if (currentResultIndex >= resultRowsCache.length) currentResultIndex = 0;
+  currentResultIndex = mod(currentResultIndex, resultRowsCache.length);
+  currentVirtualIndex = currentResultIndex;
 }
 
 function moveResult(delta) {
   if (!resultRowsCache.length) return;
-  currentResultIndex += delta;
-  clampResultIndex();
-  updateActiveResult(true);
+  currentVirtualIndex += delta;
+  currentResultIndex = mod(currentVirtualIndex, resultRowsCache.length);
+  renderCarouselWindow(true);
 }
 
 function updateActiveResult(smooth = true) {
-  const cards = Array.from(document.querySelectorAll(".result-card[data-result-index]"));
   const carousel = document.getElementById("resultCarousel");
   const track = document.getElementById("resultsContent");
-  cards.forEach(card => {
-    const active = Number(card.dataset.resultIndex) === currentResultIndex;
-    card.classList.toggle("is-active", active);
-    card.setAttribute("aria-current", active ? "true" : "false");
-  });
-  const activeCard = cards.find(card => Number(card.dataset.resultIndex) === currentResultIndex);
-  if (activeCard && carousel && track) {
-    track.style.transition = smooth ? "transform .36s cubic-bezier(.2,.8,.2,1)" : "none";
-    const activeCenter = activeCard.offsetLeft + activeCard.offsetWidth / 2;
-    const viewportCenter = carousel.clientWidth / 2;
-    const shift = viewportCenter - activeCenter;
-    track.style.transform = `translateX(${shift}px)`;
+  const activeCard = document.querySelector(".result-card.is-active");
+  if (track) track.classList.toggle("is-smooth", !!smooth);
+  if (activeCard && carousel) {
     window.setTimeout(() => {
-      const height = Math.max(activeCard.offsetHeight + 30, 260);
+      const height = Math.max(activeCard.offsetHeight + 36, 330);
       carousel.style.minHeight = height + "px";
-    }, smooth ? 80 : 0);
+    }, smooth ? 120 : 0);
   }
   updateCarouselCounter();
 }
@@ -938,35 +966,79 @@ function updateCarouselCounter() {
 function spinRandomGroup() {
   if (!resultRowsCache.length) return;
   const btn = document.getElementById("randomGroupBtn");
-  if (randomSpinTimer || randomSpinTimeout) return;
+  if (randomSpinActive) return;
+  randomSpinActive = true;
   const duration = 6000 + Math.floor(Math.random() * 6001); // 6–12 Sekunden
-  const intervalMs = 135;
-  const start = Date.now();
+  const start = performance.now();
+  let tickNo = 0;
   if (btn) {
     btn.disabled = true;
     btn.textContent = "Zufallsauswahl läuft …";
   }
-  randomSpinTimer = setInterval(() => {
-    currentResultIndex = (currentResultIndex + 1) % resultRowsCache.length;
-    updateActiveResult(true);
-  }, intervalMs);
-  randomSpinTimeout = setTimeout(() => {
-    clearInterval(randomSpinTimer);
-    randomSpinTimer = null;
-    randomSpinTimeout = null;
-    // Kein Sprung am Ende: Das Karussell bleibt dort stehen, wo der Rundlauf stoppt.
-    updateActiveResult(true);
-    if (btn) {
-      btn.disabled = false;
+
+  function intervalForElapsed(elapsed) {
+    // Wird etwa alle zwei Sekunden spürbar langsamer.
+    if (elapsed < 2000) return 115;
+    if (elapsed < 4000) return 170;
+    if (elapsed < 6000) return 250;
+    if (elapsed < 8000) return 360;
+    if (elapsed < 10000) return 500;
+    return 680;
+  }
+
+  function tick() {
+    const elapsed = performance.now() - start;
+    moveResult(1); // immer nach rechts: 1–2–3–1–2–3 …
+    tickNo += 1;
+    const nextInterval = intervalForElapsed(elapsed);
+    if (elapsed + nextInterval < duration) {
+      randomSpinTimeout = setTimeout(tick, nextInterval);
+      return;
+    }
+    randomSpinTimeout = setTimeout(() => {
+      randomSpinActive = false;
+      randomSpinTimeout = null;
+      updateActiveResult(true);
       const chosen = resultRowsCache[currentResultIndex];
-      btn.textContent = "Zufallsauswahl starten";
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Zufallsauswahl starten";
+      }
       const status = document.getElementById("resultsStatus");
       if (status) {
         status.className = "success";
         status.textContent = "Ausgewählt: " + (chosen.groupName || (chosen.data && chosen.data.groupName) || "Gruppe");
       }
-    }
-  }, Math.max(0, duration - (Date.now() - start)));
+      startConfetti(6000);
+    }, nextInterval);
+  }
+  tick();
+}
+
+function startConfetti(durationMs = 6000) {
+  const colors = ["#ef4444", "#f97316", "#f59e0b", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#84cc16", "#14b8a6"];
+  let layer = document.querySelector(".confetti-layer");
+  if (layer) layer.remove();
+  layer = document.createElement("div");
+  layer.className = "confetti-layer";
+  document.body.appendChild(layer);
+  const count = 150;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.style.left = Math.random() * 100 + "vw";
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = (Math.random() * 1.1) + "s";
+    piece.style.animationDuration = (3.8 + Math.random() * 2.8) + "s";
+    piece.style.setProperty("--drift", (Math.random() * 220 - 110) + "px");
+    piece.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+    piece.style.width = (7 + Math.random() * 8) + "px";
+    piece.style.height = (9 + Math.random() * 12) + "px";
+    layer.appendChild(piece);
+  }
+  window.setTimeout(() => {
+    if (layer && layer.parentNode) layer.parentNode.removeChild(layer);
+  }, durationMs + 1800);
 }
 
 function deleteSingleResult(index) {

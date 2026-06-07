@@ -54,8 +54,9 @@ function doPost(e) {
     return jsonOutput_({ ok: false, error: 'Ungültiges JSON: ' + err.message });
   }
 
-  if (body.action === 'deleteAll') return deleteAll_(body);
-  if (body.action === 'deleteRow') return deleteRowPost_(body);
+  const action = String(body.action || '').toLowerCase();
+  if (action === 'deleteall' || action === 'delete_all') return deleteAll_(body);
+  if (action === 'deleterow' || action === 'delete' || action === 'delete_row') return deleteRowPost_(body);
 
   return saveEntry_(body);
 }
@@ -184,6 +185,7 @@ function deleteRowGet_(e) {
   if (password !== ADMIN_PASSWORD) return jsonp_(e, { ok: false, error: 'Falsches Passwort.' });
   if (!rowNumber || rowNumber < 2) return jsonp_(e, { ok: false, error: 'Ungültige Zeile.' });
   const sheet = getSheet_();
+  if (rowNumber > sheet.getLastRow()) return jsonp_(e, { ok: false, error: 'Zeile existiert nicht mehr.' });
   sheet.deleteRow(rowNumber);
   return jsonp_(e, { ok: true, message: 'Eintrag gelöscht.' });
 }
@@ -194,6 +196,7 @@ function deleteRowPost_(body) {
   if (password !== ADMIN_PASSWORD) return jsonOutput_({ ok: false, error: 'Falsches Passwort.' });
   if (!rowNumber || rowNumber < 2) return jsonOutput_({ ok: false, error: 'Ungültige Zeile.' });
   const sheet = getSheet_();
+  if (rowNumber > sheet.getLastRow()) return jsonOutput_({ ok: false, error: 'Zeile existiert nicht mehr.' });
   sheet.deleteRow(rowNumber);
   return jsonOutput_({ ok: true, message: 'Eintrag gelöscht.' });
 }

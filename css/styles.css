@@ -5013,3 +5013,26 @@ section,
   }
 }
 
+
+/* Transferfähiger Präsentationsmodus: keine lokalen Bild-Uploads */
+#presentationBgImageBtn,
+#removePresentationBgImage,
+#v4BgButton,
+#v4BgRemove,
+input[type="file"]#presentationBgImageInput,
+input[type="file"]#v4BgInput,
+[data-action="background-image"],
+[data-action="remove-background-image"] {
+  display: none !important;
+}
+
+:root{
+  --sv-gap-card: .5cm;
+  --sv-gap-button: .35cm;
+  --sv-gap-section: .75cm;
+}
+.card, .role-card, .phase-card, .result-card { margin-bottom: var(--sv-gap-card); }
+.grid, .card-grid, .role-grid, .result-grid { gap: var(--sv-gap-card) !important; }
+button, .button { margin: .06cm; }
+.actions, .nav-row, .topbar-inner, .button-row, .phase-actions { gap: var(--sv-gap-button) !important; }
+section, .section { margin-bottom: var(--sv-gap-section); }

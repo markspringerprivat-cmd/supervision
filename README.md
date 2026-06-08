@@ -73,3 +73,18 @@ Wichtig:
 6. Die `/exec`-URL bleibt gleich, sofern die bestehende Bereitstellung bearbeitet wird.
 
 Die Website-Dateien können direkt auf GitHub Pages hochgeladen werden.
+
+
+## Update: übertragbare Präsentationsgestaltung
+
+Der Bearbeitungsmodus speichert jetzt nur noch Funktionen, die sicher über Google Sheets übertragen werden können:
+
+- Farben und Muster
+- Textänderungen, Schriftgrößen und Textfarben
+- Positionen, Größen, Drehungen und Ebenen
+- Sticker aus dem Projektordner als Pfad/Referenz
+- zusätzliche Textboxen
+
+Entfernt wurden lokaler Hintergrundbild-Upload und „Bild entfernen“, weil Base64-Bilder die Übermittlung blockieren können.
+
+Nach dem Hochladen der ZIP muss `apps-script/Code.gs` in Apps Script neu eingefügt und als neue Version bereitgestellt werden, falls du dort noch nicht den aktuellen Code nutzt.

@@ -7975,3 +7975,293 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   setTimeout(replaceSubmitButton, 300);
   setTimeout(replaceSubmitButton, 1200);
 })();
+
+/* ==========================================================
+   FINAL TRANSFERABLE PRESENTATION SYNC
+   ----------------------------------------------------------
+   Ziel: Nur übertragbare Präsentationsparameter speichern.
+   Entfernt Hintergrundbild-Upload/-Entfernen aus dem Editor und
+   sendet ein kompaktes presentationConfig-JSON an Apps Script.
+   ========================================================== */
+(function(){
+  const TRANSFER_SYNC_VERSION = '2026-06-transferable-presentation-v1';
+  const MAX_TEXT = 3000;
+  const MAX_OBJECT_KEYS = 160;
+  const MAX_ARRAY_ITEMS = 180;
+
+  function gid(){
+    try { return (typeof getGroupId === 'function') ? getGroupId() : (new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_current_group') || 'gruppe'); }
+    catch(_) { return 'gruppe'; }
+  }
+  function scopedKey(name){
+    try { if (typeof key === 'function') return key(name); } catch(_) {}
+    return 'sv_' + gid() + '_' + name;
+  }
+  function parse(raw, fb){ try { return raw ? JSON.parse(raw) : fb; } catch(_) { return fb; } }
+  function readObj(name, fb){
+    try {
+      const raw = localStorage.getItem(scopedKey(name)) || localStorage.getItem('sv_' + name) || localStorage.getItem(name);
+      return parse(raw, fb);
+    } catch(_) { return fb; }
+  }
+  function writeObj(name, value){
+    try {
+      const json = JSON.stringify(value == null ? {} : value);
+      localStorage.setItem(scopedKey(name), json);
+    } catch(_) {}
+  }
+  function isDataImage(s){ return typeof s === 'string' && /^data:image\//i.test(s); }
+  function cleanString(s){
+    if (s == null) return '';
+    s = String(s);
+    if (isDataImage(s)) return '';
+    return s.length > MAX_TEXT ? s.slice(0, MAX_TEXT) + ' …' : s;
+  }
+  function cleanValue(v, depth){
+    if (depth > 8) return null;
+    if (v == null) return v;
+    if (typeof v === 'string') return cleanString(v);
+    if (typeof v === 'number' || typeof v === 'boolean') return v;
+    if (Array.isArray(v)) return v.slice(0, MAX_ARRAY_ITEMS).map(x => cleanValue(x, depth + 1)).filter(x => x !== undefined);
+    if (typeof v === 'object') {
+      const out = {};
+      Object.keys(v).slice(0, MAX_OBJECT_KEYS).forEach(k => {
+        if (/backgroundImage|bgImage|imageData|dataUrl|base64|rawLocal|cache|history|undo|snapshot/i.test(k)) return;
+        out[k] = cleanValue(v[k], depth + 1);
+      });
+      return out;
+    }
+    return null;
+  }
+  function cleanSettings(settings){
+    settings = settings && typeof settings === 'object' ? settings : {};
+    const allowed = [
+      'heading','text','background','slide','slidePattern','slidePatternColor',
+      'backgroundPattern','backgroundPatternColor','pageBackground','pagePattern',
+      'pagePatternColor','accent','titleColor','bodyColor'
+    ];
+    const out = {};
+    allowed.forEach(k => { if (settings[k] != null && settings[k] !== '') out[k] = cleanValue(settings[k], 0); });
+    if (!out.slide) out.slide = '#ffffff';
+    if (!out.background) out.background = '#0f172a';
+    if (!out.slidePattern) out.slidePattern = 'none';
+    if (!out.backgroundPattern) out.backgroundPattern = 'none';
+    return out;
+  }
+  function cleanSticker(st){
+    if (!st || typeof st !== 'object') return null;
+    const src = cleanString(st.src || st.url || st.path || st.file || '');
+    if (!src || isDataImage(src)) return null;
+    return {
+      id: cleanString(st.id || ('sticker_' + Math.random().toString(36).slice(2))),
+      slideIndex: Number(st.slideIndex ?? st.slide ?? 0) || 0,
+      src,
+      x: Number(st.x ?? st.left ?? 40) || 0,
+      y: Number(st.y ?? st.top ?? 40) || 0,
+      width: Number(st.width ?? st.w ?? 140) || 140,
+      height: Number(st.height ?? st.h ?? 120) || 120,
+      rotation: Number(st.rotation ?? st.rotate ?? 0) || 0,
+      z: Number(st.z ?? st.zIndex ?? 20) || 20
+    };
+  }
+  function cleanExtra(ex){
+    if (!ex || typeof ex !== 'object') return null;
+    const type = cleanString(ex.type || 'text');
+    if (type === 'sticker' || ex.src || ex.url || ex.path) return cleanSticker(ex);
+    return {
+      id: cleanString(ex.id || ('textbox_' + Math.random().toString(36).slice(2))),
+      type: 'text',
+      slideIndex: Number(ex.slideIndex ?? ex.slide ?? 0) || 0,
+      text: cleanString(ex.text || ex.html || ex.content || ''),
+      x: Number(ex.x ?? ex.left ?? 60) || 0,
+      y: Number(ex.y ?? ex.top ?? 60) || 0,
+      width: Number(ex.width ?? ex.w ?? 240) || 240,
+      height: Number(ex.height ?? ex.h ?? 90) || 90,
+      rotation: Number(ex.rotation ?? ex.rotate ?? 0) || 0,
+      z: Number(ex.z ?? ex.zIndex ?? 25) || 25,
+      color: cleanString(ex.color || ex.textColor || ''),
+      fontSize: Number(ex.fontSize ?? 18) || 18
+    };
+  }
+  function collectSettings(){
+    let s = {};
+    try { s = (typeof getPresentationSettingsFinal === 'function') ? getPresentationSettingsFinal() : readObj('presentation_settings', {}); }
+    catch(_) { s = readObj('presentation_settings', {}); }
+    return cleanSettings(s);
+  }
+  function collectExtras(){
+    let extras = [];
+    try { extras = (typeof getPresentationExtrasFinal === 'function') ? getPresentationExtrasFinal() : readObj('presentation_extras', []); }
+    catch(_) { extras = readObj('presentation_extras', []); }
+    return (Array.isArray(extras) ? extras : []).map(cleanExtra).filter(Boolean);
+  }
+  function collectStickers(){
+    const stickers = readObj('presentation_stickers_v1', []);
+    return (Array.isArray(stickers) ? stickers : []).map(cleanSticker).filter(Boolean);
+  }
+  function buildTransferablePresentationConfig(){
+    return {
+      version: TRANSFER_SYNC_VERSION,
+      savedAt: new Date().toISOString(),
+      groupId: gid(),
+      settings: collectSettings(),
+      extras: collectExtras(),
+      stickers: collectStickers(),
+      stableLayout: cleanValue(readObj('presentation_layout_stable_v2', {}), 0) || {},
+      layout: cleanValue(readObj('presentation_layout', {}), 0) || {},
+      textOverrides: cleanValue(readObj('presentation_text_overrides', {}), 0) || {}
+    };
+  }
+  function stripUnsupportedPresentationConfig(cfg){
+    cfg = cfg && typeof cfg === 'object' ? cfg : {};
+    return {
+      version: cleanString(cfg.version || TRANSFER_SYNC_VERSION),
+      savedAt: cleanString(cfg.savedAt || ''),
+      groupId: cleanString(cfg.groupId || gid()),
+      settings: cleanSettings(cfg.settings || cfg.presentationSettings || {}),
+      extras: (Array.isArray(cfg.extras) ? cfg.extras : []).map(cleanExtra).filter(Boolean),
+      stickers: (Array.isArray(cfg.stickers) ? cfg.stickers : []).map(cleanSticker).filter(Boolean),
+      stableLayout: cleanValue(cfg.stableLayout || {}, 0) || {},
+      layout: cleanValue(cfg.layout || {}, 0) || {},
+      textOverrides: cleanValue(cfg.textOverrides || {}, 0) || {}
+    };
+  }
+
+  window.collectPresentationSyncConfig = buildTransferablePresentationConfig;
+
+  window.applyPresentationSyncConfig = function(config){
+    const cfg = stripUnsupportedPresentationConfig(config);
+    writeObj('presentation_settings', cfg.settings);
+    writeObj('presentation_extras', cfg.extras);
+    writeObj('presentation_stickers_v1', cfg.stickers);
+    writeObj('presentation_layout_stable_v2', cfg.stableLayout);
+    writeObj('presentation_layout', cfg.layout);
+    writeObj('presentation_text_overrides', cfg.textOverrides);
+    try { if (typeof savePresentationSettingsFinal === 'function') savePresentationSettingsFinal(cfg.settings); } catch(_) {}
+    try { if (typeof savePresentationExtrasFinal === 'function') savePresentationExtrasFinal(cfg.extras); } catch(_) {}
+  };
+
+  function buildSafePayload(){
+    let data = {};
+    try { data = (typeof collectSupervisorData === 'function') ? collectSupervisorData() : {}; }
+    catch(_) { data = {}; }
+    if (!data || typeof data !== 'object') data = {};
+    data.groupId = data.groupId || gid();
+    try {
+      const assignments = (typeof loadObj === 'function') ? loadObj('assignments', {}) : readObj('assignments', {});
+      data.assignments = data.assignments || assignments || {};
+      data.groupName = (typeof loadText === 'function' ? loadText('summary_group_name') : '') || data.groupName || Object.values(data.assignments || {}).filter(Boolean).join(', ') || data.groupId || 'Unbenannte Gruppe';
+    } catch(_) {
+      data.groupName = data.groupName || data.groupId || 'Unbenannte Gruppe';
+    }
+    data.timestampLocal = new Date().toLocaleString('de-DE');
+    const cfg = buildTransferablePresentationConfig();
+    data.presentationConfig = cfg;
+    data.presentationSettings = cfg.settings;
+    data.presentationExtras = cfg.extras;
+    data.presentationStickers = cfg.stickers;
+    data.presentationStableLayout = cfg.stableLayout;
+    data.presentationLayout = cfg.layout;
+    data.presentationTextOverrides = cfg.textOverrides;
+    data.presentationSyncVersion = cfg.version;
+    return cleanValue(data, 0);
+  }
+  window.buildPayload = buildSafePayload;
+
+  function postPayload(url, payload){
+    return new Promise((resolve, reject) => {
+      const json = JSON.stringify(payload);
+      if (json.length > 950000) {
+        reject(new Error('Die Präsentationsdaten sind zu groß. Bitte weniger Sticker/Textfelder verwenden.'));
+        return;
+      }
+      let done = false;
+      const timer = setTimeout(() => { if (!done) { done = true; reject(new Error('Zeitüberschreitung beim Senden.')); } }, 14000);
+      fetch(url, { method:'POST', mode:'no-cors', body: json, headers:{'Content-Type':'text/plain;charset=utf-8'} })
+        .then(() => { if (!done) { done = true; clearTimeout(timer); resolve(true); } })
+        .catch(err => { if (!done) { done = true; clearTimeout(timer); reject(err); } });
+    });
+  }
+  async function finalSafeSubmit(evt){
+    if (evt) { evt.preventDefault(); evt.stopPropagation(); if (evt.stopImmediatePropagation) evt.stopImmediatePropagation(); }
+    const status = document.getElementById('submitStatus');
+    const btn = document.getElementById('submitResults');
+    const url = (typeof getAppsScriptUrl === 'function') ? getAppsScriptUrl() : '';
+    const setStatus = (cls, text) => { if (status) { status.className = cls || ''; status.textContent = text || ''; } };
+    if (!url) { setStatus('warning', 'Keine Apps-Script-URL gefunden.'); return; }
+    let payload;
+    try { payload = buildSafePayload(); }
+    catch(e) { setStatus('warning', 'Ergebnisdaten konnten nicht vorbereitet werden: ' + (e && e.message ? e.message : e)); return; }
+    try {
+      if (btn) { btn.disabled = true; btn.dataset.oldText = btn.dataset.oldText || btn.textContent; btn.textContent = 'Wird abgesendet …'; }
+      setStatus('notice', 'Ergebnisse werden abgesendet …');
+      await postPayload(url, payload);
+      setStatus('success', 'Ergebnisse wurden abgesendet. Die Präsentationseinstellungen wurden mitgespeichert.');
+      try { if (typeof openSummaryPresentationPanelWithNudge === 'function') setTimeout(openSummaryPresentationPanelWithNudge, 250); } catch(_) {}
+      try {
+        const box = document.getElementById('groupShareBox');
+        if (box) box.hidden = false;
+      } catch(_) {}
+    } catch(e) {
+      setStatus('warning', e && e.message ? e.message : 'Senden fehlgeschlagen.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = btn.dataset.oldText || 'Ergebnisse absenden'; }
+    }
+  }
+  window.submitResults = finalSafeSubmit;
+
+  function rebindSubmit(){
+    const btn = document.getElementById('submitResults');
+    if (!btn || btn.dataset.transferSyncBound === '1') return;
+    const clone = btn.cloneNode(true);
+    clone.dataset.transferSyncBound = '1';
+    clone.disabled = false;
+    clone.addEventListener('click', finalSafeSubmit, true);
+    btn.parentNode.replaceChild(clone, btn);
+  }
+
+  function removeUnsupportedImageControls(){
+    const selectors = [
+      '#presentationBgImageBtn','#removePresentationBgImage','#v4BgButton','#v4BgRemove',
+      '[data-action="background-image"]','[data-action="remove-background-image"]'
+    ];
+    selectors.forEach(sel => document.querySelectorAll(sel).forEach(el => el.remove()));
+    document.querySelectorAll('button, .button, label').forEach(el => {
+      const t = (el.textContent || '').trim().toLowerCase();
+      if (t === 'hintergrundbild' || t === 'bild entfernen' || t === 'hintergrundbild hochladen') el.remove();
+    });
+    document.querySelectorAll('input[type="file"]').forEach(el => {
+      const id = String(el.id || '').toLowerCase();
+      const name = String(el.name || '').toLowerCase();
+      if (id.includes('bg') || id.includes('background') || name.includes('background')) el.remove();
+    });
+  }
+
+  function patchConfigExtractionFromRows(){
+    window.extractPresentationSyncFromRow = function(row){
+      const data = (row && row.data) || {};
+      const raw = data.raw || {};
+      const cfg = data.presentationConfig || raw.presentationConfig || null;
+      if (cfg && typeof cfg === 'object') return stripUnsupportedPresentationConfig(cfg);
+      const legacy = {
+        version: 'legacy-transferable',
+        settings: raw.presentationSettings || data.presentationSettings || {},
+        extras: raw.presentationExtras || data.presentationExtras || [],
+        stickers: raw.presentationStickers || data.presentationStickers || [],
+        stableLayout: raw.presentationStableLayout || data.presentationStableLayout || {},
+        layout: raw.presentationLayout || data.presentationLayout || {},
+        textOverrides: raw.presentationTextOverrides || data.presentationTextOverrides || {}
+      };
+      return stripUnsupportedPresentationConfig(legacy);
+    };
+  }
+
+  patchConfigExtractionFromRows();
+  document.addEventListener('DOMContentLoaded', function(){
+    removeUnsupportedImageControls();
+    rebindSubmit();
+    setTimeout(removeUnsupportedImageControls, 500);
+    setTimeout(rebindSubmit, 500);
+    setTimeout(removeUnsupportedImageControls, 1500);
+  });
+})();

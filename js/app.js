@@ -7600,3 +7600,143 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   });
 })();
 
+
+/* ==========================================================
+   HOTFIX: stabile Ergebnisübermittlung + kompakte Gruppen-Sync-Daten
+   Grund: Der vorherige Sync sammelte zusätzlich große lokale Rohdaten aus
+   localStorage. Bei vielen Stickern/Bildern kann das den Browser/POST blockieren.
+   ========================================================== */
+(function(){
+  const MAX_DATA_URL_LENGTH = 1800000; // ca. 1,8 MB pro Bild, schützt Apps Script und Browser
+
+  function svSafeClone(value){
+    try { return JSON.parse(JSON.stringify(value || null)); } catch(_) { return value || null; }
+  }
+
+  function svStripHugeFields(value){
+    if (!value || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.map(svStripHugeFields);
+    const out = {};
+    Object.keys(value).forEach(k => {
+      const v = value[k];
+      if (typeof v === 'string' && v.indexOf('data:image') === 0 && v.length > MAX_DATA_URL_LENGTH) {
+        out[k] = '';
+        out[k + '_removedBecauseTooLarge'] = true;
+        return;
+      }
+      out[k] = svStripHugeFields(v);
+    });
+    return out;
+  }
+
+  function svReadObj(name, fallback){
+    try {
+      if (typeof loadObj === 'function') return loadObj(name, fallback);
+      const gid = (typeof getGroupId === 'function') ? getGroupId() : 'gruppe';
+      const raw = localStorage.getItem('sv_' + gid + '_' + name) || localStorage.getItem(name);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch(_) { return fallback; }
+  }
+
+  window.collectPresentationSyncConfig = function(){
+    let settings = {};
+    let extras = [];
+    try { settings = (typeof getPresentationSettingsFinal === 'function') ? getPresentationSettingsFinal() : svReadObj('presentation_settings', {}); } catch(_) { settings = {}; }
+    try { extras = (typeof getPresentationExtrasFinal === 'function') ? getPresentationExtrasFinal() : svReadObj('presentation_extras', []); } catch(_) { extras = []; }
+
+    const cfg = {
+      version: '2026-06-group-sync-stable-v2',
+      savedAt: new Date().toISOString(),
+      groupId: (typeof getGroupId === 'function') ? getGroupId() : '',
+      settings: settings || {},
+      extras: Array.isArray(extras) ? extras : [],
+      stickers: svReadObj('presentation_stickers_v1', []),
+      stableLayout: svReadObj('presentation_layout_stable_v2', {}),
+      layout: svReadObj('presentation_layout', {}),
+      textOverrides: svReadObj('presentation_text_overrides', {})
+    };
+
+    // Kein rawLocalPresentationState mehr: das war zu groß und konnte das Absenden blockieren.
+    return svStripHugeFields(svSafeClone(cfg));
+  };
+
+  const previousBuildPayloadStable = (typeof buildPayload === 'function') ? buildPayload : null;
+  buildPayload = window.buildPayload = function(){
+    const data = previousBuildPayloadStable ? previousBuildPayloadStable.apply(this, arguments) : (typeof collectSupervisorData === 'function' ? collectSupervisorData() : {});
+    const cfg = window.collectPresentationSyncConfig();
+    data.presentationConfig = cfg;
+    data.presentationSettings = cfg.settings;
+    data.presentationExtras = cfg.extras;
+    data.presentationStickers = cfg.stickers;
+    data.presentationStableLayout = cfg.stableLayout;
+    data.presentationLayout = cfg.layout;
+    data.presentationTextOverrides = cfg.textOverrides;
+    data.presentationSyncVersion = cfg.version;
+    return svStripHugeFields(data);
+  };
+
+  async function svPostNoCorsWithTimeout(url, payload, ms){
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms || 15000);
+    try {
+      await fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        signal: controller.signal
+      });
+      return true;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  window.submitResults = submitResults = async function(){
+    const status = document.getElementById('submitStatus');
+    const btn = document.getElementById('submitResults');
+    const url = (typeof getAppsScriptUrl === 'function') ? getAppsScriptUrl() : '';
+
+    function setStatus(cls, text){
+      if (!status) return;
+      status.className = cls || '';
+      status.textContent = text || '';
+    }
+
+    if (!url) {
+      setStatus('warning', 'Keine Apps-Script-URL gefunden. Ergebnisse können nicht abgesendet werden.');
+      return;
+    }
+
+    let payload;
+    try {
+      if (typeof window.saveCurrentPresentationEditsFinal === 'function') {
+        // Falls die Präsentationsbearbeitung gerade offen ist, sichtbare Änderungen sichern.
+        try { window.saveCurrentPresentationEditsFinal(); } catch(_) {}
+      }
+      payload = buildPayload();
+    } catch (err) {
+      setStatus('warning', 'Die Ergebnisdaten konnten nicht vorbereitet werden: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    try {
+      if (btn) { btn.disabled = true; btn.dataset.oldText = btn.textContent; btn.textContent = 'Wird abgesendet …'; }
+      setStatus('notice', 'Ergebnisse werden abgesendet …');
+      await svPostNoCorsWithTimeout(url, payload, 15000);
+      setStatus('success', 'Ergebnisse wurden abgesendet. Sie sind nun auf der Ergebnisseite sichtbar.');
+      if (typeof openSummaryPresentationPanelWithNudge === 'function') {
+        setTimeout(openSummaryPresentationPanelWithNudge, 300);
+      }
+    } catch (err) {
+      setStatus('warning', 'Senden fehlgeschlagen oder Zeitüberschreitung. Prüfe Apps Script und die bereitgestellte Web-App.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = btn.dataset.oldText || 'Ergebnisse absenden'; }
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const btn = document.getElementById('submitResults');
+    if (btn) btn.onclick = window.submitResults;
+  });
+})();

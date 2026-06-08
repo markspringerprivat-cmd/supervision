@@ -1662,8 +1662,8 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
 
   function marker(wait, protocol){
     const tags = [];
-    if (protocol) tags.push('<span class="signal-badge signal-protocol">Protokoll</span>');
-    if (wait) tags.push('<span class="signal-badge signal-wait">Antwort abwarten</span>');
+    if (protocol) tags.push('<span class="signal-badge signal-protocol" title="Diese Antwort protokollieren">Protokoll</span>');
+    if (wait) tags.push('<span class="signal-badge signal-wait" title="Antwort abwarten">Antwort</span>');
     return tags.length ? `<span class="script-tags">${tags.join('')}</span>` : '';
   }
   function scriptBlock(items){

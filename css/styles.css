@@ -4366,3 +4366,107 @@ body[data-role="beobachter"] .role-pill { background: rgba(210,138,25,.16) !impo
   color: #8a5205 !important;
 }
 .role-qr-card.role-protokoll { border-color: #d28a19 !important; }
+
+/* Moderation/protocol layout update */
+.phase-layout-stacked {
+  display: grid;
+  gap: 18px;
+}
+.moderation-only-card {
+  max-width: 1100px;
+}
+.moderation-script {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.script-step {
+  border: 1px solid rgba(18, 41, 68, .14);
+  background: rgba(255,255,255,.72);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.script-step p {
+  margin: 0;
+  line-height: 1.5;
+}
+.answer-wait {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-left: 4px solid #d69e2e;
+  border-radius: 10px;
+  background: #fff8e6;
+  color: #6b4b10;
+  font-weight: 700;
+  font-size: .92rem;
+}
+.handoff-note {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #eef6ff;
+  border: 1px solid #b7d4f2;
+}
+.protocol-overview-card {
+  width: 100%;
+}
+.phase2-title-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+.phase2-title-row h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+.phase-task-card {
+  border: 1px solid rgba(18,41,68,.14);
+  background: #f7fafc;
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+.phase-task-card h3 {
+  margin-top: 0;
+}
+.phase2-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.phase2-doc-grid .role-note-block {
+  margin: 0;
+  height: 100%;
+  border: 1px solid rgba(18,41,68,.12);
+  border-radius: 16px;
+  background: #fbfdff;
+  padding: 14px;
+}
+.phase2-doc-grid textarea {
+  min-height: 82px;
+}
+.required-field-box {
+  position: relative;
+  margin: 16px 0 18px;
+}
+.required-field-box .required-label {
+  float: right;
+  margin-top: -4px;
+  margin-left: 10px;
+  color: #b42318;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+.prep-reference-card .readonly-box {
+  white-space: pre-wrap;
+}
+@media (max-width: 900px) {
+  .phase2-title-row,
+  .phase2-doc-grid {
+    grid-template-columns: 1fr;
+  }
+}

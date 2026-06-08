@@ -8614,3 +8614,264 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     setTimeout(removeUnsupportedImageControls, 1000);
   });
 })();
+
+/* ==========================================================
+   REAL FINAL SYNC FIX 2026-06-08
+   Erzwingt die Anwendung gespeicherter presentationConfig/presentationV6
+   in der finalen Präsentation aus der zentralen Ergebnisübersicht.
+   Entfernt nicht übertragbare Hintergrundbild-Controls robust.
+   ========================================================== */
+(function(){
+  'use strict';
+  if (window.__SV_REAL_FINAL_SYNC_FIX_20260608__) return;
+  window.__SV_REAL_FINAL_SYNC_FIX_20260608__ = true;
+
+  const DEFAULT_SETTINGS = {
+    heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
+    slidePattern:'none', backgroundPattern:'none', slidePatternColor:'#dbeafe', backgroundPatternColor:'#1f2937'
+  };
+
+  function isObj(v){ return !!v && typeof v === 'object' && !Array.isArray(v); }
+  function clone(v){ try { return JSON.parse(JSON.stringify(v || {})); } catch(_) { return {}; } }
+  function strip(v){
+    if (v == null) return v;
+    if (typeof v === 'string') return /^data:image\//i.test(v) ? '' : (v.length > 60000 ? v.slice(0,60000) : v);
+    if (Array.isArray(v)) return v.slice(0,250).map(strip).filter(x => x !== undefined);
+    if (typeof v === 'object') {
+      const o = {};
+      Object.keys(v).forEach(k => {
+        if (/backgroundImage|bgImage|imageData|dataUrl|base64|rawLocal|cache|history|undo|snapshot/i.test(k)) return;
+        o[k] = strip(v[k]);
+      });
+      return o;
+    }
+    return v;
+  }
+  function pickObj(){ for (let i=0;i<arguments.length;i++){ if (isObj(arguments[i])) return arguments[i]; } return {}; }
+  function pickArr(){ for (let i=0;i<arguments.length;i++){ if (Array.isArray(arguments[i])) return arguments[i]; } return []; }
+  function normaliseCfg(source){
+    const c = clone(source);
+    const settings = Object.assign({}, DEFAULT_SETTINGS, pickObj(c.settings, c.presentationSettings));
+    delete settings.backgroundImage;
+    const text = pickObj(c.text, c.textOverrides, c.presentationTextOverrides);
+    const layout = pickObj(c.layout, c.presentationLayout);
+    const stableLayout = pickObj(c.stableLayout, c.presentationStableLayout);
+    const extras = pickArr(c.extras, c.presentationExtras, c.textboxes);
+    const stickers = pickArr(c.stickers, c.presentationStickers);
+    const values = pickObj(c.values, c.presentationValues);
+    return strip({
+      version: c.version || 'real-final-sync',
+      savedAt: c.savedAt || '',
+      groupId: c.groupId || '',
+      settings, values, text, textOverrides:text, layout, stableLayout, extras, stickers
+    });
+  }
+  function cfgHasContent(cfg){
+    if (!cfg) return false;
+    return Object.keys(cfg.text || {}).length || Object.keys(cfg.layout || {}).length ||
+      Object.keys(cfg.stableLayout || {}).length || (cfg.extras || []).length ||
+      (cfg.stickers || []).length || JSON.stringify(cfg.settings || {}) !== JSON.stringify(DEFAULT_SETTINGS);
+  }
+  function extractCfg(row){
+    const data = pickObj(row && row.data, row);
+    const raw = pickObj(data.raw, row && row.raw);
+    let cfg = null;
+    const candidates = [
+      data.presentationConfig, raw.presentationConfig,
+      data.presentationV6, raw.presentationV6,
+      data.presentationSync, raw.presentationSync
+    ];
+    for (const cand of candidates) { if (isObj(cand)) { cfg = cand; break; } }
+    if (!cfg) {
+      cfg = {
+        settings: pickObj(data.presentationSettings, raw.presentationSettings),
+        text: pickObj(data.presentationTextOverrides, raw.presentationTextOverrides),
+        layout: pickObj(data.presentationLayout, raw.presentationLayout),
+        stableLayout: pickObj(data.presentationStableLayout, raw.presentationStableLayout),
+        extras: pickArr(data.presentationExtras, raw.presentationExtras),
+        stickers: pickArr(data.presentationStickers, raw.presentationStickers)
+      };
+    }
+    const n = normaliseCfg(cfg);
+    return cfgHasContent(n) ? n : null;
+  }
+  window.extractPresentationSyncFromRow = extractCfg;
+
+  function cssPattern(kind, color){
+    const c = color || '#e5e7eb';
+    if (kind === 'dots') return { image:`radial-gradient(${c} 1.4px, transparent 1.4px)`, size:'18px 18px' };
+    if (kind === 'grid') return { image:`linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`, size:'28px 28px' };
+    if (kind === 'diagonal') return { image:`repeating-linear-gradient(135deg, transparent 0 12px, ${c} 12px 14px)`, size:'24px 24px' };
+    if (kind === 'waves') return { image:`radial-gradient(ellipse at top, ${c} 0 16%, transparent 17%), radial-gradient(ellipse at bottom, ${c} 0 14%, transparent 15%)`, size:'70px 34px' };
+    return { image:'none', size:'24px 24px' };
+  }
+  function applyTheme(cfg){
+    const s = Object.assign({}, DEFAULT_SETTINGS, cfg && cfg.settings || {});
+    delete s.backgroundImage;
+    const slide = document.getElementById('presentationSlide');
+    const sp = cssPattern(s.slidePattern, s.slidePatternColor);
+    const bp = cssPattern(s.backgroundPattern, s.backgroundPatternColor);
+    document.body.style.backgroundColor = s.background;
+    document.body.style.backgroundImage = bp.image;
+    document.body.style.backgroundSize = bp.size;
+    document.body.style.color = s.text;
+    document.body.style.setProperty('--presentation-heading-color', s.heading);
+    document.body.style.setProperty('--presentation-text-color', s.text);
+    document.body.style.setProperty('--presentation-background-color', s.background);
+    document.body.style.setProperty('--presentation-slide-color', s.slide);
+    if (slide) {
+      slide.style.backgroundColor = s.slide;
+      slide.style.backgroundImage = sp.image;
+      slide.style.backgroundSize = sp.size;
+      slide.style.color = s.text;
+    }
+  }
+  function elementMap(idx, inner){
+    return {
+      ['s'+idx+'_title']: inner.querySelector('h1'),
+      ['s'+idx+'_kicker']: inner.querySelector('.presentation-kicker'),
+      ['s'+idx+'_groupName']: idx === 0 ? inner.querySelector('h2') : null,
+      ['s'+idx+'_subtitle']: inner.querySelector('.presentation-subtitle'),
+      ['s'+idx+'_table']: inner.querySelector('.presentation-table-wrap') || inner.querySelector('table'),
+      ['s'+idx+'_note']: inner.querySelector('.presentation-note'),
+      ['s'+idx+'_thanks']: inner.querySelector('.thanks-slide')
+    };
+  }
+  function applyEl(el, id, cfg){
+    if (!el || !cfg) return;
+    const text = cfg.text || cfg.textOverrides || {};
+    if (Object.prototype.hasOwnProperty.call(text, id + '__text') && !el.querySelector('table') && el.tagName !== 'TABLE') {
+      el.textContent = String(text[id + '__text'] || '');
+    }
+    const layout = Object.assign({}, cfg.stableLayout || {}, cfg.layout || {});
+    const l = layout[id];
+    if (!l || !isObj(l)) return;
+    el.style.position = 'absolute';
+    el.style.boxSizing = 'border-box';
+    if (l.x !== undefined) el.style.left = Number(l.x) + '%';
+    if (l.y !== undefined) el.style.top = Number(l.y) + '%';
+    if (l.w !== undefined) el.style.width = Number(l.w) + '%';
+    if (l.h !== undefined) el.style.minHeight = Number(l.h) + '%';
+    el.style.zIndex = String(l.z !== undefined ? l.z : 20);
+    el.style.transformOrigin = 'center center';
+    el.style.transform = 'rotate(' + Number(l.rot || 0) + 'deg)';
+    if (l.fontSize !== undefined) el.style.fontSize = Number(l.fontSize) + 'px';
+    if (l.color) {
+      el.style.color = l.color;
+      el.querySelectorAll('h1,h2,p,span,div,table,thead,tbody,tr,th,td').forEach(ch => { ch.style.color = l.color; });
+    }
+  }
+  function renderExtraLayers(inner, idx, cfg){
+    inner.querySelectorAll('.sv-real-extra,.sv-real-sticker').forEach(el => el.remove());
+    (cfg.extras || []).filter(x => Number(x.slide || 0) === idx).forEach((x,n) => {
+      const el = document.createElement('div');
+      el.className = 'sv-real-extra';
+      el.textContent = String(x.text || '');
+      el.style.cssText = 'position:absolute;box-sizing:border-box;white-space:pre-wrap;overflow:hidden;';
+      el.style.left = Number(x.x || 10) + '%';
+      el.style.top = Number(x.y || 70) + '%';
+      el.style.width = Number(x.w || 25) + '%';
+      el.style.minHeight = Number(x.h || 8) + '%';
+      el.style.zIndex = String(x.z || 100+n);
+      el.style.transform = 'rotate(' + Number(x.rot || 0) + 'deg)';
+      el.style.fontSize = Number(x.fontSize || 18) + 'px';
+      el.style.color = x.color || (cfg.settings && cfg.settings.text) || '#0f172a';
+      inner.appendChild(el);
+    });
+    (cfg.stickers || []).filter(x => Number(x.slide || 0) === idx).forEach((x,n) => {
+      if (!x.src || /^data:image\//i.test(String(x.src))) return;
+      const img = document.createElement('img');
+      img.className = 'sv-real-sticker';
+      img.alt = '';
+      img.src = String(x.src);
+      img.style.cssText = 'position:absolute;object-fit:contain;pointer-events:none;';
+      img.style.left = Number(x.x || 40) + '%';
+      img.style.top = Number(x.y || 20) + '%';
+      img.style.width = Number(x.w || 18) + '%';
+      img.style.height = Number(x.h || 18) + '%';
+      img.style.zIndex = String(x.z || 110+n);
+      img.style.transformOrigin = 'center center';
+      img.style.transform = 'rotate(' + Number(x.rot || 0) + 'deg)';
+      inner.appendChild(img);
+    });
+  }
+  function applyCfgNow(){
+    const cfg = window.__svActivePresentationConfig || window.__svPresentationConfig || null;
+    if (!cfg) return;
+    applyTheme(cfg);
+    const slide = document.getElementById('presentationSlide');
+    const inner = slide && slide.querySelector('.presentation-slide-inner');
+    if (!inner) return;
+    inner.style.position = 'relative';
+    inner.style.overflow = 'hidden';
+    inner.style.width = '100%';
+    inner.style.height = '100%';
+    const idx = (typeof presentationIndexFinal === 'number') ? presentationIndexFinal : 0;
+    const map = elementMap(idx, inner);
+    Object.keys(map).forEach(id => applyEl(map[id], id, cfg));
+    renderExtraLayers(inner, idx, cfg);
+  }
+  window.applyStoredPresentationConfigToCurrentSlide = applyCfgNow;
+
+  function removeBgControls(root){
+    root = root || document;
+    const selectors = [
+      '#presentationBgImageBtn','#removePresentationBgImage','#presentationBgImageInput',
+      '#v4BgButton','#v4BgRemove','#v4BgInput','[data-action="background-image"]','[data-action="remove-background-image"]'
+    ];
+    selectors.forEach(s => root.querySelectorAll(s).forEach(el => el.remove()));
+    root.querySelectorAll('button,label,input').forEach(el => {
+      const txt = (el.textContent || el.value || '').trim().toLowerCase();
+      const id = String(el.id || '').toLowerCase();
+      if (txt === 'hintergrundbild' || txt === 'bild entfernen' || txt === 'hintergrundbild hochladen' || (el.type === 'file' && /bg|background|image/.test(id))) el.remove();
+    });
+  }
+
+  if (typeof buildPresentationSlides === 'function') {
+    const oldBuild = buildPresentationSlides;
+    buildPresentationSlides = window.buildPresentationSlides = function(row){
+      const cfg = extractCfg(row);
+      window.__svPresentationRow = row;
+      window.__svActivePresentationConfig = cfg;
+      window.__svPresentationConfig = cfg;
+      return oldBuild.apply(this, arguments);
+    };
+  }
+  if (typeof renderPresentationSlideFinal === 'function') {
+    const oldRender = renderPresentationSlideFinal;
+    renderPresentationSlideFinal = window.renderPresentationSlideFinal = function(){
+      const out = oldRender.apply(this, arguments);
+      try { applyCfgNow(); setTimeout(applyCfgNow, 0); setTimeout(applyCfgNow, 80); } catch(e) { console.warn('Sync-Design konnte nicht angewendet werden', e); }
+      return out;
+    };
+  }
+  if (typeof buildPayload === 'function') {
+    const oldPayload = buildPayload;
+    buildPayload = window.buildPayload = function(){
+      const data = oldPayload.apply(this, arguments) || {};
+      const cfg = (typeof collectPresentationSyncConfig === 'function') ? collectPresentationSyncConfig() : null;
+      if (cfg) {
+        const clean = normaliseCfg(cfg);
+        data.presentationConfig = clean;
+        data.presentationSettings = clean.settings;
+        data.presentationTextOverrides = clean.textOverrides;
+        data.presentationLayout = clean.layout;
+        data.presentationStableLayout = clean.stableLayout;
+        data.presentationExtras = clean.extras;
+        data.presentationStickers = clean.stickers;
+      }
+      return strip(data);
+    };
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    removeBgControls(document);
+    setTimeout(removeBgControls, 200);
+    setTimeout(removeBgControls, 800);
+    setTimeout(applyCfgNow, 300);
+    try {
+      new MutationObserver(function(muts){
+        muts.forEach(m => (m.addedNodes || []).forEach(n => { if (n && n.nodeType === 1) removeBgControls(n); }));
+      }).observe(document.documentElement, {childList:true, subtree:true});
+    } catch(_) {}
+  });
+})();

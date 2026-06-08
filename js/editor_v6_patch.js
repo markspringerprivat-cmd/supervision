@@ -385,10 +385,59 @@
     document.documentElement.classList.add('v6-modal-open');
     renderAll();
   }
-  function close(){
+
+  function ensureSaveDecisionModal(){
+    let box = document.getElementById('v6SaveDecisionModal');
+    if (box) return box;
+    box = document.createElement('div');
+    box.id = 'v6SaveDecisionModal';
+    box.className = 'v6-confirm-modal';
+    box.hidden = true;
+    box.innerHTML = `<div class="v6-confirm-backdrop"></div>
+      <div class="v6-confirm-card" role="dialog" aria-modal="true" aria-labelledby="v6ConfirmTitle">
+        <h2 id="v6ConfirmTitle">Ungespeicherte Änderungen</h2>
+        <p>Du hast die Präsentation verändert. Möchtest du die Änderungen speichern, bevor du die Vorbereitung schließt?</p>
+        <div class="v6-confirm-actions">
+          <button type="button" data-v6-confirm="discard" class="secondary">Ohne Speichern schließen</button>
+          <button type="button" data-v6-confirm="cancel" class="secondary">Abbrechen</button>
+          <button type="button" data-v6-confirm="save" class="success-btn">Speichern und schließen</button>
+        </div>
+      </div>`;
+    document.body.appendChild(box);
+    return box;
+  }
+
+  function askSaveDecision(){
+    return new Promise(resolve => {
+      const box = ensureSaveDecisionModal();
+      box.hidden = false;
+      const onClick = (e) => {
+        const btn = e.target.closest('[data-v6-confirm]');
+        if (!btn) return;
+        const val = btn.dataset.v6Confirm;
+        cleanup();
+        resolve(val);
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape') { cleanup(); resolve('cancel'); }
+      };
+      function cleanup(){
+        box.hidden = true;
+        box.removeEventListener('click', onClick);
+        document.removeEventListener('keydown', onKey);
+      }
+      box.addEventListener('click', onClick);
+      document.addEventListener('keydown', onKey);
+      setTimeout(() => { const focusBtn = box.querySelector('[data-v6-confirm="save"]'); if(focusBtn) focusBtn.focus(); }, 30);
+    });
+  }
+
+  async function close(){
     if(dirty){
-      const choice = confirm('Änderungen speichern? OK = speichern, Abbrechen = ohne Speichern schließen.');
-      if(choice) commit(); else { draft = clone(savedAtOpen); dirty = false; }
+      const choice = await askSaveDecision();
+      if(choice === 'cancel') return;
+      if(choice === 'save') commit();
+      if(choice === 'discard') { draft = clone(savedAtOpen); dirty = false; }
     }
     if(modal) modal.hidden = true;
     document.documentElement.classList.remove('v6-modal-open');
@@ -399,6 +448,17 @@
     Object.entries(FIELD_MAP).forEach(([vKey, saveKey]) => { if(draft.values[vKey] !== undefined) saveTextSafe(saveKey, draft.values[vKey]); });
     dirty = false; undoStack = []; savedAtOpen = clone(draft); updateToolbar(); toast('Gespeichert');
     try{ if(typeof renderSummary === 'function') renderSummary(getData()); }catch(e){}
+    scheduleResultSubmitAfterPresentationSave();
+  }
+
+  let submitAfterSaveTimer = null;
+  function scheduleResultSubmitAfterPresentationSave(){
+    const btn = document.getElementById('submitResults');
+    if(!btn) return;
+    clearTimeout(submitAfterSaveTimer);
+    submitAfterSaveTimer = setTimeout(() => {
+      try { btn.click(); } catch(e) { console.warn('Ergebnisse konnten nach dem Speichern nicht automatisch abgesendet werden.', e); }
+    }, 180);
   }
   function toast(msg){ const t=modal.querySelector('#v6Toast'); t.textContent=msg; t.hidden=false; clearTimeout(t._to); t._to=setTimeout(()=>t.hidden=true,1200); }
   function pushUndo(){ if(!draft) return; undoStack.push(clone(draft)); if(undoStack.length>10) undoStack.shift(); updateToolbar(); }
@@ -641,12 +701,42 @@
         const data = row?.data || {};
         st = makeState(Object.assign(initialValues(), data.presentationValues || {}, {groupName:data.groupName || row?.groupName || 'Gruppe', timestamp:data.timestamp || row?.timestamp || new Date().toISOString()}));
       }
-      function draw(){ slideHost.innerHTML = finalRenderState(st, slideHost); if(counter) counter.textContent = `${slideIndex+1} / ${SLIDE_COUNT}`; }
+      function draw(){
+        slideHost.innerHTML = finalRenderState(st, slideHost);
+        if(counter) counter.textContent = `${slideIndex+1} / ${SLIDE_COUNT}`;
+        if(status) status.hidden = true;
+      }
+      window.__v6PresentationActive = true;
+      window.__v6DrawPresentation = draw;
       slideIndex=0; draw();
-      document.getElementById('presentationPrevBtn')?.addEventListener('click', e=>{ e.stopImmediatePropagation(); slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); }, true);
-      document.getElementById('presentationNextBtn')?.addEventListener('click', e=>{ e.stopImmediatePropagation(); slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); }, true);
-      document.addEventListener('keydown', e=>{ if(e.key==='ArrowRight'||e.key===' '){ slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); } if(e.key==='ArrowLeft'){ slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); } }, true);
+      // Die ältere Präsentationslogik lädt ebenfalls Daten asynchron. Diese Nachzeichnungen verhindern,
+      // dass sie die erste Folie kurz nach dem Laden wieder überschreibt.
+      setTimeout(draw, 120);
+      setTimeout(draw, 700);
+      setTimeout(draw, 1400);
+      document.getElementById('presentationPrevBtn')?.addEventListener('click', e=>{ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); }, true);
+      document.getElementById('presentationNextBtn')?.addEventListener('click', e=>{ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); }, true);
+      document.addEventListener('keydown', e=>{ if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); } if(e.key==='ArrowLeft'){ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); } }, true);
       if(status) status.textContent='';
     }catch(e){ if(status) status.textContent='Präsentation konnte nicht geladen werden: '+e.message; }
   }
+})();
+
+
+/* Presentation first-slide guard: keep V6-rendered slide active if older renderer fires late. */
+(function(){
+  const previous = window.renderPresentationSlideFinal;
+  window.renderPresentationSlideFinal = function(){
+    if (window.__v6PresentationActive && typeof window.__v6DrawPresentation === 'function') {
+      window.__v6DrawPresentation();
+      return;
+    }
+    if (typeof previous === 'function') return previous.apply(this, arguments);
+  };
+  window.addEventListener('load', function(){
+    if (document.body && document.body.dataset.mode === 'presentation' && typeof window.__v6DrawPresentation === 'function') {
+      setTimeout(window.__v6DrawPresentation, 100);
+      setTimeout(window.__v6DrawPresentation, 900);
+    }
+  });
 })();

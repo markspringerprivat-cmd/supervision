@@ -6817,3 +6817,152 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   }
   document.addEventListener('DOMContentLoaded', () => setTimeout(installManualShareButton, 30));
 })();
+
+/* ------------------------------------------------------------
+   MOBILE PRESENTATION + COLLAPSIBLE TOP BAR PATCH
+   ------------------------------------------------------------ */
+(function(){
+  const TOPBAR_COLLAPSED_KEY = 'sv_topbar_collapsed_v2';
+  const TOPBAR_HINT_SEEN_KEY = 'sv_topbar_hint_seen_v2';
+
+  function safeConfirm(message, title, danger){
+    if (window.supervisionConfirm) return window.supervisionConfirm(message, title, danger);
+    return Promise.resolve(confirm(message));
+  }
+
+  function setTopbarCollapsed(collapsed){
+    const bar = document.querySelector('.local-reset-bar');
+    if (!bar) return;
+    bar.classList.toggle('is-collapsed', !!collapsed);
+    localStorage.setItem(TOPBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+    const toggle = bar.querySelector('#topbarCollapseToggle');
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toggle.innerHTML = collapsed ? '⌄' : '⌃';
+      toggle.title = collapsed ? 'Leiste aufklappen' : 'Leiste einklappen';
+      toggle.classList.remove('is-glowing');
+    }
+    localStorage.setItem(TOPBAR_HINT_SEEN_KEY, '1');
+  }
+
+  window.installLocalResetControls = function(){
+    const header = document.querySelector('header');
+    if (!header) return;
+    let bar = document.querySelector('.local-reset-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'local-reset-bar topbar-collapsible-shell';
+      header.insertAdjacentElement('afterend', bar);
+    }
+
+    const collapsed = localStorage.getItem(TOPBAR_COLLAPSED_KEY) === '1';
+    const hintSeen = localStorage.getItem(TOPBAR_HINT_SEEN_KEY) === '1';
+    bar.innerHTML = `
+      <div class="wrap local-reset-inner admin-reset-inner topbar-collapsible-content">
+        <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
+        <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
+        <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
+        <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
+        <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+        <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
+      </div>
+      <button type="button" id="topbarCollapseToggle" class="topbar-collapse-toggle${hintSeen ? '' : ' is-glowing'}" aria-label="Bedienleiste ein- oder ausklappen" aria-expanded="${collapsed ? 'false' : 'true'}">${collapsed ? '⌄' : '⌃'}</button>
+    `;
+    bar.classList.toggle('is-collapsed', collapsed);
+
+    const back = document.getElementById('localBackBtn');
+    const statusBtn = document.getElementById('globalAdminStatusBtn');
+    const clearPageBtn = document.getElementById('clearPageBtn');
+    const clearAllBtn = document.getElementById('clearAllLocalBtn');
+    const toggle = document.getElementById('topbarCollapseToggle');
+
+    if (back) back.onclick = () => { if (history.length > 1) history.back(); else location.href = 'index.html'; };
+    if (statusBtn) statusBtn.onclick = typeof handleGlobalAdminClick === 'function' ? handleGlobalAdminClick : undefined;
+    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Aktuelle Seite leeren')) clearCurrentPageInputs(); };
+    if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Seite zurücksetzen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
+    if (toggle) toggle.onclick = () => setTopbarCollapsed(!bar.classList.contains('is-collapsed'));
+    if (typeof updateGlobalAdminUi === 'function') updateGlobalAdminUi();
+  };
+
+  function isLikelyPhoneOrTablet(){
+    return window.matchMedia('(max-width: 980px), (pointer: coarse)').matches;
+  }
+
+  function addOrientationHint(){
+    if (document.body.dataset.mode !== 'presentation') return;
+    if (!isLikelyPhoneOrTablet()) return;
+    if (document.getElementById('presentationOrientationHint')) return;
+    const hint = document.createElement('div');
+    hint.id = 'presentationOrientationHint';
+    hint.className = 'presentation-orientation-hint';
+    hint.innerHTML = `
+      <div class="presentation-orientation-card">
+        <strong>Quermodus empfohlen</strong>
+        <p>Für die Präsentation das Smartphone quer halten. Der Button versucht zusätzlich, Vollbild und Quermodus zu aktivieren.</p>
+        <button type="button" id="presentationLandscapeStart">Quermodus starten</button>
+      </div>
+    `;
+    document.body.appendChild(hint);
+    const btn = document.getElementById('presentationLandscapeStart');
+    if (btn) btn.addEventListener('click', async () => {
+      await requestPresentationLandscape();
+      updateOrientationHintVisibility();
+    });
+    updateOrientationHintVisibility();
+  }
+
+  function updateOrientationHintVisibility(){
+    const hint = document.getElementById('presentationOrientationHint');
+    if (!hint) return;
+    const portrait = window.matchMedia('(orientation: portrait)').matches;
+    const small = isLikelyPhoneOrTablet();
+    hint.hidden = !(small && portrait);
+  }
+
+  async function requestPresentationLandscape(){
+    try {
+      const shell = document.querySelector('.presentation-shell') || document.documentElement;
+      if (!document.fullscreenElement && shell.requestFullscreen) {
+        await shell.requestFullscreen().catch(()=>{});
+      }
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock('landscape').catch(()=>{});
+      }
+    } catch (_) {}
+  }
+
+  function enhancePresentationMobile(){
+    if (document.body.dataset.mode !== 'presentation') return;
+    document.body.classList.add('presentation-mobile-ready');
+    addOrientationHint();
+    const full = document.getElementById('presentationFullscreenBtn');
+    if (full && !full.dataset.mobileEnhanced) {
+      full.dataset.mobileEnhanced = '1';
+      const previous = full.onclick;
+      full.onclick = async (event) => {
+        if (isLikelyPhoneOrTablet()) {
+          event && event.preventDefault && event.preventDefault();
+          await requestPresentationLandscape();
+          updateOrientationHintVisibility();
+        } else if (typeof previous === 'function') {
+          previous.call(full, event);
+        } else {
+          const root = document.documentElement;
+          if (!document.fullscreenElement && root.requestFullscreen) root.requestFullscreen();
+          else if (document.exitFullscreen) document.exitFullscreen();
+        }
+      };
+    }
+    window.addEventListener('orientationchange', () => setTimeout(updateOrientationHintVisibility, 250));
+    window.addEventListener('resize', () => setTimeout(updateOrientationHintVisibility, 120));
+    // Best effort: browsers may block this without a user gesture, but it works where allowed.
+    setTimeout(() => { if (isLikelyPhoneOrTablet()) requestPresentationLandscape().then(updateOrientationHintVisibility); }, 600);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      if (typeof window.installLocalResetControls === 'function') window.installLocalResetControls();
+      enhancePresentationMobile();
+    }, 50);
+  });
+})();

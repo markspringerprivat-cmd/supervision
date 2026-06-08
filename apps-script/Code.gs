@@ -1,4 +1,7 @@
-const SPREADSHEET_ID = '1egAveElyXdI9nC4yQfZCtUUwqn8-byODELn4mvuzY';
+// Apps Script für die Supervisions-Webseite.
+// Diese Version nutzt bewusst openByUrl(), weil openById() bei einigen kopierten IDs Probleme machen kann.
+// Falls du eine andere Tabelle verwendest, ersetze nur diese vollständige Google-Sheets-URL.
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1egAveElyXdI9nC4yQfZCtUUwqn8-byODELn4mvuzY/edit?gid=0#gid=0';
 const SHEET_NAME = 'Ergebnisse';
 
 const HEADERS = [
@@ -33,11 +36,14 @@ const HEADERS = [
   'Rohdaten JSON'
 ];
 
-const COL_GROUP_ID = 28; // 1-basiert: Spalte AB
-const COL_RAW_JSON = 29; // 1-basiert: Spalte AC
+const COL_GROUP_ID = 28;
+const COL_RAW_JSON = 29;
 
 function getSheet_() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (!SPREADSHEET_URL || SPREADSHEET_URL.indexOf('docs.google.com/spreadsheets') === -1) {
+    throw new Error('SPREADSHEET_URL ist nicht korrekt eingetragen. Bitte die vollständige Google-Sheet-URL einfügen.');
+  }
+  const ss = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
   ensureHeader_(sheet);
@@ -50,41 +56,55 @@ function ensureHeader_(sheet) {
 }
 
 function doPost(e) {
-  let body = {};
   try {
-    body = JSON.parse(e.postData.contents || '{}');
+    let body = {};
+    try {
+      body = JSON.parse(e.postData.contents || '{}');
+    } catch (err) {
+      return jsonOutput_({ ok: false, error: 'Ungültiges JSON: ' + err.message });
+    }
+    const action = String(body.action || '').toLowerCase();
+    if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAll_();
+    if (action === 'deleterow' || action === 'delete' || action === 'delete_row') return deleteRowPost_(body);
+    return saveEntry_(body);
   } catch (err) {
-    return jsonOutput_({ ok: false, error: 'Ungültiges JSON: ' + err.message });
+    return jsonOutput_({ ok: false, error: err.message, stack: err.stack || '' });
   }
-
-  const action = String(body.action || '').toLowerCase();
-  if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAll_();
-  if (action === 'deleterow' || action === 'delete' || action === 'delete_row') return deleteRowPost_(body);
-
-  return saveEntry_(body);
 }
 
 function doGet(e) {
-  const action = String(e.parameter.action || 'list').toLowerCase();
-  if (action === 'list') return listEntries_(e);
-  if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAllGet_(e);
-  if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
-  if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.' });
-  return jsonp_(e, { ok: true, message: 'Apps Script läuft.', hint: 'Nutze ?action=list oder ?action=list&groupId=...' });
+  try {
+    const action = String((e.parameter && e.parameter.action) || 'list').toLowerCase();
+    if (action === 'list') return listEntries_(e);
+    if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAllGet_(e);
+    if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
+    if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME });
+    if (action === 'test') {
+      const sheet = getSheet_();
+      return jsonp_(e, {
+        ok: true,
+        message: 'Verbindung zur Tabelle erfolgreich.',
+        sheetName: sheet.getName(),
+        rows: sheet.getLastRow(),
+        columns: sheet.getLastColumn()
+      });
+    }
+    return jsonp_(e, { ok: true, message: 'Apps Script läuft.', hint: 'Nutze ?action=list oder ?action=list&groupId=...' });
+  } catch (err) {
+    return jsonp_(e, { ok: false, error: err.message, stack: err.stack || '' });
+  }
 }
 
 function saveEntry_(body) {
   const sheet = getSheet_();
   const data = normalizeSubmittedData_(body);
   const row = buildRow_(data);
-  const groupId = String(row[27] || '').trim();
-
+  const groupId = String(row[COL_GROUP_ID - 1] || '').trim();
   const existingRow = groupId ? findRowByGroupId_(sheet, groupId) : 0;
   if (existingRow >= 2) {
     sheet.getRange(existingRow, 1, 1, HEADERS.length).setValues([row]);
     return jsonOutput_({ ok: true, mode: 'updated', message: 'Ergebnis aktualisiert.', groupName: row[1], groupId: groupId, rowNumber: existingRow });
   }
-
   sheet.appendRow(row);
   return jsonOutput_({ ok: true, mode: 'created', message: 'Ergebnis gespeichert.', groupName: row[1], groupId: groupId, rowNumber: sheet.getLastRow() });
 }
@@ -100,7 +120,8 @@ function buildRow_(data) {
   const schulleitungName = pick_([assignments.schulleitung, data.schulleitung]);
   const lehrkraftAName = pick_([assignments['lehrkraft-a'], assignments.lehrkraftA, data.lehrkraftA]);
   const lehrkraftBName = pick_([assignments['lehrkraft-b'], assignments.lehrkraftB, data.lehrkraftB]);
-  const groupId = pick_([data.groupId, data.g, data.groupToken, data.token, slug_([supervisorName, schulleitungName, lehrkraftAName, lehrkraftBName].filter(Boolean).join('-'))]);
+  const fallbackGroupId = slug_([supervisorName, schulleitungName, lehrkraftAName, lehrkraftBName].filter(Boolean).join('-'));
+  const groupId = pick_([data.groupId, data.g, data.groupToken, data.token, fallbackGroupId]);
   const groupName = pick_([
     data.groupName,
     [supervisorName, schulleitungName, lehrkraftAName, lehrkraftBName].filter(Boolean).join(', '),
@@ -157,7 +178,6 @@ function listEntries_(e) {
   const values = sheet.getDataRange().getValues();
   const groupFilter = String(e.parameter.groupId || e.parameter.g || e.parameter.token || '').trim();
   const entries = [];
-
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
     if (isEmptyRow_(row)) continue;
@@ -165,22 +185,15 @@ function listEntries_(e) {
     if (groupFilter && String(entry.groupId || '').trim() !== groupFilter) continue;
     entries.push(entry);
   }
-
   return jsonp_(e, { ok: true, entries: entries, groupId: groupFilter });
 }
 
 function rowToEntry_(row, rowNumber) {
   let raw = {};
-  const rawCandidateNew = row[28];
-  const rawCandidateOld = row[27];
-  try {
-    raw = JSON.parse(rawCandidateNew || rawCandidateOld || '{}');
-  } catch (err) {
-    raw = {};
-  }
-
-  const groupId = pick_([row[27], raw.groupId, raw.g, raw.groupToken, raw.token]);
-
+  const rawCandidateNew = row[COL_RAW_JSON - 1];
+  const rawCandidateOld = row[COL_GROUP_ID - 1];
+  try { raw = JSON.parse(rawCandidateNew || rawCandidateOld || '{}'); } catch (err) { raw = {}; }
+  const groupId = pick_([row[COL_GROUP_ID - 1], raw.groupId, raw.g, raw.groupToken, raw.token]);
   const reconstructed = {
     groupId: groupId,
     groupName: row[1] || raw.groupName || '',
@@ -205,7 +218,6 @@ function rowToEntry_(row, rowNumber) {
     p6: { unterstuetzung: row[24] || '', umsetzung: row[25] || '', praxistauglichkeit: row[26] || '' },
     raw: raw
   };
-
   return {
     id: rowNumber,
     rowNumber: rowNumber,
@@ -249,16 +261,17 @@ function deleteAll_() {
 }
 
 function resetSheet() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+  const sheet = getSheet_();
   sheet.clear();
   ensureHeader_(sheet);
 }
 
 function testConnection() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  Logger.log(ss.getName());
+  const sheet = getSheet_();
+  Logger.log('Verbindung erfolgreich.');
+  Logger.log('Tabellenblatt: ' + sheet.getName());
+  Logger.log('Zeilen: ' + sheet.getLastRow());
+  Logger.log('Spalten: ' + sheet.getLastColumn());
 }
 
 function isEmptyRow_(row) {
@@ -313,7 +326,7 @@ function jsonOutput_(obj) {
 }
 
 function jsonp_(e, obj) {
-  const callback = e.parameter.callback;
+  const callback = e && e.parameter ? e.parameter.callback : '';
   const json = JSON.stringify(obj);
   if (callback) {
     return ContentService.createTextOutput(callback + '(' + json + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);

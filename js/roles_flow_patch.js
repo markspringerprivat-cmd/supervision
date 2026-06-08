@@ -274,3 +274,174 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
   };
   try { initFlow = window.initFlow; } catch(e) {}
 })();
+
+
+/* ------------------------------------------------------------
+   PATCH: device-aware role assignment + role color classes
+   ------------------------------------------------------------ */
+(function(){
+  const ROLE_LABELS_PATCH2 = {
+    supervisor: 'Supervisor*in',
+    schulleitung: 'Schulleitung',
+    'lehrkraft-a': 'Lehrkraft A',
+    'lehrkraft-b': 'Lehrkraft B',
+    protokoll: 'Protokoll / Beobachtung'
+  };
+  const ROLE_FILES_PATCH2 = {
+    supervisor: 'rolle-supervisor.html',
+    schulleitung: 'rolle-schulleitung.html',
+    'lehrkraft-a': 'rolle-lehrkraft-a.html',
+    'lehrkraft-b': 'rolle-lehrkraft-b.html'
+  };
+  const PARTICIPANTS_KEY = 'participants_v2';
+  function esc(v){
+    if (typeof escapeHtml === 'function') return escapeHtml(v);
+    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function localSlug(s){
+    return (s || '').toString().trim().toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+  function makeId(){ return 'p_' + Date.now().toString(36) + '_' + Math.floor(Math.random()*100000).toString(36); }
+  function loadParticipants(){
+    let list = [];
+    try { list = (typeof loadObj === 'function') ? loadObj(PARTICIPANTS_KEY, []) : []; } catch(_) { list = []; }
+    if (Array.isArray(list) && list.length) return list.filter(p => p && p.name).map(p => ({ id: p.id || makeId(), name: String(p.name).trim(), device: p.device || 'smartphone' }));
+    const raw = (typeof loadText === 'function') ? loadText('namesInput') : '';
+    return raw.split(/\n|,/).map(s => s.trim()).filter(Boolean).map(name => ({ id: makeId(), name, device: 'smartphone' }));
+  }
+  function saveParticipants(list){
+    if (typeof saveObj === 'function') saveObj(PARTICIPANTS_KEY, list);
+    if (typeof saveText === 'function') saveText('namesInput', list.map(p => p.name).join('\n'));
+    const textarea = document.getElementById('namesInput');
+    if (textarea) textarea.value = list.map(p => p.name).join('\n');
+  }
+  function shuffle(arr){ return arr.map(v => [Math.random(), v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+  function setStatus(text, cls){ const s = document.getElementById('assignStatus'); if(s){ s.className = cls || 'small'; s.textContent = text; } }
+  function roleClass(role){ return 'role-' + String(role || '').replace(/[^a-z0-9-]/g,''); }
+  function buildRoleUrl(file){
+    try { return new URL((typeof linkWithState === 'function' ? linkWithState(file) : file), window.location.href).toString(); }
+    catch(e){ return file; }
+  }
+  function renderNameList(list){
+    const ul = document.getElementById('namesList');
+    if(!ul) return;
+    ul.classList.add('device-name-list');
+    ul.innerHTML = '';
+    if(!list.length){
+      const li = document.createElement('li');
+      li.className = 'empty-name-list';
+      li.innerHTML = '<span class="name-index">–</span><span>Noch keine Namen eingetragen.</span>';
+      ul.appendChild(li);
+      return;
+    }
+    list.forEach((p, index) => {
+      const li = document.createElement('li');
+      li.className = 'device-' + (p.device || 'smartphone');
+      li.innerHTML = `<span class="name-index">${index+1}</span><span class="participant-name">${esc(p.name)}</span>
+        <select aria-label="Gerät von ${esc(p.name)}">
+          <option value="smartphone"${p.device==='smartphone'?' selected':''}>Smartphone</option>
+          <option value="ipad"${p.device==='ipad'?' selected':''}>iPad</option>
+          <option value="laptop"${p.device==='laptop'?' selected':''}>Laptop</option>
+        </select>
+        <button type="button" class="remove-name-btn" aria-label="${esc(p.name)} entfernen">×</button>`;
+      const select = li.querySelector('select');
+      select.addEventListener('change', () => {
+        p.device = select.value;
+        saveParticipants(list);
+        renderNameList(list);
+        setStatus('Geräteangabe wurde aktualisiert. Bitte Rollen bei Bedarf neu zuweisen.', 'notice');
+      });
+      li.querySelector('button').addEventListener('click', () => {
+        list.splice(index,1);
+        saveParticipants(list);
+        renderNameList(list);
+        setStatus('Name wurde entfernt. Bitte die Rollen neu zuweisen.', 'notice');
+      });
+      ul.appendChild(li);
+    });
+  }
+  function renderAssignments(assignments){
+    const assignedBox = document.getElementById('assignedBox');
+    const cardsBox = document.getElementById('roleCards');
+    if(assignedBox){
+      assignedBox.innerHTML = '';
+      ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'].forEach(role => {
+        if(!assignments[role]) return;
+        const li = document.createElement('li');
+        li.className = roleClass(role);
+        li.innerHTML = `<span class="role-pill ${roleClass(role)}">${ROLE_LABELS_PATCH2[role]}</span><strong>${esc(assignments[role])}</strong>`;
+        assignedBox.appendChild(li);
+      });
+    }
+    if(cardsBox){
+      cardsBox.innerHTML = '';
+      ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b'].forEach(role => {
+        const file = ROLE_FILES_PATCH2[role];
+        const href = `${file}?${typeof currentQueryString === 'function' ? currentQueryString() : ''}`;
+        const url = buildRoleUrl(file);
+        const card = document.createElement('div');
+        card.className = `card compact role-qr-card ${roleClass(role)}`;
+        card.innerHTML = `<div class="role-card-head"><span class="role-pill ${roleClass(role)}">${ROLE_LABELS_PATCH2[role]}</span><span class="assigned-name">${esc(assignments[role] || 'nicht zugewiesen')}</span></div>
+          <p class="small role-card-help">Kachel öffnen oder QR-Code mit dem Handy scannen.</p>
+          <div class="role-card-action"><a class="button" href="${href}">Rollenkarte öffnen</a></div>
+          <div class="role-card-qr"><img class="qr" alt="QR-Code für ${ROLE_LABELS_PATCH2[role]}" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}"></div>`;
+        cardsBox.appendChild(card);
+      });
+      cardsBox.style.display = 'grid';
+    }
+  }
+  function assignRoles(list){
+    const names = list.map(p => p.name).filter(Boolean);
+    const laptops = shuffle(list.filter(p => p.device === 'laptop'));
+    let supervisorParticipant = laptops[0] || shuffle(list)[0];
+    const rest = shuffle(list.filter(p => p.id !== supervisorParticipant.id));
+    const assignments = {
+      supervisor: supervisorParticipant.name,
+      schulleitung: rest[0] && rest[0].name,
+      'lehrkraft-a': rest[1] && rest[1].name,
+      'lehrkraft-b': rest[2] && rest[2].name
+    };
+    if(rest[3]) assignments.protokoll = rest[3].name;
+    return assignments;
+  }
+  window.initRoleAssignment = function(){
+    if (typeof initCommon === 'function') initCommon();
+    const input = document.getElementById('newNameInput');
+    const addBtn = document.getElementById('addNameBtn');
+    const assignBtn = document.getElementById('assignBtn');
+    let participants = loadParticipants();
+    saveParticipants(participants);
+    renderNameList(participants);
+    function addName(){
+      const value = (input && input.value || '').trim();
+      if(!value){ setStatus('Bitte zuerst einen Namen eintragen.', 'warning'); return; }
+      participants.push({ id: makeId(), name: value, device: 'smartphone' });
+      saveParticipants(participants);
+      renderNameList(participants);
+      if(input) { input.value = ''; input.focus(); }
+      setStatus('Name wurde hinzugefügt. Wähle rechts daneben bei Bedarf das Gerät aus.', 'success');
+    }
+    if(addBtn) addBtn.onclick = addName;
+    if(input) input.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); addName(); } };
+    if(assignBtn) assignBtn.onclick = () => {
+      participants = loadParticipants();
+      if(participants.length < 4){ setStatus('Bitte mindestens 4 Namen eintragen.', 'warning'); return; }
+      const groupSlug = participants.map(p => localSlug(p.name)).filter(Boolean).join('-').slice(0,80) || ('gruppe-' + Date.now().toString(36));
+      localStorage.setItem('sv_current_group', groupSlug);
+      saveParticipants(participants);
+      const assignments = assignRoles(participants);
+      if(typeof saveObj === 'function') saveObj('assignments', assignments);
+      const laptopNames = participants.filter(p => p.device === 'laptop').map(p => p.name);
+      const extra = laptopNames.length ? ' Supervisor*in wurde aus den Personen mit Laptop ausgewählt.' : ' Es wurde kein Laptop angegeben; Supervisor*in wurde zufällig bestimmt.';
+      setStatus('Rollen wurden zugeteilt.' + extra, 'success');
+      renderAssignments(assignments);
+    };
+    const existing = (typeof loadObj === 'function') ? loadObj('assignments', null) : null;
+    if(existing && Object.keys(existing).length) renderAssignments(existing);
+  };
+  try { initRoleAssignment = window.initRoleAssignment; } catch(_) {}
+  document.addEventListener('DOMContentLoaded', () => {
+    const role = document.body.dataset.role;
+    if(role){ document.body.classList.add('role-theme-' + role); if(role.indexOf('lehrkraft')===0) document.body.classList.add('role-theme-lehrkraft'); }
+  });
+})();

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenergebnis</title>
-  <link rel="stylesheet" href="css/styles.css?v=share-group-footer-v1">
+  <link rel="stylesheet" href="css/styles.css?v=nav-device-share-v1">
 </head>
 <body data-mode="group-result">
 <header>
@@ -18,19 +18,13 @@
     </div>
   </div>
 </header>
-<main class="wide-main group-result-main">
+<main class="wide-main group-result-main group-result-only-main">
+  <p id="groupResultStatus" class="visually-hidden" aria-live="polite">Gruppenergebnis wird geladen …</p>
   <section id="groupResultContent" class="group-result-content"></section>
-
-  <section class="card highlight group-result-info-card">
-    <h2>Geteiltes Gruppenergebnis</h2>
-    <p>Diese Seite lädt ausschließlich das gespeicherte Ergebnis der eigenen Gruppe.</p>
-    <p class="small">Gruppen-ID: <strong><span data-group-id></span></strong></p>
-    <p id="groupResultStatus" class="small notice">Gruppenergebnis wird geladen …</p>
-  </section>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
-<script src="js/config.js"></script><script src="js/app.js?v=share-group-footer-v1"></script>
-<script src="js/roles_flow_patch.js?v=share-group-footer-v1"></script>
-<script src="js/editor_v6_patch.js?v=share-group-footer-v1"></script>
+<script src="js/config.js"></script><script src="js/app.js?v=nav-device-share-v1"></script>
+<script src="js/roles_flow_patch.js?v=nav-device-share-v1"></script>
+<script src="js/editor_v6_patch.js?v=nav-device-share-v1"></script>
 </body>
 </html>

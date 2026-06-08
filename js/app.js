@@ -7143,3 +7143,169 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     setTimeout(initMobilePresentationV2, 300);
   });
 })();
+
+
+/* ------------------------------------------------------------
+   PATCH: group sharing without presentation button + ordered topbar
+   ------------------------------------------------------------ */
+(function(){
+  const TOPBAR_COLLAPSED_KEY_PATCH = 'sv_topbar_collapsed_v3_ordered';
+  const TOPBAR_HINT_SEEN_KEY_PATCH = 'sv_topbar_hint_seen_v3_ordered';
+  function escPatch(s){
+    if (typeof escapeHtml === 'function') return escapeHtml(s);
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function addRoleThemeClass(){
+    const role = document.body && document.body.dataset ? (document.body.dataset.role || '') : '';
+    if (!role) return;
+    document.body.classList.add('role-theme-' + role);
+    if (role.indexOf('lehrkraft') === 0) document.body.classList.add('role-theme-lehrkraft');
+  }
+  function safeConfirmPatch(message, title, danger){
+    if (window.supervisionConfirm) return window.supervisionConfirm(message, title, danger);
+    return Promise.resolve(confirm(message));
+  }
+  function setCollapseUi(bar, collapsed){
+    if (!bar) return;
+    bar.classList.toggle('is-collapsed', !!collapsed);
+    localStorage.setItem(TOPBAR_COLLAPSED_KEY_PATCH, collapsed ? '1' : '0');
+    const html = collapsed ? '<span>Ausklappen</span><span class="topbar-toggle-arrow">↓</span>' : '<span>Einklappen</span><span class="topbar-toggle-arrow">↑</span>';
+    bar.querySelectorAll('[data-topbar-collapse-toggle]').forEach(btn => {
+      btn.innerHTML = html;
+      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      btn.classList.remove('is-glowing');
+    });
+    localStorage.setItem(TOPBAR_HINT_SEEN_KEY_PATCH, '1');
+  }
+  window.installLocalResetControls = function(){
+    const header = document.querySelector('header');
+    if (!header) return;
+    let bar = document.querySelector('.local-reset-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'local-reset-bar topbar-collapsible-shell';
+      header.insertAdjacentElement('afterend', bar);
+    }
+    bar.className = 'local-reset-bar topbar-collapsible-shell';
+    const collapsed = localStorage.getItem(TOPBAR_COLLAPSED_KEY_PATCH) === '1';
+    const hintSeen = localStorage.getItem(TOPBAR_HINT_SEEN_KEY_PATCH) === '1';
+    const toggleLabel = collapsed ? '<span>Ausklappen</span><span class="topbar-toggle-arrow">↓</span>' : '<span>Einklappen</span><span class="topbar-toggle-arrow">↑</span>';
+    bar.innerHTML = `
+      <div class="wrap local-reset-inner admin-reset-inner topbar-collapsible-content">
+        <div class="topbar-nav-left">
+          <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
+          <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
+          <span class="topbar-separator" aria-hidden="true"></span>
+          <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
+          <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+        </div>
+        <div class="topbar-nav-right">
+          <button type="button" id="topbarCollapseInline" class="topbar-collapse-toggle inline-collapse-toggle${hintSeen ? '' : ' is-glowing'}" data-topbar-collapse-toggle aria-label="Bedienleiste ein- oder ausklappen" aria-expanded="${collapsed ? 'false' : 'true'}">${toggleLabel}</button>
+          <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
+        </div>
+        <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
+      </div>
+      <button type="button" id="topbarCollapseToggle" class="topbar-collapse-toggle edge-collapse-toggle${hintSeen ? '' : ' is-glowing'}" data-topbar-collapse-toggle aria-label="Bedienleiste ein- oder ausklappen" aria-expanded="${collapsed ? 'false' : 'true'}">${toggleLabel}</button>`;
+    bar.classList.toggle('is-collapsed', collapsed);
+    const back = document.getElementById('localBackBtn');
+    const statusBtn = document.getElementById('globalAdminStatusBtn');
+    const clearPageBtn = document.getElementById('clearPageBtn');
+    const clearAllBtn = document.getElementById('clearAllLocalBtn');
+    if (back) back.onclick = () => { if (history.length > 1) history.back(); else location.href = 'index.html'; };
+    if (statusBtn) statusBtn.onclick = typeof handleGlobalAdminClick === 'function' ? handleGlobalAdminClick : undefined;
+    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirmPatch('Lokale Eingaben auf der aktuellen Seite leeren?', 'Aktuelle Seite leeren')) clearCurrentPageInputs(); };
+    if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirmPatch('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Seite zurücksetzen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
+    bar.querySelectorAll('[data-topbar-collapse-toggle]').forEach(btn => {
+      btn.onclick = () => setCollapseUi(bar, !bar.classList.contains('is-collapsed'));
+    });
+    if (typeof updateGlobalAdminUi === 'function') updateGlobalAdminUi();
+  };
+  try { installLocalResetControls = window.installLocalResetControls; } catch(_) {}
+
+  function getGroupIdPatch(){
+    try { return (typeof getGroupId === 'function') ? getGroupId() : (new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_current_group') || ''); }
+    catch(_) { return ''; }
+  }
+  function getAppsUrlPatch(){ return (typeof getAppsScriptUrl === 'function') ? getAppsScriptUrl() : (window.APP_SCRIPT_URL || window.APPS_SCRIPT_URL || ''); }
+  function jsonpListPatch(url, groupId){
+    return new Promise((resolve, reject) => {
+      if (!url) { reject(new Error('Keine Apps-Script-URL eingetragen.')); return; }
+      const cb = 'svGroupOnlyCb_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+      const script = document.createElement('script');
+      let done = false;
+      const timer = setTimeout(() => { if(done) return; done = true; cleanup(); reject(new Error('Verbindung zum Apps Script fehlgeschlagen.')); }, 11000);
+      function cleanup(){ clearTimeout(timer); try{ delete window[cb]; }catch(_){ window[cb] = undefined; } if(script.parentNode) script.parentNode.removeChild(script); }
+      window[cb] = function(response){ if(done) return; done = true; cleanup(); if(response && response.ok === false) reject(new Error(response.error || 'Apps Script meldet einen Fehler.')); else resolve((response && response.entries) || []); };
+      script.onerror = function(){ if(done) return; done = true; cleanup(); reject(new Error('JSONP-Verbindung fehlgeschlagen.')); };
+      const qs = '?action=list&groupId=' + encodeURIComponent(groupId || '') + '&callback=' + encodeURIComponent(cb) + '&_=' + Date.now();
+      script.src = url + qs;
+      document.body.appendChild(script);
+    });
+  }
+  function simpleTablePatch(headers, rows){
+    return '<div class="shared-table-wrap"><table class="presentation-table shared-result-table"><thead><tr>' + headers.map(h => '<th>'+escPatch(h)+'</th>').join('') + '</tr></thead><tbody>' + rows.map(r => '<tr>' + r.map(c => '<td>'+escPatch(c || '—')+'</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+  }
+  function renderSharedGroupNoPresentation(row){
+    const data = (row && row.data) || {};
+    const raw = data.raw || {};
+    const merged = Object.assign({}, raw, data);
+    ['assignments','p2','p3','p4','p5','p6'].forEach(k => merged[k] = Object.assign({}, raw[k] || {}, data[k] || {}));
+    const a = merged.assignments || {};
+    const p2 = merged.p2 || {}, p3 = merged.p3 || {}, p4 = merged.p4 || {}, p5 = merged.p5 || {}, p6 = merged.p6 || {};
+    const title = row.groupName || merged.groupName || 'Gruppenergebnis';
+    const ts = row.timestamp || data.timestamp || '';
+    return `<article class="card shared-result-card">
+      <div class="shared-result-head"><div><h2>${escPatch(title)}</h2><p class="small">${escPatch(ts)}</p></div></div>
+      <details open><summary>Gruppenbeteiligte</summary>${simpleTablePatch(['Rolle','Name'], [
+        ['Supervisor*in', a.supervisor || ''], ['Schulleitung', a.schulleitung || ''], ['Lehrkraft A', a['lehrkraft-a'] || a.lehrkraftA || ''], ['Lehrkraft B', a['lehrkraft-b'] || a.lehrkraftB || '']
+      ])}</details>
+      <details><summary>Problembeschreibung</summary>${simpleTablePatch(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], [
+        ['Schulleitung', p2.slProbleme || p2.slProblem || '', p2.slGefuehle || '', p2.slWuensche || ''],
+        ['Lehrkraft A', p2.aProbleme || p2.aPerspektive || '', p2.aGefuehle || '', p2.aWuensche || ''],
+        ['Lehrkraft B', p2.bProbleme || p2.bPerspektive || '', p2.bGefuehle || '', p2.bWuensche || '']
+      ])}</details>
+      <details><summary>Zielformulierung</summary>${simpleTablePatch(['Bereich','Eintrag'], [
+        ['Ziel Schulleitung', p3.zielSL || ''], ['Ziel Lehrkraft A', p3.zielA || ''], ['Ziel Lehrkraft B', p3.zielB || ''], ['Gemeinsamkeiten', p3.gemeinsamkeiten || ''], ['Gemeinsame Zielvereinbarung', p3.gemeinsamesZiel || p3.gemeinsameZielformulierung || '']
+      ])}</details>
+      <details><summary>Vertiefte Problembearbeitung</summary>${simpleTablePatch(['Aspekt','Ergebnis'], [
+        ['Hilfreiche Kritik', p4.kritik || ''], ['Absprachen zum weiteren Vorgehen', p4.absprachen || p4.weiteresVorgehen || '']
+      ])}</details>
+      <details><summary>Umsetzung</summary>${simpleTablePatch(['Aspekt','Ergebnis'], [
+        ['Zustimmung zur Vereinbarung', p5.zustimmung || ''], ['Einschätzung der Praxistauglichkeit', p6.praxistauglichkeit || p6.einschaetzung || ''], ['Unterstützung durch Schulleitung', p6.unterstuetzung || ''], ['Erste konkrete Umsetzungsschritte', p6.umsetzung || p6.konkreteUmsetzungsschritte || '']
+      ])}</details>
+    </article>`;
+  }
+  window.initGroupResultPage = function(){
+    if (document.body.dataset.mode !== 'group-result') return;
+    if (typeof initCommon === 'function') initCommon();
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('g') || getGroupIdPatch();
+    const content = document.getElementById('groupResultContent');
+    const status = document.getElementById('groupResultStatus');
+    const refresh = document.getElementById('refreshGroupResultBtn');
+    const url = getAppsUrlPatch();
+    function loading(){ return `<section class="card shared-result-card group-result-loading"><h2>Gruppenergebnis wird geladen …</h2><p class="small">Gruppen-ID: <strong>${escPatch(groupId)}</strong></p></section>`; }
+    function missing(){ return `<section class="card shared-result-card group-result-missing"><h2>Noch kein Ergebnis gespeichert</h2><p>Der Supervisor eurer Gruppe muss die Ergebnisse zuvor speichern. Danach kannst du hier aktualisieren.</p><p class="small">Gruppen-ID: <strong>${escPatch(groupId)}</strong></p><button type="button" id="groupResultInlineRefresh" class="primary">Aktualisieren</button></section>`; }
+    async function load(){
+      if(status) status.textContent = 'Gruppenergebnis wird geladen …';
+      if(content) content.innerHTML = loading();
+      try {
+        const rows = await jsonpListPatch(url, groupId);
+        if(!rows.length){ if(status) status.textContent = 'Noch kein Gruppenergebnis gespeichert.'; if(content){ content.innerHTML = missing(); const b=document.getElementById('groupResultInlineRefresh'); if(b) b.onclick = load; } return; }
+        const row = rows[rows.length-1];
+        if(status) status.textContent = 'Gruppenergebnis gefunden.';
+        if(content) content.innerHTML = renderSharedGroupNoPresentation(row);
+      } catch(e){
+        const msg = e && e.message ? e.message : 'Das Gruppenergebnis konnte nicht geladen werden.';
+        if(status) status.textContent = msg;
+        if(content){ content.innerHTML = `<section class="card shared-result-card group-result-missing"><h2>Verbindung fehlgeschlagen</h2><p>${escPatch(msg)}</p><button type="button" id="groupResultInlineRefresh" class="primary">Erneut versuchen</button></section>`; const b=document.getElementById('groupResultInlineRefresh'); if(b) b.onclick = load; }
+      }
+    }
+    if(refresh) refresh.onclick = load;
+    load();
+  };
+  document.addEventListener('DOMContentLoaded', () => {
+    addRoleThemeClass();
+    if (document.body.dataset.mode === 'group-result') setTimeout(() => window.initGroupResultPage(), 1);
+  });
+})();

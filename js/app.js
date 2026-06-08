@@ -6362,3 +6362,458 @@ try {
     if(document.body.dataset.mode==='results') setTimeout(applyResultsAdminState, 50);
   });
 })();
+
+/* ==========================================================
+   Pflichtfelder + Präsentationshinweis nach Absenden: Patch v13
+   ========================================================== */
+(function(){
+  const REQUIRED_SUPERVISOR_KEYS = new Set([
+    'sup_p2_sl_probleme','sup_p2_sl_gefuehle','sup_p2_sl_wuensche',
+    'sup_p2_a_probleme','sup_p2_a_gefuehle','sup_p2_a_wuensche',
+    'sup_p2_b_probleme','sup_p2_b_gefuehle','sup_p2_b_wuensche',
+    'sup_p3_ziel_sl','sup_p3_ziel_a','sup_p3_ziel_b','sup_p3_gemeinsamkeiten','sup_p3_gemeinsames_ziel',
+    'sup_p4_kritik','sup_p4_absprachen',
+    'sup_p5_zustimmung_status','sup_p5_zustimmung',
+    'sup_p6_praxistauglichkeit','sup_p6_unterstuetzung','sup_p6_umsetzung'
+  ]);
+  window.SV_REQUIRED_SUPERVISOR_KEYS = REQUIRED_SUPERVISOR_KEYS;
+
+  function requiredBadgeHtml(){
+    return '<span class="required-badge" aria-label="Pflichtfeld">Pflichtfeld!</span>';
+  }
+
+  // noteArea wird beim Rendern der Supervisor-Phasen verwendet. Durch diese Überschreibung
+  // erhalten alle später relevanten Felder eine klare Pflichtfeld-Markierung.
+  try {
+    const oldNoteArea = typeof noteArea === 'function' ? noteArea : null;
+    noteArea = function(label, saveKey){
+      const required = REQUIRED_SUPERVISOR_KEYS.has(saveKey);
+      if (!required && oldNoteArea) return oldNoteArea(label, saveKey);
+      return `<div class="required-field is-required" data-required-wrapper="${saveKey}">
+        <div class="field-label-row"><label>${label}</label>${requiredBadgeHtml()}</div>
+        <textarea data-save="${saveKey}" data-required-supervisor="1" required></textarea>
+      </div>`;
+    };
+  } catch (_) {}
+
+  function enhanceRequiredSelects(){
+    document.querySelectorAll('select[data-save]').forEach(select => {
+      const k = select.getAttribute('data-save');
+      if (!REQUIRED_SUPERVISOR_KEYS.has(k) || select.dataset.requiredEnhanced === '1') return;
+      select.dataset.requiredSupervisor = '1';
+      select.required = true;
+      const prevLabel = select.previousElementSibling;
+      const wrap = document.createElement('div');
+      wrap.className = 'required-select-wrap is-required';
+      wrap.dataset.requiredWrapper = k;
+      const row = document.createElement('div');
+      row.className = 'field-label-row';
+      if (prevLabel && prevLabel.tagName === 'LABEL') {
+        prevLabel.remove();
+        row.appendChild(prevLabel);
+      } else {
+        const label = document.createElement('label');
+        label.textContent = 'Pflichtfeld';
+        row.appendChild(label);
+      }
+      row.insertAdjacentHTML('beforeend', requiredBadgeHtml());
+      select.parentNode.insertBefore(wrap, select);
+      wrap.appendChild(row);
+      wrap.appendChild(select);
+      select.dataset.requiredEnhanced = '1';
+    });
+  }
+
+  function showNiceRequiredMessage(message){
+    if (typeof window.supervisionConfirm === 'function') {
+      // Nur ein mittiger Hinweisdialog; kein Browser-Popup.
+      return window.supervisionConfirm(message, 'Pflichtfelder prüfen').catch(() => null);
+    }
+    alert(message);
+    return Promise.resolve();
+  }
+
+  function validateRequiredFieldsInPage(){
+    const fields = Array.from(document.querySelectorAll('[data-required-supervisor]'));
+    if (!fields.length) return true;
+    let firstMissing = null;
+    fields.forEach(field => {
+      const missing = !String(field.value || '').trim();
+      const wrap = field.closest('.required-field, .required-select-wrap');
+      if (wrap) wrap.classList.toggle('is-missing', missing);
+      field.setAttribute('aria-invalid', missing ? 'true' : 'false');
+      if (missing && !firstMissing) firstMissing = field;
+    });
+    if (firstMissing) {
+      firstMissing.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(() => { try { firstMissing.focus({preventScroll:true}); } catch (_) {} }, 250);
+      showNiceRequiredMessage('Bitte fülle zuerst alle markierten Pflichtfelder aus. Diese Angaben werden später in der Ergebnistabelle und in der Präsentation verwendet.');
+      return false;
+    }
+    return true;
+  }
+
+  function installRequiredValidation(){
+    if (document.body.dataset.role !== 'supervisor' || document.body.dataset.mode !== 'phase') return;
+    enhanceRequiredSelects();
+    document.addEventListener('input', event => {
+      const field = event.target && event.target.closest && event.target.closest('[data-required-supervisor]');
+      if (!field) return;
+      const wrap = field.closest('.required-field, .required-select-wrap');
+      if (wrap) wrap.classList.toggle('is-missing', !String(field.value || '').trim());
+      field.setAttribute('aria-invalid', !String(field.value || '').trim() ? 'true' : 'false');
+    });
+    document.addEventListener('change', event => {
+      const field = event.target && event.target.closest && event.target.closest('[data-required-supervisor]');
+      if (!field) return;
+      const wrap = field.closest('.required-field, .required-select-wrap');
+      if (wrap) wrap.classList.toggle('is-missing', !String(field.value || '').trim());
+    });
+    const next = document.getElementById('nextPhase');
+    if (next && !next.dataset.requiredGuardInstalled) {
+      next.dataset.requiredGuardInstalled = '1';
+      next.addEventListener('click', event => {
+        if (!validateRequiredFieldsInPage()) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+    }
+  }
+
+  function openSummaryPresentationPanelWithNudge(){
+    const section = document.getElementById('summaryPresentationSection');
+    const panel = document.getElementById('summaryPresentationPanel');
+    const toggle = section && section.querySelector('[data-toggle-target="summaryPresentationPanel"]');
+    if (!section || !panel) return;
+    panel.hidden = false;
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    section.classList.add('presentation-attention-active');
+    if (!section.querySelector('.prep-attention-callout')) {
+      const callout = document.createElement('div');
+      callout.className = 'prep-attention-callout';
+      callout.innerHTML = '<div class="callout-text">Zeit übrig?</div><div class="callout-arrow" aria-hidden="true">➜</div>';
+      section.insertBefore(callout, section.firstChild);
+    }
+    try { section.scrollIntoView({behavior:'smooth', block:'center'}); } catch (_) {}
+  }
+  window.openSummaryPresentationPanelWithNudge = openSummaryPresentationPanelWithNudge;
+
+  function installSummarySubmitNudge(){
+    if (document.body.dataset.mode !== 'summary') return;
+    const btn = document.getElementById('submitResults');
+    if (!btn || btn.dataset.presentationNudgeInstalled === '1') return;
+    btn.dataset.presentationNudgeInstalled = '1';
+    btn.addEventListener('click', () => {
+      // Der bestehende Absendeprozess bleibt unverändert; der Präsentationsbereich wird danach sichtbar gemacht.
+      window.setTimeout(openSummaryPresentationPanelWithNudge, 750);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    window.setTimeout(() => {
+      enhanceRequiredSelects();
+      installRequiredValidation();
+      installSummarySubmitNudge();
+    }, 0);
+  });
+})();
+
+/* GROUP SHARING + PASSWORDLESS DELETE PATCH */
+(function(){
+  function esc(s){
+    if (typeof escapeHtml === 'function') return escapeHtml(s);
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function groupIdNow(){
+    try { return (typeof getGroupId === 'function') ? getGroupId() : (new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_current_group') || ''); }
+    catch(_) { return ''; }
+  }
+  function groupShareUrl(groupId){
+    const base = new URL('gruppe-ergebnis.html', window.location.href);
+    base.searchParams.set('g', groupId || groupIdNow());
+    return base.toString();
+  }
+  function qrUrl(url){ return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(url); }
+
+  function fetchEntriesFiltered(url, groupId){
+    if (!url) return Promise.reject(new Error('Keine Apps-Script-URL eingetragen.'));
+    const query = groupId ? '&groupId=' + encodeURIComponent(groupId) : '';
+    return new Promise((resolve, reject) => {
+      const cb = 'svGroupCallback_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+      const script = document.createElement('script');
+      let done = false;
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true; cleanup(); reject(new Error('Verbindung zum Apps Script fehlgeschlagen.'));
+      }, 10000);
+      function cleanup(){ clearTimeout(timer); try{ delete window[cb]; }catch(_){ window[cb] = undefined; } if(script.parentNode) script.parentNode.removeChild(script); }
+      window[cb] = function(response){
+        if (done) return;
+        done = true; cleanup();
+        try { resolve((typeof normalizeResultResponse === 'function') ? normalizeResultResponse(response) : (response && response.entries) || []); }
+        catch(e){ reject(e); }
+      };
+      script.onerror = function(){ if(done) return; done = true; cleanup(); reject(new Error('JSONP-Verbindung fehlgeschlagen.')); };
+      script.src = url + '?action=list' + query + '&callback=' + encodeURIComponent(cb) + '&_=' + Date.now();
+      document.body.appendChild(script);
+    });
+  }
+
+  function simpleTable(headers, rows){
+    return '<div class="shared-table-wrap"><table class="presentation-table shared-result-table"><thead><tr>' + headers.map(h => '<th>'+esc(h)+'</th>').join('') + '</tr></thead><tbody>' + rows.map(r => '<tr>' + r.map(c => '<td>'+esc(c || '—')+'</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+  }
+  function rowTimestamp(row){
+    const d = (row && row.data) || {};
+    return row.timestamp || d.timestamp || d.timestampLocal || '';
+  }
+  function renderSharedGroup(row){
+    const data = (row && row.data) || {};
+    const raw = data.raw || {};
+    const merged = Object.assign({}, raw, data);
+    ['assignments','p2','p3','p4','p5','p6'].forEach(k => merged[k] = Object.assign({}, raw[k] || {}, data[k] || {}));
+    const a = merged.assignments || {};
+    const p2 = merged.p2 || {}, p3 = merged.p3 || {}, p4 = merged.p4 || {}, p5 = merged.p5 || {}, p6 = merged.p6 || {};
+    const title = row.groupName || merged.groupName || 'Gruppenergebnis';
+    const rowNumber = row.rowNumber || row.id || '';
+    return `
+      <article class="card shared-result-card">
+        <div class="shared-result-head">
+          <div>
+            <h2>${esc(title)}</h2>
+            <p class="small">${esc(rowTimestamp(row))}</p>
+          </div>
+          ${rowNumber ? `<a class="button" href="presentation.html?row=${encodeURIComponent(rowNumber)}">Präsentation starten</a>` : ''}
+        </div>
+        <details open><summary>Gruppenbeteiligte</summary>${simpleTable(['Rolle','Name'], [
+          ['Supervisor*in', a.supervisor || ''], ['Schulleitung', a.schulleitung || ''], ['Lehrkraft A', a['lehrkraft-a'] || a.lehrkraftA || ''], ['Lehrkraft B', a['lehrkraft-b'] || a.lehrkraftB || '']
+        ])}</details>
+        <details><summary>Problembeschreibung</summary>${simpleTable(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], [
+          ['Schulleitung', p2.slProbleme || p2.slProblem || '', p2.slGefuehle || '', p2.slWuensche || ''],
+          ['Lehrkraft A', p2.aProbleme || p2.aPerspektive || '', p2.aGefuehle || '', p2.aWuensche || ''],
+          ['Lehrkraft B', p2.bProbleme || p2.bPerspektive || '', p2.bGefuehle || '', p2.bWuensche || '']
+        ])}</details>
+        <details><summary>Zielformulierung</summary>${simpleTable(['Bereich','Eintrag'], [
+          ['Ziel Schulleitung', p3.zielSL || ''], ['Ziel Lehrkraft A', p3.zielA || ''], ['Ziel Lehrkraft B', p3.zielB || ''], ['Gemeinsamkeiten', p3.gemeinsamkeiten || ''], ['Gemeinsame Zielvereinbarung', p3.gemeinsamesZiel || p3.gemeinsameZielformulierung || '']
+        ])}</details>
+        <details><summary>Vertiefte Problembearbeitung</summary>${simpleTable(['Aspekt','Ergebnis'], [
+          ['Hilfreiche Kritik', p4.kritik || ''], ['Absprachen zum weiteren Vorgehen', p4.absprachen || p4.weiteresVorgehen || '']
+        ])}</details>
+        <details><summary>Umsetzung</summary>${simpleTable(['Aspekt','Ergebnis'], [
+          ['Zustimmung zur Vereinbarung', p5.zustimmung || ''], ['Einschätzung der Praxistauglichkeit', p6.praxistauglichkeit || p6.einschaetzung || ''], ['Unterstützung durch Schulleitung', p6.unterstuetzung || ''], ['Erste konkrete Umsetzungsschritte', p6.umsetzung || p6.konkreteUmsetzungsschritte || '']
+        ])}</details>
+      </article>`;
+  }
+
+  window.initGroupResultPage = function(){
+    if (document.body.dataset.mode !== 'group-result') return;
+    if (typeof initCommon === 'function') initCommon();
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('g') || groupIdNow();
+    const status = document.getElementById('groupResultStatus');
+    const content = document.getElementById('groupResultContent');
+    const refresh = document.getElementById('refreshGroupResultBtn');
+    const shareLink = document.getElementById('groupResultShareLink');
+    const shareQr = document.getElementById('groupResultShareQr');
+    const url = typeof getAppsScriptUrl === 'function' ? getAppsScriptUrl() : '';
+    const link = groupShareUrl(groupId);
+    if (shareLink) { shareLink.href = link; shareLink.textContent = link; }
+    if (shareQr) shareQr.src = qrUrl(link);
+    async function load(){
+      if (status) { status.className = 'notice'; status.textContent = 'Gruppenergebnis wird geladen …'; }
+      if (content) content.innerHTML = '';
+      try {
+        const rows = await fetchEntriesFiltered(url, groupId);
+        if (!rows.length) {
+          if (status) {
+            status.className = 'warning';
+            status.innerHTML = 'Der Supervisor eurer Gruppe muss die Ergebnisse zuvor speichern. Danach kannst du hier aktualisieren.';
+          }
+          return;
+        }
+        const row = rows[rows.length - 1];
+        if (status) { status.className = 'success'; status.textContent = 'Gruppenergebnis gefunden.'; }
+        if (content) content.innerHTML = renderSharedGroup(row);
+      } catch(e) {
+        if (status) { status.className = 'warning'; status.textContent = e.message || 'Das Gruppenergebnis konnte nicht geladen werden.'; }
+      }
+    }
+    if (refresh) refresh.onclick = load;
+    load();
+  };
+
+  function ensureShareBox(){
+    if (document.body.dataset.mode !== 'summary') return null;
+    const section = document.querySelector('section.card.highlight');
+    if (!section) return null;
+    let box = document.getElementById('groupShareBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'groupShareBox';
+      box.className = 'group-share-box';
+      box.hidden = true;
+      box.innerHTML = `
+        <h3>Ergebnis mit Gruppe teilen</h3>
+        <p class="small">Dieser Link zeigt nur das Ergebnis dieser Gruppe an. Wenn noch nichts gespeichert wurde, erscheint dort ein Hinweis mit Aktualisieren-Button.</p>
+        <div class="share-grid">
+          <div>
+            <a id="groupShareLink" class="button secondary" href="#" target="_blank" rel="noopener">Gruppenergebnis öffnen</a>
+            <button id="copyGroupShareLink" class="secondary" type="button">Link kopieren</button>
+          </div>
+          <img id="groupShareQr" class="qr share-qr" alt="QR-Code zum Gruppenergebnis">
+        </div>`;
+      section.appendChild(box);
+    }
+    const groupId = groupIdNow();
+    const link = groupShareUrl(groupId);
+    const a = box.querySelector('#groupShareLink');
+    const qr = box.querySelector('#groupShareQr');
+    const copy = box.querySelector('#copyGroupShareLink');
+    if (a) a.href = link;
+    if (qr) qr.src = qrUrl(link);
+    if (copy && copy.dataset.bound !== '1') {
+      copy.dataset.bound = '1';
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(groupShareUrl(groupIdNow())); copy.textContent = 'Kopiert'; setTimeout(()=>copy.textContent='Link kopieren', 1200); }
+        catch(_) { window.prompt('Link kopieren:', groupShareUrl(groupIdNow())); }
+      });
+    }
+    return box;
+  }
+
+  const oldSubmit = typeof submitResults === 'function' ? submitResults : null;
+  if (oldSubmit) {
+    window.submitResults = submitResults = async function(){
+      const result = await oldSubmit.apply(this, arguments);
+      const box = ensureShareBox();
+      if (box) box.hidden = false;
+      return result;
+    };
+  }
+
+  function noPasswordDeleteUrl(url, params){
+    const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+    return url + '?' + qs + '&_=' + Date.now();
+  }
+
+  window.deleteSingleResult = async function(index){
+    if (typeof isGlobalAdminActive === 'function' && !isGlobalAdminActive()) return;
+    const row = (typeof resultRowsCache !== 'undefined' && resultRowsCache) ? resultRowsCache[index] : null;
+    const url = typeof getAppsScriptUrl === 'function' ? getAppsScriptUrl() : '';
+    const status = document.getElementById('resultsStatus');
+    if (!row || !url) return;
+    const rowNumber = row.rowNumber || row.id;
+    const label = row.groupName || (row.data && row.data.groupName) || 'diesen Eintrag';
+    const ok = window.supervisionConfirm ? await window.supervisionConfirm(`Eintrag „${label}“ wirklich löschen?`, 'Eintrag löschen', true) : confirm(`Eintrag „${label}“ wirklich löschen?`);
+    if (!ok) return;
+    try {
+      await callAppsScriptJsonp(url, { action:'delete', rowNumber });
+      const rows = await fetchResultsWithFallback(url);
+      resultRowsCache = rows || [];
+      if (typeof currentResultIndex !== 'undefined' && currentResultIndex >= resultRowsCache.length) currentResultIndex = Math.max(0, resultRowsCache.length - 1);
+      if (typeof renderResults === 'function') renderResults(resultRowsCache);
+      if (status) { status.className = 'success'; status.textContent = 'Eintrag wurde gelöscht.'; }
+    } catch(e) {
+      const iframe = document.createElement('iframe');
+      iframe.style.display='none';
+      iframe.src = noPasswordDeleteUrl(url, {action:'delete', rowNumber});
+      document.body.appendChild(iframe);
+      setTimeout(async()=>{
+        try { const rows = await fetchResultsWithFallback(url); resultRowsCache = rows || []; if (typeof renderResults === 'function') renderResults(resultRowsCache); if(status){status.className='success';status.textContent='Löschbefehl wurde gesendet.';} } catch(_) {}
+        iframe.remove();
+      }, 1200);
+    }
+  };
+
+  window.deleteAllResults = async function(){
+    if (typeof isGlobalAdminActive === 'function' && !isGlobalAdminActive()) return;
+    const url = typeof getAppsScriptUrl === 'function' ? getAppsScriptUrl() : '';
+    const status = document.getElementById('resultsStatus');
+    const ok = window.supervisionConfirm ? await window.supervisionConfirm('Wirklich alle Gruppenergebnisse aus dem Google Sheet löschen?', 'Alle Gruppenergebnisse löschen', true) : confirm('Wirklich alle Gruppenergebnisse löschen?');
+    if (!ok || !url) return;
+    try {
+      await callAppsScriptJsonp(url, { action:'deleteall' });
+      resultRowsCache = [];
+      if (typeof renderResults === 'function') renderResults([]);
+      if (status) { status.className = 'success'; status.textContent = 'Alle Ergebnisse wurden gelöscht.'; }
+    } catch(e) {
+      const iframe = document.createElement('iframe');
+      iframe.style.display='none';
+      iframe.src = noPasswordDeleteUrl(url, {action:'deleteall'});
+      document.body.appendChild(iframe);
+      setTimeout(async()=>{
+        try { const rows = await fetchResultsWithFallback(url); resultRowsCache = rows || []; if (typeof renderResults === 'function') renderResults(resultRowsCache); if(status){status.className=resultRowsCache.length?'warning':'success';status.textContent=resultRowsCache.length?'Löschbefehl gesendet, aber es sind noch Einträge vorhanden.':'Alle Ergebnisse wurden gelöscht.';} } catch(_) {}
+        iframe.remove();
+      }, 1200);
+    }
+  };
+
+  // Präsentation auch direkt per Gruppen-ID öffnen können.
+  const oldInitPresentation = typeof initPresentationFinal === 'function' ? initPresentationFinal : null;
+  if (oldInitPresentation) {
+    window.initPresentationFinal = initPresentationFinal = function(){
+      const params = new URLSearchParams(window.location.search);
+      const groupParam = params.get('g') || params.get('groupId');
+      if (!groupParam) return oldInitPresentation();
+      const status = document.getElementById('presentationStatus');
+      const url = typeof getAppsScriptUrl === 'function' ? getAppsScriptUrl() : '';
+      const exit = document.getElementById('presentationExitBtn');
+      const full = document.getElementById('presentationFullscreenBtn');
+      const prev = document.getElementById('presentationPrevBtn');
+      const next = document.getElementById('presentationNextBtn');
+      if (exit) exit.onclick = () => window.location.href = 'gruppe-ergebnis.html?g=' + encodeURIComponent(groupParam);
+      if (full) full.onclick = () => { const root=document.documentElement; if(!document.fullscreenElement && root.requestFullscreen) root.requestFullscreen(); else if(document.exitFullscreen) document.exitFullscreen(); };
+      if (prev) prev.onclick = () => movePresentationFinal(-1);
+      if (next) next.onclick = () => movePresentationFinal(1);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); movePresentationFinal(1); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); movePresentationFinal(-1); }
+        if (e.key === 'Escape') { window.location.href = 'gruppe-ergebnis.html?g=' + encodeURIComponent(groupParam); }
+      });
+      if (!url) { if(status) status.textContent='Keine Apps-Script-URL gefunden.'; return; }
+      fetchEntriesFiltered(url, groupParam).then(rows => {
+        if (!rows.length) throw new Error('Der Supervisor eurer Gruppe muss die Ergebnisse zuvor speichern.');
+        const row = rows[rows.length - 1];
+        presentationSlidesFinal = buildPresentationSlides(row);
+        presentationIndexFinal = 0;
+        if (status) status.hidden = true;
+        renderPresentationSlideFinal();
+      }).catch(err => {
+        if (status) { status.className='presentation-status warning'; status.textContent=err.message || 'Präsentation konnte nicht geladen werden.'; }
+      });
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      ensureShareBox();
+      if (document.body.dataset.mode === 'group-result') window.initGroupResultPage();
+    }, 0);
+  });
+})();
+try { if (window.deleteAllResults) deleteAllResults = window.deleteAllResults; } catch (_) {}
+try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleResult; } catch (_) {}
+(function(){
+  function installManualShareButton(){
+    if (document.body.dataset.mode !== 'summary') return;
+    const row = document.querySelector('#submitResults') && document.querySelector('#submitResults').closest('.nav-row');
+    if (!row || document.getElementById('showGroupShareBoxBtn')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'showGroupShareBoxBtn';
+    btn.className = 'secondary';
+    btn.textContent = 'Ergebnis mit Gruppe teilen';
+    btn.addEventListener('click', () => {
+      const box = document.getElementById('groupShareBox') || (typeof ensureShareBox === 'function' ? ensureShareBox() : null);
+      // ensureShareBox ist im Patch gekapselt; falls nicht direkt verfügbar, simuliert ein Klick auf Absenden nicht nötig.
+      if (box) { box.hidden = false; box.scrollIntoView({behavior:'smooth', block:'center'}); }
+      else {
+        const groupId = (typeof getGroupId === 'function') ? getGroupId() : (new URLSearchParams(location.search).get('g') || '');
+        const link = new URL('gruppe-ergebnis.html', location.href); link.searchParams.set('g', groupId);
+        window.open(link.toString(), '_blank');
+      }
+    });
+    row.appendChild(btn);
+  }
+  document.addEventListener('DOMContentLoaded', () => setTimeout(installManualShareButton, 30));
+})();

@@ -1,6 +1,5 @@
 const SPREADSHEET_ID = '1egAveElyXdI9nC4yQfZCtUUwqn8-byODELn4mvuzY';
 const SHEET_NAME = 'Ergebnisse';
-const ADMIN_PASSWORD = 'HIER_DEIN_PASSWORT_EINTRAGEN';
 
 const HEADERS = [
   'Zeitpunkt',
@@ -30,8 +29,12 @@ const HEADERS = [
   'Praxistauglichkeit - Unterstützung durch Schulleitung',
   'Praxistauglichkeit - erste konkrete Umsetzungsschritte',
   'Praxistauglichkeit - Einschätzung durch Schulleitung',
+  'Gruppen-ID',
   'Rohdaten JSON'
 ];
+
+const COL_GROUP_ID = 28; // 1-basiert: Spalte AB
+const COL_RAW_JSON = 29; // 1-basiert: Spalte AC
 
 function getSheet_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -55,18 +58,35 @@ function doPost(e) {
   }
 
   const action = String(body.action || '').toLowerCase();
-  if (action === 'deleteall' || action === 'delete_all') return deleteAll_(body);
+  if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAll_();
   if (action === 'deleterow' || action === 'delete' || action === 'delete_row') return deleteRowPost_(body);
 
   return saveEntry_(body);
+}
+
+function doGet(e) {
+  const action = String(e.parameter.action || 'list').toLowerCase();
+  if (action === 'list') return listEntries_(e);
+  if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAllGet_(e);
+  if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
+  if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.' });
+  return jsonp_(e, { ok: true, message: 'Apps Script läuft.', hint: 'Nutze ?action=list oder ?action=list&groupId=...' });
 }
 
 function saveEntry_(body) {
   const sheet = getSheet_();
   const data = normalizeSubmittedData_(body);
   const row = buildRow_(data);
+  const groupId = String(row[27] || '').trim();
+
+  const existingRow = groupId ? findRowByGroupId_(sheet, groupId) : 0;
+  if (existingRow >= 2) {
+    sheet.getRange(existingRow, 1, 1, HEADERS.length).setValues([row]);
+    return jsonOutput_({ ok: true, mode: 'updated', message: 'Ergebnis aktualisiert.', groupName: row[1], groupId: groupId, rowNumber: existingRow });
+  }
+
   sheet.appendRow(row);
-  return jsonOutput_({ ok: true, message: 'Ergebnis gespeichert.', groupName: row[1] });
+  return jsonOutput_({ ok: true, mode: 'created', message: 'Ergebnis gespeichert.', groupName: row[1], groupId: groupId, rowNumber: sheet.getLastRow() });
 }
 
 function normalizeSubmittedData_(body) {
@@ -80,10 +100,11 @@ function buildRow_(data) {
   const schulleitungName = pick_([assignments.schulleitung, data.schulleitung]);
   const lehrkraftAName = pick_([assignments['lehrkraft-a'], assignments.lehrkraftA, data.lehrkraftA]);
   const lehrkraftBName = pick_([assignments['lehrkraft-b'], assignments.lehrkraftB, data.lehrkraftB]);
+  const groupId = pick_([data.groupId, data.g, data.groupToken, data.token, slug_([supervisorName, schulleitungName, lehrkraftAName, lehrkraftBName].filter(Boolean).join('-'))]);
   const groupName = pick_([
     data.groupName,
     [supervisorName, schulleitungName, lehrkraftAName, lehrkraftBName].filter(Boolean).join(', '),
-    data.groupId,
+    groupId,
     'Unbenannte Gruppe'
   ]);
 
@@ -94,15 +115,15 @@ function buildRow_(data) {
     schulleitungName,
     lehrkraftAName,
     lehrkraftBName,
-    pick_([path_(data, 'p2.slProbleme'), path_(data, 'p2.slBeobachtung'), path_(data, 'prep.schulleitung.beobachtung')]),
-    pick_([path_(data, 'p2.slGefuehle'), path_(data, 'prep.schulleitung.gefuehle')]),
-    pick_([path_(data, 'p2.slWuensche'), path_(data, 'prep.schulleitung.wuensche')]),
-    pick_([path_(data, 'p2.aProbleme'), path_(data, 'p2.aPerspektive'), path_(data, 'prep.lehrkraft-a.perspektive')]),
-    pick_([path_(data, 'p2.aGefuehle'), path_(data, 'prep.lehrkraft-a.gefuehle')]),
-    pick_([path_(data, 'p2.aWuensche'), path_(data, 'prep.lehrkraft-a.wuensche')]),
-    pick_([path_(data, 'p2.bProbleme'), path_(data, 'p2.bPerspektive'), path_(data, 'prep.lehrkraft-b.perspektive')]),
-    pick_([path_(data, 'p2.bGefuehle'), path_(data, 'prep.lehrkraft-b.gefuehle')]),
-    pick_([path_(data, 'p2.bWuensche'), path_(data, 'prep.lehrkraft-b.wuensche')]),
+    pick_([path_(data, 'p2.slProbleme'), path_(data, 'p2.slProblem'), path_(data, 'p2.slBeobachtung'), path_(data, 'prep.schulleitung.beobachtung')]),
+    pick_([path_(data, 'p2.slGefuehle'), path_(data, 'p2.schulleitungGefuehle'), path_(data, 'prep.schulleitung.gefuehle')]),
+    pick_([path_(data, 'p2.slWuensche'), path_(data, 'p2.schulleitungWuensche'), path_(data, 'prep.schulleitung.wuensche')]),
+    pick_([path_(data, 'p2.aProbleme'), path_(data, 'p2.aProblem'), path_(data, 'p2.aPerspektive'), path_(data, 'prep.lehrkraft-a.perspektive')]),
+    pick_([path_(data, 'p2.aGefuehle'), path_(data, 'p2.lehrkraftAGefuehle'), path_(data, 'prep.lehrkraft-a.gefuehle')]),
+    pick_([path_(data, 'p2.aWuensche'), path_(data, 'p2.lehrkraftAWuensche'), path_(data, 'prep.lehrkraft-a.wuensche')]),
+    pick_([path_(data, 'p2.bProbleme'), path_(data, 'p2.bProblem'), path_(data, 'p2.bPerspektive'), path_(data, 'prep.lehrkraft-b.perspektive')]),
+    pick_([path_(data, 'p2.bGefuehle'), path_(data, 'p2.lehrkraftBGefuehle'), path_(data, 'prep.lehrkraft-b.gefuehle')]),
+    pick_([path_(data, 'p2.bWuensche'), path_(data, 'p2.lehrkraftBWuensche'), path_(data, 'prep.lehrkraft-b.wuensche')]),
     pick_([path_(data, 'p3.zielSL')]),
     pick_([path_(data, 'p3.zielA')]),
     pick_([path_(data, 'p3.zielB')]),
@@ -115,35 +136,53 @@ function buildRow_(data) {
     pick_([path_(data, 'p6.unterstuetzung'), path_(data, 'p6.unterstützung')]),
     pick_([path_(data, 'p6.umsetzung'), path_(data, 'p6.konkreteUmsetzungsschritte')]),
     pick_([path_(data, 'p6.praxistauglichkeit'), path_(data, 'p6.einschaetzung'), path_(data, 'p6.einschätzung')]),
+    groupId,
     JSON.stringify(data)
   ];
 }
 
-function doGet(e) {
-  const action = String(e.parameter.action || 'list').toLowerCase();
-  if (action === 'list') return listEntries_(e);
-  if (action === 'deleteall') return deleteAllGet_(e);
-  if (action === 'delete') return deleteRowGet_(e);
-  if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.' });
-  return jsonp_(e, { ok: true, message: 'Apps Script läuft.', hint: 'Nutze ?action=list zum Auslesen.' });
+function findRowByGroupId_(sheet, groupId) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const values = sheet.getRange(2, 1, lastRow - 1, Math.max(sheet.getLastColumn(), HEADERS.length)).getValues();
+  for (let i = 0; i < values.length; i++) {
+    const entry = rowToEntry_(values[i], i + 2);
+    if (String(entry.groupId || '').trim() === String(groupId).trim()) return i + 2;
+  }
+  return 0;
 }
 
 function listEntries_(e) {
   const sheet = getSheet_();
   const values = sheet.getDataRange().getValues();
+  const groupFilter = String(e.parameter.groupId || e.parameter.g || e.parameter.token || '').trim();
   const entries = [];
+
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
     if (isEmptyRow_(row)) continue;
-    entries.push(rowToEntry_(row, r + 1));
+    const entry = rowToEntry_(row, r + 1);
+    if (groupFilter && String(entry.groupId || '').trim() !== groupFilter) continue;
+    entries.push(entry);
   }
-  return jsonp_(e, { ok: true, entries: entries });
+
+  return jsonp_(e, { ok: true, entries: entries, groupId: groupFilter });
 }
 
 function rowToEntry_(row, rowNumber) {
   let raw = {};
-  try { raw = JSON.parse(row[27] || '{}'); } catch (err) { raw = {}; }
+  const rawCandidateNew = row[28];
+  const rawCandidateOld = row[27];
+  try {
+    raw = JSON.parse(rawCandidateNew || rawCandidateOld || '{}');
+  } catch (err) {
+    raw = {};
+  }
+
+  const groupId = pick_([row[27], raw.groupId, raw.g, raw.groupToken, raw.token]);
+
   const reconstructed = {
+    groupId: groupId,
     groupName: row[1] || raw.groupName || '',
     timestamp: formatDate_(row[0]),
     assignments: {
@@ -166,13 +205,18 @@ function rowToEntry_(row, rowNumber) {
     p6: { unterstuetzung: row[24] || '', umsetzung: row[25] || '', praxistauglichkeit: row[26] || '' },
     raw: raw
   };
-  return { id: rowNumber, rowNumber: rowNumber, timestamp: formatDate_(row[0]), groupName: row[1] || '', data: reconstructed };
+
+  return {
+    id: rowNumber,
+    rowNumber: rowNumber,
+    timestamp: formatDate_(row[0]),
+    groupName: row[1] || raw.groupName || '',
+    groupId: groupId,
+    data: reconstructed
+  };
 }
 
-
 function deleteAllGet_(e) {
-  const password = e.parameter.password || '';
-  if (password !== ADMIN_PASSWORD) return jsonp_(e, { ok: false, error: 'Falsches Passwort.' });
   const sheet = getSheet_();
   if (sheet.getLastRow() > 1) sheet.deleteRows(2, sheet.getLastRow() - 1);
   ensureHeader_(sheet);
@@ -180,9 +224,7 @@ function deleteAllGet_(e) {
 }
 
 function deleteRowGet_(e) {
-  const password = e.parameter.password || '';
   const rowNumber = Number(e.parameter.rowNumber || e.parameter.id || 0);
-  if (password !== ADMIN_PASSWORD) return jsonp_(e, { ok: false, error: 'Falsches Passwort.' });
   if (!rowNumber || rowNumber < 2) return jsonp_(e, { ok: false, error: 'Ungültige Zeile.' });
   const sheet = getSheet_();
   if (rowNumber > sheet.getLastRow()) return jsonp_(e, { ok: false, error: 'Zeile existiert nicht mehr.' });
@@ -191,9 +233,7 @@ function deleteRowGet_(e) {
 }
 
 function deleteRowPost_(body) {
-  const password = body.password || '';
   const rowNumber = Number(body.rowNumber || body.id || 0);
-  if (password !== ADMIN_PASSWORD) return jsonOutput_({ ok: false, error: 'Falsches Passwort.' });
   if (!rowNumber || rowNumber < 2) return jsonOutput_({ ok: false, error: 'Ungültige Zeile.' });
   const sheet = getSheet_();
   if (rowNumber > sheet.getLastRow()) return jsonOutput_({ ok: false, error: 'Zeile existiert nicht mehr.' });
@@ -201,8 +241,7 @@ function deleteRowPost_(body) {
   return jsonOutput_({ ok: true, message: 'Eintrag gelöscht.' });
 }
 
-function deleteAll_(body) {
-  if (body.password !== ADMIN_PASSWORD) return jsonOutput_({ ok: false, error: 'Falsches Passwort.' });
+function deleteAll_() {
   const sheet = getSheet_();
   if (sheet.getLastRow() > 1) sheet.deleteRows(2, sheet.getLastRow() - 1);
   ensureHeader_(sheet);
@@ -259,6 +298,14 @@ function formatDate_(value) {
   } catch (err) {
     return String(value);
   }
+}
+
+function slug_(s) {
+  return String(s || 'gruppe')
+    .toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'gruppe';
 }
 
 function jsonOutput_(obj) {

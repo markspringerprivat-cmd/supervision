@@ -90,3 +90,27 @@ Im Bearbeitungsmodus öffnet **Sticker** nun zunächst einen Ladehinweis. Danach
 - **Dekor**: Dekor 1 bis Dekor 10
 
 Mit den Pfeilen links und rechts neben der Kategorienüberschrift wird zwischen den Kategorien gewechselt. Beim Anklicken eines Stickers wird er auf der aktuellen Folie eingefügt und kann anschließend verschoben, skaliert, gedreht und über die Ebenensteuerung angeordnet werden.
+
+## Gruppenergebnis teilen
+
+Diese Version enthält eine zusätzliche Seite `gruppe-ergebnis.html`.
+
+- Jede Gruppe behält ihre Gruppen-ID aus der Rollenverteilung.
+- Beim Absenden wird die Gruppen-ID mit an Google Sheets gesendet.
+- `gruppe-ergebnis.html?g=<GRUPPEN-ID>` lädt nur das Ergebnis dieser einen Gruppe.
+- Falls noch kein Ergebnis gespeichert wurde, erscheint ein Hinweis mit Aktualisieren-Button.
+- In der Zusammenfassung gibt es den Button „Ergebnis mit Gruppe teilen“ mit Link und QR-Code.
+
+## Apps Script aktualisieren
+
+Den Inhalt aus `apps-script/Code.gs` vollständig in Apps Script einfügen und die bestehende Web-App-Bereitstellung als neue Version veröffentlichen.
+
+Änderungen im Apps-Script-Code:
+
+- Passwortabfrage für Löschen wurde entfernt.
+- Einzelne Einträge und alle Einträge können ohne Passwort gelöscht werden.
+- Die Spalte „Gruppen-ID“ wurde ergänzt.
+- Ergebnisse werden anhand der Gruppen-ID aktualisiert statt mehrfach als Duplikat gespeichert.
+- `?action=list&groupId=<GRUPPEN-ID>` liefert nur die Ergebnisse dieser Gruppe.
+
+Hinweis: Wenn du eine ganz saubere Tabelle möchtest, kannst du nach dem Aktualisieren einmal die Funktion `resetSheet` in Apps Script ausführen. Dabei werden alte Testdaten gelöscht und die Überschriften neu gesetzt.

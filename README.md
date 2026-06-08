@@ -81,3 +81,12 @@ Der Präsentationseditor wurde überarbeitet:
 - Änderungen werden erst durch „Speichern“ übernommen.
 - Hintergrundbilder werden über den Dateiauswahldialog in die Präsentationsvorschau geladen.
 - Sticker wurden mit transparenterem Hintergrund neu aufbereitet.
+
+## Update: Sticker-Kategorien im Präsentationseditor
+
+Im Bearbeitungsmodus öffnet **Sticker** nun zunächst einen Ladehinweis. Danach werden die Sticker kategorisiert angezeigt:
+
+- **Teamwork**: Team 1 bis Team 8
+- **Dekor**: Dekor 1 bis Dekor 10
+
+Mit den Pfeilen links und rechts neben der Kategorienüberschrift wird zwischen den Kategorien gewechselt. Beim Anklicken eines Stickers wird er auf der aktuellen Folie eingefügt und kann anschließend verschoben, skaliert, gedreht und über die Ebenensteuerung angeordnet werden.

@@ -7,7 +7,11 @@
   const BASELINE_KEY_BASE = 'presentation_v7_baseline';
   const LEGACY_STATE_KEY = 'sv_presentation_v5_state';
   const STICKER_PATH = 'assets/stickers/';
-  const STICKERS = ['team4.png','team2.png','team3.png','brainstorm.png','team2reading.png','team3working.png','notices.png','worktogether.png','worktogether3.png'];
+  const STICKER_CATEGORIES = {
+    Teamwork: ['team1.png','team2.png','team3.png','team4.png','team5.png','team6.png','team7.png','team8.png'],
+    Dekor: ['Dekor1.png','Dekor2.png','Dekor3.png','Dekor4.png','Dekor5.png','Dekor6.png','Dekor7.png','Dekor8.png','Dekor9.png','Dekor10.png']
+  };
+  const STICKERS = [].concat(STICKER_CATEGORIES.Teamwork, STICKER_CATEGORIES.Dekor);
   const THEME_DEFAULT = {
     heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
     slidePattern:'none', backgroundPattern:'none',
@@ -385,59 +389,10 @@
     document.documentElement.classList.add('v6-modal-open');
     renderAll();
   }
-
-  function ensureSaveDecisionModal(){
-    let box = document.getElementById('v6SaveDecisionModal');
-    if (box) return box;
-    box = document.createElement('div');
-    box.id = 'v6SaveDecisionModal';
-    box.className = 'v6-confirm-modal';
-    box.hidden = true;
-    box.innerHTML = `<div class="v6-confirm-backdrop"></div>
-      <div class="v6-confirm-card" role="dialog" aria-modal="true" aria-labelledby="v6ConfirmTitle">
-        <h2 id="v6ConfirmTitle">Ungespeicherte Änderungen</h2>
-        <p>Du hast die Präsentation verändert. Möchtest du die Änderungen speichern, bevor du die Vorbereitung schließt?</p>
-        <div class="v6-confirm-actions">
-          <button type="button" data-v6-confirm="discard" class="secondary">Ohne Speichern schließen</button>
-          <button type="button" data-v6-confirm="cancel" class="secondary">Abbrechen</button>
-          <button type="button" data-v6-confirm="save" class="success-btn">Speichern und schließen</button>
-        </div>
-      </div>`;
-    document.body.appendChild(box);
-    return box;
-  }
-
-  function askSaveDecision(){
-    return new Promise(resolve => {
-      const box = ensureSaveDecisionModal();
-      box.hidden = false;
-      const onClick = (e) => {
-        const btn = e.target.closest('[data-v6-confirm]');
-        if (!btn) return;
-        const val = btn.dataset.v6Confirm;
-        cleanup();
-        resolve(val);
-      };
-      const onKey = (e) => {
-        if (e.key === 'Escape') { cleanup(); resolve('cancel'); }
-      };
-      function cleanup(){
-        box.hidden = true;
-        box.removeEventListener('click', onClick);
-        document.removeEventListener('keydown', onKey);
-      }
-      box.addEventListener('click', onClick);
-      document.addEventListener('keydown', onKey);
-      setTimeout(() => { const focusBtn = box.querySelector('[data-v6-confirm="save"]'); if(focusBtn) focusBtn.focus(); }, 30);
-    });
-  }
-
-  async function close(){
+  function close(){
     if(dirty){
-      const choice = await askSaveDecision();
-      if(choice === 'cancel') return;
-      if(choice === 'save') commit();
-      if(choice === 'discard') { draft = clone(savedAtOpen); dirty = false; }
+      const choice = confirm('Änderungen speichern? OK = speichern, Abbrechen = ohne Speichern schließen.');
+      if(choice) commit(); else { draft = clone(savedAtOpen); dirty = false; }
     }
     if(modal) modal.hidden = true;
     document.documentElement.classList.remove('v6-modal-open');
@@ -448,17 +403,6 @@
     Object.entries(FIELD_MAP).forEach(([vKey, saveKey]) => { if(draft.values[vKey] !== undefined) saveTextSafe(saveKey, draft.values[vKey]); });
     dirty = false; undoStack = []; savedAtOpen = clone(draft); updateToolbar(); toast('Gespeichert');
     try{ if(typeof renderSummary === 'function') renderSummary(getData()); }catch(e){}
-    scheduleResultSubmitAfterPresentationSave();
-  }
-
-  let submitAfterSaveTimer = null;
-  function scheduleResultSubmitAfterPresentationSave(){
-    const btn = document.getElementById('submitResults');
-    if(!btn) return;
-    clearTimeout(submitAfterSaveTimer);
-    submitAfterSaveTimer = setTimeout(() => {
-      try { btn.click(); } catch(e) { console.warn('Ergebnisse konnten nach dem Speichern nicht automatisch abgesendet werden.', e); }
-    }, 180);
   }
   function toast(msg){ const t=modal.querySelector('#v6Toast'); t.textContent=msg; t.hidden=false; clearTimeout(t._to); t._to=setTimeout(()=>t.hidden=true,1200); }
   function pushUndo(){ if(!draft) return; undoStack.push(clone(draft)); if(undoStack.length>10) undoStack.shift(); updateToolbar(); }
@@ -565,16 +509,97 @@
     selectedId = null; markDirty(); renderSlide();
   }
   function addTextBox(){ if(!editMode) return; pushUndo(); const id=uid('tb'); draft.textboxes.push({id, slide:slideIndex, text:'Neuer Text', x:12, y:74, w:28, h:10, rot:0, z:100, fontSize:18, color:draft.settings.text}); dirty=true; renderSlide(); select(id); }
+  function stickerCategoryNames(){ return Object.keys(STICKER_CATEGORIES); }
+  function preloadStickerImages(){
+    const files = STICKERS.slice();
+    let done = 0;
+    const total = files.length || 1;
+    const status = picker && picker.querySelector('[data-sticker-loading-status]');
+    return Promise.all(files.map(file => new Promise(resolve => {
+      const img = new Image();
+      img.onload = img.onerror = () => { done++; if(status) status.textContent = `Sticker werden geladen … ${done} / ${total}`; resolve(); };
+      img.src = STICKER_PATH + file;
+    })));
+  }
+  function renderStickerPickerCategory(category){
+    if(!picker) return;
+    const names = stickerCategoryNames();
+    const active = names.includes(category) ? category : names[0];
+    picker.dataset.category = active;
+    const grid = picker.querySelector('[data-sticker-grid]');
+    const title = picker.querySelector('[data-sticker-category-title]');
+    if(title) title.textContent = active;
+    if(!grid) return;
+    const files = STICKER_CATEGORIES[active] || [];
+    grid.innerHTML = files.map((f, i) => `
+      <button type="button" class="v6-sticker-card" data-sticker="${esc(f)}" aria-label="${esc(active)} Sticker ${i+1}">
+        <span class="v6-sticker-number">${i+1}</span>
+        <img src="${STICKER_PATH+esc(f)}" alt="${esc(active)} ${i+1}">
+      </button>`).join('');
+  }
+  function changeStickerCategory(dir){
+    if(!picker) return;
+    const names = stickerCategoryNames();
+    const current = picker.dataset.category || names[0];
+    const index = Math.max(0, names.indexOf(current));
+    const next = names[(index + dir + names.length) % names.length];
+    renderStickerPickerCategory(next);
+  }
+  function addStickerFromFile(file){
+    if(!editMode || !file) return;
+    pushUndo();
+    const id=uid('st');
+    const isDecor = /^Dekor/i.test(file);
+    draft.stickers.push({id, slide:slideIndex, src:STICKER_PATH+file, x:isDecor?62:54, y:isDecor?24:42, w:isDecor?18:30, h:isDecor?18:26, rot:0, z:110});
+    if(picker) picker.hidden=true;
+    dirty=true;
+    renderSlide();
+    select(id);
+  }
   function openStickerPicker(){
     if(!editMode) return;
     if(!picker){
-      picker = document.createElement('div'); picker.className='v6-picker'; picker.hidden=true;
-      picker.innerHTML = `<div class="v6-picker-box"><div class="v6-picker-head"><h2>Sticker hinzufügen</h2><button type="button" class="secondary" data-close-picker>Schließen</button></div><div class="v6-picker-grid">${STICKERS.map(f=>`<button type="button" data-sticker="${esc(f)}"><img src="${STICKER_PATH+esc(f)}" alt=""></button>`).join('')}</div></div>`;
+      picker = document.createElement('div');
+      picker.className='v6-picker v6-sticker-picker-advanced';
+      picker.hidden=true;
+      picker.innerHTML = `
+        <div class="v6-picker-box v6-sticker-picker-box">
+          <div class="v6-picker-head">
+            <div>
+              <h2>Sticker hinzufügen</h2>
+              <p class="v6-picker-subline" data-sticker-loading-status>Sticker werden geladen …</p>
+            </div>
+            <button type="button" class="secondary" data-close-picker>Schließen</button>
+          </div>
+          <div class="v6-sticker-category-row" aria-label="Sticker-Kategorie">
+            <button type="button" class="secondary v6-category-arrow" data-category-prev aria-label="Vorherige Kategorie">←</button>
+            <h3 data-sticker-category-title>Teamwork</h3>
+            <button type="button" class="secondary v6-category-arrow" data-category-next aria-label="Nächste Kategorie">→</button>
+          </div>
+          <div class="v6-picker-grid v6-sticker-grid" data-sticker-grid></div>
+        </div>`;
       document.body.appendChild(picker);
-      picker.addEventListener('click', e => { if(e.target === picker || e.target.closest('[data-close-picker]')) picker.hidden=true; const btn=e.target.closest('[data-sticker]'); if(btn){ pushUndo(); const id=uid('st'); draft.stickers.push({id, slide:slideIndex, src:STICKER_PATH+btn.dataset.sticker, x:56, y:45, w:26, h:22, rot:0, z:110}); picker.hidden=true; dirty=true; renderSlide(); select(id); } });
+      picker.addEventListener('click', e => {
+        if(e.target === picker || e.target.closest('[data-close-picker]')) { picker.hidden=true; return; }
+        if(e.target.closest('[data-category-prev]')) { changeStickerCategory(-1); return; }
+        if(e.target.closest('[data-category-next]')) { changeStickerCategory(1); return; }
+        const btn=e.target.closest('[data-sticker]');
+        if(btn) addStickerFromFile(btn.dataset.sticker);
+      });
     }
     picker.hidden=false;
+    const status = picker.querySelector('[data-sticker-loading-status]');
+    if(status) status.textContent = 'Sticker werden geladen …';
+    const grid = picker.querySelector('[data-sticker-grid]');
+    if(grid) grid.innerHTML = '<div class="v6-sticker-loading-card">Sticker werden vorbereitet …</div>';
+    preloadStickerImages().then(() => {
+      if(!picker || picker.hidden) return;
+      const status2 = picker.querySelector('[data-sticker-loading-status]');
+      if(status2) status2.textContent = 'Wähle einen Sticker aus. Mit den Pfeilen wechselst du die Kategorie.';
+      renderStickerPickerCategory(picker.dataset.category || 'Teamwork');
+    });
   }
+
   function updateToolbar(){
     if(!modal || !draft) return;
     const counter = modal.querySelector('#v6Counter');
@@ -701,42 +726,12 @@
         const data = row?.data || {};
         st = makeState(Object.assign(initialValues(), data.presentationValues || {}, {groupName:data.groupName || row?.groupName || 'Gruppe', timestamp:data.timestamp || row?.timestamp || new Date().toISOString()}));
       }
-      function draw(){
-        slideHost.innerHTML = finalRenderState(st, slideHost);
-        if(counter) counter.textContent = `${slideIndex+1} / ${SLIDE_COUNT}`;
-        if(status) status.hidden = true;
-      }
-      window.__v6PresentationActive = true;
-      window.__v6DrawPresentation = draw;
+      function draw(){ slideHost.innerHTML = finalRenderState(st, slideHost); if(counter) counter.textContent = `${slideIndex+1} / ${SLIDE_COUNT}`; }
       slideIndex=0; draw();
-      // Die ältere Präsentationslogik lädt ebenfalls Daten asynchron. Diese Nachzeichnungen verhindern,
-      // dass sie die erste Folie kurz nach dem Laden wieder überschreibt.
-      setTimeout(draw, 120);
-      setTimeout(draw, 700);
-      setTimeout(draw, 1400);
-      document.getElementById('presentationPrevBtn')?.addEventListener('click', e=>{ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); }, true);
-      document.getElementById('presentationNextBtn')?.addEventListener('click', e=>{ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); }, true);
-      document.addEventListener('keydown', e=>{ if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); } if(e.key==='ArrowLeft'){ e.preventDefault(); e.stopImmediatePropagation(); slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); } }, true);
+      document.getElementById('presentationPrevBtn')?.addEventListener('click', e=>{ e.stopImmediatePropagation(); slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); }, true);
+      document.getElementById('presentationNextBtn')?.addEventListener('click', e=>{ e.stopImmediatePropagation(); slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); }, true);
+      document.addEventListener('keydown', e=>{ if(e.key==='ArrowRight'||e.key===' '){ slideIndex=clamp(slideIndex+1,0,SLIDE_COUNT-1); draw(); } if(e.key==='ArrowLeft'){ slideIndex=clamp(slideIndex-1,0,SLIDE_COUNT-1); draw(); } }, true);
       if(status) status.textContent='';
     }catch(e){ if(status) status.textContent='Präsentation konnte nicht geladen werden: '+e.message; }
   }
-})();
-
-
-/* Presentation first-slide guard: keep V6-rendered slide active if older renderer fires late. */
-(function(){
-  const previous = window.renderPresentationSlideFinal;
-  window.renderPresentationSlideFinal = function(){
-    if (window.__v6PresentationActive && typeof window.__v6DrawPresentation === 'function') {
-      window.__v6DrawPresentation();
-      return;
-    }
-    if (typeof previous === 'function') return previous.apply(this, arguments);
-  };
-  window.addEventListener('load', function(){
-    if (document.body && document.body.dataset.mode === 'presentation' && typeof window.__v6DrawPresentation === 'function') {
-      setTimeout(window.__v6DrawPresentation, 100);
-      setTimeout(window.__v6DrawPresentation, 900);
-    }
-  });
 })();

@@ -170,8 +170,16 @@ function enhanceLinks() {
 
 function initCommon() {
   hydrateFromQuery();
-  const groupIdEl = document.querySelector("[data-group-id]");
-  if (groupIdEl) groupIdEl.textContent = getGroupId();
+  const groupIdEls = document.querySelectorAll("[data-group-id]");
+  if (groupIdEls.length) {
+    const gid = getGroupId();
+    groupIdEls.forEach(el => { el.textContent = gid; });
+    const footer = document.querySelector("footer");
+    if (footer) {
+      footer.classList.add("group-id-footer");
+      document.body.classList.add("has-group-id-footer");
+    }
+  }
   enhanceLinks();
 }
 
@@ -6613,21 +6621,31 @@ try {
     const status = document.getElementById('groupResultStatus');
     const content = document.getElementById('groupResultContent');
     const refresh = document.getElementById('refreshGroupResultBtn');
-    const shareLink = document.getElementById('groupResultShareLink');
-    const shareQr = document.getElementById('groupResultShareQr');
     const url = typeof getAppsScriptUrl === 'function' ? getAppsScriptUrl() : '';
-    const link = groupShareUrl(groupId);
-    if (shareLink) { shareLink.href = link; shareLink.textContent = link; }
-    if (shareQr) shareQr.src = qrUrl(link);
+
+    function loadingCard(){
+      return `<section class="card shared-result-card group-result-loading"><h2>Gruppenergebnis wird geladen …</h2><p class="small">Gruppen-ID: <strong>${esc(groupId)}</strong></p></section>`;
+    }
+    function missingCard(){
+      return `<section class="card shared-result-card group-result-missing">
+        <h2>Noch kein Ergebnis gespeichert</h2>
+        <p>Der Supervisor eurer Gruppe muss die Ergebnisse zuvor speichern. Danach kannst du hier aktualisieren.</p>
+        <p class="small">Gruppen-ID: <strong>${esc(groupId)}</strong></p>
+        <button type="button" id="groupResultInlineRefresh" class="primary">Aktualisieren</button>
+      </section>`;
+    }
+
     async function load(){
       if (status) { status.className = 'notice'; status.textContent = 'Gruppenergebnis wird geladen …'; }
-      if (content) content.innerHTML = '';
+      if (content) content.innerHTML = loadingCard();
       try {
         const rows = await fetchEntriesFiltered(url, groupId);
         if (!rows.length) {
-          if (status) {
-            status.className = 'warning';
-            status.innerHTML = 'Der Supervisor eurer Gruppe muss die Ergebnisse zuvor speichern. Danach kannst du hier aktualisieren.';
+          if (status) { status.className = 'warning'; status.textContent = 'Noch kein Gruppenergebnis gespeichert.'; }
+          if (content) {
+            content.innerHTML = missingCard();
+            const inlineRefresh = document.getElementById('groupResultInlineRefresh');
+            if (inlineRefresh) inlineRefresh.onclick = load;
           }
           return;
         }
@@ -6635,7 +6653,13 @@ try {
         if (status) { status.className = 'success'; status.textContent = 'Gruppenergebnis gefunden.'; }
         if (content) content.innerHTML = renderSharedGroup(row);
       } catch(e) {
-        if (status) { status.className = 'warning'; status.textContent = e.message || 'Das Gruppenergebnis konnte nicht geladen werden.'; }
+        const msg = e && e.message ? e.message : 'Das Gruppenergebnis konnte nicht geladen werden.';
+        if (status) { status.className = 'warning'; status.textContent = msg; }
+        if (content) {
+          content.innerHTML = `<section class="card shared-result-card group-result-missing"><h2>Verbindung fehlgeschlagen</h2><p>${esc(msg)}</p><button type="button" id="groupResultInlineRefresh" class="primary">Erneut versuchen</button></section>`;
+          const inlineRefresh = document.getElementById('groupResultInlineRefresh');
+          if (inlineRefresh) inlineRefresh.onclick = load;
+        }
       }
     }
     if (refresh) refresh.onclick = load;
@@ -6838,7 +6862,7 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     const toggle = bar.querySelector('#topbarCollapseToggle');
     if (toggle) {
       toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-      toggle.innerHTML = collapsed ? '⌄' : '⌃';
+      toggle.innerHTML = collapsed ? '<span>Ausklappen</span><span class="topbar-toggle-arrow">↓</span>' : '<span>Einklappen</span><span class="topbar-toggle-arrow">↑</span>';
       toggle.title = collapsed ? 'Leiste aufklappen' : 'Leiste einklappen';
       toggle.classList.remove('is-glowing');
     }
@@ -6866,7 +6890,7 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
         <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
         <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
       </div>
-      <button type="button" id="topbarCollapseToggle" class="topbar-collapse-toggle${hintSeen ? '' : ' is-glowing'}" aria-label="Bedienleiste ein- oder ausklappen" aria-expanded="${collapsed ? 'false' : 'true'}">${collapsed ? '⌄' : '⌃'}</button>
+      <button type="button" id="topbarCollapseToggle" class="topbar-collapse-toggle${hintSeen ? '' : ' is-glowing'}" aria-label="Bedienleiste ein- oder ausklappen" aria-expanded="${collapsed ? 'false' : 'true'}">${collapsed ? '<span>Ausklappen</span><span class="topbar-toggle-arrow">↓</span>' : '<span>Einklappen</span><span class="topbar-toggle-arrow">↑</span>'}</button>
     `;
     bar.classList.toggle('is-collapsed', collapsed);
 

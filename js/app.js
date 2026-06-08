@@ -6049,3 +6049,318 @@ try {
   window.closePresentationPrepModalFinal = closeModal;
   window.renderSummaryPresentationSlideFinal = renderSlide;
 })();
+
+/* ============================================================
+   FINAL PATCH: schöne Dialoge, Ablaufseite, Roulette-Feinschliff
+   ============================================================ */
+(function(){
+  const FLOW_STEPS = [
+    {title:'Rolle lesen', text:'Du hast deine Rollenkarte gelesen. Behalte diese Perspektive im Rollenspiel konsequent bei.'},
+    {title:'Ablauf verstehen', text:'Die Supervision läuft in sechs Phasen: Erstkontakt, Problembeschreibung, Zielformulierung, vertiefte Problembearbeitung, Ergebnissicherung und Reflexionstauglichkeit.'},
+    {title:'Eigene Perspektive vorbereiten', text:'Im nächsten Schritt notierst du kurz deine Sichtweise, Gefühle, Wünsche und mögliche Ziele. Diese Notizen helfen dir später im Gespräch.'},
+    {title:'Gruppensupervision starten', text:'Die Supervisor*in führt durch die Phasen. Die anderen Rollen bringen ihre Perspektive ein und reagieren auf die Moderationsimpulse.'},
+    {title:'Ergebnis sichern', text:'Am Ende werden Zielvereinbarung, Absprachen und Praxistauglichkeit festgehalten. Die Ergebnisse können danach zentral angezeigt und präsentiert werden.'}
+  ];
+
+  function ensureNiceModal(){
+    let m=document.getElementById('niceDialogModal');
+    if(m) return m;
+    m=document.createElement('div');
+    m.id='niceDialogModal';
+    m.className='nice-modal';
+    m.hidden=true;
+    m.innerHTML=`<div class="nice-modal-backdrop" data-nice-cancel></div><div class="nice-modal-card" role="dialog" aria-modal="true"><h2 id="niceModalTitle"></h2><p id="niceModalMessage"></p><label id="niceModalLabel" for="niceModalInput" hidden></label><input id="niceModalInput" type="text" hidden><div class="nice-modal-actions" id="niceModalActions"></div></div>`;
+    document.body.appendChild(m);
+    return m;
+  }
+  function niceDialog(opts){
+    opts=Object.assign({title:'Hinweis',message:'',confirmText:'OK',cancelText:null,input:false,password:false,danger:false}, opts||{});
+    return new Promise(resolve=>{
+      const m=ensureNiceModal();
+      const card=m.querySelector('.nice-modal-card');
+      const title=m.querySelector('#niceModalTitle');
+      const msg=m.querySelector('#niceModalMessage');
+      const label=m.querySelector('#niceModalLabel');
+      const input=m.querySelector('#niceModalInput');
+      const actions=m.querySelector('#niceModalActions');
+      card.classList.toggle('danger', !!opts.danger);
+      title.textContent=opts.title || 'Hinweis';
+      msg.textContent=opts.message || '';
+      actions.innerHTML='';
+      input.hidden=!opts.input;
+      label.hidden=!opts.input;
+      input.value='';
+      input.type=opts.password?'password':'text';
+      if(opts.input) label.textContent=opts.label || opts.title || 'Eingabe';
+      const close=(val)=>{m.hidden=true; document.removeEventListener('keydown', onKey); resolve(val);};
+      if(opts.cancelText){
+        const cancel=document.createElement('button');
+        cancel.type='button'; cancel.className='secondary'; cancel.textContent=opts.cancelText;
+        cancel.onclick=()=>close(opts.input?null:false);
+        actions.appendChild(cancel);
+      }
+      const ok=document.createElement('button');
+      ok.type='button'; ok.textContent=opts.confirmText || 'OK';
+      if(opts.danger) ok.className='danger';
+      ok.onclick=()=>close(opts.input ? input.value : true);
+      actions.appendChild(ok);
+      m.querySelector('[data-nice-cancel]').onclick=()=>close(opts.input?null:false);
+      function onKey(e){ if(e.key==='Escape') close(opts.input?null:false); if(e.key==='Enter') close(opts.input ? input.value : true); }
+      document.addEventListener('keydown', onKey);
+      m.hidden=false;
+      setTimeout(()=>{ if(opts.input) input.focus(); else ok.focus(); },20);
+    });
+  }
+  window.supervisionNiceDialog = niceDialog;
+  window.alert = function(message){ niceDialog({title:'Hinweis', message:String(message||''), confirmText:'OK'}); };
+
+  window.supervisionConfirm = (message, title='Bitte bestätigen', danger=false) => niceDialog({title, message, confirmText:'Bestätigen', cancelText:'Abbrechen', danger});
+  window.supervisionPrompt = (message, title='Eingabe', password=false) => niceDialog({title, message, input:true, password, confirmText:'Weiter', cancelText:'Abbrechen'});
+
+  // Globale lokale Navigations-/Resetleiste mit schönen Dialogen.
+  window.installLocalResetControls = function(){
+    const header=document.querySelector('header');
+    if(!header) return;
+    let bar=document.querySelector('.local-reset-bar');
+    if(!bar){ bar=document.createElement('div'); bar.className='local-reset-bar'; header.insertAdjacentElement('afterend', bar); }
+    bar.innerHTML=`<div class="wrap local-reset-inner admin-reset-inner">
+      <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
+      <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
+      <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
+      <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
+      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+      <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
+    </div>`;
+    const back=document.getElementById('localBackBtn');
+    const statusBtn=document.getElementById('globalAdminStatusBtn');
+    const clearPageBtn=document.getElementById('clearPageBtn');
+    const clearAllBtn=document.getElementById('clearAllLocalBtn');
+    if(back) back.onclick=()=>{ if(history.length>1) history.back(); else location.href='index.html'; };
+    if(statusBtn) statusBtn.onclick=typeof handleGlobalAdminClick==='function'?handleGlobalAdminClick:undefined;
+    if(clearPageBtn) clearPageBtn.onclick=async()=>{ if(await window.supervisionConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Aktuelle Seite leeren')) clearCurrentPageInputs(); };
+    if(clearAllBtn) clearAllBtn.onclick=async()=>{ if(!(await window.supervisionConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Seite zurücksetzen', true))) return; clearAllLocalSupervisionData({silent:true}); location.href='index.html'; };
+    if(typeof updateGlobalAdminUi==='function') updateGlobalAdminUi();
+  };
+
+  // Adminschutz ohne Browser-Popups.
+  window.updateAdminProtectedLinks = function(){
+    const active = (typeof isGlobalAdminActive==='function') ? isGlobalAdminActive() : false;
+    document.querySelectorAll('[data-admin-required]').forEach(el=>{
+      el.classList.toggle('is-locked', !active);
+      el.setAttribute('aria-disabled', active?'false':'true');
+      el.title = active ? '' : 'Nur im Administrationsmodus verfügbar';
+      el.onclick = async (event)=>{
+        if((typeof isGlobalAdminActive==='function') && isGlobalAdminActive()) return true;
+        event.preventDefault();
+        await niceDialog({title:'Administrationsmodus erforderlich', message:'Diese Funktion ist nur im Administrationsmodus verfügbar. Aktiviere den Admin-Modus oben in der Leiste.', confirmText:'OK'});
+        return false;
+      };
+    });
+  };
+
+  // Rolle -> Ablaufseite statt direkt Gedanken.
+  window.initRoleCard = function(){
+    initCommon();
+    const role=getPageRole();
+    const data=ROLECARD[role];
+    const target=document.getElementById('roleCard');
+    if(!data || !target) return;
+    target.innerHTML=`<div class="card highlight"><p class="role-pill">${ROLES[role]}</p><h2>${data.title}</h2><p><strong>Zugewiesene Person:</strong> ${escapeHtml(roleName(role)||'nicht gesetzt')}</p><p>${data.intro}</p><h3>Deine Aufgabe</h3><ul class="tight">${data.bullets.map(b=>`<li>${b}</li>`).join('')}</ul><h3>Fokus im Fall</h3><p>${data.caseFocus}</p></div><div class="card"><h2>Fallgrundlage</h2><div class="readonly-box">${escapeHtml(CASE_TEXT)}</div><h3>Supervisionsfrage</h3><div class="notice">${SUPERVISION_QUESTION}</div></div>`;
+    const next=document.getElementById('nextPrep');
+    if(next){ next.textContent='Weiter: Ablauf ansehen'; next.href=`ablauf.html?role=${encodeURIComponent(role)}&${currentQueryString()}`; }
+  };
+
+  window.initFlow = function(){
+    initCommon();
+    const params=new URLSearchParams(location.search);
+    const role=params.get('role') || 'supervisor';
+    const box=document.getElementById('flowSteps');
+    const next=document.getElementById('flowNext');
+    if(next) next.href=linkWithState(`gedanken-${role}.html`);
+    if(!box) return;
+    let visible=Number(localStorage.getItem(key('flow_visible_'+role)) || '1');
+    visible=Math.max(1, Math.min(FLOW_STEPS.length, visible));
+    function render(){
+      box.innerHTML='';
+      FLOW_STEPS.slice(0, visible).forEach((step, idx)=>{
+        const last=idx===visible-1;
+        const done=idx<visible-1 || visible===FLOW_STEPS.length;
+        const card=document.createElement('article');
+        card.className='card flow-step is-visible';
+        card.innerHTML=`<div class="flow-step-head"><span class="step-badge">${idx+1}</span><h3>${escapeHtml(step.title)}</h3></div><p>${escapeHtml(step.text)}</p>${(!done && last)?'<button type="button" class="secondary flow-read-btn">Gelesen</button>':''}`;
+        const btn=card.querySelector('.flow-read-btn');
+        if(btn) btn.onclick=()=>{ visible=Math.min(FLOW_STEPS.length, visible+1); localStorage.setItem(key('flow_visible_'+role), String(visible)); render(); };
+        box.appendChild(card);
+      });
+      if(next) next.hidden=visible<FLOW_STEPS.length;
+    }
+    render();
+  };
+
+  // Ergebnis-Admin-State: Zufallsleiste nur im Adminmodus; Pfeile immer sichtbar.
+  window.applyResultsAdminState = function(){
+    resultsAdminActive = (typeof isGlobalAdminActive==='function') ? isGlobalAdminActive() : !!resultsAdminActive;
+    document.body.classList.toggle('is-admin-results', !!resultsAdminActive);
+    document.body.classList.toggle('public-results', !resultsAdminActive);
+    document.querySelectorAll('.admin-only').forEach(el=>{
+      el.hidden=!resultsAdminActive;
+      el.style.display=resultsAdminActive?'':'none';
+      el.style.visibility=resultsAdminActive?'visible':'hidden';
+    });
+    document.querySelectorAll('.result-delete').forEach(el=>{ el.style.display=resultsAdminActive?'inline-flex':'none'; el.style.visibility=resultsAdminActive?'visible':'hidden'; });
+    const controls=document.getElementById('resultsControls');
+    if(controls){ controls.hidden=!resultsAdminActive; controls.style.display=resultsAdminActive?'flex':'none'; controls.style.visibility=resultsAdminActive?'visible':'hidden'; }
+    const nav=document.querySelector('.carousel-nav-floating');
+    if(nav){ nav.hidden=false; nav.style.display='flex'; nav.style.visibility='visible'; }
+    const deleteAll=document.getElementById('deleteAllBtn');
+    if(deleteAll){ deleteAll.textContent='Alle Gruppenergebnisse löschen'; deleteAll.style.display=resultsAdminActive?'inline-flex':'none'; deleteAll.style.visibility=resultsAdminActive?'visible':'hidden'; }
+    if(typeof updateGlobalAdminUi==='function') updateGlobalAdminUi();
+  };
+
+  const oldUpdateSlotCardFocus = window.updateSlotCardFocus;
+  window.updateSlotCardFocus = function(position){
+    const track=document.getElementById('resultsContent');
+    if(!track) return;
+    const nearest=Math.round(position);
+    track.querySelectorAll('.result-card').forEach(card=>{
+      const virtual=Number(card.dataset.virtualIndex);
+      const idx=Number(card.dataset.resultIndex);
+      const distance=Math.abs(virtual-position);
+      const active=virtual===nearest;
+      const opacity=active?1:Math.max(0.58,0.86-Math.min(distance,3)*0.10);
+      const z=active?50:Math.max(1,30-Math.round(distance*4));
+      card.classList.toggle('is-active', active);
+      card.classList.toggle('is-side', !active);
+      card.setAttribute('aria-current', active?'true':'false');
+      card.style.transform='translate3d(0,0,0) scale(1)';
+      card.style.opacity=String(opacity);
+      card.style.zIndex=String(z);
+      card.style.filter='none';
+      const row=resultRowsCache[idx];
+      const key=(typeof resultKey==='function')?resultKey(row,idx):String(idx);
+      card.classList.toggle('is-winner', active && window.__rouletteWinnerKey && key===window.__rouletteWinnerKey);
+    });
+  };
+
+  // Langsameres Roulette mit echtem Stop auf Fokus-Kachel und grüner Hervorhebung.
+  window.spinRandomGroup = function(){
+    if(!resultsAdminActive || !resultRowsCache.length || randomSpinActive) return;
+    const btn=document.getElementById('randomGroupBtn');
+    const status=document.getElementById('resultsStatus');
+    const available=getUnselectedResultIndexes();
+    if(!available.length){ if(status){ status.className='warning'; status.textContent='Keine weiteren Einträge verfügbar.'; } updateRandomAvailability(); return; }
+    if(carouselAnimationFrame) cancelAnimationFrame(carouselAnimationFrame);
+    if(rouletteFrame) cancelAnimationFrame(rouletteFrame);
+    window.__rouletteWinnerKey='';
+    randomSpinActive=true;
+    const n=resultRowsCache.length;
+    const duration=6500+Math.floor(Math.random()*3501); // 6,5–10 Sekunden
+    const startPosition=currentVirtualPosition;
+    const targetIndex=available[Math.floor(Math.random()*available.length)];
+    const loops=3+Math.floor(Math.random()*3); // bewusst moderater Start
+    const base=Math.ceil(startPosition)+loops*n;
+    const deltaToTarget=mod(targetIndex-mod(base,n),n);
+    const targetPosition=base+deltaToTarget;
+    buildSlotTrack(Math.floor(startPosition)-5, Math.ceil(targetPosition)+5);
+    const start=performance.now();
+    if(btn){ btn.disabled=true; btn.textContent='Zufallsauswahl läuft …'; }
+    if(status){ status.className='notice'; status.textContent='Das Rad läuft …'; }
+    function easeOutSoft(t){ return 1 - Math.pow(1-t, 2.35); }
+    function frame(now){
+      const t=Math.min(1,(now-start)/duration);
+      const eased=easeOutSoft(t);
+      const pos=startPosition+(targetPosition-startPosition)*eased;
+      positionSlotTrack(pos,false);
+      if(t<1){ rouletteFrame=requestAnimationFrame(frame); return; }
+      rouletteFrame=null; randomSpinActive=false;
+      currentVirtualPosition=Math.round(targetPosition);
+      currentVirtualIndex=Math.round(targetPosition);
+      currentResultIndex=mod(currentVirtualIndex,n);
+      buildSlotTrack(currentVirtualIndex-4,currentVirtualIndex+4);
+      const chosen=resultRowsCache[currentResultIndex];
+      window.__rouletteWinnerKey=resultKey(chosen,currentResultIndex);
+      positionSlotTrack(currentVirtualPosition,true);
+      const chosenName=(chosen&&(chosen.groupName||(chosen.data&&chosen.data.groupName)))||'Gruppe';
+      registerRandomSelection(currentResultIndex);
+      if(status){ status.className='success'; status.textContent=chosenName; }
+      updateRandomAvailability();
+      startConfetti(6000);
+      setTimeout(()=>{ window.__rouletteWinnerKey=''; updateSlotCardFocus(currentVirtualPosition); }, 9000);
+    }
+    rouletteFrame=requestAnimationFrame(frame);
+  };
+
+  // Schöne Löschdialoge.
+  window.deleteSingleResult = async function(index){
+    if(!resultsAdminActive) return;
+    const row=resultRowsCache[index]; const url=getAppsScriptUrl(); const status=document.getElementById('resultsStatus');
+    if(!row || !url){ if(status){status.className='warning';status.textContent='Dieser Eintrag kann aktuell nicht gelöscht werden.';} return; }
+    const rowNumber=row.rowNumber||row.id;
+    if(!rowNumber){ if(status){status.className='warning';status.textContent='Für diesen Eintrag wurde keine Tabellenzeile übermittelt.';} return; }
+    const label=row.groupName||(row.data&&row.data.groupName)||'diesen Eintrag';
+    const password=await window.supervisionPrompt(`Passwort zum Löschen von „${label}“ eingeben:`, 'Eintrag löschen', true);
+    if(!password) return;
+    if(!(await window.supervisionConfirm(`Eintrag „${label}“ wirklich löschen?`, 'Eintrag löschen', true))) return;
+    if(status){status.className='notice';status.textContent='Eintrag wird gelöscht …';}
+    callAppsScriptJsonp(url,{action:'delete',rowNumber,password}).then(response=>{
+      if(!response||!response.ok) throw new Error((response&&response.error)||'Löschen fehlgeschlagen.');
+      return fetchResultsWithFallback(url);
+    }).then(rows=>{ resultRowsCache=rows||[]; if(currentResultIndex>=resultRowsCache.length) currentResultIndex=Math.max(0,resultRowsCache.length-1); renderResults(resultRowsCache); if(status){status.className='success';status.textContent='Eintrag wurde gelöscht.';} })
+    .catch(()=>{ sendDeleteRowByHiddenFrame(url,rowNumber,password).then(()=>fetchResultsWithFallback(url)).then(rows=>{ const before=resultRowsCache.length; resultRowsCache=rows||[]; if(currentResultIndex>=resultRowsCache.length) currentResultIndex=Math.max(0,resultRowsCache.length-1); renderResults(resultRowsCache); if(status){ if(resultRowsCache.length<before){status.className='success';status.textContent='Eintrag wurde gelöscht.';} else {status.className='warning';status.textContent='Löschversuch abgeschlossen, der Eintrag ist aber noch vorhanden. Prüfe Passwort und Apps-Script-Version.';} } }).catch(()=>{ if(status){status.className='warning';status.textContent='Verbindung zum Apps Script fehlgeschlagen. Prüfe Apps-Script-Version und Zugriff.';} }); });
+  };
+
+  window.deleteAllResults = async function(){
+    if(!resultsAdminActive) return;
+    const url=getAppsScriptUrl(); const status=document.getElementById('resultsStatus');
+    if(!url){ if(status){status.className='warning';status.textContent='Keine Apps-Script-URL gefunden. Löschen ist nicht möglich.';} return; }
+    const password=await window.supervisionPrompt('Passwort zum Löschen aller Gruppenergebnisse eingeben:', 'Alle Gruppenergebnisse löschen', true);
+    if(!password) return;
+    if(!(await window.supervisionConfirm('Wirklich alle Ergebnisse aus dem Google Sheet löschen?', 'Alle Gruppenergebnisse löschen', true))) return;
+    if(status){status.className='notice';status.textContent='Löschbefehl wird gesendet …';}
+    callAppsScriptJsonp(url,{action:'deleteall',password}).then(response=>{ if(!response||!response.ok) throw new Error((response&&response.error)||'Löschen fehlgeschlagen.'); resultRowsCache=[]; currentResultIndex=0; renderResults([]); if(status){status.className='success';status.textContent='Alle Ergebnisse wurden gelöscht.';} })
+    .catch(()=>{ sendDeleteByHiddenFrame(url,password).then(()=>fetchResultsWithFallback(url)).then(rows=>{ resultRowsCache=rows||[]; currentResultIndex=Math.max(0,resultRowsCache.length-1); renderResults(resultRowsCache); if(status){ if(!resultRowsCache.length){status.className='success';status.textContent='Alle Ergebnisse wurden gelöscht.';} else {status.className='warning';status.textContent='Löschversuch abgeschlossen, es sind aber noch Einträge vorhanden. Prüfe Passwort und Apps-Script-Version.';} } }).catch(()=>{ if(status){status.className='warning';status.textContent='Verbindung zum Apps Script fehlgeschlagen. Prüfe Apps-Script-Version und Zugriff.';} }); });
+  };
+
+  // Finales initResults mit separater Pfeilnavigation und schönen Dialogen.
+  window.initResults = function(){
+    initCommon(); installGlobalAdminControlsFinal();
+    const status=document.getElementById('resultsStatus'); const url=getAppsScriptUrl();
+    const deleteBtn=document.getElementById('deleteAllBtn'); const prevBtn=document.getElementById('prevGroupBtn'); const nextBtn=document.getElementById('nextGroupBtn'); const randomBtn=document.getElementById('randomGroupBtn'); const resetRoundsBtn=document.getElementById('resetRoundsBtn'); const resultsContent=document.getElementById('resultsContent');
+    resultsAdminActive=(typeof isGlobalAdminActive==='function')?isGlobalAdminActive():false; applyResultsAdminState();
+    if(deleteBtn) deleteBtn.onclick=deleteAllResults;
+    if(prevBtn) prevBtn.onclick=()=>moveResult(-1);
+    if(nextBtn) nextBtn.onclick=()=>moveResult(1);
+    if(randomBtn) randomBtn.onclick=spinRandomGroup;
+    if(resetRoundsBtn) resetRoundsBtn.onclick=async()=>{ if(await window.supervisionConfirm('Alle bisherigen Roulette-Runden zurücksetzen? Die Google-Sheet-Ergebnisse bleiben erhalten.','Runden zurücksetzen')) resetRouletteRounds(false); };
+    if(resultsContent){ resultsContent.onclick=(event)=>{ const btn=event.target.closest('[data-delete-result]'); if(!btn) return; event.preventDefault(); if(!isGlobalAdminActive()) return; deleteSingleResult(Number(btn.dataset.deleteResult)); }; resultsContent.addEventListener('toggle',()=>setTimeout(()=>updateActiveResult(false),40),true); }
+    renderRoundBadges(); window.addEventListener('resize',()=>{ if(resultRowsCache.length) renderCarouselAt(currentVirtualPosition,false); });
+    if(!url){ if(status){status.className='warning';status.textContent='Keine Apps-Script-URL gefunden. Ergebnisse können nicht geladen werden.';} return; }
+    if(status){status.className='notice';status.textContent='Ergebnisse werden geladen …';}
+    fetchResultsWithFallback(url).then(rows=>{ resultRowsCache=rows||[]; currentResultIndex=Math.max(0,resultRowsCache.length-1); currentVirtualIndex=currentResultIndex; currentVirtualPosition=currentVirtualIndex; if(status) status.textContent=''; renderResults(resultRowsCache); applyResultsAdminState(); }).catch(err=>{ if(status){status.className='warning';status.textContent=err.message + " Prüfe die Web-App-Bereitstellung und den Zugriff 'Jeder'.";} });
+  };
+
+  // Gruppenzuweisung mit schönen Rückfragen.
+  const oldInitGroupAssignment = window.initGroupAssignment;
+  window.initGroupAssignment = function(){
+    initCommon(); installGlobalAdminControlsFinal(); updateGroupAssignmentAccess(); if(!isGlobalAdminActive()) return;
+    const list=document.getElementById('participantList'), input=document.getElementById('participantName'), addBtn=document.getElementById('addParticipantBtn'), buildBtn=document.getElementById('buildGroupsBtn'), resetBtn=document.getElementById('resetParticipantsBtn'), clearBtn=document.getElementById('clearParticipantsBtn'), output=document.getElementById('groupsOutput'), count=document.getElementById('participantCount'), status=document.getElementById('groupAssignStatus');
+    let names=getGroupAssignmentNames();
+    function setStatus(text,cls='notice'){ if(status){status.className=cls; status.textContent=text;} }
+    function persistNames(){ saveGroupAssignmentNames(names); }
+    function renderNames(){ if(!list) return; list.innerHTML=''; names.forEach((name,index)=>{ const li=document.createElement('li'); li.innerHTML=`<span class="name-index">${index+1}</span><span class="name-text">${escapeHtml(name)}</span><button type="button" class="icon-remove" aria-label="${escapeHtml(name)} löschen">×</button>`; li.querySelector('button').onclick=()=>{ names.splice(index,1); persistNames(); saveGroupAssignmentGroups([]); renderNames(); renderGroups([]); setStatus('Name wurde gelöscht. Die Gruppen müssen neu gebildet werden.','notice'); }; list.appendChild(li); }); if(count) count.textContent=String(names.length); }
+    function renderGroups(groups=getGroupAssignmentGroups()){ if(!output) return; output.innerHTML=''; if(!groups.length){ output.className='group-output empty-state'; output.textContent='Noch keine Gruppen gebildet.'; return; } output.className='group-output'; groups.forEach((group,index)=>{ const card=document.createElement('div'); card.className='assignment-group-card'; card.innerHTML=`<h3>Gruppe ${index+1}<span class="group-size-pill">${group.length} Personen</span></h3><ol>${group.map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ol>`; output.appendChild(card); }); }
+    function addName(){ const value=(input&&input.value||'').trim(); if(!value){ setStatus('Bitte zuerst einen Namen eintragen.','warning'); return; } names.push(value); persistNames(); saveGroupAssignmentGroups([]); if(input) input.value=''; renderNames(); renderGroups([]); setStatus('Name wurde hinzugefügt. Du kannst die Gruppen neu bilden.','success'); }
+    if(addBtn) addBtn.onclick=addName;
+    if(input) input.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); addName(); } };
+    if(buildBtn) buildBtn.onclick=()=>{ if(names.length<4){ setStatus('Für die Gruppenzuweisung werden mindestens 4 Personen benötigt.','warning'); saveGroupAssignmentGroups([]); renderGroups([]); return; } const groups=buildMinimumFourGroups(names); saveGroupAssignmentGroups(groups); renderGroups(groups); setStatus(`Gruppen wurden zufällig gebildet. Gruppengrößen: ${groups.map(g=>g.length).join(' / ')}.`, 'success'); };
+    if(resetBtn) resetBtn.onclick=async()=>{ if(!(await window.supervisionConfirm('Ursprungsliste neu laden? Eigene Änderungen an der Teilnehmendenliste gehen verloren.','Ursprungsliste laden'))) return; names=DEFAULT_GROUP_PARTICIPANTS.slice(); persistNames(); saveGroupAssignmentGroups([]); renderNames(); renderGroups([]); setStatus('Ursprungsliste wurde geladen.','success'); };
+    if(clearBtn) clearBtn.onclick=async()=>{ if(!(await window.supervisionConfirm('Gesamte Teilnehmendenliste leeren?','Teilnehmendenliste leeren',true))) return; names=[]; persistNames(); saveGroupAssignmentGroups([]); renderNames(); renderGroups([]); setStatus('Teilnehmendenliste wurde geleert. Mit Ursprungsliste laden kannst du die vorbereiteten Namen wiederherstellen.','notice'); };
+    renderNames(); renderGroups();
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    if(document.body.dataset.mode==='flow') initFlow();
+    // Damit die finale Ergebnisnavigation auch ohne Admin sichtbar bleibt.
+    if(document.body.dataset.mode==='results') setTimeout(applyResultsAdminState, 50);
+  });
+})();

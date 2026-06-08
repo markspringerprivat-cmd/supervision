@@ -331,7 +331,7 @@
     $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); updateToolbar(); });
     $('#v6AddText').addEventListener('click', addTextBox);
     $('#v6AddSticker').addEventListener('click', openStickerPicker);
-    $('#v6Reset').addEventListener('click', () => { if(!editMode) return; if(confirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?')) resetToBaseline(); });
+    $('#v6Reset').addEventListener('click', async () => { if(!editMode) return; const ok = window.supervisionConfirm ? await window.supervisionConfirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?', 'Präsentation zurücksetzen', true) : confirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?'); if(ok) resetToBaseline(); });
     $('#v6DesignTarget').addEventListener('change', syncDesignInputs);
     $('#v6DesignColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('design_'+$('#v6DesignTarget').value); const t=$('#v6DesignTarget').value; if(t !== 'slide' && t !== 'background') return; draft.settings[t] = $('#v6DesignColor').value; dirty=true; applyTheme(); });
     $('#v6PatternTarget').addEventListener('change', syncPatternInputs);
@@ -389,10 +389,30 @@
     document.documentElement.classList.add('v6-modal-open');
     renderAll();
   }
-  function close(){
+  async function close(){
     if(dirty){
-      const choice = confirm('Änderungen speichern? OK = speichern, Abbrechen = ohne Speichern schließen.');
-      if(choice) commit(); else { draft = clone(savedAtOpen); dirty = false; }
+      let save = false;
+      if (window.supervisionNiceDialog) {
+        save = await new Promise(resolve => {
+          const wrap = document.createElement('div');
+          wrap.className = 'nice-modal';
+          wrap.innerHTML = `<div class="nice-modal-backdrop"></div><div class="nice-modal-card" role="dialog" aria-modal="true"><h2>Ungespeicherte Änderungen</h2><p>Möchtest du die Änderungen speichern, bevor die Präsentationsbearbeitung geschlossen wird?</p><div class="nice-modal-actions"><button type="button" class="secondary" data-act="cancel">Abbrechen</button><button type="button" class="secondary" data-act="discard">Ohne Speichern schließen</button><button type="button" data-act="save">Speichern und schließen</button></div></div>`;
+          document.body.appendChild(wrap);
+          wrap.addEventListener('click', e => {
+            const b = e.target.closest('[data-act]');
+            if(!b) return;
+            const act = b.dataset.act;
+            wrap.remove();
+            if(act === 'cancel') resolve(null);
+            else if(act === 'save') resolve(true);
+            else resolve(false);
+          });
+        });
+        if(save === null) return;
+      } else {
+        save = confirm('Änderungen speichern? OK = speichern, Abbrechen = ohne Speichern schließen.');
+      }
+      if(save) commit(); else { draft = clone(savedAtOpen); dirty = false; }
     }
     if(modal) modal.hidden = true;
     document.documentElement.classList.remove('v6-modal-open');

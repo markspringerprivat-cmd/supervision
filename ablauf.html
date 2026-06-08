@@ -3,15 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rollenkarte Lehrkraft B</title>
+  <title>Ablauf der Gruppensupervision</title>
   <link rel="stylesheet" href="css/styles.css?v=roulette-flow-popups">
 </head>
-<body data-mode="rolecard" data-role="lehrkraft-b">
-<header><div class="wrap"><h1>Rollenkarte Lehrkraft B</h1><p>Lies deine Rolle sorgfältig. Danach bereitest du deine Perspektive vor.</p></div></header>
+<body data-mode="flow">
+<header><div class="wrap"><h1>Ablauf der Gruppensupervision</h1><p>Kurze Orientierung vor der eigenen Vorbereitung.</p></div></header>
 <main class="wide-main">
-  <div id="roleCard" class="grid"></div>
+  <section class="card highlight">
+    <h2>Was passiert als Nächstes?</h2>
+    <p>Lies die Schritte nacheinander. Nach jedem Schritt bestätigst du mit <strong>Gelesen</strong>. Danach wird der nächste Schritt sichtbar.</p>
+  </section>
+  <section id="flowSteps" class="flow-steps" aria-live="polite"></section>
   <div class="nav-row">
-    <a id="nextPrep" class="button" href="#">Weiter: Ablauf ansehen</a>
+    <a id="flowNext" class="button" href="#" hidden>Weiter: Mach dir Gedanken</a>
     <a class="button secondary" href="rollen.html" data-keep-state>Zur Rollenverteilung</a>
   </div>
 </main>

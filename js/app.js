@@ -7310,3 +7310,293 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     if (document.body.dataset.mode === 'group-result') setTimeout(() => window.initGroupResultPage(), 1);
   });
 })();
+
+
+
+/* ==========================================================
+   FINAL ARCHITECTURE PATCH: gruppenweite Präsentationssynchronisierung
+   - sammelt alle Präsentations-/Editor-Einstellungen in presentationConfig
+   - speichert diese mit dem Gruppenergebnis im Google Sheet
+   - lädt sie bei Ergebnis-/Präsentationsseiten aus dem Rohdaten-JSON wieder
+   - nutzt weiterhin lokale Daten als Fallback, wenn noch nichts geteilt wurde
+   ========================================================== */
+(function(){
+  const SYNC_VERSION = '2026-06-group-presentation-sync-v1';
+  const PRESENTATION_SYNC_KEYS = [
+    'presentation_settings',
+    'presentation_extras',
+    'presentation_layout',
+    'presentation_layout_stable_v2',
+    'presentation_stickers_v1',
+    'presentation_text_overrides',
+    'presentation_default_snapshot',
+    'presentation_theme',
+    'presentation_patterns'
+  ];
+
+  function safeParse(value, fallback){
+    try { return value ? JSON.parse(value) : fallback; } catch(_) { return fallback; }
+  }
+
+  function scopedKey(name){
+    try { return (typeof key === 'function') ? key(name) : ('sv_' + (typeof getGroupId === 'function' ? getGroupId() : 'gruppe') + '_' + name); }
+    catch(_) { return 'sv_' + name; }
+  }
+
+  function readScoped(name, fallback){
+    try {
+      if (typeof loadObj === 'function') return loadObj(name, fallback);
+      return safeParse(localStorage.getItem(scopedKey(name)), fallback);
+    } catch(_) { return fallback; }
+  }
+
+  function writeScoped(name, value){
+    try {
+      if (typeof saveObj === 'function') saveObj(name, value);
+      else localStorage.setItem(scopedKey(name), JSON.stringify(value));
+    } catch(_) {}
+  }
+
+  function removeScoped(name){
+    try {
+      if (typeof key === 'function') localStorage.removeItem(key(name));
+      localStorage.removeItem('sv_' + name);
+      localStorage.removeItem(name);
+    } catch(_) {}
+  }
+
+  function collectScopedRaw(){
+    const raw = {};
+    try {
+      const prefix = (typeof key === 'function') ? key('').replace(/_$/, '_') : '';
+      Object.keys(localStorage).forEach(k => {
+        const isScoped = prefix && k.indexOf(prefix) === 0;
+        const isRelevant = /presentation|sticker|layout/i.test(k);
+        if (!isRelevant || (!isScoped && !/^sv_/.test(k))) return;
+        const shortName = isScoped ? k.slice(prefix.length) : k;
+        const value = localStorage.getItem(k);
+        raw[shortName] = safeParse(value, value);
+      });
+    } catch(_) {}
+    return raw;
+  }
+
+  window.collectPresentationSyncConfig = function(){
+    const settings = (typeof getPresentationSettingsFinal === 'function') ? getPresentationSettingsFinal() : readScoped('presentation_settings', {});
+    const extras = (typeof getPresentationExtrasFinal === 'function') ? getPresentationExtrasFinal() : readScoped('presentation_extras', []);
+    const stickers = readScoped('presentation_stickers_v1', []);
+    const stableLayout = readScoped('presentation_layout_stable_v2', {});
+    const layout = readScoped('presentation_layout', {});
+    const textOverrides = readScoped('presentation_text_overrides', {});
+    const defaultSnapshot = readScoped('presentation_default_snapshot', null);
+
+    return {
+      version: SYNC_VERSION,
+      savedAt: new Date().toISOString(),
+      groupId: (typeof getGroupId === 'function') ? getGroupId() : '',
+      settings: settings || {},
+      extras: Array.isArray(extras) ? extras : [],
+      stickers: Array.isArray(stickers) ? stickers : [],
+      stableLayout: stableLayout && typeof stableLayout === 'object' ? stableLayout : {},
+      layout: layout && typeof layout === 'object' ? layout : {},
+      textOverrides: textOverrides && typeof textOverrides === 'object' ? textOverrides : {},
+      defaultSnapshot: defaultSnapshot || null,
+      rawLocalPresentationState: collectScopedRaw()
+    };
+  };
+
+  window.applyPresentationSyncConfig = function(config){
+    if (!config || typeof config !== 'object') return;
+    if (config.settings) writeScoped('presentation_settings', config.settings);
+    if (Array.isArray(config.extras)) writeScoped('presentation_extras', config.extras);
+    if (Array.isArray(config.stickers)) writeScoped('presentation_stickers_v1', config.stickers);
+    if (config.stableLayout && typeof config.stableLayout === 'object') writeScoped('presentation_layout_stable_v2', config.stableLayout);
+    if (config.layout && typeof config.layout === 'object') writeScoped('presentation_layout', config.layout);
+    if (config.textOverrides && typeof config.textOverrides === 'object') writeScoped('presentation_text_overrides', config.textOverrides);
+    if (config.defaultSnapshot) writeScoped('presentation_default_snapshot', config.defaultSnapshot);
+
+    // Rückwärtskompatibilität: alte einzelne Felder ebenfalls wiederherstellen.
+    if (config.settings && typeof savePresentationSettingsFinal === 'function') {
+      try { savePresentationSettingsFinal(config.settings); } catch(_) {}
+    }
+    if (Array.isArray(config.extras) && typeof savePresentationExtrasFinal === 'function') {
+      try { savePresentationExtrasFinal(config.extras); } catch(_) {}
+    }
+  };
+
+  function extractPresentationSyncFromRow(row){
+    const data = (row && row.data) || {};
+    const raw = data.raw || {};
+    const cfg = data.presentationConfig || raw.presentationConfig || null;
+    if (cfg && typeof cfg === 'object') return cfg;
+
+    // Rückwärtskompatibilität mit älteren Speicherversionen
+    const legacy = {
+      version: 'legacy-auto-merged',
+      settings: raw.presentationSettings || data.presentationSettings || {},
+      extras: raw.presentationExtras || data.presentationExtras || [],
+      stickers: raw.presentationStickers || data.presentationStickers || [],
+      stableLayout: raw.presentationStableLayout || data.presentationStableLayout || {},
+      layout: raw.presentationLayout || data.presentationLayout || {},
+      textOverrides: raw.presentationTextOverrides || data.presentationTextOverrides || {}
+    };
+    const hasLegacy = Object.keys(legacy.settings || {}).length || (legacy.extras || []).length || (legacy.stickers || []).length || Object.keys(legacy.stableLayout || {}).length;
+    return hasLegacy ? legacy : null;
+  }
+  window.extractPresentationSyncFromRow = extractPresentationSyncFromRow;
+
+  function buildPayloadWithPresentationSync(previousBuild){
+    return function(){
+      if (typeof window.saveCurrentPresentationEditsFinal === 'function') {
+        try { window.saveCurrentPresentationEditsFinal(); } catch(_) {}
+      }
+      const data = previousBuild ? previousBuild.apply(this, arguments) : (typeof collectSupervisorData === 'function' ? collectSupervisorData() : {});
+      const config = window.collectPresentationSyncConfig();
+      data.presentationConfig = config;
+
+      // Einzelne Felder bleiben für alte Ergebnis-/Präsentationsfunktionen erhalten.
+      data.presentationSettings = config.settings;
+      data.presentationExtras = config.extras;
+      data.presentationStickers = config.stickers;
+      data.presentationStableLayout = config.stableLayout;
+      data.presentationLayout = config.layout;
+      data.presentationTextOverrides = config.textOverrides;
+      data.presentationSyncVersion = config.version;
+      return data;
+    };
+  }
+
+  if (typeof buildPayload === 'function') {
+    const oldBuildPayload = buildPayload;
+    buildPayload = window.buildPayload = buildPayloadWithPresentationSync(oldBuildPayload);
+  }
+
+  // submitResults zusätzlich robust machen: nach jedem Speichern wird presentationConfig gesendet.
+  if (typeof submitResults === 'function') {
+    const oldSubmitResults = submitResults;
+    submitResults = window.submitResults = async function(){
+      return oldSubmitResults.apply(this, arguments);
+    };
+  }
+
+  // Merge-Funktion so erweitern, dass data.presentationConfig immer sichtbar wird.
+  if (typeof mergePresentationRawDataFinal === 'function') {
+    const oldMergePresentationRawDataFinal = mergePresentationRawDataFinal;
+    mergePresentationRawDataFinal = window.mergePresentationRawDataFinal = function(row){
+      const merged = oldMergePresentationRawDataFinal(row) || {};
+      const cfg = extractPresentationSyncFromRow(row);
+      if (cfg) {
+        merged.presentationConfig = cfg;
+        merged.presentationSettings = cfg.settings || merged.presentationSettings;
+        merged.presentationExtras = cfg.extras || merged.presentationExtras;
+        merged.presentationStickers = cfg.stickers || merged.presentationStickers;
+        merged.presentationStableLayout = cfg.stableLayout || merged.presentationStableLayout;
+        merged.presentationLayout = cfg.layout || merged.presentationLayout;
+        merged.presentationTextOverrides = cfg.textOverrides || merged.presentationTextOverrides;
+      }
+      return merged;
+    };
+  }
+
+  // Bevor eine Präsentation gebaut wird, den gruppenweiten Stand in den lokalen Renderer spiegeln.
+  if (typeof buildPresentationSlides === 'function') {
+    const oldBuildPresentationSlides = buildPresentationSlides;
+    buildPresentationSlides = window.buildPresentationSlides = function(row){
+      const cfg = extractPresentationSyncFromRow(row);
+      if (cfg) window.applyPresentationSyncConfig(cfg);
+      return oldBuildPresentationSlides.apply(this, arguments);
+    };
+  }
+
+  // Init der finalen Präsentation erweitert: row, i oder g/groupId werden sauber unterstützt.
+  if (typeof initPresentationFinal === 'function') {
+    initPresentationFinal = window.initPresentationFinal = function(){
+      const status = document.getElementById('presentationStatus');
+      const url = typeof getAppsScriptUrl === 'function' ? getAppsScriptUrl() : '';
+      const params = new URLSearchParams(window.location.search);
+      const rowParam = params.get('row');
+      const idxParam = params.get('i');
+      const groupParam = params.get('g') || params.get('groupId') || params.get('token');
+
+      const exit = document.getElementById('presentationExitBtn');
+      const full = document.getElementById('presentationFullscreenBtn');
+      const prev = document.getElementById('presentationPrevBtn');
+      const next = document.getElementById('presentationNextBtn');
+
+      if (exit) exit.onclick = () => {
+        if (groupParam) window.location.href = 'gruppe-ergebnis.html?g=' + encodeURIComponent(groupParam);
+        else window.location.href = 'ergebnisse.html';
+      };
+      if (full) full.onclick = () => {
+        const root = document.documentElement;
+        if (!document.fullscreenElement && root.requestFullscreen) root.requestFullscreen();
+        else if (document.exitFullscreen) document.exitFullscreen();
+      };
+      if (prev) prev.onclick = () => movePresentationFinal(-1);
+      if (next) next.onclick = () => movePresentationFinal(1);
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); movePresentationFinal(1); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); movePresentationFinal(-1); }
+      });
+
+      if (!url) {
+        if (status) status.textContent = 'Keine Apps-Script-URL gefunden.';
+        return;
+      }
+
+      const loadPromise = groupParam && typeof fetchEntriesFiltered === 'function'
+        ? fetchEntriesFiltered(url, groupParam)
+        : fetchResultsWithFallback(url);
+
+      loadPromise.then(rows => {
+        let row = null;
+        if (rowParam !== null) row = (rows || []).find(r => String(r.rowNumber || r.id) === String(rowParam));
+        if (!row && groupParam) row = (rows || []).find(r => String(r.groupId || (r.data && r.data.groupId) || '').trim() === String(groupParam).trim()) || (rows || [])[0];
+        if (!row && idxParam !== null) row = (rows || [])[Number(idxParam)];
+        if (!row && rows && rows.length) row = rows[0];
+        if (!row) throw new Error('Kein Gruppenergebnis gefunden.');
+
+        const cfg = extractPresentationSyncFromRow(row);
+        if (cfg) window.applyPresentationSyncConfig(cfg);
+
+        presentationSlidesFinal = buildPresentationSlides(row);
+        presentationIndexFinal = 0;
+        if (status) status.hidden = true;
+        renderPresentationSlideFinal();
+      }).catch(err => {
+        if (status) {
+          status.className = 'presentation-status warning';
+          status.textContent = err.message || 'Präsentation konnte nicht geladen werden.';
+        }
+      });
+    };
+  }
+
+  // Gruppenergebnis: Präsentationslink mit Gruppen-ID ermöglichen, falls später wieder aktiviert.
+  window.presentationUrlForGroupSync = function(row){
+    const data = (row && row.data) || {};
+    const groupId = row.groupId || data.groupId || (data.raw && data.raw.groupId) || '';
+    if (groupId) return 'presentation.html?g=' + encodeURIComponent(groupId);
+    const rowNumber = row && (row.rowNumber || row.id);
+    return rowNumber ? 'presentation.html?row=' + encodeURIComponent(rowNumber) : 'presentation.html';
+  };
+
+  // Nach Speichern der Präsentationsvorbereitung optional sofort erneut absenden, falls möglich.
+  if (typeof window.saveCurrentPresentationEditsFinal === 'function') {
+    const oldSaveEdits = window.saveCurrentPresentationEditsFinal;
+    window.saveCurrentPresentationEditsFinal = function(){
+      const result = oldSaveEdits.apply(this, arguments);
+      try {
+        const lastPayload = (typeof buildPayload === 'function') ? buildPayload() : null;
+        if (lastPayload) localStorage.setItem(scopedKey('last_presentation_payload_preview'), JSON.stringify(lastPayload));
+      } catch(_) {}
+      return result;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.documentElement.classList.add('sv-sync-ready');
+  });
+})();
+

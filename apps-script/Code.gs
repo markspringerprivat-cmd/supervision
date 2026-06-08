@@ -216,7 +216,14 @@ function rowToEntry_(row, rowNumber) {
     p4: { kritik: row[20] || '', anerkennung: row[21] || '', absprachen: row[22] || '' },
     p5: { zustimmung: row[23] || '' },
     p6: { unterstuetzung: row[24] || '', umsetzung: row[25] || '', praxistauglichkeit: row[26] || '' },
-    raw: raw
+    raw: raw,
+    presentationConfig: raw.presentationConfig || null,
+    presentationSettings: raw.presentationSettings || (raw.presentationConfig && raw.presentationConfig.settings) || null,
+    presentationExtras: raw.presentationExtras || (raw.presentationConfig && raw.presentationConfig.extras) || [],
+    presentationStickers: raw.presentationStickers || (raw.presentationConfig && raw.presentationConfig.stickers) || [],
+    presentationStableLayout: raw.presentationStableLayout || (raw.presentationConfig && raw.presentationConfig.stableLayout) || {},
+    presentationLayout: raw.presentationLayout || (raw.presentationConfig && raw.presentationConfig.layout) || {},
+    presentationTextOverrides: raw.presentationTextOverrides || (raw.presentationConfig && raw.presentationConfig.textOverrides) || {}
   };
   return {
     id: rowNumber,

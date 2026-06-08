@@ -4889,3 +4889,127 @@ body[data-mode="phase"] .two-col {
     padding: 1px 4px !important;
   }
 }
+
+
+
+/* ==========================================================
+   GLOBAL SPACING AUDIT PATCH
+   Einheitliche Abstände für Kacheln, Buttons, Felder und Arbeitsbereiche.
+   ========================================================== */
+:root {
+  --sv-space-xxs: 0.18cm;
+  --sv-space-xs: 0.28cm;
+  --sv-space-sm: 0.38cm;
+  --sv-space-md: 0.50cm;
+  --sv-space-lg: 0.80cm;
+  --sv-space-xl: 1.10cm;
+}
+
+.card,
+.role-card,
+.phase-card,
+.summary-block,
+.shared-result-card,
+.result-card,
+.assignment-card,
+.presentation-prep-card {
+  margin-bottom: var(--sv-space-md);
+}
+
+.grid,
+.card-grid,
+.role-grid,
+.assignment-grid,
+.results-carousel,
+.summary-phase-list,
+.phase-layout,
+.two-col,
+.three-col,
+.share-grid {
+  gap: var(--sv-space-md) !important;
+}
+
+button,
+.button,
+input,
+select,
+textarea {
+  margin: 0;
+}
+
+button + button,
+.button + .button,
+button + .button,
+.button + button,
+input + button,
+select + button {
+  margin-left: var(--sv-space-xs);
+}
+
+.actions,
+.button-row,
+.form-actions,
+.nav-actions,
+.topbar-actions,
+.presentation-prep-toolbar,
+.presentation-subtoolbar,
+.result-controls,
+.roulette-controls,
+.local-reset-controls {
+  gap: var(--sv-space-sm) !important;
+  row-gap: var(--sv-space-sm) !important;
+  column-gap: var(--sv-space-sm) !important;
+}
+
+input,
+select,
+textarea {
+  margin-top: var(--sv-space-xxs);
+  margin-bottom: var(--sv-space-xs);
+}
+
+label {
+  margin-bottom: var(--sv-space-xs);
+}
+
+section,
+.section,
+.panel,
+.accordion-panel {
+  margin-bottom: var(--sv-space-lg);
+}
+
+.phase-layout,
+.supervision-workspace,
+.documentation-grid {
+  align-items: stretch;
+}
+
+@media (min-width: 900px) {
+  .container,
+  main.container,
+  .wide-container {
+    max-width: min(96vw, 1500px);
+  }
+}
+
+@media (max-width: 780px) {
+  button + button,
+  .button + .button,
+  button + .button,
+  .button + button,
+  input + button,
+  select + button {
+    margin-left: 0;
+  }
+  .actions,
+  .button-row,
+  .form-actions,
+  .nav-actions,
+  .topbar-actions,
+  .presentation-prep-toolbar,
+  .presentation-subtoolbar {
+    gap: var(--sv-space-xs) !important;
+  }
+}
+

@@ -13,7 +13,7 @@ const ROLES = {
   schulleitung: "Schulleitung",
   "lehrkraft-a": "Lehrkraft A",
   "lehrkraft-b": "Lehrkraft B",
-  protokoll: "Protokoll / Beobachtung"
+  protokoll: "Protokoll"
 };
 
 const ROLE_FILES = {
@@ -6595,7 +6595,7 @@ try {
           ${rowNumber ? `<a class="button" href="presentation.html?row=${encodeURIComponent(rowNumber)}">Präsentation starten</a>` : ''}
         </div>
         <details open><summary>Gruppenbeteiligte</summary>${simpleTable(['Rolle','Name'], [
-          ['Supervisor*in', a.supervisor || ''], ['Schulleitung', a.schulleitung || ''], ['Lehrkraft A', a['lehrkraft-a'] || a.lehrkraftA || ''], ['Lehrkraft B', a['lehrkraft-b'] || a.lehrkraftB || ''], ['Protokoll / Beobachtung', a.protokoll || a.beobachter || '']
+          ['Supervisor*in', a.supervisor || ''], ['Schulleitung', a.schulleitung || ''], ['Lehrkraft A', a['lehrkraft-a'] || a.lehrkraftA || ''], ['Lehrkraft B', a['lehrkraft-b'] || a.lehrkraftB || ''], ['Protokoll', a.protokoll || a.beobachter || '']
         ])}</details>
         <details><summary>Problembeschreibung</summary>${simpleTable(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], [
           ['Schulleitung', p2.slProbleme || p2.slProblem || '', p2.slGefuehle || '', p2.slWuensche || ''],
@@ -7258,7 +7258,7 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     return `<article class="card shared-result-card">
       <div class="shared-result-head"><div><h2>${escPatch(title)}</h2><p class="small">${escPatch(ts)}</p></div></div>
       <details open><summary>Gruppenbeteiligte</summary>${simpleTablePatch(['Rolle','Name'], [
-        ['Supervisor*in', a.supervisor || ''], ['Schulleitung', a.schulleitung || ''], ['Lehrkraft A', a['lehrkraft-a'] || a.lehrkraftA || ''], ['Lehrkraft B', a['lehrkraft-b'] || a.lehrkraftB || ''], ['Protokoll / Beobachtung', a.protokoll || a.beobachter || '']
+        ['Supervisor*in', a.supervisor || ''], ['Schulleitung', a.schulleitung || ''], ['Lehrkraft A', a['lehrkraft-a'] || a.lehrkraftA || ''], ['Lehrkraft B', a['lehrkraft-b'] || a.lehrkraftB || ''], ['Protokoll', a.protokoll || a.beobachter || '']
       ])}</details>
       <details><summary>Problembeschreibung</summary>${simpleTablePatch(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], [
         ['Schulleitung', p2.slProbleme || p2.slProblem || '', p2.slGefuehle || '', p2.slWuensche || ''],

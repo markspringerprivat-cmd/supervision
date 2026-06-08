@@ -4311,3 +4311,58 @@ body[data-role="beobachter"] .role-pill { background: rgba(210,138,25,.16) !impo
   .role-name-list.device-name-list { min-height: 280px !important; padding-bottom: 22px !important; }
   .role-cards-grid { grid-template-columns: 1fr !important; }
 }
+
+/* FINAL OBS/TEXT UPDATE: Rollenverteilung layout + Protokoll wording */
+#assignStatus { margin-top: .5cm !important; }
+.role-name-list.device-name-list {
+  padding-bottom: 32px !important;
+  min-height: 370px !important;
+}
+.role-name-list.device-name-list li,
+.role-name-list.device-name-list .device-laptop,
+.role-name-list.device-name-list .device-ipad,
+.role-name-list.device-name-list .device-smartphone,
+.role-name-list.device-name-list .device-neutral {
+  background: #fff !important;
+  border-color: #e1e7f1 !important;
+  box-shadow: none !important;
+}
+.role-name-list.device-name-list li:last-child {
+  margin-bottom: 18px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+}
+@media (min-width: 980px) {
+  body[data-mode="roles"] main.wide-main,
+  body[data-mode="roles"] header .wrap,
+  body[data-mode="roles"] footer .wrap {
+    max-width: 1680px !important;
+  }
+  .roles-assignment-layout {
+    grid-template-columns: minmax(640px, 1.1fr) minmax(620px, .9fr) !important;
+  }
+  .role-cards-grid { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)) !important; }
+}
+.required-field-wrap { position: relative; margin-top: 14px; }
+.required-field-wrap .required-label,
+.required-label {
+  color: #b91c1c;
+  font-size: .78rem;
+  font-weight: 900;
+  text-align: right;
+  margin-bottom: 2px;
+}
+.script-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.62);
+  border: 1px solid rgba(30,58,95,.16);
+}
+.script-card h3 { margin-top: 0; }
+.role-pill.role-protokoll,
+.role-qr-card.role-protokoll .role-pill,
+.assigned-list-modern .role-protokoll .role-pill {
+  background: rgba(210,138,25,.16) !important;
+  color: #8a5205 !important;
+}
+.role-qr-card.role-protokoll { border-color: #d28a19 !important; }

@@ -5,7 +5,7 @@
     schulleitung: 'Schulleitung',
     'lehrkraft-a': 'Lehrkraft A',
     'lehrkraft-b': 'Lehrkraft B',
-    protokoll: 'Protokoll / Beobachtung'
+    protokoll: 'Protokoll'
   };
   const ROLE_FILES_PATCH = {
     supervisor: 'rolle-supervisor.html',
@@ -285,7 +285,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     schulleitung: 'Schulleitung',
     'lehrkraft-a': 'Lehrkraft A',
     'lehrkraft-b': 'Lehrkraft B',
-    protokoll: 'Protokoll / Beobachtung'
+    protokoll: 'Protokoll'
   };
   const ROLE_FILES_PATCH2 = {
     supervisor: 'rolle-supervisor.html',
@@ -456,7 +456,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     schulleitung:'Schulleitung',
     'lehrkraft-a':'Lehrkraft A',
     'lehrkraft-b':'Lehrkraft B',
-    protokoll:'Protokoll / Beobachtung'
+    protokoll:'Protokoll'
   };
   const FILES = {
     supervisor:'rolle-supervisor.html',
@@ -604,7 +604,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
       const assignments=assignRoles(participants);
       if(typeof saveObj === 'function') saveObj('assignments', assignments);
       const laptopNames=participants.filter(p=>p.device==='laptop').map(p=>p.name);
-      const obs=assignments.protokoll ? ' Bei 5 Personen übernimmt Protokoll / Beobachtung die Ergebnissicherung.' : '';
+      const obs=assignments.protokoll ? ' Bei 5 Personen übernimmt Protokoll die Ergebnissicherung.' : '';
       const extra=laptopNames.length ? ' Supervisor*in wurde aus den Personen mit Laptop ausgewählt.' : ' Es wurde kein Laptop angegeben; Supervisor*in wurde zufällig bestimmt.';
       setStatus('Rollen wurden zugeteilt.' + extra + obs, 'success');
       renderAssignments(assignments);
@@ -615,7 +615,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
   try { initRoleAssignment = window.initRoleAssignment; } catch(_) {}
 
   const ROLECARD_OBSERVER={
-    title:'Rollenkarte: Protokoll / Beobachtung',
+    title:'Rollenkarte: Protokoll',
     intro:'Du unterstützt die Supervisor*in, indem du die Ergebnisse sachlich festhältst. Du moderierst nicht, sondern beobachtest, strukturierst und dokumentierst die Aussagen in den vorgesehenen Feldern.',
     bullets:['Höre genau zu und notiere getrennt: Beobachtungen/Probleme, Gefühle, Wünsche und Ziele.', 'Formuliere knapp, neutral und ohne Bewertung.', 'Frage bei Unklarheiten kurz nach, ob du die Aussage richtig verstanden hast.', 'Am Ende sicherst du die Ergebnisse und teilst den Gruppenlink.'],
     caseFocus:'Dein Fokus liegt auf sauberer Dokumentation. Deine Notizen werden später für Tabelle, Gruppenergebnis und Präsentation verwendet.'
@@ -637,8 +637,8 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     const baseCards = {
       supervisor: {
         title:'Rollenkarte: Supervisor*in',
-        intro: hasObserver() ? 'Du leitest die Gruppensupervision. In dieser Fünferkonstellation dokumentiert Protokoll / Beobachtung die Ergebnisse. Du konzentrierst dich deshalb auf Gesprächsführung, Struktur und Moderation.' : 'Du leitest die Gruppensupervision. Du bist nicht Schiedsrichter*in, sondern strukturierst den Prozess und sicherst, dass alle Perspektiven gehört werden.',
-        bullets: hasObserver() ? ['Gespräch strukturieren und Gesprächsregeln sichern.', 'Beteiligte nacheinander zu Wort kommen lassen.', 'Protokoll / Beobachtung gezielt Zeit zum Mitschreiben geben.', 'Zwischenergebnisse laut zusammenfassen, damit sie korrekt notiert werden können.'] : ['Klare Gesprächsstruktur herstellen.', 'Ich-Aussagen und konkrete Beobachtungen einfordern.', 'Schuldzuweisungen unterbrechen.', 'Ziele, Zwischenergebnisse und Absprachen sichern.'],
+        intro: hasObserver() ? 'Du leitest die Gruppensupervision. In dieser Fünferkonstellation dokumentiert Protokoll die Ergebnisse. Du konzentrierst dich deshalb auf Gesprächsführung, Struktur und Moderation.' : 'Du leitest die Gruppensupervision. Du bist nicht Schiedsrichter*in, sondern strukturierst den Prozess und sicherst, dass alle Perspektiven gehört werden.',
+        bullets: hasObserver() ? ['Gespräch strukturieren und Gesprächsregeln sichern.', 'Beteiligte nacheinander zu Wort kommen lassen.', 'Protokoll gezielt Zeit zum Mitschreiben geben.', 'Zwischenergebnisse laut zusammenfassen, damit sie korrekt notiert werden können.'] : ['Klare Gesprächsstruktur herstellen.', 'Ich-Aussagen und konkrete Beobachtungen einfordern.', 'Schuldzuweisungen unterbrechen.', 'Ziele, Zwischenergebnisse und Absprachen sichern.'],
         caseFocus:'Dein Fokus liegt auf Prozessklarheit, Gesprächssicherheit und einer gemeinsamen Arbeitsgrundlage.'
       },
       schulleitung: {
@@ -685,8 +685,8 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
       ['Ergebnisse sichern','Du fasst Probleme, Wünsche, Zielvereinbarung, Absprachen und Praxistauglichkeit zusammen und übermittelst die Ergebnisse.']
     ],
     supervisor5:[
-      ['Rolle und Rahmen klären','Du moderierst. Protokoll / Beobachtung dokumentiert. Klärt kurz, dass du Gesprächsführung und das Protokoll die Ergebnissicherung übernimmt.'],
-      ['Erstkontakt moderieren','Du prüfst Gesprächsbereitschaft und erklärst, dass Ergebnisse durch Protokoll / Beobachtung festgehalten werden.'],
+      ['Rolle und Rahmen klären','Du moderierst. Protokoll dokumentiert. Klärt kurz, dass du Gesprächsführung und das Protokoll die Ergebnissicherung übernimmt.'],
+      ['Erstkontakt moderieren','Du prüfst Gesprächsbereitschaft und erklärst, dass Ergebnisse durch Protokoll festgehalten werden.'],
       ['Problembeschreibung leiten','Du gibst den Beteiligten nacheinander das Wort und fasst laut zusammen, damit das Protokoll sauber mitschreiben kann.'],
       ['Ziele herausarbeiten','Du sammelst die Ziele mündlich und formulierst gemeinsam mit der Gruppe eine Zielvereinbarung.'],
       ['Vertiefte Bearbeitung anleiten','Du führst durch Kritik-Brainstorming und Anerkennungsrunde; das Protokoll hält Kriterien und Absprachen fest.'],
@@ -770,7 +770,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
   function note(label, saveKey){ return `<label>${esc(label)}</label><textarea data-save="${esc(saveKey)}"></textarea>`; }
   function moderationOnlyPhase(phase){
     const map={
-      1:['Erstkontakt','Begrüße die Gruppe, kläre Anlass und Gesprächsregeln. Frage nach Bereitschaft zur Klärung und nach der Bereitschaft, andere Perspektiven anzuhören.', ['Gesprächsrahmen herstellen','Keine Schuldfrage eröffnen','Protokoll / Beobachtung als dokumentierende Rolle benennen']],
+      1:['Erstkontakt','Begrüße die Gruppe, kläre Anlass und Gesprächsregeln. Frage nach Bereitschaft zur Klärung und nach der Bereitschaft, andere Perspektiven anzuhören.', ['Gesprächsrahmen herstellen','Keine Schuldfrage eröffnen','Protokoll als dokumentierende Rolle benennen']],
       2:['Problembeschreibung','Leite die Problembeschreibung. Gib zuerst der Schulleitung, danach Lehrkraft A und Lehrkraft B das Wort. Fasse jede Perspektive laut zusammen.', ['Beobachtung, Gefühle und Wünsche trennen','Nach jeder Perspektive kurz sichern','Protokoll Zeit zum Mitschreiben geben']],
       3:['Zielformulierung','Bitte alle Beteiligten um individuelle Ziele und leite zu einer gemeinsamen Zielvereinbarung über.', ['Ziele konkret und positiv formulieren','Gemeinsamkeiten markieren','Gemeinsame Zielvereinbarung laut abschließen']],
       4:['Vertiefte Problembearbeitung','Moderieren das Brainstorming zu hilfreicher Kritik und leite die Anerkennungsrunde an.', ['Kritik als Ich-Botschaft','Situation statt Person','Anerkennung kurz und konkret halten']],
@@ -778,15 +778,15 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
       6:['Reflexionstauglichkeit','Prüfe mit der Schulleitung die Praxistauglichkeit und die Unterstützungsmöglichkeiten.', ['Umsetzbarkeit prüfen','Unterstützung konkretisieren','Ersten Schritt festlegen']]
     };
     const m=map[phase] || map[1];
-    return `<section class="card highlight moderation-only-card"><h2>Moderationskarte: ${esc(m[0])}</h2><p>${esc(m[1])}</p><div class="handoff-note"><strong>Hinweis:</strong> Protokoll / Beobachtung hält die Ergebnisse in der eigenen Phasenseite fest. Du konzentrierst dich auf Moderation und Gesprächsführung.</div><h3>Gesprächsführung</h3><ul class="tight">${m[2].map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>`;
+    return `<section class="card highlight moderation-only-card"><h2>Moderationskarte: ${esc(m[0])}</h2><p>${esc(m[1])}</p><div class="handoff-note"><strong>Hinweis:</strong> Protokoll hält die Ergebnisse in der eigenen Phasenseite fest. Du konzentrierst dich auf Moderation und Gesprächsführung.</div><h3>Gesprächsführung</h3><ul class="tight">${m[2].map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>`;
   }
   function protokollPhase(phase){
-    if(phase===1) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll / Beobachtung</p><h2>Phase 1: Erstkontakt dokumentieren</h2><p>Halte nur knapp fest, welche Gesprächsregeln und Bereitschaften vereinbart wurden.</p>${note('Rahmen / Gesprächsregeln / Bereitschaft','sup_p1_rahmen')}</section>`;
-    if(phase===2) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll / Beobachtung</p><h2>Phase 2: Problembeschreibung dokumentieren</h2><p class="small">Trenne Aussagen nach Rolle und Kategorie. Schreibe neutral und stichpunktartig.</p><div class="role-note-block"><h3>Schulleitung</h3>${note('Problem / Beobachtung','sup_p2_sl_probleme')}${note('Gefühle','sup_p2_sl_gefuehle')}${note('Wünsche','sup_p2_sl_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft A</h3>${note('Problem / Perspektive','sup_p2_a_probleme')}${note('Gefühle','sup_p2_a_gefuehle')}${note('Wünsche','sup_p2_a_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft B</h3>${note('Problem / Perspektive','sup_p2_b_probleme')}${note('Gefühle','sup_p2_b_gefuehle')}${note('Wünsche','sup_p2_b_wuensche')}</div></section>`;
-    if(phase===3) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll / Beobachtung</p><h2>Phase 3: Ziele dokumentieren</h2>${note('Ziel Schulleitung','sup_p3_ziel_sl')}${note('Ziel Lehrkraft A','sup_p3_ziel_a')}${note('Ziel Lehrkraft B','sup_p3_ziel_b')}${note('Gemeinsamkeiten','sup_p3_gemeinsamkeiten')}${note('Gemeinsame Zielformulierung','sup_p3_gemeinsames_ziel')}</section>`;
-    if(phase===4) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll / Beobachtung</p><h2>Phase 4: Vertiefte Problembearbeitung dokumentieren</h2>${note('Kriterien für hilfreiche Kritik','sup_p4_kritik')}${note('Anerkannte Stärken / Perspektiven','sup_p4_anerkennung')}${note('Mögliche neue Absprachen','sup_p4_absprachen')}</section>`;
-    if(phase===5) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll / Beobachtung</p><h2>Phase 5: Ergebnisse und Zustimmung sichern</h2><div class="summary-block"><strong>Zwischenergebnisse</strong><br>${typeof miniSummaryHtml==='function'?miniSummaryHtml():''}</div><label>Zustimmung erfolgt?</label><select data-save="sup_p5_zustimmung_status"><option value="">Bitte auswählen</option><option value="Alle stimmen zu">Alle stimmen zu</option><option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option><option value="Keine Zustimmung">Keine Zustimmung</option></select>${note('Rückmeldungen / Zustimmung / offene Punkte','sup_p5_zustimmung')}</section>`;
-    if(phase===6) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll / Beobachtung</p><h2>Phase 6: Praxistauglichkeit dokumentieren</h2>${note('Einschätzung der Praxistauglichkeit','sup_p6_praxistauglichkeit')}${note('Unterstützung durch Schulleitung','sup_p6_unterstuetzung')}${note('Erste konkrete Umsetzungsschritte','sup_p6_umsetzung')}</section>`;
+    if(phase===1) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Phase 1: Erstkontakt dokumentieren</h2><p>Halte nur knapp fest, welche Gesprächsregeln und Bereitschaften vereinbart wurden.</p>${note('Rahmen / Gesprächsregeln / Bereitschaft','sup_p1_rahmen')}</section>`;
+    if(phase===2) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Phase 2: Problembeschreibung dokumentieren</h2><p class="small">Trenne Aussagen nach Rolle und Kategorie. Schreibe neutral und stichpunktartig.</p><div class="role-note-block"><h3>Schulleitung</h3>${note('Problem / Beobachtung','sup_p2_sl_probleme')}${note('Gefühle','sup_p2_sl_gefuehle')}${note('Wünsche','sup_p2_sl_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft A</h3>${note('Problem / Perspektive','sup_p2_a_probleme')}${note('Gefühle','sup_p2_a_gefuehle')}${note('Wünsche','sup_p2_a_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft B</h3>${note('Problem / Perspektive','sup_p2_b_probleme')}${note('Gefühle','sup_p2_b_gefuehle')}${note('Wünsche','sup_p2_b_wuensche')}</div></section>`;
+    if(phase===3) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Phase 3: Ziele dokumentieren</h2>${note('Ziel Schulleitung','sup_p3_ziel_sl')}${note('Ziel Lehrkraft A','sup_p3_ziel_a')}${note('Ziel Lehrkraft B','sup_p3_ziel_b')}${note('Gemeinsamkeiten','sup_p3_gemeinsamkeiten')}${note('Gemeinsame Zielformulierung','sup_p3_gemeinsames_ziel')}</section>`;
+    if(phase===4) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Phase 4: Vertiefte Problembearbeitung dokumentieren</h2>${note('Kriterien für hilfreiche Kritik','sup_p4_kritik')}${note('Anerkannte Stärken / Perspektiven','sup_p4_anerkennung')}${note('Mögliche neue Absprachen','sup_p4_absprachen')}</section>`;
+    if(phase===5) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Phase 5: Ergebnisse und Zustimmung sichern</h2><div class="summary-block"><strong>Zwischenergebnisse</strong><br>${typeof miniSummaryHtml==='function'?miniSummaryHtml():''}</div><label>Zustimmung erfolgt?</label><select data-save="sup_p5_zustimmung_status"><option value="">Bitte auswählen</option><option value="Alle stimmen zu">Alle stimmen zu</option><option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option><option value="Keine Zustimmung">Keine Zustimmung</option></select>${note('Rückmeldungen / Zustimmung / offene Punkte','sup_p5_zustimmung')}</section>`;
+    if(phase===6) return `<section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Phase 6: Praxistauglichkeit dokumentieren</h2>${note('Einschätzung der Praxistauglichkeit','sup_p6_praxistauglichkeit')}${note('Unterstützung durch Schulleitung','sup_p6_unterstuetzung')}${note('Erste konkrete Umsetzungsschritte','sup_p6_umsetzung')}</section>`;
     return '';
   }
   window.initPhase = function(){
@@ -818,6 +818,493 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     }
   };
   try { initPhase = window.initPhase; } catch(_) {}
+  document.addEventListener('DOMContentLoaded',()=>{
+    const role=document.body.dataset.role;
+    if(role){ document.body.classList.add('role-theme-' + role); if(role.indexOf('lehrkraft')===0) document.body.classList.add('role-theme-lehrkraft'); }
+  });
+})();
+
+/* ------------------------------------------------------------
+   FINAL TEXT + PROTOKOLL PATCH: klare Gesprächsführung, Protokoll-Rolle,
+   Laptop-Logik bei 4/5 Personen und Rollenphasen mit vorbereiteten Notizen.
+   ------------------------------------------------------------ */
+(function(){
+  const LABELS_FINAL = {
+    supervisor:'Supervisor*in',
+    schulleitung:'Schulleitung',
+    'lehrkraft-a':'Lehrkraft A',
+    'lehrkraft-b':'Lehrkraft B',
+    protokoll:'Protokoll'
+  };
+  const FILES_FINAL = {
+    supervisor:'rolle-supervisor.html',
+    schulleitung:'rolle-schulleitung.html',
+    'lehrkraft-a':'rolle-lehrkraft-a.html',
+    'lehrkraft-b':'rolle-lehrkraft-b.html',
+    protokoll:'rolle-protokoll.html'
+  };
+  const PARTICIPANTS_KEY_FINAL = 'participants_v2';
+  const PHASE_NAMES_FINAL = {
+    1:'Erstkontakt', 2:'Problembeschreibung', 3:'Zielformulierung', 4:'Vertiefte Problembearbeitung', 5:'Ergebnissicherung', 6:'Reflexionstauglichkeit'
+  };
+
+  try { if (typeof ROLES !== 'undefined') ROLES.protokoll = 'Protokoll'; } catch(_) {}
+
+  function esc(v){
+    if (typeof escapeHtml === 'function') return escapeHtml(v);
+    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function makeId(){ return 'p_' + Date.now().toString(36) + '_' + Math.floor(Math.random()*100000).toString(36); }
+  function localSlug(s){ return (s || '').toString().trim().toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+  function shuffle(arr){ return arr.map(v => [Math.random(), v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+  function roleClass(role){ return 'role-' + String(role || '').replace(/[^a-z0-9-]/g,''); }
+  function setStatus(text, cls){ const s=document.getElementById('assignStatus'); if(s){ s.className=cls||'small'; s.textContent=text; } }
+  function getAssignments(){ try { return (typeof loadObj === 'function') ? loadObj('assignments', {}) : {}; } catch(_) { return {}; } }
+  function hasProtokoll(){ const a=getAssignments(); return !!(a && a.protokoll); }
+  function saveParticipants(list){
+    if(typeof saveObj === 'function') saveObj(PARTICIPANTS_KEY_FINAL, list);
+    if(typeof saveText === 'function') saveText('namesInput', list.map(p=>p.name).join('\n'));
+    const textarea=document.getElementById('namesInput');
+    if(textarea) textarea.value=list.map(p=>p.name).join('\n');
+  }
+  function loadParticipants(){
+    let list=[];
+    try { list = (typeof loadObj === 'function') ? loadObj(PARTICIPANTS_KEY_FINAL, []) : []; } catch(_) { list=[]; }
+    if(Array.isArray(list) && list.length) return list.filter(p=>p && p.name).map(p=>({id:p.id||makeId(), name:String(p.name).trim(), device:p.device||'smartphone'}));
+    const raw = (typeof loadText === 'function') ? loadText('namesInput') : '';
+    return raw.split(/\n|,/).map(s=>s.trim()).filter(Boolean).map(name=>({id:makeId(), name, device:'smartphone'}));
+  }
+  function buildRoleUrl(file){
+    try { return new URL((typeof linkWithState === 'function' ? linkWithState(file) : file), window.location.href).toString(); }
+    catch(e){ return file; }
+  }
+  function renderNameListFinal(list){
+    const ul=document.getElementById('namesList');
+    if(!ul) return;
+    ul.classList.add('device-name-list');
+    ul.innerHTML='';
+    if(!list.length){
+      const li=document.createElement('li');
+      li.className='empty-name-list device-neutral';
+      li.innerHTML='<span class="name-index">–</span><span>Noch keine Namen eingetragen.</span>';
+      ul.appendChild(li);
+      return;
+    }
+    list.forEach((p,index)=>{
+      const li=document.createElement('li');
+      li.className='device-neutral';
+      li.innerHTML=`<span class="name-index">${index+1}</span><span class="participant-name">${esc(p.name)}</span>
+        <select aria-label="Gerät von ${esc(p.name)}">
+          <option value="smartphone"${p.device==='smartphone'?' selected':''}>Smartphone</option>
+          <option value="ipad"${p.device==='ipad'?' selected':''}>iPad</option>
+          <option value="laptop"${p.device==='laptop'?' selected':''}>Laptop</option>
+        </select>
+        <button type="button" class="remove-name-btn" aria-label="${esc(p.name)} entfernen">×</button>`;
+      const select=li.querySelector('select');
+      select.addEventListener('change',()=>{
+        p.device=select.value;
+        saveParticipants(list);
+        renderNameListFinal(list);
+        setStatus('Geräteangabe wurde aktualisiert. Bitte Rollen bei Bedarf neu zuweisen.','notice');
+      });
+      li.querySelector('button').addEventListener('click',()=>{
+        list.splice(index,1);
+        saveParticipants(list);
+        renderNameListFinal(list);
+        setStatus('Name wurde entfernt. Bitte die Rollen neu zuweisen.','notice');
+      });
+      ul.appendChild(li);
+    });
+  }
+  function assignRolesFinal(list){
+    const clean = list.filter(p=>p && p.name);
+    if(clean.length >= 5){
+      const laptops = shuffle(clean.filter(p=>p.device === 'laptop'));
+      const protokoll = laptops[0] || shuffle(clean)[0];
+      const rest = shuffle(clean.filter(p=>p.id !== protokoll.id));
+      return {
+        supervisor: rest[0] && rest[0].name,
+        schulleitung: rest[1] && rest[1].name,
+        'lehrkraft-a': rest[2] && rest[2].name,
+        'lehrkraft-b': rest[3] && rest[3].name,
+        protokoll: protokoll && protokoll.name
+      };
+    }
+    const laptops = shuffle(clean.filter(p=>p.device === 'laptop'));
+    const supervisor = laptops[0] || shuffle(clean)[0];
+    const rest = shuffle(clean.filter(p=>p.id !== supervisor.id));
+    return {
+      supervisor: supervisor && supervisor.name,
+      schulleitung: rest[0] && rest[0].name,
+      'lehrkraft-a': rest[1] && rest[1].name,
+      'lehrkraft-b': rest[2] && rest[2].name
+    };
+  }
+  function renderAssignmentsFinal(assignments){
+    const assignedBox=document.getElementById('assignedBox');
+    const cardsBox=document.getElementById('roleCards');
+    const roles=['supervisor','schulleitung','lehrkraft-a','lehrkraft-b'];
+    if(assignments && assignments.protokoll) roles.push('protokoll');
+    if(assignedBox){
+      assignedBox.innerHTML='';
+      roles.forEach(role=>{
+        if(!assignments[role]) return;
+        const li=document.createElement('li');
+        li.className=roleClass(role);
+        li.innerHTML=`<span class="role-pill ${roleClass(role)}">${LABELS_FINAL[role]}</span><strong>${esc(assignments[role])}</strong>`;
+        assignedBox.appendChild(li);
+      });
+    }
+    if(cardsBox){
+      cardsBox.innerHTML='';
+      roles.forEach(role=>{
+        const file=FILES_FINAL[role];
+        const href=`${file}?${typeof currentQueryString==='function'?currentQueryString():''}`;
+        const url=buildRoleUrl(file);
+        const card=document.createElement('div');
+        card.className=`card compact role-qr-card ${roleClass(role)}`;
+        card.innerHTML=`<div class="role-card-head"><span class="role-pill ${roleClass(role)}">${LABELS_FINAL[role]}</span><span class="assigned-name">${esc(assignments[role] || 'nicht zugewiesen')}</span></div>
+          <p class="small role-card-help">Kachel öffnen oder QR-Code mit dem Handy scannen.</p>
+          <div class="role-card-action"><a class="button" href="${href}">Rollenkarte öffnen</a></div>
+          <div class="role-card-qr"><img class="qr" alt="QR-Code für ${LABELS_FINAL[role]}" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}"></div>`;
+        cardsBox.appendChild(card);
+      });
+      cardsBox.style.display='grid';
+    }
+  }
+  window.initRoleAssignment = function(){
+    if(typeof initCommon === 'function') initCommon();
+    const input=document.getElementById('newNameInput');
+    const addBtn=document.getElementById('addNameBtn');
+    const assignBtn=document.getElementById('assignBtn');
+    let participants=loadParticipants();
+    saveParticipants(participants);
+    renderNameListFinal(participants);
+    function addName(){
+      const value=(input && input.value || '').trim();
+      if(!value){ setStatus('Bitte zuerst einen Namen eintragen.','warning'); return; }
+      participants.push({id:makeId(), name:value, device:'smartphone'});
+      saveParticipants(participants);
+      renderNameListFinal(participants);
+      if(input){ input.value=''; input.focus(); }
+      setStatus('Name wurde hinzugefügt. Wähle rechts daneben das passende Gerät aus.','success');
+    }
+    if(addBtn) addBtn.onclick=addName;
+    if(input) input.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); addName(); } };
+    if(assignBtn) assignBtn.onclick=()=>{
+      participants=loadParticipants();
+      if(participants.length < 4){ setStatus('Bitte mindestens 4 Namen eintragen.','warning'); return; }
+      const groupSlug=participants.map(p=>localSlug(p.name)).filter(Boolean).join('-').slice(0,80) || ('gruppe-' + Date.now().toString(36));
+      localStorage.setItem('sv_current_group', groupSlug);
+      saveParticipants(participants);
+      const assignments=assignRolesFinal(participants);
+      if(typeof saveObj === 'function') saveObj('assignments', assignments);
+      const hasLaptop=participants.some(p=>p.device==='laptop');
+      let extra='';
+      if(participants.length >= 5){
+        extra = hasLaptop ? ' Bei 5 Personen wurde die Protokoll-Rolle aus den Personen mit Laptop ausgewählt.' : ' Es wurde kein Laptop angegeben; die Protokoll-Rolle wurde zufällig bestimmt.';
+      } else {
+        extra = hasLaptop ? ' Bei 4 Personen wurde Supervisor*in aus den Personen mit Laptop ausgewählt.' : ' Es wurde kein Laptop angegeben; Supervisor*in wurde zufällig bestimmt.';
+      }
+      setStatus('Rollen wurden zugeteilt.' + extra, 'success');
+      renderAssignmentsFinal(assignments);
+    };
+    const existing=(typeof loadObj === 'function') ? loadObj('assignments', null) : null;
+    if(existing && Object.keys(existing).length) renderAssignmentsFinal(existing);
+  };
+  try { initRoleAssignment = window.initRoleAssignment; } catch(_) {}
+
+  const BASE_ROLECARDS_FINAL = {
+    supervisor: {
+      title:'Rollenkarte: Supervisor*in',
+      intro:'Du leitest das Gespräch. Deine Aufgabe ist nicht, eine schnelle Lösung vorzugeben. Du strukturierst die Supervision so, dass alle Beteiligten zu Wort kommen und am Ende eine tragfähige Vereinbarung entsteht.',
+      bullets:['Eröffne das Gespräch ruhig und klar.', 'Achte auf Ich-Aussagen, konkrete Beobachtungen und respektvolle Sprache.', 'Führe die Fragen entlang der Kategorien: Beobachtung/Problem, Gefühle, Wünsche, Ziele, Absprachen und Praxistauglichkeit.', 'Bei 5 Personen dokumentiert die Rolle Protokoll. Deine Moderationskarten sind so aufgebaut, dass diese Person die Felder gut füllen kann.'],
+      caseFocus:'Du hältst den Prozess zusammen und sorgst dafür, dass der Konflikt im Teamteaching nicht weiter eskaliert.'
+    },
+    schulleitung: {
+      title:'Rollenkarte: Schulleitung',
+      intro:'Du hast die Supervision angeregt, weil die Uneinigkeit im Teamteaching die Klasse belastet und nicht mehr ausreichend direkt geklärt werden konnte.',
+      bullets:['Beschreibe, was du beobachtet hast.', 'Benenne, was die Situation bei dir auslöst.', 'Formuliere, was du dir vom Teamteaching wünschst.', 'Prüfe am Ende, welche Unterstützung du als Schulleitung anbieten kannst.'],
+      caseFocus:'Dein Fokus liegt auf Stabilität für die Klasse, professioneller Zusammenarbeit und einer umsetzbaren Vereinbarung.'
+    },
+    'lehrkraft-a': {
+      title:'Rollenkarte: Lehrkraft A – erfahrene Teamteaching-Lehrkraft',
+      intro:'Du arbeitest schon länger im Teamteaching und setzt auf klare, strukturierende Interventionen. Aus deiner Sicht gibt dieses Vorgehen der Klasse Sicherheit.',
+      bullets:['Du fühlst dich irritiert, wenn vor der Klasse anders gehandelt wird.', 'Du möchtest, dass Absprachen verlässlich gelten.', 'Du befürchtest, dass zu viel spontanes Ausprobieren die Klasse verunsichert.', 'Du brauchst Klarheit darüber, wie ihr als Team geschlossen auftretet.'],
+      caseFocus:'Dein Fokus liegt auf Verlässlichkeit, Klarheit und pädagogischer Handlungsfähigkeit.'
+    },
+    'lehrkraft-b': {
+      title:'Rollenkarte: Lehrkraft B – neue Teamteaching-Lehrkraft',
+      intro:'Du bist neu im Team und möchtest stärker beziehungs- und ressourcenorientiert arbeiten. Du möchtest neue Wege erproben, ohne dauerhaft gegen die Kollegin oder den Kollegen zu arbeiten.',
+      bullets:['Du möchtest Eskalationen früher vorbeugen.', 'Du fühlst dich mit neuen Ideen nicht immer ernst genommen.', 'Du möchtest Veränderung, brauchst dafür aber gemeinsame Absprachen.', 'Du willst klären, wie neue Methoden im Team eingeführt werden können.'],
+      caseFocus:'Dein Fokus liegt auf Weiterentwicklung, Beziehungsgestaltung und abgestimmtem Handeln.'
+    },
+    protokoll: {
+      title:'Rollenkarte: Protokoll',
+      intro:'Du dokumentierst die Ergebnisse. Du moderierst nicht. Du hörst genau zu und hältst die Aussagen so fest, dass die Gruppe am Ende damit weiterarbeiten kann.',
+      bullets:['Trenne die Kategorien sauber: Problem/Beobachtung, Gefühle, Wünsche, Ziele, Absprachen und Praxistauglichkeit.', 'Schreibe neutral und kurz. Keine Bewertungen.', 'Wenn etwas unklar ist, bitte um eine kurze Wiederholung oder Zusammenfassung.', 'Am Ende prüfst du die Zusammenfassung, sendest die Ergebnisse ab und kannst den Gruppenlink teilen.'],
+      caseFocus:'Dein Fokus liegt auf klarer, neutraler und vollständiger Ergebnissicherung.'
+    }
+  };
+  window.initRoleCard = function(){
+    if(typeof initCommon === 'function') initCommon();
+    const role=(typeof getPageRole === 'function' ? getPageRole() : document.body.dataset.role);
+    const data=BASE_ROLECARDS_FINAL[role];
+    const target=document.getElementById('roleCard');
+    if(!data || !target) return;
+    const assigned=(typeof roleName === 'function') ? roleName(role) : '';
+    const caseText=(typeof CASE_TEXT !== 'undefined' ? CASE_TEXT : 'In einer ESE-Klasse belasten uneinheitliche Vorgehensweisen im Teamteaching die Stabilität der Lerngruppe.');
+    const question=(typeof SUPERVISION_QUESTION !== 'undefined' ? SUPERVISION_QUESTION : 'Wie kann das Team ein gemeinsames, verlässliches Vorgehen entwickeln?');
+    target.innerHTML=`<div class="card highlight"><p class="role-pill ${roleClass(role)}">${LABELS_FINAL[role] || role}</p><h2>${esc(data.title)}</h2><p><strong>Zugewiesene Person:</strong> ${esc(assigned || 'nicht gesetzt')}</p><p>${esc(data.intro)}</p><h3>Deine Aufgabe</h3><ul class="tight">${data.bullets.map(b=>`<li>${esc(b)}</li>`).join('')}</ul><h3>Fokus im Fall</h3><p>${esc(data.caseFocus)}</p></div><div class="card"><h2>Fallgrundlage</h2><div class="readonly-box">${esc(caseText)}</div><h3>Supervisionsfrage</h3><div class="notice">${esc(question)}</div></div>`;
+    const next=document.getElementById('nextPrep');
+    if(next){
+      let flowFile='ablauf-supervisor.html';
+      if(role==='schulleitung') flowFile='ablauf-schulleitung.html';
+      if(role==='lehrkraft-a' || role==='lehrkraft-b') flowFile='ablauf-lehrkraft.html';
+      if(role==='protokoll') flowFile='ablauf-protokoll.html';
+      const query=typeof currentQueryString==='function' ? currentQueryString() : '';
+      next.textContent='Weiter: Ablauf ansehen';
+      next.href=`${flowFile}?role=${encodeURIComponent(role)}${query?'&'+query:''}`;
+    }
+  };
+  try { initRoleCard = window.initRoleCard; } catch(_) {}
+
+  const oldSetupSavingFinal = (typeof setupSaving === 'function') ? setupSaving : null;
+  window.prepFields = function(role){
+    if(role === 'supervisor') return [
+      {id:'ziel', label:'Welches Ziel verfolgst du mit dieser Supervision?', hint:'Formuliere kurz, was das Gespräch leisten soll. Beispiel: Die Beteiligten sollen ein gemeinsames, verlässliches Vorgehen im Teamteaching vereinbaren.'}
+    ];
+    if(role === 'protokoll') return [
+      {id:'auftrag', label:'Worauf achtest du beim Protokollieren?', hint:'Schreibe neutral, kurz und getrennt nach Kategorien.'},
+      {id:'kategorien', label:'Welche Kategorien musst du sauber trennen?', hint:'Problem/Beobachtung, Gefühle, Wünsche, Ziele, Absprachen, Zustimmung und Praxistauglichkeit.'},
+      {id:'nachfragen', label:'Wann fragst du kurz nach?', hint:'Wenn eine Aussage unklar ist oder nicht eindeutig zugeordnet werden kann.'}
+    ];
+    if(role === 'schulleitung') return [
+      {id:'beobachtung', label:'Fasse deine Beobachtung kurz zusammen.', hint:'Was hast du im Teamteaching wahrgenommen? Was wirkt für die Klasse uneinheitlich oder belastend?'},
+      {id:'gefuehle', label:'Welche Gefühle hast du in der Situation?', hint:'Zum Beispiel Sorge, Ärger, Druck, Unsicherheit oder Verantwortungsgefühl.'},
+      {id:'wuensche', label:'Welche Wünsche hast du an das Teamteaching?', hint:'Was sollen die Lehrkräfte klären oder verändern?'},
+      {id:'loesung', label:'Erste Gedanken zu einer möglichen Unterstützung', hint:'Welche Rahmenbedingungen könntest du als Schulleitung anbieten?'}
+    ];
+    if(role === 'lehrkraft-a' || role === 'lehrkraft-b') return [
+      {id:'perspektive', label:'Fasse deine Perspektive kurz zusammen.', hint:'Was ist aus deiner Rolle das zentrale Problem?'},
+      {id:'gefuehle', label:'Welche Gefühle hast du in der Situation?', hint:'Was löst der Konflikt bei dir aus?'},
+      {id:'wuensche', label:'Welche Wünsche hast du an die anderen Beteiligten?', hint:'Was brauchst du für bessere Zusammenarbeit im Teamteaching?'},
+      {id:'ziele', label:'Gedanken zu konkreten Zielformulierungen', hint:'Was sollte nach der Supervision klarer oder anders sein?'}
+    ];
+    return [];
+  };
+  try { prepFields = window.prepFields; } catch(_) {}
+
+  const FLOW_FINAL = {
+    supervisor4:[
+      ['Gespräch eröffnen','Du begrüßt die Gruppe, benennst den Anlass neutral und klärst Gesprächsregeln.'],
+      ['Perspektiven sammeln','Du fragst nacheinander nach Beobachtungen, Gefühlen und Wünschen. Deine Fragen führen direkt zu den Feldern, die du festhalten musst.'],
+      ['Ziele klären','Du fragst nach individuellen Zielen und leitest daraus eine gemeinsame Zielformulierung ab.'],
+      ['Problem vertiefen','Du leitest das Gespräch zu hilfreicher Kritik, Anerkennung und konkreten Absprachen.'],
+      ['Ergebnisse sichern','Du fasst Probleme, Wünsche, Zielvereinbarung und Absprachen zusammen und fragst nach Zustimmung.'],
+      ['Praxistauglichkeit prüfen','Du klärst mit der Schulleitung, ob die Vereinbarung im Alltag umsetzbar ist und welche Unterstützung folgt.']
+    ],
+    supervisor5:[
+      ['Gespräch eröffnen','Du moderierst das Gespräch ruhig und klar. Deine Moderationskarten sind so aufgebaut, dass das Protokoll die notwendigen Felder gut ausfüllen kann.'],
+      ['Perspektiven sammeln','Du fragst nacheinander nach Beobachtungen, Gefühlen und Wünschen. Sprich langsam genug, damit die Ergebnisse festgehalten werden können.'],
+      ['Ziele klären','Du fragst nach individuellen Zielen und bündelst Gemeinsamkeiten zu einer gemeinsamen Zielformulierung.'],
+      ['Problem vertiefen','Du leitest das Gespräch über hilfreiche Kritik, Anerkennung und konkrete Absprachen.'],
+      ['Zustimmung prüfen','Du liest zentrale Ergebnisse vor und fragst, ob die Vereinbarung mitgetragen wird.'],
+      ['Praxistauglichkeit prüfen','Du klärst mit der Schulleitung, welche Unterstützung und ersten Umsetzungsschritte realistisch sind.']
+    ],
+    protokoll:[
+      ['Auftrag klären','Du dokumentierst. Du moderierst nicht und bewertest keine Aussage.'],
+      ['Kategorien beachten','Trenne Beobachtung/Problem, Gefühle, Wünsche, Ziele, Absprachen und Praxistauglichkeit.'],
+      ['Kurz und neutral schreiben','Formuliere stichpunktartig. Wenn etwas unklar ist, bitte um Wiederholung.'],
+      ['Ziele sauber sichern','Achte darauf, dass Einzelziele, Gemeinsamkeiten und gemeinsame Zielvereinbarung klar notiert sind.'],
+      ['Absprachen und Zustimmung sichern','Halte fest, was vereinbart wird und ob Zustimmung erfolgt.'],
+      ['Ergebnisse absenden','Am Ende prüfst du die Zusammenfassung, sendest sie ab und kannst den Gruppenlink teilen.']
+    ],
+    schulleitung:[
+      ['Anlass klären','Überlege, warum du die Supervision angeregt hast und was du beobachtet hast.'],
+      ['Perspektive vorbereiten','Trenne Beobachtung, Gefühl und Wunsch. So kannst du im Gespräch klar und sachlich sprechen.'],
+      ['Ziel formulieren','Überlege, welche Stabilität die Klasse und welche Zusammenarbeit das Team braucht.'],
+      ['Unterstützung prüfen','Überlege, welche organisatorische Unterstützung du anbieten kannst.'],
+      ['Zustimmung prüfen','Prüfe, ob du die gemeinsame Vereinbarung mittragen und unterstützen kannst.']
+    ],
+    lehrkraft:[
+      ['Eigene Perspektive klären','Überlege, was für dich das zentrale Problem im Teamteaching ist.'],
+      ['Beobachtung statt Vorwurf','Bereite konkrete Situationen vor und vermeide Bewertungen über die andere Person.'],
+      ['Gefühle und Wünsche formulieren','Benenne, was die Situation bei dir auslöst und was du brauchst.'],
+      ['Ziel formulieren','Überlege, was nach der Supervision konkret anders laufen sollte.'],
+      ['Vereinbarung prüfen','Prüfe am Ende, ob du die gemeinsame Absprache mittragen kannst.']
+    ]
+  };
+  window.initFlow = function(){
+    if(typeof initCommon === 'function') initCommon();
+    const params=new URLSearchParams(location.search);
+    let role=params.get('role') || document.body.dataset.role || '';
+    const profile=document.body.dataset.flowProfile || (role==='protokoll'?'protokoll':role==='schulleitung'?'schulleitung':role==='supervisor'?'supervisor':((role==='lehrkraft-a'||role==='lehrkraft-b')?'lehrkraft':'general'));
+    let steps=FLOW_FINAL.lehrkraft;
+    if(profile==='supervisor') steps=hasProtokoll()?FLOW_FINAL.supervisor5:FLOW_FINAL.supervisor4;
+    if(profile==='protokoll') steps=FLOW_FINAL.protokoll;
+    if(profile==='schulleitung') steps=FLOW_FINAL.schulleitung;
+    if(profile==='lehrkraft') steps=FLOW_FINAL.lehrkraft;
+    const box=document.getElementById('flowSteps');
+    const next=document.getElementById('flowNext');
+    if(next){
+      let targetRole=role || profile;
+      if(profile==='lehrkraft' && !targetRole) targetRole='lehrkraft-a';
+      next.href=(typeof linkWithState==='function') ? linkWithState(`gedanken-${targetRole}.html`) : `gedanken-${targetRole}.html`;
+      next.classList.add('disabled');
+      next.setAttribute('aria-disabled','true');
+    }
+    if(!box) return;
+    const storageKey=(typeof key==='function') ? key('flow_visible_' + (role||profile) + '_final') : 'flow_visible_' + (role||profile) + '_final';
+    let visible=Number(localStorage.getItem(storageKey) || '1');
+    visible=Math.max(1, Math.min(steps.length, visible));
+    function blockNext(event){ if(visible < steps.length) event.preventDefault(); }
+    function setNextState(){
+      if(!next) return;
+      const complete=visible >= steps.length;
+      next.classList.toggle('disabled', !complete);
+      next.setAttribute('aria-disabled', complete?'false':'true');
+      next.textContent=complete?'Weiter: Mach dir Gedanken':'Weiter wird nach allen Kacheln aktiviert';
+      next.onclick=complete?null:blockNext;
+    }
+    function render(){
+      box.innerHTML='';
+      steps.slice(0, visible).forEach((step, idx)=>{
+        const read=idx < visible-1 || visible>=steps.length;
+        const isLastVisible=idx===visible-1;
+        const card=document.createElement('article');
+        card.className='card flow-step is-visible' + (read?' is-read':'');
+        card.innerHTML=`<div class="flow-step-head"><span class="step-badge">${idx+1}</span><h3>${esc(step[0])}</h3></div><p>${esc(step[1])}</p>${(!read && isLastVisible)?'<button type="button" class="secondary flow-read-btn">Gelesen</button>':''}`;
+        const btn=card.querySelector('.flow-read-btn');
+        if(btn) btn.onclick=()=>{ visible=Math.min(steps.length, visible+1); localStorage.setItem(storageKey,String(visible)); render(); };
+        box.appendChild(card);
+      });
+      setNextState();
+    }
+    render();
+  };
+  try { initFlow = window.initFlow; } catch(_) {}
+
+  function requiredNote(label, saveKey, hint){
+    return `<div class="required-field-wrap"><div class="required-label">Pflichtfeld!</div><label>${esc(label)}</label>${hint?`<p class="small">${esc(hint)}</p>`:''}<textarea data-save="${esc(saveKey)}"></textarea></div>`;
+  }
+  function readText(k){ try { return (typeof loadText === 'function') ? loadText(k) : ''; } catch(_) { return ''; } }
+  function prepItems(role){
+    const fields = window.prepFields ? window.prepFields(role) : [];
+    return fields.map(f => ({label:f.label, value: readText(`prep_${role}_${f.id}`)}));
+  }
+  function prepCard(role, title){
+    const items = prepItems(role);
+    if(!items.length) return '';
+    return `<section class="card"><h2>${esc(title || 'Deine vorbereiteten Notizen')}</h2>${items.map(item=>`<h3>${esc(item.label)}</h3><div class="readonly-box">${esc(item.value || 'Noch keine Notiz gespeichert.')}</div>`).join('')}</section>`;
+  }
+  function scriptBlock(lines){ return `<div class="script-card"><h3>Mögliche Formulierungen</h3><ul class="tight">${lines.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`; }
+  function moderatorCard(phase){
+    const cards = {
+      1:{ title:'Erstkontakt', aim:'Einen sicheren Gesprächsrahmen herstellen.', lines:[
+        '„Willkommen. Ich freue mich, dass Sie alle da sind und sich Zeit für die Klärung nehmen.“',
+        '„Die Schulleitung hat mich hinzugezogen, weil es im Teamteaching zu Uneinigkeiten gekommen ist, die inzwischen die Zusammenarbeit und die Stabilität der Klasse belasten.“',
+        '„Heute geht es nicht um Schuld, sondern darum, die unterschiedlichen Perspektiven zu verstehen und zu einer gemeinsamen Arbeitsgrundlage zu kommen.“',
+        '„Sind Sie bereit, einander zuzuhören und an einer gemeinsamen Klärung mitzuwirken?“',
+        '„Wir arbeiten mit Ich-Aussagen, konkreten Beobachtungen und respektvoller Sprache.“'
+      ]},
+      2:{ title:'Problembeschreibung', aim:'Beobachtungen, Gefühle und Wünsche getrennt sammeln.', lines:[
+        '„Ich würde zunächst gerne von der Schulleitung hören: Was haben Sie beobachtet?“',
+        '„Welche Gefühle oder Sorgen löst die Situation bei Ihnen aus?“',
+        '„Welche Wünsche haben Sie an das Teamteaching?“',
+        '„Lehrkraft A, wie stellt sich die Situation aus Ihrer Perspektive dar? Was ist für Sie das zentrale Problem?“',
+        '„Welche Gefühle sind damit verbunden, und was wünschen Sie sich konkret?“',
+        '„Lehrkraft B, ich stelle Ihnen dieselben Fragen: Perspektive, Gefühle und Wünsche.“',
+        '„Ich fasse kurz zusammen, was ich gehört habe. Bitte korrigieren Sie mich, wenn etwas nicht stimmt.“'
+      ]},
+      3:{ title:'Zielformulierung', aim:'Aus den Einzelzielen eine gemeinsame Zielvereinbarung entwickeln.', lines:[
+        '„Ich möchte jetzt von jeder Person ein Ziel hören: Was soll nach dieser Supervision klarer oder anders sein?“',
+        '„Bitte formulieren Sie das Ziel möglichst konkret und positiv.“',
+        '„Welche Gemeinsamkeiten hören wir in diesen Zielen?“',
+        '„Welche gemeinsame Zielformulierung könnten alle mittragen?“',
+        '„Ich halte fest: Unser gemeinsames Ziel lautet … Stimmen Sie dem so zu?“'
+      ]},
+      4:{ title:'Vertiefte Problembearbeitung', aim:'Hilfreiche Kritik und konkrete Absprachen entwickeln.', lines:[
+        '„Wir schauen jetzt darauf, wie Kritik im Teamteaching hilfreich geäußert werden kann.“',
+        '„Was macht Kritik so, dass sie nicht als Angriff ankommt?“',
+        '„Welche Regeln helfen: unter vier Augen, konkret, zeitnah, Ich-Botschaft, Bezug auf die Situation?“',
+        '„Nennen Sie nun bitte an einer anderen Perspektive einen Punkt, den Sie nachvollziehen oder hilfreich finden.“',
+        '„Welche konkrete Absprache hilft dem Team ab morgen?“'
+      ]},
+      5:{ title:'Ergebnissicherung', aim:'Ergebnisse bündeln und Zustimmung prüfen.', lines:[
+        '„Ich fasse die zentralen Punkte zusammen: Probleme, Gefühle, Wünsche, Ziele und Absprachen.“',
+        '„Die gemeinsame Zielvereinbarung lautet …“',
+        '„Gibt es Korrekturen oder Ergänzungen?“',
+        '„Können alle diese Vereinbarung mittragen?“',
+        '„Sind alle bereit, an der Umsetzung mitzuwirken?“'
+      ]},
+      6:{ title:'Reflexionstauglichkeit', aim:'Umsetzbarkeit und Unterstützung durch die Schulleitung prüfen.', lines:[
+        '„Ich möchte zum Schluss mit der Schulleitung prüfen, ob die Vereinbarung im Schulalltag realistisch umsetzbar ist.“',
+        '„Welche Unterstützung können Sie anbieten?“',
+        '„Was ist der erste konkrete Schritt nach der Supervision?“',
+        '„Woran merken wir, dass sich die Situation verbessert?“'
+      ]}
+    };
+    const c=cards[phase] || cards[1];
+    const note = hasProtokoll() ? '<div class="handoff-note"><strong>Hinweis:</strong> Die Fragen sind an den Feldern orientiert, die das Protokoll dokumentiert. Sprich langsam und fasse Zwischenergebnisse kurz zusammen.</div>' : '';
+    return `<section class="card highlight moderation-only-card"><h2>Moderationskarte: ${esc(c.title)}</h2><p><strong>Ziel:</strong> ${esc(c.aim)}</p>${scriptBlock(c.lines)}${note}</section>`;
+  }
+  function protocolFields(phase){
+    if(phase===1) return `<section class="card"><h2>Dokumentation</h2>${requiredNote('Rahmen / Gesprächsregeln / Bereitschaft','sup_p1_rahmen','Was wurde als Gesprächsrahmen vereinbart?')}</section>`;
+    if(phase===2) return `<section class="card"><h2>Dokumentation: Problembeschreibung</h2><p class="small">Trenne Aussagen nach Rolle und Kategorie. Schreibe neutral und stichpunktartig.</p><div class="role-note-block"><h3>Schulleitung</h3>${requiredNote('Problem / Beobachtung','sup_p2_sl_probleme')}${requiredNote('Gefühle','sup_p2_sl_gefuehle')}${requiredNote('Wünsche','sup_p2_sl_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft A</h3>${requiredNote('Problem / Perspektive','sup_p2_a_probleme')}${requiredNote('Gefühle','sup_p2_a_gefuehle')}${requiredNote('Wünsche','sup_p2_a_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft B</h3>${requiredNote('Problem / Perspektive','sup_p2_b_probleme')}${requiredNote('Gefühle','sup_p2_b_gefuehle')}${requiredNote('Wünsche','sup_p2_b_wuensche')}</div></section>`;
+    if(phase===3) return `<section class="card"><h2>Dokumentation: Ziele</h2>${requiredNote('Ziel Schulleitung','sup_p3_ziel_sl')}${requiredNote('Ziel Lehrkraft A','sup_p3_ziel_a')}${requiredNote('Ziel Lehrkraft B','sup_p3_ziel_b')}${requiredNote('Gemeinsamkeiten','sup_p3_gemeinsamkeiten')}${requiredNote('Gemeinsame Zielformulierung','sup_p3_gemeinsames_ziel')}</section>`;
+    if(phase===4) return `<section class="card"><h2>Dokumentation: Vertiefte Bearbeitung</h2>${requiredNote('Kriterien für hilfreiche Kritik','sup_p4_kritik')}${requiredNote('Anerkannte Stärken / nachvollziehbare Perspektiven','sup_p4_anerkennung')}${requiredNote('Absprachen zum weiteren Vorgehen','sup_p4_absprachen')}</section>`;
+    if(phase===5) return `<section class="card"><h2>Dokumentation: Ergebnissicherung</h2><div class="summary-block"><strong>Zwischenergebnisse</strong><br>${typeof miniSummaryHtml==='function'?miniSummaryHtml():''}</div><label>Zustimmung erfolgt?</label><select data-save="sup_p5_zustimmung_status"><option value="">Bitte auswählen</option><option value="Alle stimmen zu">Alle stimmen zu</option><option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option><option value="Keine Zustimmung">Keine Zustimmung</option></select>${requiredNote('Rückmeldungen / Zustimmung / offene Punkte','sup_p5_zustimmung')}</section>`;
+    if(phase===6) return `<section class="card"><h2>Dokumentation: Praxistauglichkeit</h2>${requiredNote('Einschätzung der Praxistauglichkeit','sup_p6_praxistauglichkeit')}${requiredNote('Unterstützung durch Schulleitung','sup_p6_unterstuetzung')}${requiredNote('Erste konkrete Umsetzungsschritte','sup_p6_umsetzung')}</section>`;
+    return '';
+  }
+  function supervisorFullPhase(phase){
+    return `<div class="two-col">${moderatorCard(phase)}${protocolFields(phase)}</div>`;
+  }
+  function protokollOnlyPhase(phase){
+    return `<div class="two-col"><section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Deine Aufgabe in Phase ${phase}</h2><p>Höre genau zu und fülle die Dokumentationsfelder. Du moderierst nicht. Frage nur kurz nach, wenn eine Aussage unklar ist.</p></section>${protocolFields(phase)}</div>`;
+  }
+  function participantPhaseFinal(role, phase){
+    const roleLabel=LABELS_FINAL[role] || role;
+    if(phase===1) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(roleLabel)}</p><h2>Gesprächsstart</h2><p>Höre der Supervisor*in zu. Achte auf Gesprächsregeln und darauf, ob du bereit bist, deine Perspektive einzubringen und die anderen Perspektiven zunächst anzuhören.</p></section>${prepCard(role,'Deine vorbereiteten Gedanken')}`;
+    if(phase===2) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(roleLabel)}</p><h2>Problembeschreibung</h2><p>Wenn du das Wort bekommst, sprich entlang deiner vorbereiteten Notizen: Beobachtung oder Perspektive, Gefühle und Wünsche. Bleibe konkret und vermeide Vorwürfe.</p></section>${prepCard(role,'Notizen für deine Wortmeldung')}`;
+    if(phase===3) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(roleLabel)}</p><h2>Zielformulierung</h2><p>Formuliere ein Ziel aus deiner Rolle. Es soll konkret, erreichbar und auf Zusammenarbeit bezogen sein.</p><p class="notice">Satzanfang: „Mein Ziel wäre, dass …“</p><label>Meine Zielformulierung</label><textarea data-save="participant_${esc(role)}_phase3_ziel"></textarea></section>${prepCard(role,'Vorbereitete Ziele und Wünsche')}`;
+    if(phase===4) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(roleLabel)}</p><h2>Vertiefte Problembearbeitung</h2><p>Beteilige dich am Gespräch über hilfreiche Kritik. Formuliere Kritik situativ, konkret und nicht persönlich. Nenne in der Anerkennungsrunde mindestens einen Punkt, den du an einer anderen Perspektive nachvollziehen kannst.</p></section>${prepCard(role,'Wünsche und Ziele als Orientierung')}`;
+    if(phase===5) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(roleLabel)}</p><h2>Ergebnissicherung</h2><p>Höre die Zusammenfassung. Prüfe, ob deine Perspektive, Gefühle, Wünsche und Ziele korrekt aufgenommen wurden. Sage klar, ob du die Vereinbarung mittragen kannst.</p></section>${prepCard(role,'Deine Notizen zum Abgleichen')}`;
+    if(phase===6 && role==='schulleitung') return `<section class="card highlight"><p class="role-pill role-schulleitung">Schulleitung</p><h2>Praxistauglichkeit prüfen</h2><p>Prüfe mit der Supervisor*in, ob die Vereinbarung im Schulalltag realistisch ist. Benenne, welche Unterstützung du anbieten kannst und was der erste konkrete Schritt ist.</p></section>${prepCard(role,'Vorbereitete Unterstützungsideen')}`;
+    if(phase===6) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(roleLabel)}</p><h2>Abschluss</h2><p>Die Praxistauglichkeit wird vor allem mit der Schulleitung geprüft. Nutze die Zeit, um zu überlegen, was du aus dem Gespräch mitnimmst und welchen ersten Schritt du selbst gehen kannst.</p></section>${prepCard(role,'Deine wichtigsten Punkte')}`;
+    return '';
+  }
+  window.initPhase = function(){
+    if(typeof initCommon === 'function') initCommon();
+    const role = (typeof getPageRole === 'function') ? getPageRole() : document.body.dataset.role;
+    const phase = (typeof getPhase === 'function') ? getPhase() : Number(document.body.dataset.phase || '0');
+    if(typeof renderPhaseBar === 'function') renderPhaseBar(phase);
+    const title=document.getElementById('phaseTitle');
+    if(title) title.textContent = `Phase ${phase}: ${PHASE_NAMES_FINAL[phase] || ''}`;
+    const content=document.getElementById('phaseContent');
+    if(!content) return;
+    if(role==='protokoll') content.innerHTML=protokollOnlyPhase(phase);
+    else if(role==='supervisor' && hasProtokoll()) content.innerHTML=moderatorCard(phase);
+    else if(role==='supervisor') content.innerHTML=supervisorFullPhase(phase);
+    else content.innerHTML=participantPhaseFinal(role, phase);
+    if(oldSetupSavingFinal) oldSetupSavingFinal();
+    const next=document.getElementById('nextPhase');
+    if(next){
+      if(phase < 6){
+        next.href = (typeof linkWithState === 'function') ? linkWithState(`phase${phase+1}-${role}.html`) : `phase${phase+1}-${role}.html`;
+        next.textContent = `Bereit für Phase ${phase+1}`;
+      } else {
+        let target='abschluss.html';
+        if(role==='protokoll') target='zusammenfassung-protokoll.html';
+        else if(role==='supervisor' && !hasProtokoll()) target='zusammenfassung.html';
+        next.href = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        next.textContent = (target.indexOf('zusammenfassung')>=0) ? 'Ergebnisse zusammenfassen' : 'Abschluss';
+      }
+    }
+  };
+  try { initPhase = window.initPhase; } catch(_) {}
+
   document.addEventListener('DOMContentLoaded',()=>{
     const role=document.body.dataset.role;
     if(role){ document.body.classList.add('role-theme-' + role); if(role.indexOf('lehrkraft')===0) document.body.classList.add('role-theme-lehrkraft'); }

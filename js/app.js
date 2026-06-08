@@ -6990,3 +6990,156 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     }, 50);
   });
 })();
+
+/* ------------------------------------------------------------
+   MOBILE PRESENTATION LOADER + LANDSCAPE PATCH v2
+   ------------------------------------------------------------ */
+(function(){
+  function isPresentationPage(){ return document.body && document.body.dataset && document.body.dataset.mode === 'presentation'; }
+  function isMobileLike(){ return window.matchMedia('(max-width: 980px), (pointer: coarse)').matches; }
+  function isPortrait(){ return window.matchMedia('(orientation: portrait)').matches; }
+
+  function ensurePresentationLoadingOverlay(){
+    if (!isPresentationPage()) return null;
+    let overlay = document.getElementById('presentationLoadingOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'presentationLoadingOverlay';
+      overlay.className = 'presentation-loading-overlay';
+      overlay.innerHTML = '<div class="presentation-loading-card"><strong>Präsentation wird geladen</strong><p>Die Folien werden vorbereitet und an das Gerät angepasst.</p><div class="presentation-progress" aria-hidden="true"><span></span></div></div>';
+      document.body.appendChild(overlay);
+    }
+    return overlay;
+  }
+
+  function hidePresentationLoadingOverlay(){
+    const overlay = document.getElementById('presentationLoadingOverlay');
+    if (!overlay) return;
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => overlay.remove(), 280);
+  }
+
+  function ensurePortraitOverlay(){
+    if (!isPresentationPage() || !isMobileLike()) return null;
+    let overlay = document.getElementById('presentationPortraitOverlayV2');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'presentationPortraitOverlayV2';
+      overlay.className = 'presentation-portrait-overlay';
+      overlay.innerHTML = '<div class="presentation-portrait-card"><div class="presentation-portrait-icon">↻</div><strong>Bitte das Smartphone quer halten</strong><p>Die Präsentation ist für das Querformat optimiert. Drehe dein Gerät, damit die Folien vollständig und lesbar angezeigt werden.</p><button type="button" id="presentationTryLandscapeBtn">Vollbild / Quermodus versuchen</button></div>';
+      document.body.appendChild(overlay);
+      const btn = document.getElementById('presentationTryLandscapeBtn');
+      if (btn) btn.addEventListener('click', requestLandscapeMode);
+    }
+    return overlay;
+  }
+
+  function updatePortraitOverlay(){
+    if (!isPresentationPage()) return;
+    const overlay = ensurePortraitOverlay();
+    if (!overlay) return;
+    overlay.hidden = !(isMobileLike() && isPortrait());
+  }
+
+  async function requestLandscapeMode(){
+    try {
+      const root = document.documentElement;
+      if (!document.fullscreenElement && root.requestFullscreen) {
+        await root.requestFullscreen().catch(function(){});
+      }
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock('landscape').catch(function(){});
+      }
+    } catch (_) {}
+    setTimeout(updatePortraitOverlay, 160);
+  }
+
+  function ensureSideNavigation(){
+    if (!isPresentationPage()) return;
+    if (!document.getElementById('presentationSidePrev')) {
+      const prev = document.createElement('button');
+      prev.id = 'presentationSidePrev';
+      prev.type = 'button';
+      prev.className = 'presentation-mobile-side-nav';
+      prev.setAttribute('aria-label', 'Vorherige Folie');
+      prev.textContent = '←';
+      prev.addEventListener('click', function(e){ e.preventDefault(); if (typeof movePresentationFinal === 'function') movePresentationFinal(-1); });
+      document.body.appendChild(prev);
+    }
+    if (!document.getElementById('presentationSideNext')) {
+      const next = document.createElement('button');
+      next.id = 'presentationSideNext';
+      next.type = 'button';
+      next.className = 'presentation-mobile-side-nav';
+      next.setAttribute('aria-label', 'Nächste Folie');
+      next.textContent = '→';
+      next.addEventListener('click', function(e){ e.preventDefault(); if (typeof movePresentationFinal === 'function') movePresentationFinal(1); });
+      document.body.appendChild(next);
+    }
+  }
+
+  function markLoadedWhenSlideReady(){
+    if (!isPresentationPage()) return;
+    const started = Date.now();
+    const finish = function(){
+      const minDelay = Math.max(0, 650 - (Date.now() - started));
+      setTimeout(function(){ hidePresentationLoadingOverlay(); updatePortraitOverlay(); }, minDelay);
+    };
+    const slide = document.getElementById('presentationSlide');
+    if (slide && slide.querySelector('.presentation-slide-inner')) { finish(); return; }
+    const observer = new MutationObserver(function(){
+      const s = document.getElementById('presentationSlide');
+      if (s && s.querySelector('.presentation-slide-inner')) {
+        observer.disconnect();
+        finish();
+      }
+    });
+    if (slide) observer.observe(slide, { childList:true, subtree:true });
+    setTimeout(function(){ observer.disconnect(); finish(); }, 3600);
+  }
+
+  function patchPresentationRenderForMobile(){
+    if (!isPresentationPage()) return;
+    if (window.__presentationMobileRenderPatchV2) return;
+    window.__presentationMobileRenderPatchV2 = true;
+    const original = window.renderPresentationSlideFinal;
+    if (typeof original !== 'function') return;
+    window.renderPresentationSlideFinal = renderPresentationSlideFinal = function(){
+      original.apply(this, arguments);
+      document.body.classList.add('presentation-mobile-v2');
+      ensureSideNavigation();
+      updatePortraitOverlay();
+      const slide = document.getElementById('presentationSlide');
+      if (slide) {
+        slide.style.removeProperty('transform');
+        slide.style.removeProperty('left');
+        slide.style.removeProperty('top');
+      }
+    };
+  }
+
+  function initMobilePresentationV2(){
+    if (!isPresentationPage()) return;
+    document.body.classList.add('presentation-mobile-v2');
+    ensurePresentationLoadingOverlay();
+    ensurePortraitOverlay();
+    ensureSideNavigation();
+    patchPresentationRenderForMobile();
+    const full = document.getElementById('presentationFullscreenBtn');
+    if (full && !full.dataset.landscapeV2) {
+      full.dataset.landscapeV2 = '1';
+      full.addEventListener('click', function(){ setTimeout(requestLandscapeMode, 0); }, true);
+    }
+    window.addEventListener('resize', function(){ setTimeout(updatePortraitOverlay, 120); });
+    window.addEventListener('orientationchange', function(){ setTimeout(updatePortraitOverlay, 260); });
+    document.addEventListener('fullscreenchange', function(){ setTimeout(updatePortraitOverlay, 120); });
+    markLoadedWhenSlideReady();
+    setTimeout(function(){ if (isMobileLike()) requestLandscapeMode(); }, 850);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(initMobilePresentationV2, 5);
+    setTimeout(initMobilePresentationV2, 300);
+  });
+})();

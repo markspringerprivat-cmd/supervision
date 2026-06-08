@@ -4243,3 +4243,71 @@ body[data-role="lehrkraft-b"] .role-pill,
 .group-result-only-main .group-result-content { order: 1; }
 .group-result-info-card { display: none !important; }
 .shared-result-card .shared-result-head .button[href*="presentation.html"] { display: none !important; }
+
+
+/* ==========================================================
+   Beobachtung/Protokoll + Rollenlayout: Patch v13
+   ========================================================== */
+@media (min-width: 980px) {
+  body[data-mode="roles"] main.wide-main,
+  body[data-mode="roles"] header .wrap,
+  body[data-mode="roles"] footer .wrap {
+    max-width: 1540px !important;
+  }
+  .roles-page .roles-assignment-card { width: 100% !important; }
+  .roles-assignment-layout {
+    grid-template-columns: minmax(560px, 1.12fr) minmax(520px, .88fr) !important;
+    gap: 28px !important;
+  }
+}
+.role-assign-actions { margin-top: 14px !important; margin-bottom: .5cm !important; }
+.role-name-list.device-name-list {
+  min-height: 340px !important;
+  max-height: min(56vh, 620px) !important;
+  padding: 8px 8px 18px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+.role-name-list.device-name-list li,
+.role-name-list.device-name-list .device-laptop,
+.role-name-list.device-name-list .device-ipad,
+.role-name-list.device-name-list .device-smartphone {
+  background: #fff !important;
+  border-color: #e1e7f1 !important;
+}
+.role-name-list.device-name-list li:last-child { margin-bottom: 10px !important; border-bottom: 1px solid #eef2f7 !important; }
+.role-cards-grid { grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)) !important; align-items: stretch; }
+.role-qr-card { min-height: 370px !important; }
+.role-qr-card.role-protokoll,
+.role-qr-card.role-beobachter {
+  border-color: #d28a19 !important;
+  box-shadow: 0 12px 30px rgba(210,138,25,.12) !important;
+}
+.role-pill.role-protokoll,
+.role-pill.role-beobachter,
+.role-qr-card.role-protokoll .role-pill,
+.role-qr-card.role-beobachter .role-pill,
+.assigned-list-modern .role-protokoll .role-pill,
+.assigned-list-modern .role-beobachter .role-pill {
+  background: rgba(210,138,25,.16) !important;
+  color: #8a5205 !important;
+}
+.assigned-list-modern li.role-protokoll,
+.assigned-list-modern li.role-beobachter { border-color: rgba(210,138,25,.42) !important; }
+body[data-role="protokoll"],
+body[data-role="beobachter"] { --role-accent: #d28a19; --role-accent-soft: rgba(210,138,25,.15); }
+body[data-role="protokoll"] .role-pill,
+body[data-role="beobachter"] .role-pill { background: rgba(210,138,25,.16) !important; color: #8a5205 !important; }
+.moderation-only-card .handoff-note,
+.protokoll-note-card .handoff-note {
+  border: 1px solid rgba(210,138,25,.35);
+  background: rgba(210,138,25,.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.protokoll-note-card textarea { min-height: 96px; }
+@media (max-width: 760px) {
+  .role-name-list.device-name-list { min-height: 280px !important; padding-bottom: 22px !important; }
+  .role-cards-grid { grid-template-columns: 1fr !important; }
+}

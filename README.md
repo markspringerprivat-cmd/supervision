@@ -49,3 +49,6 @@ apps-script/
 Im Ordner `apps-script/Code.gs` liegt zusätzlich der aktuelle Apps-Script-Code als Sicherung. Da dein Apps Script jetzt bereits funktioniert, musst du ihn nicht erneut übernehmen.
 
 Falls du ihn später erneut kopierst, prüfe oben in `Code.gs`, dass `SPREADSHEET_URL` auf deine richtige Google-Sheet-Datei zeigt.
+
+
+Update observer-v13: Beobachtung/Protokoll-Rolle bei 5 Personen ergänzt. Apps Script muss dafür nicht geändert werden, weil dieselben Ergebnisfelder und Rohdaten-JSON verwendet werden.

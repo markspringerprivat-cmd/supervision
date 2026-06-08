@@ -223,7 +223,10 @@ function rowToEntry_(row, rowNumber) {
     presentationStickers: raw.presentationStickers || (raw.presentationConfig && raw.presentationConfig.stickers) || [],
     presentationStableLayout: raw.presentationStableLayout || (raw.presentationConfig && raw.presentationConfig.stableLayout) || {},
     presentationLayout: raw.presentationLayout || (raw.presentationConfig && raw.presentationConfig.layout) || {},
-    presentationTextOverrides: raw.presentationTextOverrides || (raw.presentationConfig && raw.presentationConfig.textOverrides) || {}
+    presentationTextOverrides: raw.presentationTextOverrides || (raw.presentationConfig && raw.presentationConfig.textOverrides) || {},
+    presentationV6: raw.presentationV6 || null,
+    presentationValues: raw.presentationValues || (raw.presentationV6 && raw.presentationV6.values) || {},
+    presentationSyncVersion: raw.presentationSyncVersion || (raw.presentationConfig && raw.presentationConfig.version) || ''
   };
   return {
     id: rowNumber,

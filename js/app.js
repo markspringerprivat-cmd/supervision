@@ -7740,3 +7740,238 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     if (btn) btn.onclick = window.submitResults;
   });
 })();
+
+/* ==========================================================
+   FREEZE FIX FINAL: sichere, schlanke Ergebnisübermittlung
+   ----------------------------------------------------------
+   Problem: Ältere Patches hingen weiterhin als addEventListener am
+   Absende-Button und sammelten zu große/rekursive Präsentationsdaten.
+   Lösung: Button wird geklont, alte Listener werden entfernt, danach
+   wird nur noch diese robuste Sendefunktion verwendet.
+   ========================================================== */
+(function(){
+  const MAX_STRING = 120000;      // schützt vor riesigen base64-/Bildstrings
+  const MAX_JSON_TOTAL = 950000;  // bleibt deutlich unter Apps-Script-/Browser-Grenzen
+
+  function safeParse(v, fallback){
+    try { return v ? JSON.parse(v) : fallback; } catch(_) { return fallback; }
+  }
+
+  function groupKey(name){
+    try {
+      if (typeof key === 'function') return key(name);
+      const gid = (typeof getGroupId === 'function') ? getGroupId() : 'gruppe';
+      return 'sv_' + gid + '_' + name;
+    } catch(_) {
+      return 'sv_gruppe_' + name;
+    }
+  }
+
+  function readLocalObj(name, fallback){
+    try {
+      const raw = localStorage.getItem(groupKey(name)) || localStorage.getItem('sv_' + name) || localStorage.getItem(name);
+      return safeParse(raw, fallback);
+    } catch(_) { return fallback; }
+  }
+
+  function trimHuge(value){
+    if (value == null) return value;
+    if (typeof value === 'string') {
+      if (value.indexOf('data:image') === 0) {
+        return value.length > MAX_STRING ? '' : value;
+      }
+      return value.length > MAX_STRING ? value.slice(0, MAX_STRING) + ' … [gekürzt]' : value;
+    }
+    if (Array.isArray(value)) return value.slice(0, 80).map(trimHuge);
+    if (typeof value === 'object') {
+      const out = {};
+      Object.keys(value).slice(0, 120).forEach(k => {
+        if (/raw|cache|history|undo|snapshot/i.test(k)) return;
+        out[k] = trimHuge(value[k]);
+      });
+      return out;
+    }
+    return value;
+  }
+
+  function buildCompactPresentationConfig(){
+    let settings = {};
+    let extras = [];
+    try { settings = typeof getPresentationSettingsFinal === 'function' ? getPresentationSettingsFinal() : readLocalObj('presentation_settings', {}); } catch(_) { settings = readLocalObj('presentation_settings', {}); }
+    try { extras = typeof getPresentationExtrasFinal === 'function' ? getPresentationExtrasFinal() : readLocalObj('presentation_extras', []); } catch(_) { extras = readLocalObj('presentation_extras', []); }
+
+    const cfg = {
+      version: '2026-06-compact-sync-no-freeze-v3',
+      savedAt: new Date().toISOString(),
+      groupId: typeof getGroupId === 'function' ? getGroupId() : '',
+      settings: settings || {},
+      extras: Array.isArray(extras) ? extras : [],
+      stickers: readLocalObj('presentation_stickers_v1', []),
+      stableLayout: readLocalObj('presentation_layout_stable_v2', {}),
+      layout: readLocalObj('presentation_layout', {}),
+      textOverrides: readLocalObj('presentation_text_overrides', {})
+    };
+    return trimHuge(cfg);
+  }
+
+  function buildLightPayload(){
+    let data = {};
+    try {
+      data = typeof collectSupervisorData === 'function' ? collectSupervisorData() : {};
+    } catch(err) {
+      data = { groupId: (typeof getGroupId === 'function' ? getGroupId() : 'gruppe') };
+    }
+
+    try {
+      const assignments = (typeof loadObj === 'function') ? loadObj('assignments', {}) : {};
+      const groupName = (typeof loadText === 'function' ? loadText('summary_group_name') : '') || data.groupName || Object.values(assignments || {}).filter(Boolean).join(', ') || data.groupId || 'Unbenannte Gruppe';
+      data.groupName = groupName;
+      data.assignments = data.assignments || assignments;
+    } catch(_) {}
+
+    data.timestampLocal = new Date().toLocaleString('de-DE');
+    const cfg = buildCompactPresentationConfig();
+    data.presentationConfig = cfg;
+    data.presentationSettings = cfg.settings;
+    data.presentationExtras = cfg.extras;
+    data.presentationStickers = cfg.stickers;
+    data.presentationStableLayout = cfg.stableLayout;
+    data.presentationLayout = cfg.layout;
+    data.presentationTextOverrides = cfg.textOverrides;
+    data.presentationSyncVersion = cfg.version;
+
+    data = trimHuge(data);
+
+    // Falls trotz Kürzung zu groß: Präsentationsdaten stärker reduzieren.
+    try {
+      let json = JSON.stringify(data);
+      if (json.length > MAX_JSON_TOTAL) {
+        data.presentationConfig = {
+          version: cfg.version,
+          savedAt: cfg.savedAt,
+          groupId: cfg.groupId,
+          settings: trimHuge(cfg.settings || {}),
+          textOverrides: trimHuge(cfg.textOverrides || {}),
+          layout: trimHuge(cfg.layout || {}),
+          stableLayout: trimHuge(cfg.stableLayout || {}),
+          extras: [],
+          stickers: []
+        };
+        data.presentationExtras = [];
+        data.presentationStickers = [];
+      }
+    } catch(_) {}
+
+    return data;
+  }
+
+  function postNoCors(url, payload, timeoutMs){
+    return new Promise((resolve, reject) => {
+      let done = false;
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        reject(new Error('Zeitüberschreitung beim Senden.'));
+      }, timeoutMs || 14000);
+
+      try {
+        fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        }).then(() => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(true);
+        }).catch(err => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          reject(err);
+        });
+      } catch(err) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(err);
+      }
+    });
+  }
+
+  async function safeSubmitResults(evt){
+    if (evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      if (evt.stopImmediatePropagation) evt.stopImmediatePropagation();
+    }
+
+    const status = document.getElementById('submitStatus');
+    const btn = document.getElementById('submitResults');
+    const url = typeof getAppsScriptUrl === 'function' ? getAppsScriptUrl() : '';
+
+    function setStatus(cls, text){
+      if (!status) return;
+      status.className = cls || '';
+      status.textContent = text || '';
+    }
+
+    if (!url) {
+      setStatus('warning', 'Keine Apps-Script-URL gefunden. Ergebnisse können nicht abgesendet werden.');
+      return;
+    }
+
+    let payload;
+    try {
+      payload = buildLightPayload();
+    } catch(err) {
+      setStatus('warning', 'Die Ergebnisdaten konnten nicht vorbereitet werden: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    try {
+      if (btn) {
+        btn.disabled = true;
+        btn.dataset.oldText = btn.dataset.oldText || btn.textContent;
+        btn.textContent = 'Wird abgesendet …';
+      }
+      setStatus('notice', 'Ergebnisse werden abgesendet …');
+      await postNoCors(url, payload, 14000);
+      setStatus('success', 'Ergebnisse wurden abgesendet. Sie sind nun auf der Ergebnisseite sichtbar.');
+      if (typeof openSummaryPresentationPanelWithNudge === 'function') {
+        setTimeout(openSummaryPresentationPanelWithNudge, 250);
+      }
+    } catch(err) {
+      setStatus('warning', 'Senden fehlgeschlagen oder Zeitüberschreitung. Prüfe Apps Script und die Web-App-Bereitstellung.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.oldText || 'Ergebnisse absenden';
+      }
+    }
+  }
+
+  window.submitResults = submitResults = safeSubmitResults;
+  window.buildPayload = buildLightPayload;
+  window.collectPresentationSyncConfig = buildCompactPresentationConfig;
+
+  function replaceSubmitButton(){
+    const oldBtn = document.getElementById('submitResults');
+    if (!oldBtn || oldBtn.dataset.safeSubmitBound === '1') return;
+    const newBtn = oldBtn.cloneNode(true);
+    newBtn.dataset.safeSubmitBound = '1';
+    newBtn.disabled = false;
+    newBtn.textContent = oldBtn.dataset.oldText || oldBtn.textContent || 'Ergebnisse absenden';
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+    newBtn.addEventListener('click', safeSubmitResults, { capture: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', replaceSubmitButton);
+  } else {
+    replaceSubmitButton();
+  }
+  setTimeout(replaceSubmitButton, 300);
+  setTimeout(replaceSubmitButton, 1200);
+})();

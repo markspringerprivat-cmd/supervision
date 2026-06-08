@@ -3278,3 +3278,153 @@ body[data-mode="results"]:not(.is-admin-results) #resultsControls {
   display: none !important;
   visibility: hidden !important;
 }
+
+
+/* ==========================================================
+   Rollenverteilung + Ablaufseiten: Layout-Patch v12
+   ========================================================== */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.roles-page .roles-assignment-card {
+  padding: clamp(18px, 2vw, 28px);
+}
+.roles-assignment-layout {
+  grid-template-columns: minmax(420px, 0.95fr) minmax(420px, 1fr) !important;
+  gap: 24px !important;
+}
+.name-add-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+.role-name-list {
+  list-style: none;
+  padding: 10px;
+  margin: 8px 0 0;
+  min-height: 260px;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8fafc;
+}
+.role-name-list li {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid #e1e7f1;
+  border-radius: 12px;
+  background: #fff;
+  margin-bottom: 8px;
+}
+.role-name-list li:last-child { margin-bottom: 0; }
+.role-name-list .name-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--primary-dark);
+  font-weight: 800;
+  font-size: .85rem;
+}
+.role-name-list .remove-name-btn {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.role-assign-actions { margin-top: 14px; }
+.assigned-list-modern li {
+  display: grid;
+  grid-template-columns: minmax(150px, .55fr) 1fr;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+}
+.assigned-list-modern strong { font-size: 1.04rem; }
+.roles-card-section { margin-top: 20px; }
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 14px;
+}
+.role-qr-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 12px;
+  align-items: start;
+  min-height: 390px;
+}
+.role-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  border-bottom: 1px solid #e6ebf3;
+  padding-bottom: 10px;
+}
+.role-card-head .assigned-name {
+  font-weight: 850;
+  color: var(--primary-dark);
+}
+.role-card-help { min-height: 44px; }
+.role-card-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+.role-card-qr {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 10px;
+}
+.role-card-qr .qr {
+  width: 155px;
+  height: 155px;
+}
+.flow-bottom-nav .button.disabled,
+.flow-bottom-nav .button[aria-disabled="true"] {
+  opacity: .48;
+  pointer-events: none;
+  filter: grayscale(.35);
+}
+.flow-step.is-read {
+  border-color: #b9dec9;
+  background: #f6fffa;
+}
+.flow-read-btn {
+  margin-top: 8px;
+  float: right;
+}
+@media (max-width: 1180px) {
+  .role-cards-grid { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+  .roles-assignment-layout { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 680px) {
+  .name-add-row { grid-template-columns: 1fr; }
+  .role-cards-grid { grid-template-columns: 1fr; }
+  .assigned-list-modern li { grid-template-columns: 1fr; gap: 6px; }
+}

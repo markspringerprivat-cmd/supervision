@@ -42,14 +42,14 @@ const ROLECARD = {
       "Stoppe Schuldzuweisungen und vorschnelle Diagnosen über den Schüler.",
       "Sichere Zwischenergebnisse schriftlich auf deinen Moderationskarten."
     ],
-    caseFocus: "Der Fall betrifft nicht nur Jamal als Schüler mit ESE-Förderbedarf. Im Zentrum steht auch ein Konflikt im Teamteaching zwischen Erfahrung, neuer Methodik und gemeinsamer Verantwortung."
+    caseFocus: "Der Fall betrifft eine ESE-Klasse, in der unterschiedliche pädagogische Vorgehensweisen im Teamteaching zu Unsicherheit führen. Im Zentrum steht die Zusammenarbeit zwischen Erfahrung, neuer Methodik und gemeinsamer Verantwortung."
   },
   schulleitung: {
     title: "Rollenkarte: Schulleitung",
     intro: "Du hast die Supervision angeregt, weil der Konflikt im Teamteaching nicht mehr allein zwischen den beiden Lehrkräften geklärt werden konnte. Dir geht es um Schutz, Verlässlichkeit und professionelle Zusammenarbeit.",
     bullets: [
       "Du beobachtest, dass Absprachen im Teamteaching fehlen oder unterschiedlich verstanden werden.",
-      "Du machst dir Sorgen, dass Jamal und die Klasse unter den ungeklärten Erwachsenenabsprachen leiden.",
+      "Du machst dir Sorgen, dass die Klasse unter den ungeklärten Erwachsenenabsprachen leidet und dadurch weniger Stabilität erlebt.",
       "Du willst nicht einseitig Partei ergreifen, brauchst aber eine tragfähige Vereinbarung.",
       "Du kannst Ressourcen bereitstellen: Gesprächszeit, Absprachen im Kollegium, Unterstützung bei Förder- und Deeskalationsplanung."
     ],
@@ -57,20 +57,20 @@ const ROLECARD = {
   },
   "lehrkraft-a": {
     title: "Rollenkarte: Lehrkraft A – erfahrene Teamteaching-Lehrkraft",
-    intro: "Du arbeitest seit Jahren im Teamteaching und kennst Jamal schon länger. Du hast ein festes Vorgehen entwickelt, das aus deiner Sicht Stabilität gibt: klare Ansage, kurze Auszeit, Wiedereinstieg.",
+    intro: "Du arbeitest seit Jahren im Teamteaching und kennst die Klasse sowie einzelne herausfordernde Dynamiken schon länger. Du hast ein festes Vorgehen entwickelt, das aus deiner Sicht Stabilität gibt: klare Ansage, kurze Auszeit, Wiedereinstieg.",
     bullets: [
       "Du erlebst Lehrkraft B als Person, die deine Erfahrung nicht ausreichend respektiert.",
       "Als Lehrkraft B vor der Klasse eingreift, fühlst du dich untergraben.",
-      "Du befürchtest, dass Jamal bei zu viel Verhandlung die Grenzen austestet.",
+      "Du befürchtest, dass bei zu viel Verhandlung klare Grenzen verloren gehen.",
       "Du möchtest, dass klare Regeln gelten und du im Unterricht handlungsfähig bleibst."
     ],
-    caseFocus: "Deine Spannung: Du willst Jamal unterstützen, aber du willst auch Verlässlichkeit, Autorität und Ruhe für die Klasse sichern."
+    caseFocus: "Deine Spannung: Du willst Schüler*innen unterstützen, aber du willst auch Verlässlichkeit, Autorität und Ruhe für die Klasse sichern."
   },
   "lehrkraft-b": {
     title: "Rollenkarte: Lehrkraft B – neue Teamteaching-Lehrkraft",
-    intro: "Du bist neu im Teamteaching und möchtest stärker beziehungs- und ressourcenorientiert arbeiten. Du fragst dich, ob das bisherige Vorgehen Jamals Eskalationen eher stabilisiert als löst.",
+    intro: "Du bist neu im Teamteaching und möchtest stärker beziehungs- und ressourcenorientiert arbeiten. Du fragst dich, ob das bisherige Vorgehen die wiederkehrenden Eskalationen eher stabilisiert als löst.",
     bullets: [
-      "Du willst Jamal nicht vorschnell aus Situationen ausschließen.",
+      "Du willst Schüler*innen nicht vorschnell aus Situationen ausschließen.",
       "Du möchtest neue Methoden ausprobieren: Wahlmöglichkeiten, Deeskalationsplan, frühere Wahrnehmung von Auslösern.",
       "Du fühlst dich von Lehrkraft A wenig ernst genommen, weil auf Erfahrung verwiesen wird.",
       "Du willst Veränderung, aber nicht dauerhaft gegen die Kollegin/den Kollegen arbeiten."
@@ -79,23 +79,21 @@ const ROLECARD = {
   }
 };
 
-const CASE_TEXT = `Jamal ist 11 Jahre alt und besucht eine 5. Klasse im Gemeinsamen Lernen. Bei ihm liegt ein Förderbedarf im Bereich emotionale und soziale Entwicklung vor. Er reagiert schnell impulsiv, verweigert Aufgaben und provoziert Mitschüler*innen, besonders in offenen Arbeitsphasen.
+const CASE_TEXT = `In einer Klasse mit Förderbedarf im Bereich emotionale und soziale Entwicklung kommt es regelmäßig zu Unruhe, Verweigerung und impulsiven Reaktionen einzelner Schüler*innen. Besonders in offenen Arbeitsphasen wird deutlich, dass die Klasse klare, verlässliche Absprachen braucht.
 
 In der Klasse arbeiten zwei Lehrkräfte im Teamteaching:
 
-Lehrkraft A ist seit mehreren Jahren an der Schule, kennt Jamal schon länger und arbeitet nach einem festen Schema: klare Ansage, Sitzplatzwechsel, kurze Auszeit vor der Tür, danach Wiedereinstieg. Lehrkraft A sagt: „Bei Jamal hilft nur Konsequenz. Wenn wir da anfangen zu diskutieren, tanzt er uns auf der Nase herum.“
+Lehrkraft A ist seit mehreren Jahren an der Schule und arbeitet nach einem festen, strukturierenden Vorgehen: klare Ansage, Sitzplatzwechsel, kurze Auszeit, danach Wiedereinstieg. Aus dieser Perspektive geben Konsequenz und Vorhersehbarkeit der Klasse Halt.
 
-Lehrkraft B ist neu im Team und möchte stärker beziehungs- und ressourcenorientiert arbeiten. Sie schlägt vor, Jamal mehr Wahlmöglichkeiten zu geben, Eskalationsauslöser vorher zu erkennen und mit ihm einen individuellen Deeskalationsplan zu erarbeiten. Lehrkraft B sagt: „Ich glaube, wir verstärken sein Verhalten, wenn wir immer gleich mit Ausschluss reagieren.“
+Lehrkraft B ist neu im Team und möchte stärker beziehungs- und ressourcenorientiert arbeiten. Sie schlägt vor, Auslöser früher wahrzunehmen, mehr Wahlmöglichkeiten zu geben und gemeinsam präventive Strategien zu entwickeln.
 
-In einer Unterrichtsstunde eskaliert die Situation. Jamal verweigert eine Gruppenarbeit, ruft „Ich mach den Mist nicht“, wirft sein Arbeitsblatt weg und lacht, als andere Schüler*innen reagieren. Lehrkraft A will ihn sofort vor die Tür schicken. Lehrkraft B greift ein und sagt vor der Klasse: „Warte, vielleicht braucht er gerade eine andere Möglichkeit.“
+In einer Unterrichtsstunde eskaliert die Situation. Während Lehrkraft A auf eine klare Konsequenz setzen möchte, greift Lehrkraft B mit einem alternativen Vorschlag ein. Dadurch entsteht vor der Klasse der Eindruck, dass die Lehrkräfte nicht gemeinsam handeln.
 
-Lehrkraft A fühlt sich dadurch vor der Klasse untergraben. Nach der Stunde sagt sie: „Du kannst mir nicht mitten im Unterricht in den Rücken fallen. Ich mache das hier seit Jahren.“
+Lehrkraft A fühlt sich dadurch vor der Klasse untergraben. Lehrkraft B fühlt sich nicht ernst genommen und erlebt das bisherige Vorgehen als zu starr.
 
-Lehrkraft B fühlt sich nicht ernst genommen und sagt: „Nur weil du es seit Jahren so machst, heißt das nicht, dass es für Jamal gut ist.“
+Die Situation wird der Schulleitung gemeldet. Die Schulleitung schaltet eine Supervisor*in ein, weil der Konflikt inzwischen die Zusammenarbeit im Teamteaching belastet. Für die Klasse entsteht dadurch zu wenig Stabilität: Regeln, Abläufe und Interventionen wirken uneinheitlich.`;
 
-Die Situation wird der Schulleitung gemeldet. Die Schulleitung schaltet eine Supervisor*in ein, weil der Konflikt inzwischen die Zusammenarbeit im Teamteaching belastet und Jamal immer stärker zum Auslöser eines Erwachsenenkonflikts wird.`;
-
-const SUPERVISION_QUESTION = "Wie kann das Team einen gemeinsamen professionellen Umgang mit Jamal entwickeln, ohne dass der Konflikt zwischen den Lehrkräften weiter eskaliert?";
+const SUPERVISION_QUESTION = "Wie kann das Team ein gemeinsames, verlässliches Vorgehen für die Klasse entwickeln, ohne dass der Konflikt zwischen den Lehrkräften weiter eskaliert?";
 
 function slug(s) {
   return (s || "")
@@ -318,7 +316,7 @@ function initPrep() {
 
 function prepFields(role) {
   if (role === "schulleitung") return [
-    {id:"beobachtung", label:"Fasse deine Beobachtung kurz zusammen.", hint:"Was hast du im Teamteaching und im Umgang mit Jamal wahrgenommen?"},
+    {id:"beobachtung", label:"Fasse deine Beobachtung kurz zusammen.", hint:"Was hast du im Teamteaching und im Umgang mit der Klasse wahrgenommen?"},
     {id:"gefuehle", label:"Welche Gefühle hast du in der Situation?", hint:"Zum Beispiel Sorge, Ärger, Enttäuschung, Druck."},
     {id:"wuensche", label:"Welche Wünsche hast du an das Teamteaching?", hint:"Was sollen die Lehrkräfte klären oder verändern?"},
     {id:"loesung", label:"Erste Gedanken zu einem Lösungsvorschlag", hint:"Noch keine fertige Lösung. Nur erste Ideen."}
@@ -381,7 +379,7 @@ function supervisorPhase(phase) {
           <li>Erkläre: Es geht nicht um Schuld, sondern um gemeinsame Klärung.</li>
           <li>Frage jede Person: „Sind Sie bereit, an einer Klärung mitzuwirken?“</li>
           <li>Frage: „Sind Sie bereit, die Perspektive der anderen zunächst anzuhören?“</li>
-          <li>Lege Gesprächsregeln fest: ausreden lassen, Ich-Aussagen, konkrete Beobachtungen, keine Diagnosen über Jamal.</li>
+          <li>Lege Gesprächsregeln fest: ausreden lassen, Ich-Aussagen, konkrete Beobachtungen, keine vorschnellen Diagnosen über einzelne Schüler*innen.</li>
         </ol>
       </section>
       <section class="card">
@@ -437,7 +435,7 @@ function supervisorPhase(phase) {
           <li>Frage: „Welches Ziel könnten alle mittragen?“</li>
           <li>Formuliere ein gemeinsames Ziel kurz, konkret und positiv.</li>
         </ol>
-        <p class="notice"><strong>Beispiel:</strong> „Wir entwickeln eine verbindliche Absprache zum Umgang mit Jamals Eskalationen und klären, wie Lehrkraft A und B im Teamteaching vor der Klasse geschlossen handeln.“</p>
+        <p class="notice"><strong>Beispiel:</strong> „Wir entwickeln eine verbindliche Absprache zum Umgang mit herausfordernden Situationen und klären, wie Lehrkraft A und B im Teamteaching vor der Klasse geschlossen handeln.“</p>
       </section>
       <section class="card">
         <h2>Ziele festhalten</h2>

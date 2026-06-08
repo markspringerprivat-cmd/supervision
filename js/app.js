@@ -8265,3 +8265,352 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     setTimeout(removeUnsupportedImageControls, 1500);
   });
 })();
+
+/* ==========================================================
+   FINAL TRANSFERABLE PRESENTATION SYNC PATCH
+   - entfernt nicht übertragbare Hintergrundbild-Funktionen dynamisch
+   - speichert/lädt nur kompakte Parameter
+   - wendet gespeicherte Gruppen-Präsentationsparameter beim Start
+     aus der zentralen Ergebnisübersicht sichtbar auf die Folien an
+   ========================================================== */
+(function(){
+  'use strict';
+  const PATCH_ID = 'sv-transferable-presentation-final-2026-06-08';
+  if (window.__SV_TRANSFERABLE_PRESENTATION_FINAL_PATCH__ === PATCH_ID) return;
+  window.__SV_TRANSFERABLE_PRESENTATION_FINAL_PATCH__ = PATCH_ID;
+
+  const DEFAULT_THEME = {
+    heading: '#1e3a5f',
+    text: '#0f172a',
+    background: '#071323',
+    slide: '#ffffff',
+    slidePattern: 'none',
+    backgroundPattern: 'none',
+    slidePatternColor: '#dbeafe',
+    backgroundPatternColor: '#1f2937'
+  };
+
+  function cloneSafe(obj){
+    try { return JSON.parse(JSON.stringify(obj || {})); } catch(_) { return {}; }
+  }
+
+  function stripUnsupported(value){
+    if (value == null) return value;
+    if (typeof value === 'string') {
+      if (/^data:image\//i.test(value)) return '';
+      return value.length > 60000 ? value.slice(0, 60000) + ' … [gekürzt]' : value;
+    }
+    if (Array.isArray(value)) return value.slice(0, 200).map(stripUnsupported);
+    if (typeof value === 'object') {
+      const out = {};
+      Object.keys(value).forEach(k => {
+        if (/backgroundImage|bgImage|imageData|dataUrl|base64|rawLocal|cache|history|undo|snapshot/i.test(k)) return;
+        out[k] = stripUnsupported(value[k]);
+      });
+      return out;
+    }
+    return value;
+  }
+
+  function normaliseConfig(input){
+    const cfg = cloneSafe(input);
+    const settings = Object.assign({}, DEFAULT_THEME, cfg.settings || cfg.presentationSettings || {});
+    delete settings.backgroundImage;
+    return stripUnsupported({
+      version: cfg.version || 'transferable-final',
+      savedAt: cfg.savedAt || new Date().toISOString(),
+      groupId: cfg.groupId || '',
+      settings,
+      values: cfg.values || cfg.presentationValues || {},
+      text: cfg.text || cfg.textOverrides || cfg.presentationTextOverrides || {},
+      textOverrides: cfg.textOverrides || cfg.text || cfg.presentationTextOverrides || {},
+      layout: cfg.layout || cfg.presentationLayout || {},
+      stableLayout: cfg.stableLayout || cfg.presentationStableLayout || {},
+      extras: Array.isArray(cfg.extras) ? cfg.extras : (Array.isArray(cfg.presentationExtras) ? cfg.presentationExtras : []),
+      stickers: Array.isArray(cfg.stickers) ? cfg.stickers : (Array.isArray(cfg.presentationStickers) ? cfg.presentationStickers : [])
+    });
+  }
+
+  function extractConfigFromRow(row){
+    const data = (row && row.data) || {};
+    const raw = data.raw || {};
+    let cfg = data.presentationConfig || raw.presentationConfig || null;
+    if (!cfg && raw.presentationV6 && typeof raw.presentationV6 === 'object') cfg = raw.presentationV6;
+    if (!cfg && data.presentationV6 && typeof data.presentationV6 === 'object') cfg = data.presentationV6;
+    if (!cfg) {
+      cfg = {
+        version: 'legacy-fields',
+        settings: raw.presentationSettings || data.presentationSettings || {},
+        text: raw.presentationTextOverrides || data.presentationTextOverrides || {},
+        layout: raw.presentationLayout || data.presentationLayout || {},
+        stableLayout: raw.presentationStableLayout || data.presentationStableLayout || {},
+        extras: raw.presentationExtras || data.presentationExtras || [],
+        stickers: raw.presentationStickers || data.presentationStickers || []
+      };
+    }
+    cfg = normaliseConfig(cfg);
+    const hasSomething = Object.keys(cfg.settings || {}).length || Object.keys(cfg.text || {}).length || Object.keys(cfg.layout || {}).length || (cfg.stickers || []).length || (cfg.extras || []).length;
+    return hasSomething ? cfg : null;
+  }
+
+  window.extractPresentationSyncFromRow = extractConfigFromRow;
+
+  function scopedKeyFinal(name){
+    try {
+      if (typeof scopedKey === 'function') return scopedKey(name);
+      if (typeof key === 'function') return key(name);
+      const gid = (typeof getGroupId === 'function') ? getGroupId() : 'gruppe';
+      return 'sv_' + gid + '_' + name;
+    } catch(_) { return 'sv_gruppe_' + name; }
+  }
+
+  function readObj(name, fallback){
+    try {
+      const raw = localStorage.getItem(scopedKeyFinal(name)) || localStorage.getItem('sv_' + name) || localStorage.getItem(name);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch(_) { return fallback; }
+  }
+
+  function collectTransferableConfig(){
+    let settings = {};
+    try { settings = typeof getPresentationSettingsFinal === 'function' ? getPresentationSettingsFinal() : readObj('presentation_settings', {}); } catch(_) { settings = readObj('presentation_settings', {}); }
+    delete settings.backgroundImage;
+    const cfg = {
+      version: 'transferable-final',
+      savedAt: new Date().toISOString(),
+      groupId: (typeof getGroupId === 'function') ? getGroupId() : '',
+      settings,
+      text: readObj('presentation_text_overrides', {}),
+      textOverrides: readObj('presentation_text_overrides', {}),
+      layout: readObj('presentation_layout', {}),
+      stableLayout: readObj('presentation_layout_stable_v2', {}),
+      extras: readObj('presentation_extras', []),
+      stickers: readObj('presentation_stickers_v1', [])
+    };
+    return normaliseConfig(cfg);
+  }
+  window.collectPresentationSyncConfig = collectTransferableConfig;
+
+  function removeUnsupportedImageControls(root){
+    root = root || document;
+    const killSelectors = [
+      '#presentationBgImageBtn', '#removePresentationBgImage', '#presentationBgImageInput',
+      '#v4BgButton', '#v4BgRemove', '#v4BgInput',
+      '[data-action="background-image"]', '[data-action="remove-background-image"]'
+    ];
+    killSelectors.forEach(sel => root.querySelectorAll(sel).forEach(el => el.remove()));
+    root.querySelectorAll('button,label,input,span,div').forEach(el => {
+      const t = (el.textContent || '').trim().toLowerCase();
+      const id = String(el.id || '').toLowerCase();
+      const cls = String(el.className || '').toLowerCase();
+      const isBgFile = el.matches && el.matches('input[type="file"]') && (id.includes('bg') || id.includes('background') || cls.includes('background'));
+      if (isBgFile || t === 'hintergrundbild' || t === 'bild entfernen' || t === 'hintergrundbild hochladen') {
+        el.remove();
+      }
+    });
+  }
+
+  function installControlCleaner(){
+    removeUnsupportedImageControls(document);
+    try {
+      const mo = new MutationObserver(mutations => {
+        for (const m of mutations) {
+          m.addedNodes && m.addedNodes.forEach(node => {
+            if (node && node.nodeType === 1) removeUnsupportedImageControls(node);
+          });
+        }
+      });
+      mo.observe(document.documentElement, { childList: true, subtree: true });
+    } catch(_) {}
+  }
+
+  function patternCss(kind, color){
+    const c = color || '#e5e7eb';
+    if (kind === 'dots') return { image: `radial-gradient(${c} 1.4px, transparent 1.4px)`, size: '18px 18px' };
+    if (kind === 'grid') return { image: `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`, size: '28px 28px' };
+    if (kind === 'diagonal') return { image: `repeating-linear-gradient(135deg, transparent 0 12px, ${c} 12px 14px)`, size: '24px 24px' };
+    if (kind === 'waves') return { image: `radial-gradient(ellipse at top, ${c} 0 16%, transparent 17%), radial-gradient(ellipse at bottom, ${c} 0 14%, transparent 15%)`, size: '70px 34px' };
+    return { image: 'none', size: '24px 24px' };
+  }
+
+  function applyThemeToPresentation(settings){
+    const s = Object.assign({}, DEFAULT_THEME, settings || {});
+    delete s.backgroundImage;
+    const body = document.body;
+    const slide = document.getElementById('presentationSlide');
+    const sp = patternCss(s.slidePattern, s.slidePatternColor);
+    const bp = patternCss(s.backgroundPattern, s.backgroundPatternColor);
+    if (body) {
+      body.style.backgroundColor = s.background;
+      body.style.backgroundImage = bp.image;
+      body.style.backgroundSize = bp.size;
+      body.style.color = s.text;
+      body.style.setProperty('--presentation-heading-color', s.heading);
+      body.style.setProperty('--presentation-text-color', s.text);
+      body.style.setProperty('--presentation-background-color', s.background);
+      body.style.setProperty('--presentation-slide-color', s.slide);
+      body.style.setProperty('--slide-pattern-image', sp.image);
+      body.style.setProperty('--slide-pattern-size', sp.size);
+      body.style.setProperty('--background-pattern-image', bp.image);
+      body.style.setProperty('--background-pattern-size', bp.size);
+    }
+    if (slide) {
+      slide.style.backgroundColor = s.slide;
+      slide.style.backgroundImage = sp.image;
+      slide.style.backgroundSize = sp.size;
+      slide.style.color = s.text;
+    }
+  }
+
+  function slideElementMap(index, inner){
+    if (!inner) return {};
+    return {
+      [`s${index}_title`]: inner.querySelector('h1'),
+      [`s${index}_kicker`]: inner.querySelector('.presentation-kicker'),
+      [`s${index}_groupName`]: index === 0 ? inner.querySelector('h2') : null,
+      [`s${index}_subtitle`]: inner.querySelector('.presentation-subtitle'),
+      [`s${index}_table`]: inner.querySelector('.presentation-table-wrap') || inner.querySelector('table'),
+      [`s${index}_note`]: inner.querySelector('.presentation-note'),
+      [`s${index}_thanks`]: inner.querySelector('.thanks-slide')
+    };
+  }
+
+  function applyTextAndLayoutToElement(el, id, cfg){
+    if (!el || !cfg) return;
+    const text = cfg.text || cfg.textOverrides || {};
+    const layout = Object.assign({}, cfg.stableLayout || {}, cfg.layout || {});
+    if (Object.prototype.hasOwnProperty.call(text, id + '__text')) {
+      const newText = String(text[id + '__text'] || '');
+      if (el.tagName === 'TABLE' || el.querySelector('table')) {
+        // Tabelleninhalte werden bewusst nicht durch einen Einzeltext ersetzt.
+      } else {
+        el.textContent = newText;
+      }
+    }
+    const l = layout[id];
+    if (!l || typeof l !== 'object') return;
+    el.classList.add('synced-presentation-element');
+    el.style.position = 'absolute';
+    if (l.x !== undefined) el.style.left = Number(l.x) + '%';
+    if (l.y !== undefined) el.style.top = Number(l.y) + '%';
+    if (l.w !== undefined) el.style.width = Number(l.w) + '%';
+    if (l.h !== undefined) el.style.minHeight = Number(l.h) + '%';
+    el.style.boxSizing = 'border-box';
+    el.style.zIndex = String(l.z !== undefined ? l.z : 20);
+    el.style.transformOrigin = 'center center';
+    el.style.transform = `rotate(${Number(l.rot || 0)}deg)`;
+    if (l.fontSize !== undefined) el.style.fontSize = Number(l.fontSize) + 'px';
+    if (l.color) {
+      el.style.color = l.color;
+      el.querySelectorAll('th,td,h1,h2,p,span,div').forEach(child => { child.style.color = l.color; });
+    }
+  }
+
+  function renderSyncedExtras(inner, cfg, index){
+    if (!inner || !cfg) return;
+    inner.querySelectorAll('.sv-synced-extra,.sv-synced-sticker').forEach(el => el.remove());
+    const extras = Array.isArray(cfg.extras) ? cfg.extras : [];
+    extras.filter(x => Number(x.slide || 0) === index).forEach((x, n) => {
+      const box = document.createElement('div');
+      box.className = 'sv-synced-extra';
+      box.textContent = String(x.text || '');
+      box.style.position = 'absolute';
+      box.style.left = Number(x.x || 10) + '%';
+      box.style.top = Number(x.y || 70) + '%';
+      box.style.width = Number(x.w || 25) + '%';
+      box.style.minHeight = Number(x.h || 8) + '%';
+      box.style.zIndex = String(x.z || 100 + n);
+      box.style.transform = `rotate(${Number(x.rot || 0)}deg)`;
+      box.style.fontSize = Number(x.fontSize || 18) + 'px';
+      box.style.color = x.color || (cfg.settings && cfg.settings.text) || '#0f172a';
+      box.style.whiteSpace = 'pre-wrap';
+      inner.appendChild(box);
+    });
+    const stickers = Array.isArray(cfg.stickers) ? cfg.stickers : [];
+    stickers.filter(x => Number(x.slide || 0) === index).forEach((x, n) => {
+      if (!x.src || /^data:image\//i.test(String(x.src))) return;
+      const img = document.createElement('img');
+      img.className = 'sv-synced-sticker';
+      img.alt = '';
+      img.src = String(x.src);
+      img.style.position = 'absolute';
+      img.style.left = Number(x.x || 40) + '%';
+      img.style.top = Number(x.y || 20) + '%';
+      img.style.width = Number(x.w || 18) + '%';
+      img.style.height = Number(x.h || 18) + '%';
+      img.style.objectFit = 'contain';
+      img.style.zIndex = String(x.z || 110 + n);
+      img.style.transformOrigin = 'center center';
+      img.style.transform = `rotate(${Number(x.rot || 0)}deg)`;
+      img.style.pointerEvents = 'none';
+      inner.appendChild(img);
+    });
+  }
+
+  function applySyncedPresentationConfig(){
+    const cfg = window.__svActivePresentationConfig || null;
+    if (!cfg) return;
+    applyThemeToPresentation(cfg.settings || {});
+    const slide = document.getElementById('presentationSlide');
+    const inner = slide && slide.querySelector('.presentation-slide-inner');
+    if (!inner) return;
+    inner.style.position = 'relative';
+    inner.style.overflow = 'hidden';
+    inner.style.width = '100%';
+    inner.style.height = '100%';
+    const idx = typeof presentationIndexFinal === 'number' ? presentationIndexFinal : 0;
+    const map = slideElementMap(idx, inner);
+    Object.keys(map).forEach(id => applyTextAndLayoutToElement(map[id], id, cfg));
+    renderSyncedExtras(inner, cfg, idx);
+  }
+
+  // buildPresentationSlides: aktuelle Gruppen-Konfiguration merken.
+  if (typeof buildPresentationSlides === 'function' && !buildPresentationSlides.__svTransferWrapped) {
+    const oldBuild = buildPresentationSlides;
+    const wrapped = function(row){
+      const cfg = extractConfigFromRow(row);
+      window.__svActivePresentationConfig = cfg;
+      return oldBuild.apply(this, arguments);
+    };
+    wrapped.__svTransferWrapped = true;
+    buildPresentationSlides = window.buildPresentationSlides = wrapped;
+  }
+
+  // renderPresentationSlideFinal: nach jedem Standardrender die gespeicherten Parameter anwenden.
+  if (typeof renderPresentationSlideFinal === 'function' && !renderPresentationSlideFinal.__svTransferWrapped) {
+    const oldRender = renderPresentationSlideFinal;
+    const wrappedRender = function(){
+      const result = oldRender.apply(this, arguments);
+      try { applySyncedPresentationConfig(); } catch(err) { console.warn('Präsentationsparameter konnten nicht angewendet werden:', err); }
+      return result;
+    };
+    wrappedRender.__svTransferWrapped = true;
+    renderPresentationSlideFinal = window.renderPresentationSlideFinal = wrappedRender;
+  }
+
+  // Absenden: immer kompaktes, übertragbares Schema mitschicken.
+  if (typeof buildPayload === 'function' && !buildPayload.__svTransferPayloadWrapped) {
+    const oldPayload = buildPayload;
+    const wrappedPayload = function(){
+      const data = oldPayload.apply(this, arguments) || {};
+      const cfg = collectTransferableConfig();
+      data.presentationConfig = cfg;
+      data.presentationSettings = cfg.settings;
+      data.presentationExtras = cfg.extras;
+      data.presentationStickers = cfg.stickers;
+      data.presentationStableLayout = cfg.stableLayout;
+      data.presentationLayout = cfg.layout;
+      data.presentationTextOverrides = cfg.textOverrides;
+      data.presentationSyncVersion = cfg.version;
+      return stripUnsupported(data);
+    };
+    wrappedPayload.__svTransferPayloadWrapped = true;
+    buildPayload = window.buildPayload = wrappedPayload;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    installControlCleaner();
+    setTimeout(removeUnsupportedImageControls, 250);
+    setTimeout(removeUnsupportedImageControls, 1000);
+  });
+})();

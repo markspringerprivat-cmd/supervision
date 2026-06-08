@@ -88,3 +88,6 @@ Der Bearbeitungsmodus speichert jetzt nur noch Funktionen, die sicher über Goog
 Entfernt wurden lokaler Hintergrundbild-Upload und „Bild entfernen“, weil Base64-Bilder die Übermittlung blockieren können.
 
 Nach dem Hochladen der ZIP muss `apps-script/Code.gs` in Apps Script neu eingefügt und als neue Version bereitgestellt werden, falls du dort noch nicht den aktuellen Code nutzt.
+
+## Transferierbare Präsentationsdaten
+Diese Version speichert nur übertragbare Präsentationsparameter in Google Sheets: Farben, Muster, Musterfarben, Textänderungen, Schriftgrößen, Positionen, Größen, Ebenen, Drehungen, Sticker-Referenzen und zusätzliche Textboxen. Hintergrundbild-Upload wurde bewusst entfernt, weil Base64-Bilddaten die Übermittlung blockieren können.

@@ -88,3 +88,6 @@ Der Bearbeitungsmodus speichert jetzt nur noch Funktionen, die sicher über Goog
 Entfernt wurden lokaler Hintergrundbild-Upload und „Bild entfernen“, weil Base64-Bilder die Übermittlung blockieren können.
 
 Nach dem Hochladen der ZIP muss `apps-script/Code.gs` in Apps Script neu eingefügt und als neue Version bereitgestellt werden, falls du dort noch nicht den aktuellen Code nutzt.
+
+## Update: Geführter Übermittlungsablauf
+Diese Version ergänzt einen geführten Ablauf nach der Ergebnissicherung, Pflichtfeld-Prüfungen auf den Phasenseiten, eine klickbare Phasenlegende mit Rot/Grün-Status sowie eine Speicherabfrage im Präsentationseditor.

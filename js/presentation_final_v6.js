@@ -179,16 +179,20 @@
   function svgPattern(svg){
     return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g,'%27').replace(/\"/g,'%22')}")`;
   }
+  function safePatternColor(color, fallback){
+    const c = String(color || fallback || '#dbe4ef').trim();
+    return /^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\(/i.test(c) ? c : fallback;
+  }
   function patternCss(kind,color){
-    const c = color || '#dbe4ef';
+    const c = safePatternColor(color, '#dbe4ef');
     if(!kind || kind === 'none') return 'none';
-    if(kind === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='4' cy='4' r='1.6' fill='${c}' fill-opacity='.95'/></svg>`);
-    if(kind === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M0 .5H32M.5 0V32' stroke='${c}' stroke-width='1' stroke-opacity='.9' fill='none'/></svg>`);
-    if(kind === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M-8 28L28 -8M0 36L36 0' stroke='${c}' stroke-width='2' stroke-opacity='.9'/></svg>`);
-    if(kind === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='56' height='28' viewBox='0 0 56 28'><path d='M0 18 Q14 2 28 18 T56 18' stroke='${c}' stroke-width='2.2' stroke-opacity='.9' fill='none' stroke-linecap='round'/></svg>`);
+    if(kind === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='8' cy='8' r='2.1' fill='${c}' fill-opacity='.72'/></svg>`);
+    if(kind === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><path d='M0 .6H40M.6 0V40' stroke='${c}' stroke-width='1.2' stroke-opacity='.55' fill='none'/></svg>`);
+    if(kind === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><path d='M-12 44L44 -12M10 54L54 10' stroke='${c}' stroke-width='2' stroke-opacity='.55' fill='none' stroke-linecap='round'/></svg>`);
+    if(kind === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='72' height='36' viewBox='0 0 72 36'><path d='M0 24 C9 8 27 8 36 24 S63 40 72 24' stroke='${c}' stroke-width='2.2' stroke-opacity='.62' fill='none' stroke-linecap='round'/></svg>`);
     return 'none';
   }
-  function patternSize(kind){ if(kind==='dots') return '24px 24px'; if(kind==='grid') return '32px 32px'; if(kind==='diagonal') return '28px 28px'; if(kind==='waves') return '56px 28px'; return 'auto'; }
+  function patternSize(kind){ if(kind==='dots') return '32px 32px'; if(kind==='grid') return '40px 40px'; if(kind==='diagonal') return '44px 44px'; if(kind==='waves') return '72px 36px'; return 'auto'; }
   function layoutFor(id,type){ return Object.assign({}, defaultLayout(type, slideIndex), isObj(state.layout[id]) ? state.layout[id] : {}); }
   function styleFor(l){
     return `left:${num(l.x,0)}%;top:${num(l.y,0)}%;width:${num(l.w ?? l.width,20)}%;height:${num(l.h ?? l.height,10)}%;transform:rotate(${num(l.rot ?? l.rotation,0)}deg);z-index:${num(l.z ?? l.zIndex,20)};font-size:${num(l.fontSize,18)}px;${l.color ? `color:${esc(l.color)};` : ''}`;
@@ -261,10 +265,11 @@
       const data = Object.assign({}, row.data || {});
       data.raw = Object.assign({}, data.raw || row.raw || {});
       state = normalizeState(data,row);
-      status.hidden = true;
       slideIndex = clamp(num(new URLSearchParams(location.search).get('slide'),0),0,SLIDE_COUNT-1);
       render();
+      requestAnimationFrame(() => { document.body.classList.add('is-loaded'); status.hidden = true; });
     }catch(e){
+      document.body.classList.remove('is-loaded');
       status.hidden = false; status.className = 'status warn'; status.textContent = e && e.message ? e.message : 'Präsentation konnte nicht geladen werden.';
     }
     $('exitBtn').onclick = () => { location.href = 'ergebnisse.html'; };

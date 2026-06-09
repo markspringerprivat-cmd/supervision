@@ -232,16 +232,23 @@
   }
   function renderAll(){ renderSlide(); updateToolbar(); }
 
+  function svgPattern(svg){
+    return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g,'%27').replace(/\"/g,'%22')}")`;
+  }
+  function safePatternColor(color, fallback){
+    const c = String(color || fallback || '#dbe4ef').trim();
+    return /^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\(/i.test(c) ? c : fallback;
+  }
   function patternCss(pattern, color){
-    color = color || 'rgba(30,58,95,.14)';
+    const c = safePatternColor(color, '#dbe4ef');
     if(!pattern || pattern === 'none') return '';
-    if(pattern === 'dots') return `radial-gradient(${color} 1.5px, transparent 1.8px)`;
-    if(pattern === 'grid') return `linear-gradient(${color} 1px, transparent 1px), linear-gradient(90deg, ${color} 1px, transparent 1px)`;
-    if(pattern === 'diagonal') return `repeating-linear-gradient(135deg, ${color} 0 1px, transparent 1px 16px)`;
-    if(pattern === 'waves') return `radial-gradient(ellipse at 50% 120%, transparent 0 22px, ${color} 23px, transparent 24px)`;
+    if(pattern === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='8' cy='8' r='2.1' fill='${c}' fill-opacity='.72'/></svg>`);
+    if(pattern === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><path d='M0 .6H40M.6 0V40' stroke='${c}' stroke-width='1.2' stroke-opacity='.55' fill='none'/></svg>`);
+    if(pattern === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><path d='M-12 44L44 -12M10 54L54 10' stroke='${c}' stroke-width='2' stroke-opacity='.55' fill='none' stroke-linecap='round'/></svg>`);
+    if(pattern === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='72' height='36' viewBox='0 0 72 36'><path d='M0 24 C9 8 27 8 36 24 S63 40 72 24' stroke='${c}' stroke-width='2.2' stroke-opacity='.62' fill='none' stroke-linecap='round'/></svg>`);
     return '';
   }
-  function patternSize(pattern){ if(pattern==='dots') return '18px 18px'; if(pattern==='grid') return '22px 22px, 22px 22px'; if(pattern==='waves') return '46px 24px'; return 'auto'; }
+  function patternSize(pattern){ if(pattern==='dots') return '32px 32px'; if(pattern==='grid') return '40px 40px'; if(pattern==='diagonal') return '44px 44px'; if(pattern==='waves') return '72px 36px'; return 'auto'; }
   function applyTheme(){
     const stage = modal && modal.querySelector('#v6Stage');
     const slide = modal && modal.querySelector('#v6Slide');

@@ -90,11 +90,16 @@
     if(document.body.dataset.mode !== 'prep') return;
     const btn=document.getElementById('startPhase1'); if(!btn || btn.dataset.waitPopup==='1') return;
     btn.dataset.waitPopup='1';
-    const href=btn.getAttribute('href') || linkWithG(`phase1-${roleFromPage()}.html`);
+    const rawPhase1Href = (btn.getAttribute('href') || '').trim();
+    const phase1Target = (!rawPhase1Href || rawPhase1Href === '#' || rawPhase1Href.toLowerCase().startsWith('javascript:'))
+      ? `phase1-${roleFromPage()}.html`
+      : rawPhase1Href.split('?')[0];
+    function phase1Href(){ return linkWithG(phase1Target); }
+    btn.setAttribute('href', phase1Href());
     btn.addEventListener('click', async function(e){
       e.preventDefault(); e.stopImmediatePropagation();
       const go = await niceDialog({title:'Gespräch starten', text:'Warte, bis alle Gruppenmitglieder ihre Notizen abgeschlossen haben. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.', actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]});
-      if(go) location.href = href;
+      if(go) location.href = phase1Href();
     }, true);
   }
 

@@ -5036,3 +5036,19 @@ input[type="file"]#v4BgInput,
 button, .button { margin: .06cm; }
 .actions, .nav-row, .topbar-inner, .button-row, .phase-actions { gap: var(--sv-gap-button) !important; }
 section, .section { margin-bottom: var(--sv-gap-section); }
+
+/* Einheitliche, übertragbare Präsentationsmuster und Tabellendesigns */
+.v6-table.v6-table-classic{background:#fff;border-color:#d9e1ec;color:inherit}
+.v6-table.v6-table-classic th{background:#e9eff7;color:#0f2238}
+.v6-table.v6-table-clean{background:#fff;border-color:#cbd5e1;border-radius:8px;color:#0f172a}
+.v6-table.v6-table-clean th{background:#fff;color:#1e3a5f;border-bottom:3px solid #1e3a5f}
+.v6-table.v6-table-clean td{border-color:#e5e7eb}
+.v6-table.v6-table-soft{background:#fbfdff;border-color:#bfdbfe;border-radius:18px;color:#172033;box-shadow:0 10px 28px rgba(30,58,95,.08)}
+.v6-table.v6-table-soft th{background:#dbeafe;color:#1e3a5f}
+.v6-table.v6-table-soft td{border-color:#dbeafe}
+.v6-table.v6-table-striped{background:#fff;border-color:#d7dee9;color:#111827}
+.v6-table.v6-table-striped th{background:#274c77;color:#fff}
+.v6-table.v6-table-striped tbody tr:nth-child(even) td{background:#f5f8fc}
+.v6-table.v6-table-dark{background:#0f172a;border-color:#334155;color:#f8fafc}
+.v6-table.v6-table-dark th{background:#1e3a5f;color:#fff}
+.v6-table.v6-table-dark td{border-color:#334155}

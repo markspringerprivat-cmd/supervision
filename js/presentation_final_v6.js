@@ -8,7 +8,7 @@
   const THEME_DEFAULT = {
     heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
     slidePattern:'none', backgroundPattern:'none',
-    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d'
+    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', tableStyle:'classic'
   };
   const SLIDE_COUNT = 6;
   let state = null;
@@ -176,17 +176,19 @@
       {id:'thanks', elements:[{id:'s5_thanks', type:'thanks', html:'Vielen Dank fürs Zuhören!'}]}
     ];
   }
+  function svgPattern(svg){
+    return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g,'%27').replace(/\"/g,'%22')}")`;
+  }
   function patternCss(kind,color){
     const c = color || '#dbe4ef';
-    switch(String(kind || 'none')){
-      case 'dots': return `radial-gradient(${c} 1.8px, transparent 2px)`;
-      case 'grid': return `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`;
-      case 'diagonal': return `repeating-linear-gradient(135deg, transparent 0 14px, ${c} 14px 16px)`;
-      case 'waves': return `radial-gradient(ellipse at 50% 120%, transparent 0 22px, ${c} 23px, transparent 24px)`;
-      default: return 'none';
-    }
+    if(!kind || kind === 'none') return 'none';
+    if(kind === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='4' cy='4' r='1.6' fill='${c}' fill-opacity='.95'/></svg>`);
+    if(kind === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M0 .5H32M.5 0V32' stroke='${c}' stroke-width='1' stroke-opacity='.9' fill='none'/></svg>`);
+    if(kind === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M-8 28L28 -8M0 36L36 0' stroke='${c}' stroke-width='2' stroke-opacity='.9'/></svg>`);
+    if(kind === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='56' height='28' viewBox='0 0 56 28'><path d='M0 18 Q14 2 28 18 T56 18' stroke='${c}' stroke-width='2.2' stroke-opacity='.9' fill='none' stroke-linecap='round'/></svg>`);
+    return 'none';
   }
-  function patternSize(kind){ return kind === 'dots' ? '24px 24px' : kind === 'grid' ? '30px 30px' : kind === 'diagonal' ? '30px 30px' : kind === 'waves' ? '46px 24px' : 'auto'; }
+  function patternSize(kind){ if(kind==='dots') return '24px 24px'; if(kind==='grid') return '32px 32px'; if(kind==='diagonal') return '28px 28px'; if(kind==='waves') return '56px 28px'; return 'auto'; }
   function layoutFor(id,type){ return Object.assign({}, defaultLayout(type, slideIndex), isObj(state.layout[id]) ? state.layout[id] : {}); }
   function styleFor(l){
     return `left:${num(l.x,0)}%;top:${num(l.y,0)}%;width:${num(l.w ?? l.width,20)}%;height:${num(l.h ?? l.height,10)}%;transform:rotate(${num(l.rot ?? l.rotation,0)}deg);z-index:${num(l.z ?? l.zIndex,20)};font-size:${num(l.fontSize,18)}px;${l.color ? `color:${esc(l.color)};` : ''}`;
@@ -194,7 +196,8 @@
   function renderTable(def, values){
     const headers = def.headers.map(h => `<th>${esc(h)}</th>`).join('');
     const rows = def.rows.map(row => `<tr>${row.map((cell,i)=> i===0 ? `<td>${esc(cell)}</td>` : `<td>${esc(valueText(values[cell]))}</td>`).join('')}</tr>`).join('');
-    return `<table class="v6-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    const tableStyle = (state && state.settings && state.settings.tableStyle) || 'classic';
+    return `<table class="v6-table v6-table-${esc(tableStyle)}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
   }
   function renderElement(e){
     const l = layoutFor(e.id, e.type);

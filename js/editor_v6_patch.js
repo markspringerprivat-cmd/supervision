@@ -15,7 +15,7 @@
   const THEME_DEFAULT = {
     heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
     slidePattern:'none', backgroundPattern:'none',
-    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', backgroundImage:''
+    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', backgroundImage:'', tableStyle:'classic'
   };
   const SLIDE_COUNT = 6;
   const BASE_IDS = new Set(['title','subtitle','kicker','groupName','table','note','thanks']);
@@ -182,7 +182,8 @@
       const txt = valueText(values[cell]);
       return `<td data-v6-field="${esc(cell)}" contenteditable="${editable ? 'true':'false'}">${esc(txt)}</td>`;
     }).join('')}</tr>`).join('');
-    return `<table class="v6-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    const tableStyle = (draft && draft.settings && draft.settings.tableStyle) || 'classic';
+    return `<table class="v6-table v6-table-${esc(tableStyle)}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
   }
   function getLayout(id, type){
     const l = draft.layout[id] || defaultLayout(type, slideIndex);
@@ -288,6 +289,8 @@
           <label>Musterziel <select id="v6PatternTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
           <label>Muster <select id="v6PatternType"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Wellen</option></select></label>
           <label>Musterfarbe <input id="v6PatternColor" type="color" value="#dbe4ef"></label>
+          <span class="v6-sep-neon" aria-hidden="true"></span>
+          <label>Tabellendesign <select id="v6TableStyle"><option value="classic">Klassisch</option><option value="clean">Klar</option><option value="soft">Weich</option><option value="striped">Gestreift</option><option value="dark">Dunkel</option></select></label>
         </div>
         <div class="v6-toolbar v6-contextbar" id="v6Context" data-editor-toolbar hidden>
           <label>Schriftgröße <input id="v6FontSize" type="number" min="8" max="140" value="22"> px</label>
@@ -325,7 +328,7 @@
     $('#v6Edit').addEventListener('click', () => { editMode = !editMode; if(!editMode){ activePanel=null; select(null); } updateToolbar(); renderSlide(); });
     $('#v6Undo').addEventListener('click', undo);
     $('#v6AddMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'add' ? null : 'add'; updateToolbar(); });
-    $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); updateToolbar(); });
+    $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); syncTableStyleInput(); updateToolbar(); });
     $('#v6AddText').addEventListener('click', addTextBox);
     $('#v6AddSticker').addEventListener('click', openStickerPicker);
     $('#v6Reset').addEventListener('click', async () => { if(!editMode) return; const ok = window.supervisionConfirm ? await window.supervisionConfirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?', 'Präsentation zurücksetzen', true) : confirm('Präsentationslayout auf den ursprünglichen Stand zurücksetzen?'); if(ok) resetToBaseline(); });
@@ -334,6 +337,8 @@
     $('#v6PatternTarget').addEventListener('change', syncPatternInputs);
     $('#v6PatternType').addEventListener('change', () => { if(!editMode) return; pushUndoOnce('pattern_'+$('#v6PatternTarget').value); setPatternFromControls(); });
     $('#v6PatternColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('patternColor_'+$('#v6PatternTarget').value); setPatternFromControls(); });
+    const tableStyleEl = $('#v6TableStyle');
+    if(tableStyleEl) tableStyleEl.addEventListener('change', () => { if(!editMode) return; pushUndoOnce('tableStyle'); draft.settings.tableStyle = tableStyleEl.value || 'classic'; dirty = true; renderSlide(); });
     $('#v6FontSize').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('fontsize_'+selectedId); setSelectedStyle({fontSize: clamp(num($('#v6FontSize').value,22),8,140)}); });
     $('#v6TextColor').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
     $('#v6Front').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(1); });
@@ -360,6 +365,12 @@
       colorEl.value = draft.settings.slidePatternColor || '#dbe4ef';
     }
   }
+
+  function syncTableStyleInput(){
+    const el = modal && modal.querySelector('#v6TableStyle');
+    if(el) el.value = (draft && draft.settings && draft.settings.tableStyle) || 'classic';
+  }
+
   function setPatternFromControls(){
     const target = modal.querySelector('#v6PatternTarget').value;
     const pattern = modal.querySelector('#v6PatternType').value || 'none';
@@ -702,7 +713,8 @@
   function renderReadOnlyTable(def, values){
     const headers = def.headers.map(h => `<th>${esc(h)}</th>`).join('');
     const rows = def.rows.map(row => `<tr>${row.map((cell,i)=>`<td>${esc(i===0 ? cell : valueText(values[cell]))}</td>`).join('')}</tr>`).join('');
-    return `<table class="v6-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    const tableStyle = (state && state.settings && state.settings.tableStyle) || 'classic';
+    return `<table class="v6-table v6-table-${esc(tableStyle)}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   const oldBuildPayload = (typeof buildPayload === 'function') ? buildPayload : (window.buildPayload || null);

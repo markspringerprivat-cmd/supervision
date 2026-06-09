@@ -15,7 +15,7 @@
   const THEME_DEFAULT = {
     heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
     slidePattern:'none', backgroundPattern:'none',
-    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', backgroundImage:'', tableStyle:'classic'
+    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', backgroundImage:'', tableStyle:'classic', slideBorder:'none', slideBorderColor:'#d8e0ec', gridVisible:false
   };
   const SLIDE_COUNT = 6;
   const BASE_IDS = new Set(['title','subtitle','kicker','groupName','table','note','thanks']);
@@ -118,19 +118,19 @@
     // Die Startlayouts sind bewusst großzügig gesetzt, damit Überschrift,
     // Gruppenname und Tabellen nicht ineinanderlaufen. Alle Werte sind Prozent
     // der Folie und bleiben dadurch auf unterschiedlichen Bildschirmgrößen stabil.
-    if(type === 'title') return {x:7,y:7,w:86,h:12,rot:0,z:20,fontSize:40,color:null};
-    if(type === 'kicker') return {x:7,y:22,w:50,h:5,rot:0,z:20,fontSize:13,color:null};
-    if(type === 'groupName') return {x:7,y:29,w:82,h:8,rot:0,z:20,fontSize:30,color:null};
-    if(type === 'subtitle') return {x:7,y:21,w:82,h:8,rot:0,z:20,fontSize:15,color:null};
+    if(type === 'title') return {x:7,y:7,w:86,h:12,rot:0,z:20,fontSize:40,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'kicker') return {x:7,y:22,w:50,h:5,rot:0,z:20,fontSize:13,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'groupName') return {x:7,y:29,w:82,h:8,rot:0,z:20,fontSize:30,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'subtitle') return {x:7,y:21,w:82,h:8,rot:0,z:20,fontSize:15,color:null,opacity:1,shadow:'none',border:'none'};
     if(type === 'table') {
-      if(Number(slide) === 0) return {x:7,y:43,w:86,h:34,rot:0,z:20,fontSize:15,color:null};
-      return {x:7,y:34,w:86,h:42,rot:0,z:20,fontSize:15,color:null};
+      if(Number(slide) === 0) return {x:7,y:43,w:86,h:34,rot:0,z:20,fontSize:15,color:null,opacity:1,shadow:'none',border:'none'};
+      return {x:7,y:34,w:86,h:42,rot:0,z:20,fontSize:15,color:null,opacity:1,shadow:'none',border:'none'};
     }
-    if(type === 'note') return {x:7,y:84,w:72,h:6,rot:0,z:20,fontSize:13,color:null};
+    if(type === 'note') return {x:7,y:84,w:72,h:6,rot:0,z:20,fontSize:13,color:null,opacity:1,shadow:'none',border:'none'};
     if(type === 'thanks') return {x:12,y:38,w:76,h:18,rot:0,z:20,fontSize:46,color:null};
-    if(type === 'textbox') return {x:12,y:74,w:25,h:10,rot:0,z:80,fontSize:18,color:null};
-    if(type === 'sticker') return {x:60,y:48,w:24,h:22,rot:0,z:90};
-    return {x:7,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null};
+    if(type === 'textbox') return {x:12,y:74,w:25,h:10,rot:0,z:80,fontSize:18,color:null,opacity:1,shadow:'none',border:'none',borderColor:'#d8e0ec'};
+    if(type === 'sticker') return {x:60,y:48,w:24,h:22,rot:0,z:90,opacity:1,shadow:'none',border:'none',borderColor:'#d8e0ec'};
+    return {x:7,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null,opacity:1,shadow:'none',border:'none'};
   }
   function slideDefs(values){
     values = values || initialValues();
@@ -193,7 +193,11 @@
   function styleFor(layout){
     const fs = layout.fontSize ? `font-size:${Number(layout.fontSize)}px;` : '';
     const col = layout.color ? `color:${layout.color};` : '';
-    return `left:${layout.x}%;top:${layout.y}%;width:${layout.w}%;height:${layout.h}%;transform:rotate(${layout.rot||0}deg);z-index:${layout.z||20};${fs}${col}`;
+    const op = `opacity:${clamp(num(layout.opacity,1),0.05,1)};`;
+    const sh = `box-shadow:${shadowCss(layout.shadow)};`;
+    const bd = layout.border && layout.border !== 'none' ? `border:${borderCss(layout.border, layout.borderColor)};` : '';
+    const br = borderRadiusCss(layout.border) ? `border-radius:${borderRadiusCss(layout.border)};` : '';
+    return `left:${layout.x}%;top:${layout.y}%;width:${layout.w}%;height:${layout.h}%;transform:rotate(${layout.rot||0}deg);z-index:${layout.z||20};${fs}${col}${op}${sh}${bd}${br}`;
   }
   function renderElement(elDef, editable){
     const id = elDef.id, type = elDef.type;
@@ -229,6 +233,7 @@
     applyTheme();
     bindSlideInteractions();
     updateToolbar();
+    renderThumbs();
   }
   function renderAll(){ renderSlide(); updateToolbar(); }
 
@@ -258,6 +263,9 @@
     slide.style.backgroundImage = patternCss(s.slidePattern, s.slidePatternColor);
     slide.style.backgroundSize = patternSize(s.slidePattern);
     slide.style.color = s.text;
+    slide.style.border = s.slideBorder && s.slideBorder !== 'none' ? borderCss(s.slideBorder, s.slideBorderColor) : '0 solid transparent';
+    slide.style.borderRadius = s.slideBorder === 'rounded' ? '26px' : '22px';
+    slide.classList.toggle('v6-grid-visible', !!s.gridVisible);
     slide.style.setProperty('--v6-heading-color', s.heading);
     slide.style.setProperty('--v6-text-color', s.text);
   }
@@ -286,20 +294,20 @@
           <button type="button" id="v6AddSticker" class="secondary">Sticker</button>
         </div>
         <div class="v6-toolbar v6-dock" id="v6DesignDock" data-editor-toolbar hidden>
-          <label>Farbe <select id="v6DesignTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
+          <label>Vorlage <select id="v6Template"><option value="">Keine</option><option value="sachlich">Sachlich</option><option value="modern">Modern</option><option value="schule">Schule</option><option value="kreativ">Kreativ</option></select></label><span class="v6-sep-neon" aria-hidden="true"></span><label>Farbe <select id="v6DesignTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
           <input id="v6DesignColor" type="color" value="#ffffff" aria-label="Farbe wählen">
           <span class="v6-sep-neon" aria-hidden="true"></span>
           <label>Musterziel <select id="v6PatternTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
           <label>Muster <select id="v6PatternType"><option value="none">Kein Muster</option><option value="dots">Punkte</option><option value="grid">Raster</option><option value="diagonal">Diagonal</option><option value="waves">Wellen</option></select></label>
           <label>Musterfarbe <input id="v6PatternColor" type="color" value="#dbe4ef"></label>
           <span class="v6-sep-neon" aria-hidden="true"></span>
-          <label>Tabellendesign <select id="v6TableStyle"><option value="classic">Klassisch</option><option value="clean">Klar</option><option value="soft">Weich</option><option value="striped">Gestreift</option><option value="dark">Dunkel</option></select></label>
+          <label>Tabellendesign <select id="v6TableStyle"><option value="classic">Klassisch</option><option value="clean">Klar</option><option value="soft">Weich</option><option value="striped">Gestreift</option><option value="dark">Dunkel</option></select></label><span class="v6-sep-neon" aria-hidden="true"></span><label>Folienrahmen <select id="v6SlideBorder"><option value="none">Kein Rahmen</option><option value="thin">Dünn</option><option value="dashed">Gestrichelt</option><option value="rounded">Abgerundet</option></select></label><label>Rahmenfarbe <input id="v6SlideBorderColor" type="color" value="#d8e0ec"></label><button type="button" id="v6GridToggle" class="secondary">Raster anzeigen</button>
         </div>
         <div class="v6-toolbar v6-contextbar" id="v6Context" data-editor-toolbar hidden>
           <label>Schriftgröße <input id="v6FontSize" type="number" min="8" max="140" value="22"> px</label>
-          <label>Textfarbe <input id="v6TextColor" type="color" value="#0f172a"></label>
+          <label>Textfarbe <input id="v6TextColor" type="color" value="#0f172a"></label><label>Transparenz <input id="v6Opacity" type="range" min="0.1" max="1" step="0.05" value="1"></label><label>Schatten <select id="v6Shadow"><option value="none">Kein Schatten</option><option value="soft">Weich</option><option value="strong">Stark</option></select></label><label>Rahmen <select id="v6Border"><option value="none">Kein Rahmen</option><option value="thin">Dünn</option><option value="dashed">Gestrichelt</option><option value="rounded">Abgerundet</option></select></label><label>Rahmenfarbe <input id="v6BorderColor" type="color" value="#d8e0ec"></label>
           <span class="v6-sep-neon" aria-hidden="true"></span>
-          <span class="v6-layer-control" aria-label="Ebenensteuerung">
+          <span class="v6-align-control"><button type="button" id="v6AlignLeft" class="secondary" title="Linksbündig">↤</button><button type="button" id="v6AlignCenter" class="secondary" title="Horizontal zentrieren">⇔</button><button type="button" id="v6AlignRight" class="secondary" title="Rechtsbündig">↦</button><button type="button" id="v6AlignTop" class="secondary" title="Oben">↥</button><button type="button" id="v6AlignMiddle" class="secondary" title="Vertikal zentrieren">⇕</button><button type="button" id="v6AlignBottom" class="secondary" title="Unten">↧</button></span><button type="button" id="v6Duplicate" class="secondary">Duplizieren</button><span class="v6-sep-neon" aria-hidden="true"></span><span class="v6-layer-control" aria-label="Ebenensteuerung">
             <button type="button" id="v6AllBack" class="secondary" title="Ganz nach hinten">&lt;&lt;</button>
             <button type="button" id="v6Back" class="secondary" title="Eine Ebene nach hinten">&lt;</button>
             <span class="v6-layer-indicator">Ebene: <strong id="v6LayerLevel">—</strong></span>
@@ -309,7 +317,7 @@
           <span class="v6-sep-neon" aria-hidden="true"></span>
           <button type="button" id="v6Delete" class="danger" disabled>Auswahl löschen</button>
         </div>
-        <div id="v6Stage" class="v6-stage"><section id="v6Slide" class="v6-slide"></section></div>
+        <div id="v6Stage" class="v6-stage"><aside id="v6Thumbs" class="v6-thumbs" data-editor-toolbar></aside><section id="v6Slide" class="v6-slide"></section></div>
         <div class="v6-slide-nav" data-editor-toolbar>
           <button type="button" id="v6Prev" class="secondary">←</button>
           <span id="v6Counter" class="v6-bottom-counter">1 / 6</span>
@@ -342,8 +350,29 @@
     $('#v6PatternColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('patternColor_'+$('#v6PatternTarget').value); setPatternFromControls(); });
     const tableStyleEl = $('#v6TableStyle');
     if(tableStyleEl) tableStyleEl.addEventListener('change', () => { if(!editMode) return; pushUndoOnce('tableStyle'); draft.settings.tableStyle = tableStyleEl.value || 'classic'; dirty = true; renderSlide(); });
+    const templateEl = $('#v6Template');
+    if(templateEl) templateEl.addEventListener('change', () => { if(!editMode || !templateEl.value) return; pushUndo(); Object.assign(draft.settings, DESIGN_TEMPLATES[templateEl.value] || {}); templateEl.value=''; dirty=true; renderSlide(); });
+    const slideBorderEl = $('#v6SlideBorder');
+    if(slideBorderEl) slideBorderEl.addEventListener('change', () => { if(!editMode) return; pushUndoOnce('slideBorder'); draft.settings.slideBorder = slideBorderEl.value || 'none'; dirty=true; applyTheme(); });
+    const slideBorderColorEl = $('#v6SlideBorderColor');
+    if(slideBorderColorEl) slideBorderColorEl.addEventListener('input', () => { if(!editMode) return; pushUndoOnce('slideBorderColor'); draft.settings.slideBorderColor = slideBorderColorEl.value || '#d8e0ec'; dirty=true; applyTheme(); });
+    const gridToggle = $('#v6GridToggle');
+    if(gridToggle) gridToggle.addEventListener('click', () => { if(!editMode) return; draft.settings.gridVisible = !draft.settings.gridVisible; dirty=true; applyTheme(); updateToolbar(); });
+
     $('#v6FontSize').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('fontsize_'+selectedId); setSelectedStyle({fontSize: clamp(num($('#v6FontSize').value,22),8,140)}); });
     $('#v6TextColor').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
+    $('#v6Opacity').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('opacity_'+selectedId); setSelectedStyle({opacity: num($('#v6Opacity').value,1)}); });
+    $('#v6Shadow').addEventListener('change', () => { if(!selectedId || !editMode) return; pushUndoOnce('shadow_'+selectedId); setSelectedStyle({shadow: $('#v6Shadow').value}); });
+    $('#v6Border').addEventListener('change', () => { if(!selectedId || !editMode) return; pushUndoOnce('border_'+selectedId); setSelectedStyle({border: $('#v6Border').value}); });
+    $('#v6BorderColor').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('borderColor_'+selectedId); setSelectedStyle({borderColor: $('#v6BorderColor').value}); });
+    $('#v6Duplicate').addEventListener('click', duplicateSelected);
+    $('#v6AlignLeft').addEventListener('click', () => alignSelected('left'));
+    $('#v6AlignCenter').addEventListener('click', () => alignSelected('center'));
+    $('#v6AlignRight').addEventListener('click', () => alignSelected('right'));
+    $('#v6AlignTop').addEventListener('click', () => alignSelected('top'));
+    $('#v6AlignMiddle').addEventListener('click', () => alignSelected('middle'));
+    $('#v6AlignBottom').addEventListener('click', () => alignSelected('bottom'));
+
     $('#v6Front').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(1); });
     $('#v6Back').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(-1); });
     $('#v6AllFront').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer('front'); });
@@ -372,6 +401,8 @@
   function syncTableStyleInput(){
     const el = modal && modal.querySelector('#v6TableStyle');
     if(el) el.value = (draft && draft.settings && draft.settings.tableStyle) || 'classic';
+    const sb = modal && modal.querySelector('#v6SlideBorder'); if(sb) sb.value = (draft && draft.settings && draft.settings.slideBorder) || 'none';
+    const sbc = modal && modal.querySelector('#v6SlideBorderColor'); if(sbc) sbc.value = (draft && draft.settings && draft.settings.slideBorderColor) || '#d8e0ec';
   }
 
   function setPatternFromControls(){
@@ -506,7 +537,7 @@
     const dx = (e.clientX - drag.startX) / drag.sr.width * 100;
     const dy = (e.clientY - drag.startY) / drag.sr.height * 100;
     let changes = {};
-    if(drag.mode === 'move') changes = {x: clamp(drag.x + dx, -30, 130), y: clamp(drag.y + dy, -30, 130)};
+    if(drag.mode === 'move') { const raw={x: clamp(drag.x + dx, -30, 130), y: clamp(drag.y + dy, -30, 130)}; const snapped=snapLayout(raw.x, raw.y, drag.w, drag.h, drag.el); changes = {x:snapped.x, y:snapped.y}; }
     if(drag.mode === 'resize') changes = {w: clamp(drag.w + dx, 4, 160), h: clamp(drag.h + dy, 3, 120)};
     if(drag.mode === 'rotate') { const a = Math.atan2(e.clientY-drag.center.y, e.clientX-drag.center.x)*180/Math.PI; changes = {rot: drag.rot + (a - drag.startAngle)}; }
     setElLayout(drag.el, changes); dirty = true;
@@ -543,7 +574,7 @@
     draft.stickers = (draft.stickers||[]).filter(x => x.id !== selectedId);
     selectedId = null; markDirty(); renderSlide();
   }
-  function addTextBox(){ if(!editMode) return; pushUndo(); const id=uid('tb'); draft.textboxes.push({id, slide:slideIndex, text:'Neuer Text', x:12, y:74, w:28, h:10, rot:0, z:100, fontSize:18, color:draft.settings.text}); dirty=true; renderSlide(); select(id); }
+  function addTextBox(){ if(!editMode) return; pushUndo(); const id=uid('tb'); draft.textboxes.push({id, slide:slideIndex, text:'Neuer Text', x:12, y:74, w:28, h:10, rot:0, z:100, fontSize:18, color:draft.settings.text, opacity:1, shadow:'none', border:'none', borderColor:'#d8e0ec'}); dirty=true; renderSlide(); select(id); }
   function stickerCategoryNames(){ return Object.keys(STICKER_CATEGORIES); }
   function preloadStickerImages(){
     const files = STICKERS.slice();
@@ -585,7 +616,7 @@
     pushUndo();
     const id=uid('st');
     const isDecor = /^Dekor/i.test(file);
-    draft.stickers.push({id, slide:slideIndex, src:STICKER_PATH+file, x:isDecor?62:54, y:isDecor?24:42, w:isDecor?18:30, h:isDecor?18:26, rot:0, z:110});
+    draft.stickers.push({id, slide:slideIndex, src:STICKER_PATH+file, x:isDecor?62:54, y:isDecor?24:42, w:isDecor?18:30, h:isDecor?18:26, rot:0, z:110, opacity:1, shadow:'none', border:'none', borderColor:'#d8e0ec'});
     if(picker) picker.hidden=true;
     dirty=true;
     renderSlide();
@@ -635,6 +666,58 @@
     });
   }
 
+
+  function selectedDataObject(id){
+    if(!id) return null;
+    if(id.startsWith('tb_')) return (draft.textboxes||[]).find(x=>x.id===id);
+    if(id.startsWith('st_')) return (draft.stickers||[]).find(x=>x.id===id);
+    return null;
+  }
+  function duplicateSelected(){
+    if(!selectedId || !editMode) return;
+    const obj = selectedDataObject(selectedId);
+    if(!obj) return;
+    pushUndo();
+    const copy = clone(obj);
+    copy.id = uid(selectedId.startsWith('st_') ? 'st' : 'tb');
+    copy.x = clamp(num(copy.x,10)+3, 0, 95);
+    copy.y = clamp(num(copy.y,10)+3, 0, 95);
+    copy.z = num(copy.z,90)+10;
+    if(selectedId.startsWith('st_')) draft.stickers.push(copy); else draft.textboxes.push(copy);
+    dirty=true; renderSlide(); select(copy.id);
+  }
+  function alignSelected(where){
+    if(!selectedId || !editMode) return;
+    const el = getElement(selectedId); if(!el) return;
+    const l = getElLayout(el); const c = {};
+    if(where === 'left') c.x = 7;
+    if(where === 'center') c.x = (100 - num(l.w,20)) / 2;
+    if(where === 'right') c.x = 93 - num(l.w,20);
+    if(where === 'top') c.y = 7;
+    if(where === 'middle') c.y = (100 - num(l.h,10)) / 2;
+    if(where === 'bottom') c.y = 93 - num(l.h,10);
+    pushUndo(); setElLayout(el, c); dirty = true; updateToolbar();
+  }
+  function snapValue(value, candidates, threshold){
+    let best = value;
+    candidates.forEach(c => { if(Math.abs(value - c) <= threshold) best = c; });
+    return best;
+  }
+  function snapLayout(x, y, w, h, el){
+    if(!draft.settings.gridVisible && !editMode) return {x,y};
+    const candidatesX = [0,7,10,25,50-w/2,50,75,90-w,93-w,100-w];
+    const candidatesY = [0,7,10,25,50-h/2,50,75,90-h,93-h,100-h];
+    const slideEls = modal ? Array.from(modal.querySelectorAll('.v6-el')).filter(n=>n!==el) : [];
+    slideEls.forEach(n=>{ const l=getElLayout(n); candidatesX.push(num(l.x,0), num(l.x,0)+num(l.w,0), num(l.x,0)+num(l.w,0)/2-w/2); candidatesY.push(num(l.y,0), num(l.y,0)+num(l.h,0), num(l.y,0)+num(l.h,0)/2-h/2); });
+    return {x:snapValue(x,candidatesX,1.0), y:snapValue(y,candidatesY,1.0)};
+  }
+  function renderThumbs(){
+    const box = modal && modal.querySelector('#v6Thumbs');
+    if(!box || !draft) return;
+    const defs = slideDefs(draft.values);
+    box.innerHTML = defs.map((d,i)=>`<button type="button" class="v6-thumb ${i===slideIndex?'active':''}" data-slide="${i}"><span>${i+1}</span><strong>${esc(d.title||('Folie '+(i+1)))}</strong></button>`).join('');
+    box.querySelectorAll('[data-slide]').forEach(b=>b.addEventListener('click',()=>{ slideIndex=Number(b.dataset.slide)||0; select(null); renderSlide(); }));
+  }
   function updateToolbar(){
     if(!modal || !draft) return;
     const counter = modal.querySelector('#v6Counter');
@@ -674,6 +757,10 @@
       const l = getElLayout(el);
       modal.querySelector('#v6FontSize').value = Math.round(num(l.fontSize, parseFloat(getComputedStyle(el).fontSize) || 22));
       modal.querySelector('#v6TextColor').value = toHex(l.color || getComputedStyle(el).color || '#0f172a');
+      modal.querySelector('#v6Opacity').value = clamp(num(l.opacity,1),0.1,1);
+      modal.querySelector('#v6Shadow').value = l.shadow || 'none';
+      modal.querySelector('#v6Border').value = l.border || 'none';
+      modal.querySelector('#v6BorderColor').value = toHex(l.borderColor || '#d8e0ec');
       const levelEl = modal.querySelector('#v6LayerLevel');
       if(levelEl) levelEl.textContent = getLayerLevel(el);
       const d = modal.querySelector('#v6Delete');
@@ -681,6 +768,7 @@
     }
     if(addMenu) addMenu.classList.toggle('success-btn', editMode && activePanel === 'add');
     if(designMenu) designMenu.classList.toggle('success-btn', editMode && activePanel === 'design');
+    const gt = modal.querySelector('#v6GridToggle'); if(gt) gt.textContent = draft.settings.gridVisible ? 'Raster ausblenden' : 'Raster anzeigen';
   }
   function toHex(c){ if(!c) return '#0f172a'; if(String(c).startsWith('#')) return c; const m=String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(!m) return '#0f172a'; return '#'+[m[1],m[2],m[3]].map(v=>(+v).toString(16).padStart(2,'0')).join(''); }
 
@@ -711,12 +799,12 @@
       else content = `<div class="v6-editable-text">${esc(text)}</div>`;
       return `<div class="v6-el v6-base v6-type-${esc(e.type)}" style="${styleFor(l)}">${content}</div>`;
     }).join('') + (state.textboxes||[]).filter(x=>x.slide===slideIndex).map(x=>`<div class="v6-el v6-textbox" style="${styleFor(Object.assign({}, defaultLayout('textbox'), x))}"><div class="v6-editable-text">${esc(x.text||'')}</div></div>`).join('') + (state.stickers||[]).filter(x=>x.slide===slideIndex).map(x=>`<div class="v6-el v6-sticker" style="${styleFor(Object.assign({}, defaultLayout('sticker'), x))}"><img src="${esc(x.src)}" alt=""></div>`).join('');
-    return `<section class="v6-slide v6-final-slide" style="background-color:${settings.slide};background-image:${patternCss(settings.slidePattern, settings.slidePatternColor)};background-size:${patternSize(settings.slidePattern)};color:${settings.text};--v6-heading-color:${settings.heading};--v6-text-color:${settings.text};">${slideHtml}</section>`;
+    return `<section class="v6-slide v6-final-slide" style="background-color:${settings.slide};background-image:${patternCss(settings.slidePattern, settings.slidePatternColor)};background-size:${patternSize(settings.slidePattern)};color:${settings.text};--v6-heading-color:${settings.heading};--v6-text-color:${settings.text};border:${settings.slideBorder&&settings.slideBorder!=='none'?borderCss(settings.slideBorder,settings.slideBorderColor):'0 solid transparent'};border-radius:${settings.slideBorder==='rounded'?'26px':'22px'};">${slideHtml}</section>`;
   }
   function renderReadOnlyTable(def, values){
     const headers = def.headers.map(h => `<th>${esc(h)}</th>`).join('');
     const rows = def.rows.map(row => `<tr>${row.map((cell,i)=>`<td>${esc(i===0 ? cell : valueText(values[cell]))}</td>`).join('')}</tr>`).join('');
-    const tableStyle = (state && state.settings && state.settings.tableStyle) || 'classic';
+    const tableStyle = (draft && draft.settings && draft.settings.tableStyle) || 'classic';
     return `<table class="v6-table v6-table-${esc(tableStyle)}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
   }
 

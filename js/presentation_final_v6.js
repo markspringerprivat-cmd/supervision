@@ -8,7 +8,7 @@
   const THEME_DEFAULT = {
     heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
     slidePattern:'none', backgroundPattern:'none',
-    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', tableStyle:'classic'
+    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', tableStyle:'classic', slideBorder:'none', slideBorderColor:'#d8e0ec'
   };
   const SLIDE_COUNT = 6;
   let state = null;
@@ -116,11 +116,11 @@
     out.textboxes = out.textboxes.filter(isObj).map((x,i)=>({
       id: textVal(x.id || ('textbox_'+i)), slide: clamp(num(x.slide ?? x.slideIndex,0),0,SLIDE_COUNT-1), text: textVal(x.text ?? x.html ?? x.content),
       x:num(x.x ?? x.left,12), y:num(x.y ?? x.top,74), w:num(x.w ?? x.width,25), h:num(x.h ?? x.height,10), rot:num(x.rot ?? x.rotation,0), z:num(x.z ?? x.zIndex,80+i),
-      fontSize:num(x.fontSize,18), color:textVal(x.color || '')
+      fontSize:num(x.fontSize,18), color:textVal(x.color || ''), opacity:num(x.opacity,1), shadow:textVal(x.shadow||'none'), border:textVal(x.border||'none'), borderColor:textVal(x.borderColor||'#d8e0ec')
     }));
     out.stickers = out.stickers.filter(isObj).map((x,i)=>({
       id: textVal(x.id || ('sticker_'+i)), slide: clamp(num(x.slide ?? x.slideIndex,0),0,SLIDE_COUNT-1), src: textVal(x.src || x.path || x.url),
-      x:num(x.x ?? x.left,60), y:num(x.y ?? x.top,48), w:num(x.w ?? x.width,24), h:num(x.h ?? x.height,22), rot:num(x.rot ?? x.rotation,0), z:num(x.z ?? x.zIndex,90+i)
+      x:num(x.x ?? x.left,60), y:num(x.y ?? x.top,48), w:num(x.w ?? x.width,24), h:num(x.h ?? x.height,22), rot:num(x.rot ?? x.rotation,0), z:num(x.z ?? x.zIndex,90+i), opacity:num(x.opacity,1), shadow:textVal(x.shadow||'none'), border:textVal(x.border||'none'), borderColor:textVal(x.borderColor||'#d8e0ec')
     })).filter(x => x.src && !/^data:image/i.test(x.src));
     return out;
   }
@@ -133,16 +133,16 @@
   }
   function elementKey(id){ return id + '__text'; }
   function defaultLayout(type, slide){
-    if(type === 'title') return {x:7,y:7,w:86,h:12,rot:0,z:20,fontSize:40,color:null};
-    if(type === 'kicker') return {x:7,y:22,w:50,h:5,rot:0,z:20,fontSize:13,color:null};
-    if(type === 'groupName') return {x:7,y:29,w:82,h:8,rot:0,z:20,fontSize:30,color:null};
-    if(type === 'subtitle') return {x:7,y:21,w:82,h:8,rot:0,z:20,fontSize:15,color:null};
-    if(type === 'table') return Number(slide) === 0 ? {x:7,y:43,w:86,h:34,rot:0,z:20,fontSize:15,color:null} : {x:7,y:34,w:86,h:42,rot:0,z:20,fontSize:15,color:null};
-    if(type === 'note') return {x:7,y:84,w:72,h:6,rot:0,z:20,fontSize:13,color:null};
+    if(type === 'title') return {x:7,y:7,w:86,h:12,rot:0,z:20,fontSize:40,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'kicker') return {x:7,y:22,w:50,h:5,rot:0,z:20,fontSize:13,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'groupName') return {x:7,y:29,w:82,h:8,rot:0,z:20,fontSize:30,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'subtitle') return {x:7,y:21,w:82,h:8,rot:0,z:20,fontSize:15,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'table') return Number(slide) === 0 ? {x:7,y:43,w:86,h:34,rot:0,z:20,fontSize:15,color:null,opacity:1,shadow:'none',border:'none'} : {x:7,y:34,w:86,h:42,rot:0,z:20,fontSize:15,color:null,opacity:1,shadow:'none',border:'none'};
+    if(type === 'note') return {x:7,y:84,w:72,h:6,rot:0,z:20,fontSize:13,color:null,opacity:1,shadow:'none',border:'none'};
     if(type === 'thanks') return {x:12,y:38,w:76,h:18,rot:0,z:20,fontSize:46,color:null};
-    if(type === 'textbox') return {x:12,y:74,w:25,h:10,rot:0,z:80,fontSize:18,color:null};
-    if(type === 'sticker') return {x:60,y:48,w:24,h:22,rot:0,z:90};
-    return {x:7,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null};
+    if(type === 'textbox') return {x:12,y:74,w:25,h:10,rot:0,z:80,fontSize:18,color:null,opacity:1,shadow:'none',border:'none',borderColor:'#d8e0ec'};
+    if(type === 'sticker') return {x:60,y:48,w:24,h:22,rot:0,z:90,opacity:1,shadow:'none',border:'none',borderColor:'#d8e0ec'};
+    return {x:7,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null,opacity:1,shadow:'none',border:'none'};
   }
   function slideDefs(values){
     return [
@@ -189,9 +189,27 @@
     return 'none';
   }
   function patternSize(kind){ if(kind==='dots') return '28px 28px'; if(kind==='grid') return '36px 36px'; if(kind==='diagonal') return '34px 34px'; if(kind==='waves') return '64px 32px'; return 'auto'; }
+  function shadowCss(v){
+    if(v === 'soft') return '0 10px 28px rgba(15,23,42,.18)';
+    if(v === 'strong') return '0 18px 48px rgba(15,23,42,.34)';
+    return 'none';
+  }
+  function borderCss(v, color){
+    color = color || '#d8e0ec';
+    if(v === 'thin') return `1.5px solid ${color}`;
+    if(v === 'dashed') return `2px dashed ${color}`;
+    if(v === 'rounded') return `2px solid ${color}`;
+    return '0 solid transparent';
+  }
+  function borderRadiusCss(v){ return v === 'rounded' ? '18px' : ''; }
+
   function layoutFor(id,type){ return Object.assign({}, defaultLayout(type, slideIndex), isObj(state.layout[id]) ? state.layout[id] : {}); }
   function styleFor(l){
-    return `left:${num(l.x,0)}%;top:${num(l.y,0)}%;width:${num(l.w ?? l.width,20)}%;height:${num(l.h ?? l.height,10)}%;transform:rotate(${num(l.rot ?? l.rotation,0)}deg);z-index:${num(l.z ?? l.zIndex,20)};font-size:${num(l.fontSize,18)}px;${l.color ? `color:${esc(l.color)};` : ''}`;
+    const opacity = `opacity:${clamp(num(l.opacity,1),0.05,1)};`;
+    const shadow = `box-shadow:${shadowCss(l.shadow)};`;
+    const border = l.border && l.border !== 'none' ? `border:${borderCss(l.border,l.borderColor)};` : '';
+    const radius = borderRadiusCss(l.border) ? `border-radius:${borderRadiusCss(l.border)};` : '';
+    return `left:${num(l.x,0)}%;top:${num(l.y,0)}%;width:${num(l.w ?? l.width,20)}%;height:${num(l.h ?? l.height,10)}%;transform:rotate(${num(l.rot ?? l.rotation,0)}deg);z-index:${num(l.z ?? l.zIndex,20)};font-size:${num(l.fontSize,18)}px;${l.color ? `color:${esc(l.color)};` : ''}${opacity}${shadow}${border}${radius}`;
   }
   function renderTable(def, values){
     const headers = def.headers.map(h => `<th>${esc(h)}</th>`).join('');
@@ -224,6 +242,8 @@
     deck.style.backgroundImage = patternCss(s.slidePattern, s.slidePatternColor);
     deck.style.backgroundSize = patternSize(s.slidePattern);
     deck.style.color = s.text;
+    deck.style.border = s.slideBorder && s.slideBorder !== 'none' ? borderCss(s.slideBorder, s.slideBorderColor) : '0 solid transparent';
+    deck.style.borderRadius = s.slideBorder === 'rounded' ? '28px' : '28px';
     deck.style.setProperty('--v6-heading-color', s.heading);
     deck.style.setProperty('--v6-text-color', s.text);
   }

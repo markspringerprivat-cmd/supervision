@@ -8875,3 +8875,47 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     } catch(_) {}
   });
 })();
+
+/* Canonical transferable presentation save patch v8
+   Speichert nur übertragbare Parameter und erstellt zusätzlich ein klares 1600x900-Schema.
+   Keine Hintergrundbild-Uploads, keine Base64-Daten. */
+(function(){
+  'use strict';
+  const DEFAULT_SETTINGS = {heading:'#1e3a5f',text:'#0f172a',background:'#071323',slide:'#ffffff',slidePattern:'none',backgroundPattern:'none',slidePatternColor:'#dbeafe',backgroundPatternColor:'#1f2937'};
+  const SETTINGS_KEY='presentation_settings', EXTRAS_KEY='presentation_extras', STICKERS_KEY='presentation_stickers_v1', LAYOUT_KEY='presentation_layout_stable_v2', TEXT_KEY='presentation_text_overrides';
+  function readObj(k, fb){ try{ if(typeof loadObj==='function') return loadObj(k,fb); const v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch(_){return fb;} }
+  function readText(k){ try{ return typeof loadText==='function' ? loadText(k) : (localStorage.getItem(k)||''); }catch(_){return '';} }
+  function cleanStr(v, max){ let s=String(v??''); if(/^data:image\//i.test(s)||(/base64,/i.test(s)&&s.length>5000)) return ''; if(max&&s.length>max) s=s.slice(0,max); return s; }
+  function isObj(v){return v&&typeof v==='object'&&!Array.isArray(v);} function arr(v){return Array.isArray(v)?v:[];}
+  function strip(v, depth){ if(depth>8)return null; if(v==null)return v; if(typeof v==='string')return cleanStr(v,100000); if(Array.isArray(v))return v.slice(0,500).map(x=>strip(x,depth+1)); if(typeof v==='object'){const o={}; Object.keys(v).forEach(k=>{ if(/backgroundImage|bgImage|imageData|dataUrl|base64|snapshot|history|undo|localStorage/i.test(k))return; o[k]=strip(v[k],depth+1);}); return o;} return v; }
+  function settings(){ const s=Object.assign({},DEFAULT_SETTINGS, readObj(SETTINGS_KEY,{})); delete s.backgroundImage; return strip(s,0); }
+  function number(v,fb){ const n=Number(v); return Number.isFinite(n)?n:fb; }
+  function normLayout(l, type){ const d= type==='title'?{x:7,y:7,w:86,h:12,z:20,fontSize:56}:type==='kicker'?{x:7,y:22,w:52,h:5,z:20,fontSize:13}:type==='heading2'?{x:7,y:29,w:86,h:9,z:20,fontSize:46}:type==='table'?{x:7,y:43,w:86,h:34,z:20,fontSize:20}:type==='note'?{x:7,y:82,w:86,h:6,z:20,fontSize:17}:type==='subtitle'?{x:7,y:22,w:86,h:10,z:20,fontSize:24}:{x:7,y:20,w:86,h:10,z:20,fontSize:20}; l=Object.assign({},d,isObj(l)?l:{}); return {x:number(l.x,d.x),y:number(l.y,d.y),w:number(l.w??l.width,d.w),h:number(l.h??l.height,d.h),rot:number(l.rot??l.rotation,0),z:number(l.z??l.zIndex,d.z),fontSize:number(l.fontSize,d.fontSize),color:cleanStr(l.color||'',80)}; }
+  function cleanSticker(x,i){ if(!isObj(x))return null; const src=cleanStr(x.src||x.path||x.url||'',300); if(!src||/^data:image\//i.test(src))return null; return {id:cleanStr(x.id||('st_'+i),80),slide:number(x.slide??x.slideIndex,0),src:src,x:number(x.x??x.left,60),y:number(x.y??x.top,14),w:number(x.w??x.width,22),h:number(x.h??x.height,22),rot:number(x.rot??x.rotation,0),z:number(x.z??x.zIndex,110+i)}; }
+  function cleanExtra(x,i){ if(!isObj(x))return null; if(x.src||x.path||x.url)return cleanSticker(x,i); return {id:cleanStr(x.id||('tx_'+i),80),type:'text',slide:number(x.slide??x.slideIndex,0),text:cleanStr(x.text||x.html||x.content||'',5000),x:number(x.x??x.left,10),y:number(x.y??x.top,70),w:number(x.w??x.width,25),h:number(x.h??x.height,8),rot:number(x.rot??x.rotation,0),z:number(x.z??x.zIndex,100+i),fontSize:number(x.fontSize,18),color:cleanStr(x.color||'',80)}; }
+  function values(){ return { groupName: readText('summary_group_name') || '', timestamp: new Date().toISOString(), supervisor:'', schulleitung:'', lehrkraftA:'', lehrkraftB:'' }; }
+  function canonical(){
+    const s=settings();
+    const layout=strip(readObj(LAYOUT_KEY,{}),0)||{};
+    const text=strip(readObj(TEXT_KEY,{}),0)||{};
+    const extras=arr(readObj(EXTRAS_KEY,[])).map(cleanExtra).filter(Boolean).filter(x=>x.type==='text');
+    const stickers=arr(readObj(STICKERS_KEY,[])).map(cleanSticker).filter(Boolean).concat(arr(readObj(EXTRAS_KEY,[])).map(cleanExtra).filter(Boolean).filter(x=>x.src));
+    const cfg={version:8,savedAt:new Date().toISOString(),canvas:{width:1600,height:900},settings:s,values:values(),text:text,textOverrides:text,layout:layout,stableLayout:layout,extras:extras,textboxes:extras,stickers:stickers};
+    cfg.slides=['s0','s1','s2','s3','s4','s5'].map((sid,idx)=>({id:sid,elements:{},stickers:stickers.filter(x=>Number(x.slide)===idx),textboxes:extras.filter(x=>Number(x.slide)===idx)}));
+    const types={s0_title:'title',s0_kicker:'kicker',s0_groupName:'heading2',s0_table:'table',s0_note:'note',s1_title:'title',s1_subtitle:'subtitle',s1_table:'table',s2_title:'title',s2_subtitle:'subtitle',s2_table:'table',s3_title:'title',s3_subtitle:'subtitle',s3_table:'table',s4_title:'title',s4_subtitle:'subtitle',s4_table:'table',s5_thanks:'thanks'};
+    Object.keys(types).forEach(id=>{ const idx=Number(id.slice(1,2)); if(cfg.slides[idx]) cfg.slides[idx].elements[id]=Object.assign({id:id,type:types[id],text:text[id+'__text']||''}, normLayout(layout[id],types[id])); });
+    return strip(cfg,0);
+  }
+  const previousCollect = window.collectPresentationSyncConfig;
+  window.collectPresentationSyncConfig = function(){
+    const c=canonical();
+    try{ const old=typeof previousCollect==='function'?previousCollect():null; if(isObj(old)){ c.legacy=strip(old,0); } }catch(_){}
+    return c;
+  };
+  const previousBuildPayload = window.buildPayload;
+  if(typeof previousBuildPayload==='function'){
+    window.buildPayload = function(){ const data=previousBuildPayload.apply(this,arguments)||{}; const cfg=window.collectPresentationSyncConfig(); data.presentationConfig=cfg; data.presentationV6=cfg; data.presentationSettings=cfg.settings; data.presentationLayout=cfg.layout; data.presentationStableLayout=cfg.stableLayout; data.presentationTextOverrides=cfg.textOverrides; data.presentationExtras=cfg.extras; data.presentationStickers=cfg.stickers; return strip(data,0); };
+  }
+  function removeBackgroundControls(root){ root=root||document; root.querySelectorAll('button,label,input').forEach(el=>{ const t=(el.textContent||el.value||'').trim().toLowerCase(); const id=String(el.id||'').toLowerCase(); if(t==='hintergrundbild'||t==='bild entfernen'||t==='hintergrundbild hochladen'||(el.type==='file'&&/bg|background|image/.test(id))) el.remove(); }); }
+  document.addEventListener('DOMContentLoaded',()=>{ removeBackgroundControls(document); setTimeout(()=>removeBackgroundControls(document),250); try{new MutationObserver(ms=>ms.forEach(m=>(m.addedNodes||[]).forEach(n=>{if(n&&n.nodeType===1)removeBackgroundControls(n)}))).observe(document.documentElement,{childList:true,subtree:true});}catch(_){} });
+})();

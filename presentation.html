@@ -4,76 +4,57 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Präsentation Gruppenergebnis</title>
-  <link rel="stylesheet" href="css/styles.css?v=presentation-sync-v2">
   <style>
-    :root{--ps-bg:#071323;--ps-slide:#fff;--ps-heading:#1e3a5f;--ps-text:#0f172a;}
-    html,body{height:100%;}
-    body.presentation-body{margin:0;min-height:100vh;background:var(--ps-bg);color:var(--ps-text);overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-    .presentation-shell{width:100vw;height:100vh;padding:0;display:grid;place-items:center;background:transparent;}
-    .presentation-toolbar{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(7,19,35,.94);border-bottom:1px solid rgba(255,255,255,.12);}
-    .presentation-toolbar button{border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer;}
-    .presentation-toolbar button.secondary{background:#f1f5f9;color:#0f172a;}
-    .presentation-toolbar button:not(.secondary){background:#274c77;color:#fff;}
-    .presentation-counter{margin-left:auto;color:#fff;font-weight:900;letter-spacing:.03em;}
-    .presentation-status{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:2100;background:#fff;border:1px solid #d8dde8;border-radius:14px;padding:18px 22px;box-shadow:0 18px 40px rgba(0,0,0,.18);font-weight:800;}
-    .presentation-status.warning{background:#fff7ed;color:#8a5b00;border-color:#fed7aa;}
-    #presentationSlide.presentation-slide{position:relative;width:min(78vw,1320px);height:min(calc(78vw * 9 / 16), calc(100vh - 160px));max-height:760px;aspect-ratio:16/9;margin-top:34px;border-radius:18px;background:var(--ps-slide);box-shadow:0 24px 70px rgba(0,0,0,.34);overflow:hidden;color:var(--ps-text);}
-    @supports (width: min(1px, 1px)){
-      #presentationSlide.presentation-slide{width:min(calc((100vh - 160px) * 16 / 9), 78vw, 1320px);height:min(calc(78vw * 9 / 16), calc(100vh - 160px), 760px);}
-    }
-    .ps-inner{position:relative;width:100%;height:100%;overflow:hidden;}
-    .ps-el{box-sizing:border-box;line-height:1.16;overflow:hidden;white-space:normal;overflow-wrap:anywhere;}
-    .ps-title{font-weight:900;color:var(--ps-heading);letter-spacing:-.035em;}
-    .ps-kicker{font-weight:800;}
-    .ps-heading2{font-weight:900;letter-spacing:-.025em;}
-    .ps-subtitle{font-weight:700;line-height:1.35;}
-    .ps-note{font-weight:800;line-height:1.3;}
-    .ps-table-wrap{width:100%;height:100%;overflow:visible;}
-    .ps-table{width:100%;height:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #d9e1ec;border-radius:10px;overflow:hidden;font-size:.78em;line-height:1.22;table-layout:fixed;}
-    .ps-table th,.ps-table td{border-right:1px solid #d9e1ec;border-bottom:1px solid #e7edf5;padding:.58em .72em;text-align:left;vertical-align:top;white-space:normal;overflow-wrap:anywhere;}
-    .ps-table th{background:#e9eff7;font-weight:900;}
-    .ps-table tr:last-child td{border-bottom:0;}
-    .ps-table th:last-child,.ps-table td:last-child{border-right:0;}
-    .ps-thanks{display:flex;align-items:center;justify-content:center;text-align:center;flex-direction:column;color:var(--ps-heading);font-weight:900;}
-    .ps-thanks h2{font-size:1em;margin:0 0 .25em;}
-    .ps-thanks p{font-size:.34em;margin:0;color:var(--ps-text);}
-    .ps-extra,.ps-sticker{position:absolute;box-sizing:border-box;transform-origin:center center;}
-    .ps-extra{white-space:pre-wrap;overflow:hidden;line-height:1.25;font-weight:700;}
-    .ps-sticker{object-fit:contain;pointer-events:none;}
-    .presentation-nav{position:fixed;left:0;right:0;bottom:18px;z-index:2000;display:flex;justify-content:center;gap:12px;}
-    .presentation-nav button{border:0;border-radius:10px;padding:12px 20px;font-weight:900;background:#274c77;color:#fff;cursor:pointer;}
-    .presentation-nav button.secondary{background:#f1f5f9;color:#0f172a;}
-    .presentation-nav button:disabled{opacity:.45;cursor:not-allowed;}
+    html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#071323;color:#0f172a;}
+    body{position:relative;}
+    .pres-toolbar{position:fixed;top:0;left:0;right:0;height:52px;z-index:50;display:flex;align-items:center;gap:12px;padding:0 10px;background:rgba(7,19,35,.96);border-bottom:1px solid rgba(255,255,255,.12);box-sizing:border-box;}
+    .pres-toolbar button{border:0;border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer;}
+    .pres-toolbar .light{background:#f1f5f9;color:#0f172a;}
+    .pres-toolbar .blue{background:#274c77;color:#fff;}
+    .pres-count{margin-left:auto;color:#fff;font-weight:900;letter-spacing:.03em;}
+    .stage{position:fixed;inset:52px 0 56px 0;overflow:hidden;}
+    .deck{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center;background:#fff;border-radius:28px;box-shadow:0 24px 80px rgba(0,0,0,.36);overflow:hidden;color:#0f172a;}
+    .slide-layer{position:absolute;inset:0;overflow:hidden;}
+    .el{position:absolute;box-sizing:border-box;overflow:hidden;white-space:normal;overflow-wrap:anywhere;line-height:1.18;}
+    .title{font-weight:950;letter-spacing:-.04em;}
+    .kicker{font-weight:850;}
+    .heading2{font-weight:950;letter-spacing:-.03em;}
+    .subtitle{font-weight:750;line-height:1.35;}
+    .note{font-weight:800;line-height:1.3;}
+    .table-wrap{overflow:hidden;}
+    .table-wrap table{width:100%;height:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #d9e1ec;border-radius:12px;overflow:hidden;table-layout:fixed;line-height:1.22;}
+    .table-wrap th,.table-wrap td{border-right:1px solid #d9e1ec;border-bottom:1px solid #e7edf5;padding:.55em .72em;text-align:left;vertical-align:top;white-space:normal;overflow-wrap:anywhere;}
+    .table-wrap th{background:#e9eff7;font-weight:950;}
+    .table-wrap th:last-child,.table-wrap td:last-child{border-right:0;}
+    .table-wrap tr:last-child td{border-bottom:0;}
+    .thanks{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;font-weight:950;}
+    .thanks h2{font-size:1em;margin:0 0 .25em;line-height:1.1;}
+    .thanks p{font-size:.35em;margin:0;font-weight:800;}
+    .sticker{position:absolute;object-fit:contain;transform-origin:center center;pointer-events:none;}
+    .nav{position:fixed;left:0;right:0;bottom:16px;z-index:40;display:flex;justify-content:center;gap:14px;}
+    .nav button{border:0;border-radius:10px;padding:12px 20px;font-weight:900;background:#274c77;color:#fff;cursor:pointer;}
+    .nav button.light{background:#f1f5f9;color:#0f172a;}
+    .nav button:disabled{opacity:.45;cursor:not-allowed;}
+    .status{position:fixed;z-index:80;left:50%;top:86px;transform:translateX(-50%);background:#fff;border:1px solid #d8dde8;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.25);padding:18px 22px;font-weight:850;max-width:min(760px,86vw);}
+    .status.warn{background:#fff7ed;color:#7c4a03;border-color:#fed7aa;}
     @media (max-width:900px) and (orientation:landscape){
-      .presentation-toolbar{padding:5px 8px;gap:8px;}
-      .presentation-toolbar button{padding:7px 10px;font-size:12px;}
-      #presentationSlide.presentation-slide{width:calc(100vw - 150px);height:calc((100vw - 150px) * 9 / 16);max-height:calc(100vh - 70px);margin-top:24px;}
-      .presentation-nav{top:50%;bottom:auto;left:0;right:0;justify-content:space-between;transform:translateY(-50%);padding:0 12px;pointer-events:none;}
-      .presentation-nav button{pointer-events:auto;border-radius:999px;width:54px;height:78px;padding:0;font-size:24px;}
+      .pres-toolbar{height:42px;padding:0 8px;gap:8px}.pres-toolbar button{padding:7px 10px;font-size:12px}.stage{inset:42px 70px 18px 70px}.nav{top:42px;bottom:18px;left:0;right:0;justify-content:space-between;align-items:center;padding:0 8px;pointer-events:none}.nav button{pointer-events:auto;width:54px;height:84px;border-radius:999px;padding:0;font-size:24px}.pres-count{font-size:12px}
     }
     @media (max-width:700px) and (orientation:portrait){
-      body.presentation-body:before{content:'Bitte das Smartphone quer halten';position:fixed;z-index:3000;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;color:#0f172a;border-radius:18px;padding:22px;width:min(86vw,360px);text-align:center;font-weight:900;box-shadow:0 18px 40px rgba(0,0,0,.3);}
-      #presentationSlide.presentation-slide{width:86vw;height:calc(86vw * 9 / 16);margin-top:80px;opacity:.25;}
-      .presentation-toolbar{display:none;}
-      .presentation-nav{display:none;}
+      .pres-toolbar,.nav{display:none}.stage{inset:0}.deck{opacity:.18}.status{display:block!important;top:50%;text-align:center}.status::before{content:'Bitte das Smartphone quer halten';display:block;font-size:20px;margin-bottom:10px;color:#0f172a}.status{color:#475569}
     }
   </style>
 </head>
-<body data-mode="presentation" class="presentation-body">
-  <main class="presentation-shell">
-    <div class="presentation-toolbar" role="toolbar" aria-label="Präsentationssteuerung">
-      <button id="presentationExitBtn" type="button" class="secondary">Präsentation abbrechen</button>
-      <button id="presentationFullscreenBtn" type="button">Vollbildmodus</button>
-      <span id="presentationCounter" class="presentation-counter">1 / 6</span>
-    </div>
-    <section id="presentationStatus" class="presentation-status">Präsentation wird geladen …</section>
-    <section id="presentationSlide" class="presentation-slide" aria-live="polite"></section>
-    <div class="presentation-nav">
-      <button id="presentationPrevBtn" class="secondary" type="button" aria-label="Zurück">←</button>
-      <button id="presentationNextBtn" type="button" aria-label="Weiter">→</button>
-    </div>
-  </main>
-  <script src="js/config.js?v=presentation-sync-v2"></script>
-  <script src="js/presentation_sync_standalone.js?v=presentation-sync-v2"></script>
+<body>
+  <div class="pres-toolbar">
+    <button id="exitBtn" class="light" type="button">Präsentation abbrechen</button>
+    <button id="fullBtn" class="blue" type="button">Vollbildmodus</button>
+    <span id="count" class="pres-count">1 / 6</span>
+  </div>
+  <div class="stage"><section id="deck" class="deck" aria-live="polite"><div id="slideLayer" class="slide-layer"></div></section></div>
+  <div id="status" class="status">Präsentation wird geladen …</div>
+  <div class="nav"><button id="prevBtn" class="light" type="button">←</button><button id="nextBtn" type="button">→</button></div>
+  <script src="js/config.js?v=canonical-presentation-v1"></script>
+  <script src="js/presentation_canonical.js?v=canonical-presentation-v1"></script>
 </body>
 </html>

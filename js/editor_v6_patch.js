@@ -247,8 +247,8 @@
     if(!stage || !slide || !draft) return;
     const s = Object.assign({}, THEME_DEFAULT, draft.settings || {});
     stage.style.backgroundColor = s.background;
-    stage.style.backgroundImage = [s.backgroundImage ? `url("${s.backgroundImage}")` : '', patternCss(s.backgroundPattern, s.backgroundPatternColor)].filter(Boolean).join(', ');
-    stage.style.backgroundSize = [s.backgroundImage ? 'cover' : '', patternSize(s.backgroundPattern)].filter(Boolean).join(', ');
+    stage.style.backgroundImage = patternCss(s.backgroundPattern, s.backgroundPatternColor);
+    stage.style.backgroundSize = patternSize(s.backgroundPattern);
     stage.style.backgroundPosition = 'center';
     slide.style.backgroundColor = s.slide;
     slide.style.backgroundImage = patternCss(s.slidePattern, s.slidePatternColor);
@@ -280,9 +280,6 @@
         <div class="v6-toolbar v6-dock" id="v6AddDock" data-editor-toolbar hidden>
           <button type="button" id="v6AddText" class="secondary">Text</button>
           <button type="button" id="v6AddSticker" class="secondary">Sticker</button>
-          <input id="v6BgInput" type="file" accept="image/*" hidden>
-          <button type="button" id="v6BgBtn" class="secondary">Hintergrundbild</button>
-          <button type="button" id="v6BgRemove" class="secondary">Bild entfernen</button>
         </div>
         <div class="v6-toolbar v6-dock" id="v6DesignDock" data-editor-toolbar hidden>
           <label>Farbe <select id="v6DesignTarget"><option value="slide">Folie</option><option value="background">Hintergrund</option></select></label>
@@ -337,9 +334,6 @@
     $('#v6PatternTarget').addEventListener('change', syncPatternInputs);
     $('#v6PatternType').addEventListener('change', () => { if(!editMode) return; pushUndoOnce('pattern_'+$('#v6PatternTarget').value); setPatternFromControls(); });
     $('#v6PatternColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('patternColor_'+$('#v6PatternTarget').value); setPatternFromControls(); });
-    $('#v6BgBtn').addEventListener('click', () => { if(!editMode) return; $('#v6BgInput').click(); });
-    $('#v6BgRemove').addEventListener('click', () => { if(!editMode) return; pushUndo(); draft.settings.backgroundImage=''; dirty=true; applyTheme(); updateToolbar(); });
-    $('#v6BgInput').addEventListener('change', (e) => { const f=e.target.files && e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ pushUndo(); draft.settings.backgroundImage=String(r.result||''); dirty=true; applyTheme(); updateToolbar(); }; r.readAsDataURL(f); e.target.value=''; });
     $('#v6FontSize').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('fontsize_'+selectedId); setSelectedStyle({fontSize: clamp(num($('#v6FontSize').value,22),8,140)}); });
     $('#v6TextColor').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
     $('#v6Front').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(1); });
@@ -380,12 +374,13 @@
     dirty = true;
     applyTheme();
   }
-  function open(){
+  function open(forceEdit){
     ensureModal();
     draft = clone(getSaved());
     savedAtOpen = clone(draft);
-    dirty = false; editMode = false; slideIndex = 0; selectedId = null; undoStack = []; activePanel = null;
+    dirty = false; editMode = !!forceEdit; slideIndex = 0; selectedId = null; undoStack = []; activePanel = null;
     modal.hidden = false;
+    try{ delete modal.dataset.savedOnce; }catch(_){}
     document.documentElement.classList.add('v6-modal-open');
     renderAll();
   }
@@ -414,14 +409,20 @@
       }
       if(save) commit(); else { draft = clone(savedAtOpen); dirty = false; }
     }
+    const shouldGoNext = !!(modal && modal.dataset.savedOnce === '1' && document.body && document.body.dataset.mode === 'summary');
     if(modal) modal.hidden = true;
     document.documentElement.classList.remove('v6-modal-open');
+    if(shouldGoNext){
+      const gid = (typeof getGroupId === 'function' ? getGroupId() : '') || new URLSearchParams(location.search).get('g') || '';
+      const url = 'uebermittlung.html' + (gid ? ('?g=' + encodeURIComponent(gid)) : '');
+      setTimeout(() => { window.location.href = url; }, 80);
+    }
   }
   function commit(){
     persistDomEdits();
     setLS(storageKey(STATE_KEY_BASE), draft);
     Object.entries(FIELD_MAP).forEach(([vKey, saveKey]) => { if(draft.values[vKey] !== undefined) saveTextSafe(saveKey, draft.values[vKey]); });
-    dirty = false; undoStack = []; savedAtOpen = clone(draft); updateToolbar(); toast('Gespeichert');
+    dirty = false; undoStack = []; savedAtOpen = clone(draft); if(modal) modal.dataset.savedOnce = '1'; updateToolbar(); toast('Gespeichert');
     try{ if(typeof renderSummary === 'function') renderSummary(getData()); }catch(e){}
   }
   function toast(msg){ const t=modal.querySelector('#v6Toast'); t.textContent=msg; t.hidden=false; clearTimeout(t._to); t._to=setTimeout(()=>t.hidden=true,1200); }

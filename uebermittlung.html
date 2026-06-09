@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ergebnis übermitteln</title>
+  <link rel="stylesheet" href="css/styles.css?v=handoff-flow-v1">
+</head>
+<body data-mode="summary" data-role="supervisor">
+<header><div class="wrap"><h1>Ergebnis übermitteln</h1><p>Präsentation speichern, Ergebnis teilen und Übersicht prüfen</p></div></header>
+<main class="wide-main">
+  <section class="card highlight">
+    <h2>1. Ergebnis an die zentrale Ergebnisübersicht senden</h2>
+    <p>Die Präsentation wurde lokal gespeichert. Sende jetzt das Gruppenergebnis mit der gespeicherten Präsentationsgestaltung ab. Danach kann die Präsentation später in der zentralen Ergebnisübersicht mit Roulette korrekt geladen werden.</p>
+    <label for="groupName">Gruppenname</label>
+    <input id="groupName" type="text">
+    <div class="nav-row">
+      <button id="submitResults" type="button">Ergebnis übermitteln</button>
+    </div>
+    <p id="submitStatus" class="small"></p>
+  </section>
+
+  <section class="card" id="shareCard">
+    <h2>2. Ergebnis mit der Gruppe teilen</h2>
+    <p>Dieser Link zeigt nur das Ergebnis dieser Gruppe. Er ist für die Gruppenmitglieder gedacht, nicht für die zentrale Ergebnisübersicht.</p>
+    <div class="share-grid">
+      <div class="nav-row">
+        <a id="groupShareLink" class="button secondary" href="#" target="_blank" rel="noopener">Gruppenergebnis öffnen</a>
+        <button id="copyGroupShareLink" class="secondary" type="button">Link kopieren</button>
+      </div>
+      <img id="groupShareQr" class="qr share-qr" alt="QR-Code zum Gruppenergebnis">
+    </div>
+  </section>
+
+  <section class="summary-accordion card" id="summaryOverviewSection">
+    <button type="button" class="summary-toggle" data-toggle-target="summaryContent" aria-expanded="false">3. Übersicht der Ergebnisse außerhalb der Präsentation</button>
+    <div id="summaryContent" class="summary-panel" hidden></div>
+  </section>
+</main>
+<footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
+<script src="js/config.js"></script><script src="js/app.js?v=handoff-flow-v1"></script>
+<script src="js/roles_flow_patch.js?v=handoff-flow-v1"></script>
+<script>
+(function(){
+  function getId(){
+    try{ if(typeof getGroupId === 'function') return getGroupId(); }catch(_){}
+    return new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_group_id') || '';
+  }
+  function shareUrl(){
+    var u = new URL('gruppe-ergebnis.html', location.href);
+    var gid = getId(); if(gid) u.searchParams.set('g', gid);
+    return u.toString();
+  }
+  function qrUrl(text){ return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(text); }
+  function refreshShare(){
+    var link = shareUrl();
+    var a = document.getElementById('groupShareLink');
+    var qr = document.getElementById('groupShareQr');
+    if(a) a.href = link;
+    if(qr) qr.src = qrUrl(link);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    refreshShare();
+    var copy = document.getElementById('copyGroupShareLink');
+    if(copy) copy.addEventListener('click', async function(){
+      var link = shareUrl();
+      try{ await navigator.clipboard.writeText(link); copy.textContent = 'Kopiert'; setTimeout(function(){copy.textContent='Link kopieren';},1200); }
+      catch(_){ window.prompt('Link kopieren:', link); }
+    });
+    var submit = document.getElementById('submitResults');
+    if(submit){
+      submit.addEventListener('click', function(){ setTimeout(refreshShare, 700); setTimeout(refreshShare, 1500); });
+    }
+  });
+})();
+</script>
+</body>
+</html>

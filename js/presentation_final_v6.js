@@ -182,11 +182,11 @@
       case 'dots': return `radial-gradient(${c} 1.8px, transparent 2px)`;
       case 'grid': return `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`;
       case 'diagonal': return `repeating-linear-gradient(135deg, transparent 0 14px, ${c} 14px 16px)`;
-      case 'waves': return `radial-gradient(ellipse at top, transparent 0 55%, ${c} 56% 61%, transparent 62%), radial-gradient(ellipse at bottom, transparent 0 55%, ${c} 56% 61%, transparent 62%)`;
+      case 'waves': return `radial-gradient(ellipse at 50% 120%, transparent 0 22px, ${c} 23px, transparent 24px)`;
       default: return 'none';
     }
   }
-  function patternSize(kind){ return kind === 'dots' ? '24px 24px' : kind === 'grid' ? '30px 30px' : kind === 'diagonal' ? '30px 30px' : kind === 'waves' ? '54px 30px' : 'auto'; }
+  function patternSize(kind){ return kind === 'dots' ? '24px 24px' : kind === 'grid' ? '30px 30px' : kind === 'diagonal' ? '30px 30px' : kind === 'waves' ? '46px 24px' : 'auto'; }
   function layoutFor(id,type){ return Object.assign({}, defaultLayout(type, slideIndex), isObj(state.layout[id]) ? state.layout[id] : {}); }
   function styleFor(l){
     return `left:${num(l.x,0)}%;top:${num(l.y,0)}%;width:${num(l.w ?? l.width,20)}%;height:${num(l.h ?? l.height,10)}%;transform:rotate(${num(l.rot ?? l.rotation,0)}deg);z-index:${num(l.z ?? l.zIndex,20)};font-size:${num(l.fontSize,18)}px;${l.color ? `color:${esc(l.color)};` : ''}`;

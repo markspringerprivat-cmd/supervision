@@ -4,48 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Zusammenfassung</title>
-  <link rel="stylesheet" href="css/styles.css?v=compact-protocol-v4">
+  <link rel="stylesheet" href="css/styles.css?v=handoff-flow-v1">
 </head>
 <body data-mode="summary" data-role="supervisor">
-<header><div class="wrap"><h1>Zusammenfassung</h1><p>Supervisorische Ergebnissicherung</p></div></header>
+<header><div class="wrap"><h1>Zusammenfassung</h1><p>Präsentation vorbereiten und Ergebnisse sichern</p></div></header>
 <main class="wide-main">
-  <section class="card highlight">
-    <h2>Übermittlung</h2>
-    <p>Nach Absenden der Ergebnisse werden diese für alle Teilnehmer*innen des Seminars sichtbar.</p>
-    <label for="groupName">Gruppenname</label>
-    <input id="groupName" type="text">
+  <section class="card highlight" id="summaryPresentationIntro">
+    <h2>Präsentation vorbereiten</h2>
+    <p>Im nächsten Schritt werden eure Notizen automatisch als Präsentation dargestellt. Ihr könnt die Folien noch prüfen und überarbeiten: Texte anpassen, Farben und Muster wählen, Sticker einfügen oder Elemente verschieben.</p>
+    <p>Die gespeicherte Präsentation wird später in der zentralen Ergebnisübersicht genutzt. Dort kann per Zufall eine Gruppe ausgewählt werden, die ihre Präsentation vorstellt. Deshalb sollte die Präsentation hier einmal sorgfältig geprüft und gespeichert werden.</p>
     <div class="nav-row">
-      <button id="submitResults">Ergebnisse absenden</button>
-      <a class="button secondary admin-only" href="ergebnisse.html" hidden>Ergebnisse ansehen</a>
+      <button type="button" id="openPresentationPrepBtnSafe" data-open-prep-safe="1">Präsentation anzeigen</button>
     </div>
-    <p id="submitStatus" class="small"></p>
+    <p class="small">Nach dem Speichern und Schließen gelangt ihr automatisch zur Übermittlung der Ergebnisse.</p>
   </section>
-  <section class="summary-accordion card" id="summaryPresentationSection" style="margin-top:18px">
-    <button type="button" class="summary-toggle" data-toggle-target="summaryPresentationPanel" aria-expanded="false">Präsentation</button>
-    <div id="summaryPresentationPanel" class="summary-panel" hidden>
-      <p class="small">Hier kann die Präsentation vor dem Absenden geprüft und vorbereitet werden. Änderungen an Tabellenfeldern werden in den lokalen Ergebnisdaten gespeichert und beim Absenden übernommen.</p>
-      <button type="button" id="openPresentationPrepBtnSafe" data-open-prep-safe="1">Präsentation vorbereiten</button>
-    </div>
-  </section>
+
   <section class="summary-accordion card" id="summaryOverviewSection" style="margin-top:18px">
     <button type="button" class="summary-toggle" data-toggle-target="summaryContent" aria-expanded="false">Übersicht</button>
     <div id="summaryContent" class="summary-panel" hidden></div>
   </section>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
-<script src="js/config.js"></script><script src="js/app.js?v=compact-protocol-v4"></script>
-<script src="js/roles_flow_patch.js?v=compact-protocol-v4"></script>
+<script src="js/config.js"></script><script src="js/app.js?v=handoff-flow-v1"></script>
+<script src="js/roles_flow_patch.js?v=handoff-flow-v1"></script>
 <script>
 (function(){
   function openPrepSafe(){
     try {
       if (typeof window.openPresentationPrepModalFinal === 'function') {
-        window.openPresentationPrepModalFinal();
+        window.openPresentationPrepModalFinal(true);
         return;
-      }
-      if (typeof window.ensurePresentationPrepModalFinal === 'function') {
-        var modal = window.ensurePresentationPrepModalFinal();
-        if (modal) { modal.hidden = false; return; }
       }
       alert('Die Präsentationsvorbereitung konnte nicht geöffnet werden. Bitte Seite neu laden.');
     } catch (err) {
@@ -67,6 +55,6 @@
   });
 })();
 </script>
-<script src="js/editor_v6_patch.js?v=compact-protocol-v4"></script>
+<script src="js/editor_v6_patch.js?v=handoff-flow-v1"></script>
 </body>
 </html>

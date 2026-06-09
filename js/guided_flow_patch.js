@@ -93,7 +93,7 @@
     const href=btn.getAttribute('href') || linkWithG(`phase1-${roleFromPage()}.html`);
     btn.addEventListener('click', async function(e){
       e.preventDefault(); e.stopImmediatePropagation();
-      const go = await niceDialog({title:'Bereit für das Gespräch?', text:'Warte, bis alle Gruppenmitglieder ihre Notizen abgeschlossen haben. Wenn alle bereit sind, beginnt im nächsten Schritt gemeinsam das Gespräch mit Phase 1.', actions:[{label:'Warten und weiter bearbeiten',value:false,className:'secondary'},{label:'Weiter zu Phase 1',value:true}]});
+      const go = await niceDialog({title:'Gespräch starten', text:'Warte, bis alle Gruppenmitglieder ihre Notizen abgeschlossen haben. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.', actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]});
       if(go) location.href = href;
     }, true);
   }

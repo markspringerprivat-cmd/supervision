@@ -9189,3 +9189,189 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     setTimeout(ensureRandomPool, 1200);
   });
 })();
+
+
+/* ==========================================================
+   Präsentationsdesign-Handoff-Fix v8
+   Sichert Muster, Texturen, Farben, Tabellenstil, Layout,
+   Textboxen und Sticker beim Schritt Zusammenfassung -> Übermittlung.
+   ========================================================== */
+(function(){
+  'use strict';
+  const DEFAULT_SETTINGS = {
+    heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
+    slidePattern:'none', backgroundPattern:'none',
+    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', tableStyle:'classic'
+  };
+  const STATE_KEY_BASE = 'presentation_v7_state';
+  const HANDOFF_KEY_BASE = 'presentation_handoff_v8';
+  const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+  function clone(o){ try { return JSON.parse(JSON.stringify(o || {})); } catch(_) { return {}; } }
+  function readLS(key){ try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(_) { return null; } }
+  function safeText(v){
+    if(v === null || v === undefined) return '';
+    if(typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if(isObj(v)) return safeText(v.text ?? v.value ?? v.html ?? v.content ?? '');
+    return String(v);
+  }
+  function cleanString(s, max){
+    s = safeText(s);
+    if(/^data:image\//i.test(s) || (/base64,/i.test(s) && s.length > 5000)) return '';
+    return max && s.length > max ? s.slice(0, max) : s;
+  }
+  function stripLarge(v, depth){
+    if(depth > 8) return null;
+    if(v === null || v === undefined) return v;
+    if(typeof v === 'string') return cleanString(v, 100000);
+    if(Array.isArray(v)) return v.slice(0, 500).map(x => stripLarge(x, depth + 1)).filter(x => x !== undefined);
+    if(typeof v === 'object'){
+      const out = {};
+      Object.keys(v).forEach(k => {
+        if(/backgroundImage|bgImage|imageData|dataUrl|base64|snapshot|history|undo|localStorage/i.test(k)) return;
+        out[k] = stripLarge(v[k], depth + 1);
+      });
+      return out;
+    }
+    return v;
+  }
+  function getGroupSafe(){
+    try {
+      const q = new URLSearchParams(location.search);
+      const fromUrl = q.get('g') || q.get('groupId') || q.get('token');
+      if(fromUrl) return fromUrl;
+    } catch(_) {}
+    try { if(typeof getGroupId === 'function') return getGroupId(); } catch(_) {}
+    try { return localStorage.getItem('sv_current_group') || 'default'; } catch(_) { return 'default'; }
+  }
+  function storageKey(group, base){ return 'sv_' + (group || getGroupSafe()) + '_' + base; }
+  function currentValuesFromPayload(data){
+    data = data || {};
+    const a = data.assignments || {};
+    const p2 = data.p2 || {}, p3 = data.p3 || {}, p4 = data.p4 || {}, p5 = data.p5 || {}, p6 = data.p6 || {};
+    return {
+      groupName: safeText(data.groupName || [a.supervisor,a.schulleitung,a['lehrkraft-a']||a.lehrkraftA,a['lehrkraft-b']||a.lehrkraftB].filter(Boolean).join(', ') || data.groupId || getGroupSafe() || 'Gruppe'),
+      timestamp: safeText(data.timestamp || new Date().toISOString()),
+      supervisor: safeText(a.supervisor || data.supervisor || ''),
+      schulleitung: safeText(a.schulleitung || data.schulleitung || ''),
+      lehrkraftA: safeText(a['lehrkraft-a'] || a.lehrkraftA || data.lehrkraftA || ''),
+      lehrkraftB: safeText(a['lehrkraft-b'] || a.lehrkraftB || data.lehrkraftB || ''),
+      p2slProblems: safeText(p2.slProbleme), p2slFeelings: safeText(p2.slGefuehle), p2slWishes: safeText(p2.slWuensche),
+      p2aProblems: safeText(p2.aProbleme), p2aFeelings: safeText(p2.aGefuehle), p2aWishes: safeText(p2.aWuensche),
+      p2bProblems: safeText(p2.bProbleme), p2bFeelings: safeText(p2.bGefuehle), p2bWishes: safeText(p2.bWuensche),
+      p3zielSL: safeText(p3.zielSL), p3zielA: safeText(p3.zielA), p3zielB: safeText(p3.zielB), p3gemeinsam: safeText(p3.gemeinsamkeiten), p3ziel: safeText(p3.gemeinsamesZiel),
+      p4kritik: safeText(p4.kritik), p4absprachen: safeText(p4.absprachen),
+      p5zustimmung: safeText(p5.zustimmung), p6prax: safeText(p6.praxistauglichkeit), p6support: safeText(p6.unterstuetzung), p6steps: safeText(p6.umsetzung)
+    };
+  }
+  function designScore(st){
+    if(!isObj(st)) return -1;
+    let score = 0;
+    const s = isObj(st.settings) ? st.settings : {};
+    Object.keys(DEFAULT_SETTINGS).forEach(k => { if(s[k] && s[k] !== DEFAULT_SETTINGS[k]) score += 30; });
+    if(st.layout && isObj(st.layout)) score += Object.keys(st.layout).length * 3;
+    if(st.text && isObj(st.text)) score += Object.keys(st.text).length * 4;
+    if(Array.isArray(st.textboxes)) score += st.textboxes.length * 15;
+    if(Array.isArray(st.stickers)) score += st.stickers.length * 15;
+    if(st.savedAt){ const t = Date.parse(st.savedAt); if(Number.isFinite(t)) score += Math.min(25, Math.max(0, (Date.now() - t) / 1000 / 60 / 60 / 24 < 7 ? 25 : 5)); }
+    return score;
+  }
+  function candidateList(data){
+    const group = getGroupSafe();
+    const groupName = safeText(data && data.groupName).trim();
+    const items = [];
+    function add(key, rank){
+      if(!key) return;
+      const st = readLS(key);
+      if(isObj(st)) items.push({key, rank: Number(rank) || 0, state: st});
+    }
+    add(storageKey(group, STATE_KEY_BASE), 1000);
+    add(storageKey(group, HANDOFF_KEY_BASE), 980);
+    add('sv_presentation_handoff_v8', 930);
+    try{
+      for(let i = 0; i < localStorage.length; i++){
+        const key = localStorage.key(i);
+        if(!key || !/(^sv_.+_(presentation_v7_state|presentation_handoff_v8)$)/.test(key)) continue;
+        if(items.some(x => x.key === key)) continue;
+        const st = readLS(key);
+        if(!isObj(st)) continue;
+        let rank = 100;
+        if(safeText(st.groupId) && safeText(st.groupId) === group) rank += 760;
+        if(groupName && safeText(st.values && st.values.groupName).trim() === groupName) rank += 620;
+        items.push({key, rank, state: st});
+      }
+    }catch(_){}
+    return items.sort((a,b) => (b.rank + designScore(b.state)) - (a.rank + designScore(a.state)));
+  }
+  function pickSavedPresentationState(data){
+    const candidates = candidateList(data || {});
+    return candidates.length ? clone(candidates[0].state) : {};
+  }
+  function normalizePresentationState(data){
+    const values = currentValuesFromPayload(data);
+    const st = pickSavedPresentationState(data);
+    const out = {
+      version: 6,
+      savedAt: new Date().toISOString(),
+      groupId: getGroupSafe(),
+      settings: Object.assign({}, DEFAULT_SETTINGS, isObj(st.settings) ? st.settings : {}),
+      values: Object.assign({}, values, isObj(st.values) ? st.values : {}, values),
+      text: isObj(st.text) ? st.text : (isObj(st.textOverrides) ? st.textOverrides : {}),
+      textOverrides: isObj(st.text) ? st.text : (isObj(st.textOverrides) ? st.textOverrides : {}),
+      layout: isObj(st.layout) ? st.layout : {},
+      stableLayout: isObj(st.stableLayout) ? st.stableLayout : (isObj(st.layout) ? st.layout : {}),
+      textboxes: Array.isArray(st.textboxes) ? st.textboxes : (Array.isArray(st.extras) ? st.extras : []),
+      extras: Array.isArray(st.textboxes) ? st.textboxes : (Array.isArray(st.extras) ? st.extras : []),
+      stickers: Array.isArray(st.stickers) ? st.stickers : []
+    };
+    delete out.settings.backgroundImage;
+    Object.keys(out.values).forEach(k => out.values[k] = safeText(out.values[k]));
+    Object.keys(out.text).forEach(k => out.text[k] = safeText(out.text[k]));
+    out.textOverrides = Object.assign({}, out.text);
+    out.textboxes = out.textboxes.filter(isObj).map((x,i) => ({
+      id: cleanString(x.id || ('textbox_' + i), 80),
+      slide: Number(x.slide ?? x.slideIndex) || 0,
+      text: cleanString(x.text ?? x.html ?? x.content, 5000),
+      x: Number(x.x ?? x.left) || 12, y: Number(x.y ?? x.top) || 74,
+      w: Number(x.w ?? x.width) || 25, h: Number(x.h ?? x.height) || 10,
+      rot: Number(x.rot ?? x.rotation) || 0, z: Number(x.z ?? x.zIndex) || 80,
+      fontSize: Number(x.fontSize) || 18, color: cleanString(x.color || '', 80)
+    }));
+    out.extras = out.textboxes;
+    out.stickers = out.stickers.filter(isObj).map((x,i) => ({
+      id: cleanString(x.id || ('sticker_' + i), 80),
+      slide: Number(x.slide ?? x.slideIndex) || 0,
+      src: cleanString(x.src ?? x.path ?? x.url, 300),
+      x: Number(x.x ?? x.left) || 60, y: Number(x.y ?? x.top) || 48,
+      w: Number(x.w ?? x.width) || 24, h: Number(x.h ?? x.height) || 22,
+      rot: Number(x.rot ?? x.rotation) || 0, z: Number(x.z ?? x.zIndex) || 90
+    })).filter(x => x.src && !/^data:image\//i.test(x.src));
+    return stripLarge(out, 0);
+  }
+  window.collectPresentationSyncConfig = function(){
+    let data = {};
+    try { data = typeof collectSupervisorData === 'function' ? collectSupervisorData() : {}; } catch(_) {}
+    return normalizePresentationState(data);
+  };
+  const previousBuildPayload = (typeof window.buildPayload === 'function') ? window.buildPayload : null;
+  window.buildPayload = buildPayload = function(){
+    let data = {};
+    try { data = previousBuildPayload ? previousBuildPayload.apply(this, arguments) : (typeof collectSupervisorData === 'function' ? collectSupervisorData() : {}); } catch(_) {
+      try { data = typeof collectSupervisorData === 'function' ? collectSupervisorData() : {}; } catch(__) { data = {}; }
+    }
+    data = isObj(data) ? data : {};
+    data.groupName = (typeof loadText === 'function' && loadText('summary_group_name')) || data.groupName || data.groupId || 'Gruppe';
+    data.timestampLocal = new Date().toLocaleString('de-DE');
+    const pres = normalizePresentationState(data);
+    data.presentationV6 = pres;
+    data.presentationConfig = pres;
+    data.presentationJson = pres;
+    data.presentationSettings = pres.settings;
+    data.presentationValues = pres.values;
+    data.presentationTextOverrides = pres.text;
+    data.presentationLayout = pres.layout;
+    data.presentationStableLayout = pres.stableLayout;
+    data.presentationExtras = pres.textboxes;
+    data.presentationStickers = pres.stickers;
+    return stripLarge(data, 0);
+  };
+})();

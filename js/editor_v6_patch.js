@@ -92,6 +92,8 @@
   function getSaved(){
     const saved = getLS(storageKey(STATE_KEY_BASE), null);
     if (saved) return mergeState(saved);
+    const handoff = getLS(storageKey('presentation_handoff_v8'), null) || getLS('sv_presentation_handoff_v8', null);
+    if (handoff && handoff.settings) return mergeState(handoff);
     const legacy = getLS(storageKey(LEGACY_STATE_KEY), null);
     if (legacy && legacy.settings) return mergeState(legacyToV6(legacy));
     return getBaseline();
@@ -111,7 +113,31 @@
   function legacyToV6(s){
     return {version:6, settings:s.settings || {}, values:s.values || {}, text:s.text || {}, layout:s.layout || {}, textboxes:s.textboxes || s.presentationExtras || [], stickers:s.stickers || s.presentationStickers || []};
   }
-  function saveState(){ setLS(storageKey(STATE_KEY_BASE), draft); }
+
+  // Übergabe-Fix: Der Editor speichert das vollständige V6-Design zusätzlich
+  // in stabile Handoff-Keys. Die spätere Übermittlungsseite lädt diesen Editor
+  // nicht erneut und kann die Gestaltung sonst verlieren, wenn der Gruppen-Key
+  // bei der Navigation nicht exakt identisch aufgelöst wird.
+  function mirrorPresentationHandoff(state){
+    try{
+      if(!state) return;
+      const handoff = mergeState(clone(state));
+      handoff.version = 6;
+      handoff.savedAt = new Date().toISOString();
+      handoff.groupId = getGroup();
+      setLS(storageKey('presentation_handoff_v8'), handoff);
+      setLS('sv_presentation_handoff_v8', handoff);
+      if(typeof saveObj === 'function'){
+        saveObj('presentation_settings', handoff.settings || {});
+        saveObj('presentation_layout_stable_v2', handoff.layout || {});
+        saveObj('presentation_text_overrides', handoff.text || {});
+        saveObj('presentation_extras', Array.isArray(handoff.textboxes) ? handoff.textboxes : []);
+        saveObj('presentation_stickers_v1', Array.isArray(handoff.stickers) ? handoff.stickers : []);
+      }
+    }catch(_e){}
+  }
+
+  function saveState(){ setLS(storageKey(STATE_KEY_BASE), draft); mirrorPresentationHandoff(draft); }
   function resetToBaseline(){ draft = clone(getBaseline()); selectedId = null; undoStack = []; dirty = true; renderAll(); }
 
   function defaultLayout(type, slide){
@@ -430,7 +456,9 @@
   }
   function commit(){
     persistDomEdits();
+    try{ draft.groupId = getGroup(); draft.savedAt = new Date().toISOString(); }catch(_e){}
     setLS(storageKey(STATE_KEY_BASE), draft);
+    mirrorPresentationHandoff(draft);
     Object.entries(FIELD_MAP).forEach(([vKey, saveKey]) => { if(draft.values[vKey] !== undefined) saveTextSafe(saveKey, draft.values[vKey]); });
     dirty = false; undoStack = []; savedAtOpen = clone(draft); if(modal) modal.dataset.savedOnce = '1'; updateToolbar(); toast('Gespeichert');
     try{ if(typeof renderSummary === 'function') renderSummary(getData()); }catch(e){}

@@ -1,4 +1,4 @@
-/* Guided flow, phase status, required validation and presentation save dialog */
+/* Guided flow, locked phase status, required validation and presentation save dialog */
 (function(){
   'use strict';
   const PHASE_LABELS = {
@@ -8,7 +8,7 @@
     1:['sup_p1_rahmen'],
     2:['sup_p2_sl_probleme','sup_p2_sl_gefuehle','sup_p2_sl_wuensche','sup_p2_a_probleme','sup_p2_a_gefuehle','sup_p2_a_wuensche','sup_p2_b_probleme','sup_p2_b_gefuehle','sup_p2_b_wuensche'],
     3:['sup_p3_ziel_sl','sup_p3_ziel_a','sup_p3_ziel_b','sup_p3_gemeinsamkeiten','sup_p3_gemeinsames_ziel'],
-    4:['sup_p4_kritik','sup_p4_absprachen'],
+    4:['sup_p4_kritik','sup_p4_anerkennung','sup_p4_absprachen'],
     5:['sup_p5_zustimmung_status','sup_p5_zustimmung'],
     6:['sup_p6_praxistauglichkeit','sup_p6_unterstuetzung','sup_p6_umsetzung']
   };
@@ -17,14 +17,41 @@
   function ltxt(k){ try{ if(typeof loadText==='function') return loadText(k)||''; }catch(_){} return localStorage.getItem(key(k)) || localStorage.getItem('sv_'+k) || localStorage.getItem(k) || ''; }
   function linkWithG(url){ try{ if(typeof linkWithState==='function') return linkWithState(url); }catch(_){} const g=gid(); return g ? `${url}${url.includes('?')?'&':'?'}g=${encodeURIComponent(g)}` : url; }
   function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+  function cssEsc(s){ return (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/[^a-zA-Z0-9_-]/g,'\\$&'); }
   function roleFromPage(){ return document.body.dataset.role || ((location.pathname.match(/(?:phase\d-|gedanken-|rolle-)([^.]+)\.html/)||[])[1]) || 'supervisor'; }
   function phaseFromPage(){ return Number(document.body.dataset.phase || ((location.pathname.match(/phase(\d)-/)||[])[1]) || 0); }
   function isRecorderRole(){ const r=roleFromPage(); return r==='supervisor' || r==='protokoll'; }
-  function phaseComplete(n){
-    if(!isRecorderRole()) return true;
+  function fieldForKey(k){ return document.querySelector(`[data-save="${cssEsc(k)}"]`); }
+  function missingForPhase(n, highlight){
     const keys = REQUIRED_BY_PHASE[n] || [];
-    return keys.length ? keys.every(k => String(ltxt(k)).trim().length>0) : true;
+    const missing = [];
+    keys.forEach(k=>{
+      const field = Number(n) === phaseFromPage() ? fieldForKey(k) : null;
+      const val = field ? String(field.value||'').trim() : String(ltxt(k)).trim();
+      if(!val){
+        missing.push(k);
+        if(highlight && field){
+          field.classList.add('sv-required-missing');
+          const wrap=field.closest('.required-field,.required-field-box,.required-field-wrap,.role-note-block,section.card') || field;
+          wrap.classList.add('sv-required-missing-wrap');
+        }
+      }
+    });
+    return missing;
   }
+  function missingForRange(from, to, highlight){
+    const miss = [];
+    for(let n=from; n<=to; n++) missingForPhase(n, highlight).forEach(k=>miss.push({phase:n,key:k}));
+    return miss;
+  }
+  function phaseComplete(n){ return missingForPhase(Number(n), false).length === 0; }
+  function canOpenPhase(n){
+    n = Number(n);
+    if(!n || n <= 1) return true;
+    for(let i=1; i<n; i++){ if(!phaseComplete(i)) return false; }
+    return true;
+  }
+  function uniquePhases(missing){ return Array.from(new Set(missing.map(x=>x.phase))).sort((a,b)=>a-b); }
   function niceDialog(opts){
     opts = Object.assign({title:'Hinweis', text:'', actions:[{label:'OK', value:true}]}, opts||{});
     return new Promise(resolve=>{
@@ -45,27 +72,20 @@
   function installPhaseLegend(){
     if(document.body.dataset.mode !== 'phase') return;
     const phase = phaseFromPage(); const role=roleFromPage();
-    const main=document.querySelector('main'); if(!main || document.querySelector('.sv-phase-status-nav')) return;
+    const main=document.querySelector('main'); if(!main) return;
     const nav=document.createElement('nav');
     nav.className='sv-phase-status-nav';
     nav.setAttribute('aria-label','Phasenübersicht');
     nav.innerHTML = Object.keys(PHASE_LABELS).map(num=>{
-      const n=Number(num); const state=phaseComplete(n)?'done':'open';
-      return `<a class="sv-phase-chip ${n===phase?'active':''} ${state}" href="${linkWithG(`phase${n}-${role}.html`)}" title="Phase ${n}: ${PHASE_LABELS[n]}"><span>${n}</span><small>${PHASE_LABELS[n]}</small></a>`;
+      const n=Number(num);
+      const complete=phaseComplete(n);
+      const locked=!canOpenPhase(n);
+      const state=complete?'done':'open';
+      const href=linkWithG(`phase${n}-${role}.html`);
+      return `<a class="sv-phase-chip ${n===phase?'active':''} ${state} ${locked?'locked':''}" href="${href}" data-phase-target="${n}" ${locked?'aria-disabled="true" data-locked="1"':''} title="Phase ${n}: ${PHASE_LABELS[n]}"><span>${n}</span><small>${PHASE_LABELS[n]}</small></a>`;
     }).join('');
-    const old=document.getElementById('phaseBar');
+    const old=document.querySelector('.sv-phase-status-nav') || document.getElementById('phaseBar');
     if(old) old.replaceWith(nav); else main.prepend(nav);
-  }
-  function currentMissing(){
-    const phase=phaseFromPage(); if(!isRecorderRole()) return [];
-    const keys=REQUIRED_BY_PHASE[phase] || [];
-    const missing = [];
-    keys.forEach(k=>{
-      const field=document.querySelector(`[data-save="${CSS.escape(k)}"]`);
-      const val = field ? String(field.value||'').trim() : String(ltxt(k)).trim();
-      if(!val) { missing.push(k); if(field){ field.classList.add('sv-required-missing'); const wrap=field.closest('.required-field,.required-field-box,.required-field-wrap,.role-note-block,section.card') || field; wrap.classList.add('sv-required-missing-wrap'); }}
-    });
-    return missing;
   }
   function clearMissing(el){
     if(!el) return; el.classList.remove('sv-required-missing');
@@ -74,15 +94,28 @@
   }
   function installRequiredGuard(){
     if(document.body.dataset.mode !== 'phase') return;
-    document.addEventListener('input',e=>{ if(e.target.matches('[data-save]')) { clearMissing(e.target); setTimeout(installPhaseLegend,30); }}, true);
-    const next=document.getElementById('nextPhase');
-    if(!next || next.dataset.flowGuard==='1') return;
-    next.dataset.flowGuard='1';
-    next.addEventListener('click', async function(e){
-      const missing=currentMissing();
+    document.addEventListener('input',e=>{ if(e.target.matches('[data-save]')) { clearMissing(e.target); setTimeout(installPhaseLegend,90); }}, true);
+    document.addEventListener('change',e=>{ if(e.target.matches('[data-save]')) { clearMissing(e.target); setTimeout(installPhaseLegend,90); }}, true);
+    document.addEventListener('click', async function(e){
+      const chip=e.target.closest('.sv-phase-chip[data-phase-target]');
+      if(chip && chip.dataset.locked==='1'){
+        e.preventDefault(); e.stopImmediatePropagation();
+        const target=Number(chip.dataset.phaseTarget||'0');
+        const missing=missingForRange(1, Math.max(1,target-1), true);
+        const phases=uniquePhases(missing).map(n=>'Phase '+n).join(', ');
+        await niceDialog({title:'Phase noch gesperrt', text:`Diese Phase ist erst verfügbar, wenn die vorherigen Pflichtfelder ausgefüllt sind. Offen: ${phases || 'vorherige Phase'}.`, actions:[{label:'OK',value:true}]});
+        return;
+      }
+      const next=e.target.closest('#nextPhase');
+      if(!next) return;
+      const phase=phaseFromPage();
+      const isSummaryButton = phase===6 && /zusammenfassen/i.test(next.textContent || '');
+      if(!isRecorderRole() && !isSummaryButton) return;
+      const missing = missingForRange(1, phase, true);
       if(missing.length){
         e.preventDefault(); e.stopImmediatePropagation();
-        await niceDialog({title:'Pflichtfelder fehlen', text:'Bitte fülle zuerst alle rot markierten Pflichtfelder dieser Phase aus. Erst danach kannst du zur nächsten Seite wechseln.', actions:[{label:'OK',value:true}]});
+        const phases=uniquePhases(missing).map(n=>'Phase '+n).join(', ');
+        await niceDialog({title:'Pflichtfelder fehlen', text:`Bitte fülle zuerst alle Pflichtfelder aus. Rot markierte Felder müssen ergänzt werden. Offen: ${phases}.`, actions:[{label:'OK',value:true}]});
       }
     }, true);
   }
@@ -111,7 +144,7 @@
       <section class="sv-guidance-stage" aria-live="polite">
         <article class="sv-guidance-card is-active" data-step="0">
           <h2>Ihr habt das Gespräch beendet.</h2>
-          <p>Im nächsten Schritt wird aus euren Notizen eine Präsentation erstellt. Diese Präsentation kann später im Plenum genutzt werden, falls eure Gruppe zufällig ausgewählt wird.</p>
+          <p>Im nächsten Schritt wird aus euren Notizen eine Präsentation erstellt. Diese Präsentation kann später im Plenum genutzt werden, falls eure Gruppe zufällig ausgewählt wird, ihre Ergebnisse vorzustellen.</p>
           <div class="nav-row"><button type="button" class="secondary" data-guide-back disabled>Zurück</button><button type="button" data-guide-next>Weiter</button></div>
         </article>
         <article class="sv-guidance-card" data-step="1" hidden>
@@ -156,28 +189,62 @@
           <label for="groupName">Gruppenname</label><input id="groupName" type="text">
           <div class="nav-row"><button type="button" class="secondary" data-tx-prev>Zurück</button><button id="submitResults" type="button">Ergebnis übermitteln</button></div>
           <p id="submitStatus" class="small"></p>
-          <div id="afterSubmitStart" class="nav-row" hidden><a class="button secondary" href="index.html">Zurück zur Startseite</a></div>
         </article>
-        <article class="sv-guidance-card" data-tx="2" hidden>
-          <h2>Übersicht prüfen</h2>
-          <p>Hier könnt ihr eure Ergebnisse außerhalb der Präsentation noch einmal kontrollieren.</p>
-          <div id="summaryContent" class="summary-panel"></div>
-          <div class="nav-row"><button type="button" class="secondary" data-tx-prev>Zurück</button><a class="button" href="index.html">Zurück zur Startseite</a></div>
+        <article class="sv-guidance-card sv-thank-you-card" data-tx="2" hidden>
+          <h2>Vielen Dank für deine Teilnahme.</h2>
+          <p>Du kannst zur Startseite zurückkehren.</p>
+          <div class="nav-row">
+            <a id="finalPresentationLink" class="button" href="presentation.html" target="_blank" rel="noopener">Fertige Präsentation anzeigen</a>
+            <button type="button" class="secondary" data-show-final-summary>Ergebnisse als Tabelle anzeigen</button>
+            <a class="button secondary" href="index.html">Zurück zur Startseite</a>
+          </div>
+          <div id="summaryContent" class="summary-panel sv-final-summary" hidden></div>
         </article>
       </section>`;
     if(typeof renderSummary==='function' && typeof collectSupervisorData==='function') { try{ renderSummary(collectSupervisorData()); }catch(_){} }
-    if(typeof initSummary==='function') { try{ const input=document.getElementById('groupName'); if(input){ const d=typeof collectSupervisorData==='function'?collectSupervisorData():{}; input.value=ltxt('summary_group_name') || d.groupName || gid(); input.addEventListener('input',()=>{try{ if(typeof saveText==='function') saveText('summary_group_name', input.value); }catch(_){}}); } }catch(_){} }
+    const input=document.getElementById('groupName');
+    if(input){
+      try{ const d=typeof collectSupervisorData==='function'?collectSupervisorData():{}; input.value=ltxt('summary_group_name') || d.groupName || gid(); }catch(_){ input.value=ltxt('summary_group_name') || gid(); }
+      input.addEventListener('input',()=>{try{ if(typeof saveText==='function') saveText('summary_group_name', input.value); }catch(_){}});
+    }
     function shareUrl(){ const u=new URL('gruppe-ergebnis.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
-    function refreshShare(){ const link=shareUrl(); const a=document.getElementById('groupShareLink'); const qr=document.getElementById('groupShareQr'); if(a)a.href=link; if(qr)qr.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link); }
-    refreshShare();
+    function presentationUrl(){ const u=new URL('presentation.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
+    function refreshLinks(){ const link=shareUrl(); const a=document.getElementById('groupShareLink'); const qr=document.getElementById('groupShareQr'); const p=document.getElementById('finalPresentationLink'); if(a)a.href=link; if(qr)qr.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link); if(p)p.href=presentationUrl(); }
+    refreshLinks();
     let tx=0; const cards=Array.from(main.querySelectorAll('[data-tx]'));
-    function show(n){ tx=Math.max(0,Math.min(cards.length-1,n)); cards.forEach((c,i)=>{c.hidden=i!==tx;c.classList.toggle('is-active',i===tx);}); }
+    function show(n){ tx=Math.max(0,Math.min(cards.length-1,n)); cards.forEach((c,i)=>{c.hidden=i!==tx;c.classList.toggle('is-active',i===tx);}); refreshLinks(); }
     main.addEventListener('click', async e=>{
       if(e.target.closest('[data-tx-next]')) show(tx+1);
       if(e.target.closest('[data-tx-prev]')) show(tx-1);
       if(e.target.closest('#copyGroupShareLink')){ try{ await navigator.clipboard.writeText(shareUrl()); e.target.textContent='Kopiert'; setTimeout(()=>e.target.textContent='Link kopieren',1200);}catch(_){prompt('Link kopieren:', shareUrl());} }
-      if(e.target.closest('#submitResults')){
-        setTimeout(()=>{ const st=document.getElementById('submitStatus'); if(st && /gesendet|sichtbar|abgesendet|gespeichert/i.test(st.textContent||'')){ const as=document.getElementById('afterSubmitStart'); if(as) as.hidden=false; }}, 1200);
+      if(e.target.closest('[data-show-final-summary]')){
+        const panel=document.getElementById('summaryContent');
+        if(panel){ panel.hidden=!panel.hidden; e.target.textContent=panel.hidden?'Ergebnisse als Tabelle anzeigen':'Tabellen ausblenden'; }
+      }
+      const submit=e.target.closest('#submitResults');
+      if(submit){
+        e.preventDefault(); e.stopPropagation();
+        if(submit.dataset.busy==='1') return;
+        submit.dataset.busy='1';
+        submit.dataset.oldText=submit.textContent;
+        submit.textContent='Wird abgesendet …';
+        submit.disabled=true;
+        const st=document.getElementById('submitStatus');
+        if(st){ st.className='notice'; st.textContent='Ergebnisse werden abgesendet …'; }
+        try{
+          if(typeof window.submitResults==='function') await window.submitResults();
+          const failed = st && /warning|danger|error/i.test(st.className||'') && /keine|fehl|nicht|error/i.test(st.textContent||'');
+          if(!failed){
+            if(typeof renderSummary==='function' && typeof collectSupervisorData==='function') { try{ renderSummary(collectSupervisorData()); }catch(_){} }
+            show(2);
+          }
+        }catch(err){
+          if(st){ st.className='warning'; st.textContent='Senden fehlgeschlagen: '+(err && err.message ? err.message : err); }
+        }finally{
+          submit.disabled=false;
+          submit.textContent=submit.dataset.oldText || 'Ergebnis übermitteln';
+          delete submit.dataset.busy;
+        }
       }
     });
   }
@@ -185,16 +252,13 @@
   function installSaveChoice(){
     document.addEventListener('click', async function(e){
       const btn=e.target.closest('#v6Save'); if(!btn) return;
-      // Das eigentliche Speichern aus editor_v6_patch läuft am Button zuerst. Diese Abfrage kommt direkt danach.
       setTimeout(async ()=>{
         const modal=document.getElementById('presentationPrepModalV6');
         if(!modal || modal.hidden) return;
-        const choice=await niceDialog({title:'Präsentation gespeichert', text:'Wie möchtest du fortfahren?', actions:[{label:'Speichern und Beenden',value:'close',className:'secondary'},{label:'Speichern und weiter',value:'next'}]});
+        const choice=await niceDialog({title:'Präsentation gespeichert', text:'Wie möchtest du fortfahren?', actions:[{label:'Weiter arbeiten',value:'work',className:'secondary'},{label:'Speichern und weiter',value:'next'}]});
         if(choice==='next'){
           const url='uebermittlung.html' + (gid()?('?g='+encodeURIComponent(gid())):'');
           location.href=url;
-        } else if(choice==='close') {
-          modal.hidden=true; document.documentElement.classList.remove('v6-modal-open');
         }
       }, 40);
     }, false);

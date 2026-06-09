@@ -23,7 +23,7 @@
   let draft = null;
   let savedAtOpen = null;
   let dirty = false;
-  let editMode = false;
+  let editMode = true;
   let slideIndex = 0;
   let selectedId = null;
   let undoStack = [];
@@ -271,15 +271,13 @@
     modal.innerHTML = `
       <div class="v6-shell">
         <div class="v6-toolbar v6-mainbar" data-editor-toolbar>
-          <button type="button" id="v6Edit" class="secondary">Bearbeitungsmodus</button>
           <button type="button" id="v6Undo" class="secondary" disabled>Rückgängig</button>
           <button type="button" id="v6AddMenu" class="secondary" disabled>Hinzufügen</button>
           <button type="button" id="v6DesignMenu" class="secondary" disabled>Design</button>
           <button type="button" id="v6DeleteTop" class="danger" disabled>Löschen</button>
           <button type="button" id="v6Reset" class="warning-btn" disabled>Zurücksetzen</button>
           <span class="v6-spacer"></span>
-          <button type="button" id="v6Save" class="success-btn">Speichern</button>
-          <button type="button" id="v6Close" class="secondary">Schließen</button>
+          <button type="button" id="v6Save" class="success-btn v6-save-wide">Speichern</button>
         </div>
         <div class="v6-toolbar v6-dock" id="v6AddDock" data-editor-toolbar hidden>
           <button type="button" id="v6AddText" class="secondary">Text</button>
@@ -325,10 +323,8 @@
     const $ = (s) => modal.querySelector(s);
     modal.addEventListener('pointerdown', (e) => { if(e.target.closest('[data-editor-toolbar], .v6-el, .v6-picker')) return; if(editMode) select(null); });
     $('#v6Save').addEventListener('click', commit);
-    $('#v6Close').addEventListener('click', close);
     $('#v6Prev').addEventListener('click', () => { slideIndex = clamp(slideIndex-1,0,SLIDE_COUNT-1); select(null); renderSlide(); });
     $('#v6Next').addEventListener('click', () => { slideIndex = clamp(slideIndex+1,0,SLIDE_COUNT-1); select(null); renderSlide(); });
-    $('#v6Edit').addEventListener('click', () => { editMode = !editMode; if(!editMode){ activePanel=null; select(null); } updateToolbar(); renderSlide(); });
     $('#v6Undo').addEventListener('click', undo);
     $('#v6AddMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'add' ? null : 'add'; updateToolbar(); });
     $('#v6DesignMenu').addEventListener('click', () => { if(!editMode) return; selectedId=null; if(modal) modal.querySelectorAll('.v6-el').forEach(el=>el.classList.remove('is-selected')); activePanel = activePanel === 'design' ? null : 'design'; syncDesignInputs(); syncPatternInputs(); syncTableStyleInput(); updateToolbar(); });
@@ -392,7 +388,7 @@
     ensureModal();
     draft = clone(getSaved());
     savedAtOpen = clone(draft);
-    dirty = false; editMode = !!forceEdit; slideIndex = 0; selectedId = null; undoStack = []; activePanel = null;
+    dirty = false; editMode = true; slideIndex = 0; selectedId = null; undoStack = []; activePanel = null;
     modal.hidden = false;
     try{ delete modal.dataset.savedOnce; }catch(_){}
     document.documentElement.classList.add('v6-modal-open');
@@ -639,9 +635,6 @@
     if(!modal || !draft) return;
     const counter = modal.querySelector('#v6Counter');
     if(counter) counter.textContent = `${slideIndex+1} / ${SLIDE_COUNT}${dirty ? ' · ungespeichert' : ''}`;
-    const editBtn = modal.querySelector('#v6Edit');
-    editBtn.textContent = editMode ? 'Bearbeitung aktiv' : 'Bearbeitungsmodus';
-    editBtn.classList.toggle('success-btn', editMode);
 
     const addMenu = modal.querySelector('#v6AddMenu');
     const designMenu = modal.querySelector('#v6DesignMenu');

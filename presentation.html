@@ -13,9 +13,9 @@
     .pres-toolbar .blue{background:#274c77;color:#fff;}
     .pres-count{margin-left:auto;color:#fff;font-weight:900;letter-spacing:.03em;}
     .stage{position:fixed;inset:52px 0 56px 0;overflow:hidden;}
-    .deck{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center;background:#fff;border-radius:28px;box-shadow:0 24px 80px rgba(0,0,0,.36);overflow:hidden;color:#0f172a;opacity:0;visibility:hidden;transition:opacity .22s ease;}
-    body.is-loaded .deck{opacity:1;visibility:visible;}
-    .slide-layer{position:absolute;inset:0;overflow:hidden;}
+    .deck{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center;background:#fff;border-radius:28px;box-shadow:0 24px 80px rgba(0,0,0,.36);overflow:hidden;color:#0f172a;opacity:0;visibility:hidden;transition:opacity .28s ease;will-change:transform,opacity;}
+    body.presentation-ready .deck{opacity:1;visibility:visible;}
+    .slide-layer{position:absolute;inset:0;overflow:hidden;transition:opacity .18s ease;}
     .v6-el{position:absolute;box-sizing:border-box;overflow:hidden;line-height:1.18;white-space:normal;overflow-wrap:anywhere;}
     .v6-type-title{font-weight:950;letter-spacing:-.035em;color:var(--v6-heading-color,#1e3a5f);}
     .v6-type-groupName{font-weight:950;letter-spacing:-.025em;}
@@ -74,6 +74,6 @@
   <div id="status" class="status">Präsentation wird geladen …</div>
   <div class="nav"><button id="prevBtn" class="light" type="button">←</button><button id="nextBtn" type="button">→</button></div>
   <script src="js/config.js?v=canonical-presentation-v1"></script>
-  <script src="js/presentation_final_v6.js?v=pattern-loading-fix-1"></script>
+  <script src="js/presentation_final_v6.js?v=final-v6-state-1"></script>
 </body>
 </html>

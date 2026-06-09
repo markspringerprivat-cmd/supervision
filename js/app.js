@@ -9064,3 +9064,128 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     try{ new MutationObserver(ms => ms.forEach(m => (m.addedNodes||[]).forEach(n => { if(n && n.nodeType === 1) removeBgControls(n); }))).observe(document.documentElement,{childList:true,subtree:true}); }catch(_){}
   });
 })();
+
+/* ==========================================================
+   Präsentations-/Beamer- und Roulette-Stabilisierung v1
+   ========================================================== */
+(function(){
+  'use strict';
+  function safeName(row, index){
+    return (row && (row.groupName || (row.data && row.data.groupName))) || ('Gruppe ' + (index + 1));
+  }
+  function usedKeys(){
+    try { return new Set((typeof getSelectedRandomKeys === 'function' ? getSelectedRandomKeys() : []) || []); } catch(_) { return new Set(); }
+  }
+  function keyFor(row,index){
+    try { return typeof resultKey === 'function' ? resultKey(row,index) : String(index); } catch(_) { return String(index); }
+  }
+  function ensureRandomPool(){
+    if(document.body.dataset.mode !== 'results') return;
+    const area = document.querySelector('#resultsControls .random-area');
+    if(!area) return;
+    let pool = document.getElementById('randomPool');
+    if(!pool){
+      pool = document.createElement('div');
+      pool.id = 'randomPool';
+      pool.className = 'random-pool';
+      area.appendChild(pool);
+    }
+    const rows = Array.isArray(window.resultRowsCache) ? window.resultRowsCache : (typeof resultRowsCache !== 'undefined' && Array.isArray(resultRowsCache) ? resultRowsCache : []);
+    if(!rows.length){ pool.innerHTML = ''; return; }
+    const used = usedKeys();
+    pool.innerHTML = '<span class="random-pool-label">Im Roulette:</span>' + rows.map((r,i)=>{
+      const k = keyFor(r,i);
+      const cls = used.has(k) ? ' random-pool-chip is-used' : ' random-pool-chip';
+      return `<span class="${cls}" data-pool-index="${i}">${(typeof escapeHtml === 'function') ? escapeHtml(safeName(r,i)) : String(safeName(r,i)).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[m] || m))}</span>`;
+    }).join('') + '<div id="rouletteStatusLine" class="roulette-status-line" hidden></div>';
+  }
+  function markPool(activeIndex, picked){
+    document.querySelectorAll('.random-pool-chip').forEach(chip=>{
+      const is = Number(chip.dataset.poolIndex) === Number(activeIndex);
+      chip.classList.toggle('is-rolling', is && !picked);
+      chip.classList.toggle('is-picked', is && !!picked);
+    });
+  }
+  const oldRenderResults = typeof renderResults === 'function' ? renderResults : null;
+  if(oldRenderResults){
+    renderResults = function(rows){
+      const out = oldRenderResults.apply(this, arguments);
+      setTimeout(ensureRandomPool, 30);
+      return out;
+    };
+    window.renderResults = renderResults;
+  }
+  const oldRenderRoundBadges = typeof renderRoundBadges === 'function' ? renderRoundBadges : null;
+  if(oldRenderRoundBadges){
+    renderRoundBadges = function(){ const out = oldRenderRoundBadges.apply(this, arguments); setTimeout(ensureRandomPool, 10); return out; };
+    window.renderRoundBadges = renderRoundBadges;
+  }
+  function smootherEase(t){
+    // erst moderat beschleunigen, dann deutlich abbremsen; keine Anfangsraserei
+    return t < .22 ? 2.15*t*t : 1 - Math.pow(1 - (t-.22)/.78, 3.2) * .90;
+  }
+  if(typeof spinRandomGroup === 'function'){
+    spinRandomGroup = function(){
+      if (typeof resultsAdminActive !== 'undefined' && !resultsAdminActive) return;
+      if (!Array.isArray(resultRowsCache) || !resultRowsCache.length) return;
+      const btn = document.getElementById('randomGroupBtn');
+      const status = document.getElementById('resultsStatus');
+      const line = document.getElementById('rouletteStatusLine');
+      if (typeof randomSpinActive !== 'undefined' && randomSpinActive) return;
+      const available = typeof getUnselectedResultIndexes === 'function' ? getUnselectedResultIndexes() : resultRowsCache.map((_,i)=>i);
+      if (!available.length) { if(status){status.className='warning';status.textContent='Keine weiteren Einträge verfügbar.';} if(typeof updateRandomAvailability==='function') updateRandomAvailability(); ensureRandomPool(); return; }
+      if (typeof carouselAnimationFrame !== 'undefined' && carouselAnimationFrame) cancelAnimationFrame(carouselAnimationFrame);
+      if (typeof rouletteFrame !== 'undefined' && rouletteFrame) cancelAnimationFrame(rouletteFrame);
+      randomSpinActive = true;
+      const n = resultRowsCache.length;
+      const duration = 7600;
+      const startPosition = Number(currentVirtualPosition || 0);
+      const targetIndex = available[Math.floor(Math.random()*available.length)];
+      const loops = Math.max(4, Math.min(7, n + 2));
+      const base = Math.ceil(startPosition) + loops * n;
+      const targetPosition = base + (((targetIndex - ((base % n)+n)%n)+n)%n);
+      if(typeof buildSlotTrack === 'function') buildSlotTrack(Math.floor(startPosition)-5, Math.ceil(targetPosition)+5);
+      if(btn){btn.disabled=true;btn.textContent='Zufallsauswahl läuft …';}
+      if(status){status.className='notice';status.textContent='Das Roulette läuft …';}
+      if(line){line.hidden=false; line.textContent='Die Gruppen laufen durch und werden langsam abgebremst.';}
+      ensureRandomPool();
+      const start = performance.now();
+      function frame(now){
+        const t = Math.min(1, (now-start)/duration);
+        const eased = smootherEase(t);
+        const pos = startPosition + (targetPosition-startPosition)*eased;
+        if(typeof positionSlotTrack === 'function') positionSlotTrack(pos,false);
+        const idx = ((Math.round(pos)%n)+n)%n;
+        markPool(idx,false);
+        if(t < 1){ rouletteFrame = requestAnimationFrame(frame); return; }
+        rouletteFrame = null; randomSpinActive = false;
+        currentVirtualPosition = Math.round(targetPosition);
+        currentVirtualIndex = Math.round(targetPosition);
+        currentResultIndex = ((currentVirtualIndex%n)+n)%n;
+        if(typeof buildSlotTrack === 'function') buildSlotTrack(currentVirtualIndex-4,currentVirtualIndex+4);
+        const chosen = resultRowsCache[currentResultIndex];
+        window.__rouletteWinnerKey = keyFor(chosen,currentResultIndex);
+        if(typeof positionSlotTrack === 'function') positionSlotTrack(currentVirtualPosition,true);
+        const chosenName = safeName(chosen,currentResultIndex);
+        if(typeof registerRandomSelection === 'function') registerRandomSelection(currentResultIndex);
+        if(status){status.className='success';status.textContent='Ausgewählt: '+chosenName;}
+        if(line){line.hidden=false;line.textContent='Ausgewählt: '+chosenName;}
+        markPool(currentResultIndex,true);
+        if(typeof updateRandomAvailability === 'function') updateRandomAvailability();
+        if(typeof startConfetti === 'function') startConfetti(4500);
+        setTimeout(()=>{ window.__rouletteWinnerKey=''; if(typeof updateSlotCardFocus==='function') updateSlotCardFocus(currentVirtualPosition); ensureRandomPool(); },9000);
+      }
+      rouletteFrame = requestAnimationFrame(frame);
+    };
+    window.spinRandomGroup = spinRandomGroup;
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    if(document.body.dataset.mode !== 'results') return;
+    setTimeout(()=>{
+      ensureRandomPool();
+      const btn = document.getElementById('randomGroupBtn');
+      if(btn) btn.onclick = spinRandomGroup;
+    }, 250);
+    setTimeout(ensureRandomPool, 1200);
+  });
+})();

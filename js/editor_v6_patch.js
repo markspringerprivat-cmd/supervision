@@ -235,20 +235,16 @@
   function svgPattern(svg){
     return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g,'%27').replace(/\"/g,'%22')}")`;
   }
-  function safePatternColor(color, fallback){
-    const c = String(color || fallback || '#dbe4ef').trim();
-    return /^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\(/i.test(c) ? c : fallback;
-  }
   function patternCss(pattern, color){
-    const c = safePatternColor(color, '#dbe4ef');
+    color = color || '#dbe4ef';
     if(!pattern || pattern === 'none') return '';
-    if(pattern === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='8' cy='8' r='2.1' fill='${c}' fill-opacity='.72'/></svg>`);
-    if(pattern === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><path d='M0 .6H40M.6 0V40' stroke='${c}' stroke-width='1.2' stroke-opacity='.55' fill='none'/></svg>`);
-    if(pattern === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><path d='M-12 44L44 -12M10 54L54 10' stroke='${c}' stroke-width='2' stroke-opacity='.55' fill='none' stroke-linecap='round'/></svg>`);
-    if(pattern === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='72' height='36' viewBox='0 0 72 36'><path d='M0 24 C9 8 27 8 36 24 S63 40 72 24' stroke='${c}' stroke-width='2.2' stroke-opacity='.62' fill='none' stroke-linecap='round'/></svg>`);
+    if(pattern === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><circle cx='7' cy='7' r='1.7' fill='${color}' fill-opacity='.85'/><circle cx='21' cy='21' r='1.7' fill='${color}' fill-opacity='.65'/></svg>`);
+    if(pattern === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'><path d='M0 .5H36M.5 0V36' stroke='${color}' stroke-width='1.15' stroke-opacity='.72' fill='none'/></svg>`);
+    if(pattern === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'><path d='M-10 44 L44 -10 M-10 10 L10 -10 M24 44 L44 24' stroke='${color}' stroke-width='2.1' stroke-opacity='.72' stroke-linecap='round' fill='none'/></svg>`);
+    if(pattern === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='32' viewBox='0 0 64 32'><path d='M-2 22 C8 8 22 8 32 22 S56 36 66 22' stroke='${color}' stroke-width='2.1' stroke-opacity='.76' fill='none' stroke-linecap='round'/><path d='M-2 6 C8 -8 22 -8 32 6 S56 20 66 6' stroke='${color}' stroke-width='2.1' stroke-opacity='.52' fill='none' stroke-linecap='round'/></svg>`);
     return '';
   }
-  function patternSize(pattern){ if(pattern==='dots') return '32px 32px'; if(pattern==='grid') return '40px 40px'; if(pattern==='diagonal') return '44px 44px'; if(pattern==='waves') return '72px 36px'; return 'auto'; }
+  function patternSize(pattern){ if(pattern==='dots') return '28px 28px'; if(pattern==='grid') return '36px 36px'; if(pattern==='diagonal') return '34px 34px'; if(pattern==='waves') return '64px 32px'; return 'auto'; }
   function applyTheme(){
     const stage = modal && modal.querySelector('#v6Stage');
     const slide = modal && modal.querySelector('#v6Slide');

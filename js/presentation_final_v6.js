@@ -179,20 +179,16 @@
   function svgPattern(svg){
     return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g,'%27').replace(/\"/g,'%22')}")`;
   }
-  function safePatternColor(color, fallback){
-    const c = String(color || fallback || '#dbe4ef').trim();
-    return /^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\(/i.test(c) ? c : fallback;
-  }
   function patternCss(kind,color){
-    const c = safePatternColor(color, '#dbe4ef');
+    const c = color || '#dbe4ef';
     if(!kind || kind === 'none') return 'none';
-    if(kind === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='8' cy='8' r='2.1' fill='${c}' fill-opacity='.72'/></svg>`);
-    if(kind === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><path d='M0 .6H40M.6 0V40' stroke='${c}' stroke-width='1.2' stroke-opacity='.55' fill='none'/></svg>`);
-    if(kind === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><path d='M-12 44L44 -12M10 54L54 10' stroke='${c}' stroke-width='2' stroke-opacity='.55' fill='none' stroke-linecap='round'/></svg>`);
-    if(kind === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='72' height='36' viewBox='0 0 72 36'><path d='M0 24 C9 8 27 8 36 24 S63 40 72 24' stroke='${c}' stroke-width='2.2' stroke-opacity='.62' fill='none' stroke-linecap='round'/></svg>`);
+    if(kind === 'dots') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><circle cx='7' cy='7' r='1.7' fill='${c}' fill-opacity='.85'/><circle cx='21' cy='21' r='1.7' fill='${c}' fill-opacity='.65'/></svg>`);
+    if(kind === 'grid') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'><path d='M0 .5H36M.5 0V36' stroke='${c}' stroke-width='1.15' stroke-opacity='.72' fill='none'/></svg>`);
+    if(kind === 'diagonal') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'><path d='M-10 44 L44 -10 M-10 10 L10 -10 M24 44 L44 24' stroke='${c}' stroke-width='2.1' stroke-opacity='.72' stroke-linecap='round' fill='none'/></svg>`);
+    if(kind === 'waves') return svgPattern(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='32' viewBox='0 0 64 32'><path d='M-2 22 C8 8 22 8 32 22 S56 36 66 22' stroke='${c}' stroke-width='2.1' stroke-opacity='.76' fill='none' stroke-linecap='round'/><path d='M-2 6 C8 -8 22 -8 32 6 S56 20 66 6' stroke='${c}' stroke-width='2.1' stroke-opacity='.52' fill='none' stroke-linecap='round'/></svg>`);
     return 'none';
   }
-  function patternSize(kind){ if(kind==='dots') return '32px 32px'; if(kind==='grid') return '40px 40px'; if(kind==='diagonal') return '44px 44px'; if(kind==='waves') return '72px 36px'; return 'auto'; }
+  function patternSize(kind){ if(kind==='dots') return '28px 28px'; if(kind==='grid') return '36px 36px'; if(kind==='diagonal') return '34px 34px'; if(kind==='waves') return '64px 32px'; return 'auto'; }
   function layoutFor(id,type){ return Object.assign({}, defaultLayout(type, slideIndex), isObj(state.layout[id]) ? state.layout[id] : {}); }
   function styleFor(l){
     return `left:${num(l.x,0)}%;top:${num(l.y,0)}%;width:${num(l.w ?? l.width,20)}%;height:${num(l.h ?? l.height,10)}%;transform:rotate(${num(l.rot ?? l.rotation,0)}deg);z-index:${num(l.z ?? l.zIndex,20)};font-size:${num(l.fontSize,18)}px;${l.color ? `color:${esc(l.color)};` : ''}`;
@@ -235,9 +231,10 @@
     const deck = $('deck');
     const toolbarH = 52, navH = 56;
     const landscapePhone = innerWidth < 900 && innerWidth > innerHeight;
-    const side = landscapePhone ? 150 : 90;
-    const top = landscapePhone ? 44 : toolbarH + 24;
-    const bottom = landscapePhone ? 24 : navH + 24;
+    const beamer = innerWidth >= 1000;
+    const side = landscapePhone ? 150 : (beamer ? 110 : 150);
+    const top = landscapePhone ? 52 : toolbarH + (beamer ? 34 : 52);
+    const bottom = landscapePhone ? 28 : navH + (beamer ? 34 : 52);
     const scale = Math.min((innerWidth - side) / 1600, (innerHeight - top - bottom) / 900);
     deck.style.transform = `translate(-50%,-50%) scale(${Math.max(.1, scale)})`;
   }
@@ -267,9 +264,11 @@
       state = normalizeState(data,row);
       slideIndex = clamp(num(new URLSearchParams(location.search).get('slide'),0),0,SLIDE_COUNT-1);
       render();
-      requestAnimationFrame(() => { document.body.classList.add('is-loaded'); status.hidden = true; });
+      requestAnimationFrame(() => {
+        status.hidden = true;
+        document.body.classList.add('presentation-ready');
+      });
     }catch(e){
-      document.body.classList.remove('is-loaded');
       status.hidden = false; status.className = 'status warn'; status.textContent = e && e.message ? e.message : 'Präsentation konnte nicht geladen werden.';
     }
     $('exitBtn').onclick = () => { location.href = 'ergebnisse.html'; };

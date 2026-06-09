@@ -5052,3 +5052,61 @@ section, .section { margin-bottom: var(--sv-gap-section); }
 .v6-table.v6-table-dark{background:#0f172a;border-color:#334155;color:#f8fafc}
 .v6-table.v6-table-dark th{background:#1e3a5f;color:#fff}
 .v6-table.v6-table-dark td{border-color:#334155}
+
+
+/* Presentation margin and diagonal-pattern stabilization */
+.v6-stage{padding:48px 56px 44px!important;}
+.v6-slide{width:min(84vw,1280px)!important;height:min(68vh,720px)!important;}
+.presentation-body #presentationSlide .v6-final-slide{width:min(84vw,1280px)!important;height:min(68vh,720px)!important;}
+@media(max-width:900px){.v6-stage{padding:18px!important}.v6-slide{width:92vw!important;height:66vh!important}}
+
+/* ==========================================================
+   Beamer-/Roulette-Stabilisierung v1
+   ========================================================== */
+body[data-mode="results"] #resultsControls.card{
+  max-width: 1480px !important;
+  width: min(1480px, calc(100vw - 56px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+body[data-mode="results"] .random-area{
+  gap: 12px !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+.random-pool{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin-left:10px;
+  min-width:0;
+}
+.random-pool-label{font-size:.86rem;font-weight:900;color:#475569;margin-right:2px;}
+.random-pool-chip{
+  border:1px solid #d8e2ef;
+  background:#f8fbff;
+  color:#1e3a5f;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:.82rem;
+  font-weight:850;
+  box-shadow:0 8px 18px rgba(15,23,42,.05);
+  max-width:220px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.random-pool-chip.is-used{opacity:.45;text-decoration:line-through;}
+.random-pool-chip.is-rolling{background:#fff7ed;border-color:#fdba74;color:#9a3412;}
+.random-pool-chip.is-picked{background:#ecfdf5;border-color:#22c55e;color:#166534;box-shadow:0 0 0 3px rgba(34,197,94,.16),0 12px 28px rgba(34,197,94,.18);}
+.roulette-status-line{width:100%;font-weight:900;color:#1e3a5f;font-size:.9rem;margin-top:3px;}
+body[data-mode="results"] .result-card.is-active.is-winner,
+body[data-mode="results"] .result-card[aria-current="true"].is-winner{
+  border-color:#22c55e!important;
+  box-shadow:0 0 0 5px rgba(34,197,94,.20),0 0 44px rgba(34,197,94,.82),0 34px 100px rgba(22,50,79,.22)!important;
+}
+@media (max-width: 760px){
+  .random-pool{width:100%;margin-left:0;}
+  .random-pool-chip{max-width:44vw;}
+}

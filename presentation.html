@@ -15,6 +15,18 @@
     .stage{position:fixed;inset:52px 0 56px 0;overflow:hidden;}
     .deck{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center;background:#fff;border-radius:28px;box-shadow:0 24px 80px rgba(0,0,0,.36);overflow:hidden;color:#0f172a;}
     .slide-layer{position:absolute;inset:0;overflow:hidden;}
+    .v6-el{position:absolute;box-sizing:border-box;overflow:hidden;line-height:1.18;white-space:normal;overflow-wrap:anywhere;}
+    .v6-type-title{font-weight:950;letter-spacing:-.035em;color:var(--v6-heading-color,#1e3a5f);}
+    .v6-type-groupName{font-weight:950;letter-spacing:-.025em;}
+    .v6-type-kicker,.v6-type-note{font-weight:850;}
+    .v6-type-subtitle{font-weight:800;line-height:1.35;}
+    .v6-type-thanks{display:flex;align-items:center;justify-content:center;text-align:center;font-weight:950;}
+    .v6-table{width:100%;height:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #d9e1ec;border-radius:12px;overflow:hidden;table-layout:fixed;}
+    .v6-table th,.v6-table td{border-right:1px solid #d9e1ec;border-bottom:1px solid #e7edf5;padding:.55em .72em;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;}
+    .v6-table th{background:#e9eff7;font-weight:950;}
+    .v6-table th:last-child,.v6-table td:last-child{border-right:0;}
+    .v6-table tr:last-child td{border-bottom:0;}
+    .v6-sticker img{width:100%;height:100%;object-fit:contain;display:block;}
     .el{position:absolute;box-sizing:border-box;overflow:hidden;white-space:normal;overflow-wrap:anywhere;line-height:1.18;}
     .title{font-weight:950;letter-spacing:-.04em;}
     .kicker{font-weight:850;}
@@ -55,6 +67,6 @@
   <div id="status" class="status">Präsentation wird geladen …</div>
   <div class="nav"><button id="prevBtn" class="light" type="button">←</button><button id="nextBtn" type="button">→</button></div>
   <script src="js/config.js?v=canonical-presentation-v1"></script>
-  <script src="js/presentation_canonical.js?v=canonical-presentation-v1"></script>
+  <script src="js/presentation_final_v6.js?v=final-v6-state-1"></script>
 </body>
 </html>

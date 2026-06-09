@@ -121,6 +121,40 @@ function normalizeSubmittedData_(body) {
 }
 
 
+
+function normalizePresentationState_(cfg, data) {
+  cfg = isObject_(cfg) ? cfg : {};
+  const assignments = isObject_(data.assignments) ? data.assignments : {};
+  const p2 = isObject_(data.p2) ? data.p2 : {};
+  const p3 = isObject_(data.p3) ? data.p3 : {};
+  const p4 = isObject_(data.p4) ? data.p4 : {};
+  const p5 = isObject_(data.p5) ? data.p5 : {};
+  const p6 = isObject_(data.p6) ? data.p6 : {};
+  const values = Object.assign({
+    groupName: textValue_(data.groupName),
+    timestamp: textValue_(data.timestamp),
+    supervisor: textValue_(assignments.supervisor),
+    schulleitung: textValue_(assignments.schulleitung),
+    lehrkraftA: textValue_(assignments['lehrkraft-a'] || assignments.lehrkraftA),
+    lehrkraftB: textValue_(assignments['lehrkraft-b'] || assignments.lehrkraftB),
+    p2slProblems: textValue_(p2.slProbleme), p2slFeelings: textValue_(p2.slGefuehle), p2slWishes: textValue_(p2.slWuensche),
+    p2aProblems: textValue_(p2.aProbleme), p2aFeelings: textValue_(p2.aGefuehle), p2aWishes: textValue_(p2.aWuensche),
+    p2bProblems: textValue_(p2.bProbleme), p2bFeelings: textValue_(p2.bGefuehle), p2bWishes: textValue_(p2.bWuensche),
+    p3zielSL: textValue_(p3.zielSL), p3zielA: textValue_(p3.zielA), p3zielB: textValue_(p3.zielB), p3gemeinsam: textValue_(p3.gemeinsamkeiten), p3ziel: textValue_(p3.gemeinsamesZiel),
+    p4kritik: textValue_(p4.kritik), p4absprachen: textValue_(p4.absprachen),
+    p5zustimmung: textValue_(p5.zustimmung), p6prax: textValue_(p6.praxistauglichkeit), p6support: textValue_(p6.unterstuetzung), p6steps: textValue_(p6.umsetzung)
+  }, isObject_(cfg.values) ? cfg.values : {});
+  Object.keys(values).forEach(function(k){ values[k] = textValue_(values[k]); });
+  cfg.values = values;
+  if (!isObject_(cfg.settings)) cfg.settings = {};
+  delete cfg.settings.backgroundImage;
+  if (!isObject_(cfg.text)) cfg.text = isObject_(cfg.textOverrides) ? cfg.textOverrides : {};
+  if (!isObject_(cfg.layout)) cfg.layout = {};
+  if (!Array.isArray(cfg.textboxes)) cfg.textboxes = Array.isArray(cfg.extras) ? cfg.extras : [];
+  if (!Array.isArray(cfg.stickers)) cfg.stickers = [];
+  return cfg;
+}
+
 function extractPresentationConfig_(data) {
   const cfg = {};
   const v6 = isObject_(data.presentationV6) ? data.presentationV6 : {};
@@ -162,7 +196,7 @@ function extractPresentationConfig_(data) {
   const textboxes = firstArray_(pc.textboxes, pc.extras, v6.textboxes, v6.extras, data.presentationExtras);
   const stickers = firstArray_(pc.stickers, v6.stickers, data.presentationStickers);
 
-  return stripLargePresentationData_({
+  return stripLargePresentationData_(normalizePresentationState_({
     version: 7,
     savedAt: new Date().toISOString(),
     settings: settings,
@@ -174,7 +208,7 @@ function extractPresentationConfig_(data) {
     textboxes: textboxes,
     extras: textboxes,
     stickers: stickers
-  });
+  }, data));
 }
 
 function isObject_(v) {
@@ -412,16 +446,22 @@ function path_(obj, path) {
   return current === null || current === undefined ? '' : current;
 }
 
+function textValue_(value) {
+  if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) return value.map(textValue_).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    if (value.text !== undefined) return textValue_(value.text);
+    if (value.value !== undefined) return textValue_(value.value);
+    if (value.html !== undefined) return textValue_(value.html);
+    if (value.content !== undefined) return textValue_(value.content);
+    return '';
+  }
+  return String(value).trim();
+}
+
 function pick_(values) {
   for (let i = 0; i < values.length; i++) {
-    const value = values[i];
-    if (value === null || value === undefined) continue;
-    if (Array.isArray(value)) {
-      const joined = value.filter(Boolean).join(', ');
-      if (joined) return joined;
-      continue;
-    }
-    const text = String(value).trim();
+    const text = textValue_(values[i]);
     if (text) return text;
   }
   return '';

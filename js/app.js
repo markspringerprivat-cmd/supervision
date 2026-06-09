@@ -8919,3 +8919,148 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   function removeBackgroundControls(root){ root=root||document; root.querySelectorAll('button,label,input').forEach(el=>{ const t=(el.textContent||el.value||'').trim().toLowerCase(); const id=String(el.id||'').toLowerCase(); if(t==='hintergrundbild'||t==='bild entfernen'||t==='hintergrundbild hochladen'||(el.type==='file'&&/bg|background|image/.test(id))) el.remove(); }); }
   document.addEventListener('DOMContentLoaded',()=>{ removeBackgroundControls(document); setTimeout(()=>removeBackgroundControls(document),250); try{new MutationObserver(ms=>ms.forEach(m=>(m.addedNodes||[]).forEach(n=>{if(n&&n.nodeType===1)removeBackgroundControls(n)}))).observe(document.documentElement,{childList:true,subtree:true});}catch(_){} });
 })();
+
+/* FINALER SPEICHER-PATCH: Präsentationszustand exakt aus dem V6-Editor übernehmen.
+   Wichtig: Ergebnis übermitteln darf die Präsentation nicht wieder auf Standardwerte zurücksetzen. */
+(function(){
+  'use strict';
+  const STATE_KEY_BASE = 'presentation_v7_state';
+  const DEFAULT_SETTINGS = {heading:'#1e3a5f',text:'#0f172a',background:'#071323',slide:'#ffffff',slidePattern:'none',backgroundPattern:'none',slidePatternColor:'#dbe4ef',backgroundPatternColor:'#12372d'};
+  function isObj(v){ return v && typeof v === 'object' && !Array.isArray(v); }
+  function clone(v){ try{return JSON.parse(JSON.stringify(v||{}));}catch(_){return {};} }
+  function safeText(v){
+    if(v === null || v === undefined) return '';
+    if(typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if(isObj(v)) return safeText(v.text ?? v.value ?? v.html ?? v.content ?? '');
+    return String(v);
+  }
+  function cleanString(s,max){
+    s = safeText(s);
+    if(/^data:image\//i.test(s) || (/base64,/i.test(s) && s.length > 5000)) return '';
+    return max && s.length > max ? s.slice(0,max) : s;
+  }
+  function stripLarge(v, depth){
+    if(depth > 8) return null;
+    if(v === null || v === undefined) return v;
+    if(typeof v === 'string') return cleanString(v, 100000);
+    if(Array.isArray(v)) return v.slice(0,500).map(x => stripLarge(x, depth+1)).filter(x => x !== undefined);
+    if(typeof v === 'object'){
+      const out = {};
+      Object.keys(v).forEach(k => {
+        if(/backgroundImage|bgImage|imageData|dataUrl|base64|snapshot|history|undo|localStorage/i.test(k)) return;
+        out[k] = stripLarge(v[k], depth+1);
+      });
+      return out;
+    }
+    return v;
+  }
+  function getGroupSafe(){
+    try { if(typeof getGroupId === 'function') return getGroupId(); } catch(_) {}
+    try { return localStorage.getItem('sv_current_group') || 'default'; } catch(_) { return 'default'; }
+  }
+  function readLS(key, fb){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; }catch(_){ return fb; } }
+  function stateKey(){ return 'sv_' + getGroupSafe() + '_' + STATE_KEY_BASE; }
+  function currentValuesFromPayload(data){
+    data = data || {};
+    const a = data.assignments || {};
+    const p2 = data.p2 || {}, p3 = data.p3 || {}, p4 = data.p4 || {}, p5 = data.p5 || {}, p6 = data.p6 || {};
+    return {
+      groupName: safeText(data.groupName || [a.supervisor,a.schulleitung,a['lehrkraft-a']||a.lehrkraftA,a['lehrkraft-b']||a.lehrkraftB].filter(Boolean).join(', ') || data.groupId || 'Gruppe'),
+      timestamp: safeText(data.timestamp || new Date().toISOString()),
+      supervisor: safeText(a.supervisor || data.supervisor || ''),
+      schulleitung: safeText(a.schulleitung || data.schulleitung || ''),
+      lehrkraftA: safeText(a['lehrkraft-a'] || a.lehrkraftA || data.lehrkraftA || ''),
+      lehrkraftB: safeText(a['lehrkraft-b'] || a.lehrkraftB || data.lehrkraftB || ''),
+      p2slProblems: safeText(p2.slProbleme), p2slFeelings: safeText(p2.slGefuehle), p2slWishes: safeText(p2.slWuensche),
+      p2aProblems: safeText(p2.aProbleme), p2aFeelings: safeText(p2.aGefuehle), p2aWishes: safeText(p2.aWuensche),
+      p2bProblems: safeText(p2.bProbleme), p2bFeelings: safeText(p2.bGefuehle), p2bWishes: safeText(p2.bWuensche),
+      p3zielSL: safeText(p3.zielSL), p3zielA: safeText(p3.zielA), p3zielB: safeText(p3.zielB), p3gemeinsam: safeText(p3.gemeinsamkeiten), p3ziel: safeText(p3.gemeinsamesZiel),
+      p4kritik: safeText(p4.kritik), p4absprachen: safeText(p4.absprachen),
+      p5zustimmung: safeText(p5.zustimmung), p6prax: safeText(p6.praxistauglichkeit), p6support: safeText(p6.unterstuetzung), p6steps: safeText(p6.umsetzung)
+    };
+  }
+  function normalizePresentationState(data){
+    const saved = readLS(stateKey(), null);
+    const values = currentValuesFromPayload(data);
+    const st = isObj(saved) ? clone(saved) : {version:6, settings:{}, values:{}, text:{}, layout:{}, textboxes:[], stickers:[]};
+    st.version = 6;
+    st.savedAt = new Date().toISOString();
+    st.settings = Object.assign({}, DEFAULT_SETTINGS, isObj(st.settings) ? st.settings : {});
+    delete st.settings.backgroundImage;
+    st.values = Object.assign({}, values, isObj(st.values) ? st.values : {}, values);
+    Object.keys(st.values).forEach(k => st.values[k] = safeText(st.values[k]));
+    st.text = isObj(st.text) ? st.text : {};
+    Object.keys(st.text).forEach(k => st.text[k] = safeText(st.text[k]));
+    st.layout = isObj(st.layout) ? st.layout : {};
+    st.textboxes = Array.isArray(st.textboxes) ? st.textboxes.map((x,i)=>({
+      id: cleanString(x && x.id || 'textbox_'+i,80),
+      slide: Number(x && (x.slide ?? x.slideIndex)) || 0,
+      text: cleanString(x && (x.text ?? x.html ?? x.content),5000),
+      x: Number(x && (x.x ?? x.left)) || 12, y: Number(x && (x.y ?? x.top)) || 74,
+      w: Number(x && (x.w ?? x.width)) || 25, h: Number(x && (x.h ?? x.height)) || 10,
+      rot: Number(x && (x.rot ?? x.rotation)) || 0, z: Number(x && (x.z ?? x.zIndex)) || 80,
+      fontSize: Number(x && x.fontSize) || 18, color: cleanString(x && x.color || '',80)
+    })) : [];
+    st.stickers = Array.isArray(st.stickers) ? st.stickers.map((x,i)=>({
+      id: cleanString(x && x.id || 'sticker_'+i,80),
+      slide: Number(x && (x.slide ?? x.slideIndex)) || 0,
+      src: cleanString(x && (x.src ?? x.path ?? x.url),300),
+      x: Number(x && (x.x ?? x.left)) || 60, y: Number(x && (x.y ?? x.top)) || 48,
+      w: Number(x && (x.w ?? x.width)) || 24, h: Number(x && (x.h ?? x.height)) || 22,
+      rot: Number(x && (x.rot ?? x.rotation)) || 0, z: Number(x && (x.z ?? x.zIndex)) || 90
+    })).filter(x => x.src && !/^data:image\//i.test(x.src)) : [];
+    return stripLarge(st,0);
+  }
+  window.collectPresentationSyncConfig = function(){
+    let data = {};
+    try { data = typeof collectSupervisorData === 'function' ? collectSupervisorData() : {}; } catch(_) {}
+    return normalizePresentationState(data);
+  };
+  window.buildPayload = buildPayload = function(){
+    const data = (typeof collectSupervisorData === 'function') ? collectSupervisorData() : {};
+    data.groupName = (typeof loadText === 'function' && loadText('summary_group_name')) || data.groupName || data.groupId || 'Gruppe';
+    data.timestampLocal = new Date().toLocaleString('de-DE');
+    const pres = normalizePresentationState(data);
+    data.presentationV6 = pres;
+    data.presentationConfig = pres;
+    data.presentationSettings = pres.settings;
+    data.presentationValues = pres.values;
+    data.presentationTextOverrides = pres.text;
+    data.presentationLayout = pres.layout;
+    data.presentationExtras = pres.textboxes;
+    data.presentationStickers = pres.stickers;
+    return stripLarge(data,0);
+  };
+  async function finalSubmitResults(){
+    const status = document.getElementById('submitStatus');
+    const btn = document.getElementById('submitResults');
+    const url = (typeof getAppsScriptUrl === 'function') ? getAppsScriptUrl() : '';
+    if(!url){ if(status){status.className='warning';status.textContent='Keine Apps-Script-URL gefunden.';} return; }
+    const payload = window.buildPayload();
+    if(btn) btn.disabled = true;
+    if(status){ status.className='warning'; status.textContent='Ergebnis und Präsentationsdesign werden gespeichert …'; }
+    try{
+      await Promise.race([
+        fetch(url, {method:'POST', mode:'no-cors', body:JSON.stringify(payload), headers:{'Content-Type':'text/plain;charset=utf-8'}}),
+        new Promise(resolve => setTimeout(resolve, 9000))
+      ]);
+      if(status){ status.className='success'; status.textContent='Ergebnis wurde gespeichert. Die Präsentationsgestaltung wurde mitgesendet.'; }
+    }catch(e){ if(status){ status.className='warning'; status.textContent='Senden fehlgeschlagen: '+(e && e.message ? e.message : e); } }
+    finally{ if(btn) btn.disabled = false; }
+  }
+  window.submitResults = submitResults = finalSubmitResults;
+  function removeBgControls(root){
+    root = root || document;
+    root.querySelectorAll('button,label,input').forEach(el => {
+      const t = (el.textContent || el.value || '').trim().toLowerCase();
+      const id = String(el.id || '').toLowerCase();
+      if(t === 'hintergrundbild' || t === 'bild entfernen' || t === 'hintergrundbild hochladen' || (el.type === 'file' && /bg|background|image/.test(id))) el.remove();
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    removeBgControls(document); setTimeout(()=>removeBgControls(document),250); setTimeout(()=>removeBgControls(document),1000);
+    const old = document.getElementById('submitResults');
+    if(old){ const clean = old.cloneNode(true); old.replaceWith(clean); clean.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); finalSubmitResults(); }, true); }
+    try{ new MutationObserver(ms => ms.forEach(m => (m.addedNodes||[]).forEach(n => { if(n && n.nodeType === 1) removeBgControls(n); }))).observe(document.documentElement,{childList:true,subtree:true}); }catch(_){}
+  });
+})();

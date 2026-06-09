@@ -12,6 +12,28 @@
     Dekor: ['Dekor1.png','Dekor2.png','Dekor3.png','Dekor4.png','Dekor5.png','Dekor6.png','Dekor7.png','Dekor8.png','Dekor9.png','Dekor10.png']
   };
   const STICKERS = [].concat(STICKER_CATEGORIES.Teamwork, STICKER_CATEGORIES.Dekor);
+
+  const DESIGN_TEMPLATES = {
+    sachlich: {heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff', slidePattern:'none', backgroundPattern:'none', tableStyle:'classic', slideBorder:'none'},
+    modern: {heading:'#2563eb', text:'#0f172a', background:'#0b1220', slide:'#f8fafc', slidePattern:'grid', backgroundPattern:'diagonal', slidePatternColor:'#b7c7dd', backgroundPatternColor:'#35506a', tableStyle:'clean', slideBorder:'rounded', slideBorderColor:'#d8e0ec'},
+    schule: {heading:'#1e3a5f', text:'#111827', background:'#14324a', slide:'#fffdf7', slidePattern:'dots', backgroundPattern:'none', slidePatternColor:'#d7e2ef', tableStyle:'soft', slideBorder:'thin', slideBorderColor:'#bfdbfe'},
+    kreativ: {heading:'#c2410c', text:'#111827', background:'#102a2a', slide:'#fff7ed', slidePattern:'waves', backgroundPattern:'diagonal', slidePatternColor:'#fdba74', backgroundPatternColor:'#2dd4bf', tableStyle:'striped', slideBorder:'rounded', slideBorderColor:'#fb923c'}
+  };
+  function shadowCss(v){
+    if(v === 'soft') return '0 10px 26px rgba(15,23,42,.18)';
+    if(v === 'strong') return '0 18px 46px rgba(15,23,42,.34)';
+    return 'none';
+  }
+  function borderCss(v, color){
+    const c = color || '#d8e0ec';
+    if(v === 'thin') return `2px solid ${c}`;
+    if(v === 'dashed') return `2px dashed ${c}`;
+    if(v === 'rounded') return `2px solid ${c}`;
+    if(v === 'double') return `5px double ${c}`;
+    return `0 solid transparent`;
+  }
+  function borderRadiusCss(v){ return v === 'rounded' ? '16px' : ''; }
+
   const THEME_DEFAULT = {
     heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
     slidePattern:'none', backgroundPattern:'none',

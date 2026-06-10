@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-v13-admin-delete">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-v13-errorfix">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -190,8 +190,8 @@
       <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-feedback-v13-admin-delete"></script>
-  <script src="js/app.js?v=manometer-feedback-v13-admin-delete"></script>
+  <script src="js/config.js?v=manometer-feedback-v13-errorfix"></script>
+  <script src="js/app.js?v=manometer-feedback-v13-errorfix"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -316,7 +316,7 @@
     function collectScores(){const scores={}; QUESTIONS.forEach(q=>scores[q.key]=Number(document.getElementById(q.key).value||1)); return scores}
     function collectImprovements(){const improvements={}; QUESTIONS.forEach(q=>improvements[q.key]=listValues(q.key)); return improvements}
     function jsonp(url, params){return new Promise((resolve,reject)=>{const cb='manometerCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); const qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); const script=document.createElement('script'); let settled=false; window[cb]=function(data){settled=true; cleanup(); resolve(data)}; function cleanup(){try{delete window[cb]}catch(_){} if(script.parentNode)script.parentNode.removeChild(script)} script.onerror=function(){if(!settled){cleanup(); reject(new Error('Manometer-Feedback konnte nicht übertragen werden.'))}}; script.src=url+(url.includes('?')?'&':'?')+qs.toString(); document.body.appendChild(script); setTimeout(()=>{if(!settled){cleanup(); reject(new Error('Zeitüberschreitung beim Übertragen des Feedbacks.'))}},15000)})}
-    async function saveFeedback(){const url=getAppsUrl(); if(!url){setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.','error'); return} const button=document.getElementById('submitBtn'); button.disabled=true; button.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird übertragen …'); const payload={action:'manometerFeedbackSave', deviceId:getDeviceId(), groupId:getGroupId(), groupName:getGroupName(), scores:JSON.stringify(collectScores()), improvements:JSON.stringify(collectImprovements()), generalFeedback:'', generalPraise:JSON.stringify(listValues('praise')), generalCriticism:JSON.stringify(listValues('criticism')), generalSuggestions:JSON.stringify(listValues('suggestions')), avoidCriticism:(document.querySelector('input[name="avoidCriticism"]:checked')||{}).value||'', llmUsed:(document.querySelector('input[name="llmUsed"]:checked')||{}).value||'', llmDetails:document.getElementById('llmDetails').value.trim()}; try{const result=await jsonp(url,payload); if(!result||result.ok===false) if(result&&result.duplicate){showAlreadyVotedOnly();return;} throw new Error(result&&(result.error||result.message)||'Speichern fehlgeschlagen.'); try{localStorage.setItem(votedKey,'1')}catch(_){} setStatus('Feedback erfolgreich gespeichert.','ok'); showSubmitSuccess()}catch(err){setStatus('Feedback konnte nicht übertragen werden: '+err.message,'error')}finally{button.disabled=false; button.textContent='Feedback absenden'}}
+    async function saveFeedback(){const url=getAppsUrl(); if(!url){setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.','error'); return} const button=document.getElementById('submitBtn'); button.disabled=true; button.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird übertragen …'); const payload={action:'manometerFeedbackSave', deviceId:getDeviceId(), groupId:getGroupId(), groupName:getGroupName(), scores:JSON.stringify(collectScores()), improvements:JSON.stringify(collectImprovements()), generalFeedback:'', generalPraise:JSON.stringify(listValues('praise')), generalCriticism:JSON.stringify(listValues('criticism')), generalSuggestions:JSON.stringify(listValues('suggestions')), avoidCriticism:(document.querySelector('input[name="avoidCriticism"]:checked')||{}).value||'', llmUsed:(document.querySelector('input[name="llmUsed"]:checked')||{}).value||'', llmDetails:document.getElementById('llmDetails').value.trim()}; try{const result=await jsonp(url,payload); if(!result||result.ok===false){ if(result&&result.duplicate){ throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben. Bitte lass die Hardware-IDs im Adminbereich freigeben und lade die Seite danach neu.'); } throw new Error(result&&(result.error||result.message)||'Speichern fehlgeschlagen.'); } try{localStorage.setItem(votedKey,'1')}catch(_){} setStatus('Feedback erfolgreich gespeichert.','ok'); showSubmitSuccess()}catch(err){setStatus('Feedback konnte nicht übertragen werden: '+err.message,'error')}finally{button.disabled=false; button.textContent='Feedback absenden'}}
     function switchSubmitState(targetId){['submitInitial','submitSuccess','submitGame'].forEach(id=>{const el=document.getElementById(id); if(!el)return; el.classList.toggle('hidden', id!==targetId)})}
     function showSubmitSuccess(){switchSubmitState('submitSuccess'); document.getElementById('navDock').style.display='none'; document.getElementById('arrowPrev').style.display='none'; document.getElementById('arrowNext').style.display='none'; document.querySelector('.progress-wrap').style.display='none';}
     function showGameInline(){switchSubmitState('submitGame'); if(!game) initGame(); refreshGameHud();}

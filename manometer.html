@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-v2">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-v3">
   <style>
     .manometer-hero{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #d8e7f7}
     .manometer-grid{display:grid;gap:18px;margin-top:18px}
@@ -71,7 +71,7 @@
 </main>
 <footer><div class="wrap">Manometer · Reflexionsfeedback</div></footer>
 <script src="js/config.js"></script>
-<script src="js/app.js?v=manometer-v2"></script>
+<script src="js/app.js?v=manometer-v3"></script>
 <script>
 (function(){
   function gid(){ try{ if(typeof getGroupId==='function') return getGroupId(); }catch(_){} return new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_group_id') || ''; }
@@ -81,6 +81,8 @@
   function updateLinks(){ var g=gid(); document.querySelectorAll('[data-group-id]').forEach(function(el){el.textContent=g||'ohne Gruppen-ID';}); var a=document.getElementById('resultsLink'); if(a){ var u=new URL('manometer-auswertung.html', location.href); if(g) u.searchParams.set('g',g); a.href=u.toString(); } }
   function values(){ var out={}; ['caseConsultation','phaseUnderstanding','rolePerspective','goalAction','technicalClarity','manometerReflection'].forEach(function(k){ out[k]=Number(document.getElementById(k).value||0); }); return out; }
   function texts(){ return { takeaway:document.getElementById('takeaway').value.trim(), improvement:document.getElementById('improvement').value.trim(), praise:document.getElementById('praise').value.trim() }; }
+  function jsonp(url, params){ return new Promise(function(resolve,reject){ var cb='manoSaveCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); var qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); var s=document.createElement('script'); var done=false; window[cb]=function(data){done=true; cleanup(); resolve(data);}; function cleanup(){delete window[cb]; if(s&&s.parentNode)s.parentNode.removeChild(s);} s.onerror=function(){ if(!done){cleanup(); reject(new Error('Manometer-Feedback konnte nicht gespeichert werden.'));} }; s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString(); document.body.appendChild(s); setTimeout(function(){ if(!done){cleanup(); reject(new Error('Zeitüberschreitung beim Speichern des Manometer-Feedbacks.'));}},12000); }); }
+  function saveManometer(url, payload){ return jsonp(url,{ action:'manometerFeedbackSave', groupId:payload.feedback.groupId, groupName:payload.feedback.groupName, participant:payload.feedback.participant, scores:JSON.stringify(payload.feedback.scores), texts:JSON.stringify(payload.feedback.texts), createdAt:payload.feedback.createdAt }); }
   document.addEventListener('input', function(e){ if(e.target && e.target.type==='range'){ var v=document.querySelector('[data-value-for="'+e.target.id+'"]'); if(v) v.textContent=e.target.value; }});
   document.addEventListener('DOMContentLoaded', updateLinks);
   document.getElementById('manometerForm').addEventListener('submit', async function(e){
@@ -91,8 +93,9 @@
     btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; st.textContent='Bitte warten. Dein Feedback wird an Manometer übertragen …';
     var payload={ action:'manometerFeedback', feedback:{ groupId:gid(), groupName:groupName(), participant:role(), scores:values(), texts:texts(), createdAt:new Date().toISOString() } };
     try{
-      await Promise.race([fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain;charset=utf-8'}}), new Promise(function(resolve){setTimeout(resolve,5000);})]);
-      st.textContent='Danke. Dein Feedback wurde übertragen. Die Auswertung wird geöffnet …';
+      var res = await saveManometer(url, payload);
+      if(!res || res.ok === false) throw new Error((res && res.error) || 'Apps Script hat das Feedback nicht bestätigt.');
+      st.textContent='Danke. Dein Feedback wurde gespeichert. Die Auswertung wird geöffnet …';
       setTimeout(function(){ var u=new URL('manometer-auswertung.html', location.href); var g=gid(); if(g) u.searchParams.set('g',g); location.href=u.toString(); }, 900);
     }catch(err){ st.textContent='Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err); btn.disabled=false; btn.textContent='Feedback erneut absenden'; }
   });

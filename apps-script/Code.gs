@@ -114,6 +114,7 @@ function doGet(e) {
     if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAllGet_(e);
     if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
     if (action === 'manometerfeedbacklist' || action === 'manometer_feedback_list' || action === 'feedback_list') return listFeedback_(e);
+    if (action === 'manometerfeedbacksave' || action === 'manometer_feedback_save' || action === 'savefeedback') return saveFeedbackGet_(e);
     if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME });
     if (action === 'test') {
       const sheet = getSheet_();
@@ -433,8 +434,45 @@ function ensureFeedbackHeader_(sheet) {
 }
 
 function saveFeedback_(body) {
-  const sheet = getFeedbackSheet_();
   const data = (body && body.feedback && typeof body.feedback === 'object') ? body.feedback : ((body && body.data && typeof body.data === 'object') ? body.data : (body || {}));
+  return jsonOutput_(saveFeedbackData_(data));
+}
+
+
+function saveFeedbackGet_(e) {
+  const p = (e && e.parameter) || {};
+  let scores = {};
+  let texts = {};
+  try { scores = p.scores ? JSON.parse(p.scores) : {}; } catch (err) { scores = {}; }
+  try { texts = p.texts ? JSON.parse(p.texts) : {}; } catch (err) { texts = {}; }
+  const payload = {
+    feedback: {
+      groupId: p.groupId || p.g || p.groupToken || p.token || '',
+      groupName: p.groupName || '',
+      participant: p.participant || p.role || p.person || p.name || '',
+      scores: Object.keys(scores).length ? scores : {
+        caseConsultation: p.caseConsultation,
+        phaseUnderstanding: p.phaseUnderstanding,
+        rolePerspective: p.rolePerspective,
+        goalAction: p.goalAction,
+        technicalClarity: p.technicalClarity,
+        manometerReflection: p.manometerReflection
+      },
+      texts: Object.keys(texts).length ? texts : {
+        takeaway: p.takeaway || p.mitgenommen || '',
+        improvement: p.improvement || p.verbesserung || '',
+        praise: p.praise || p.lob || ''
+      },
+      createdAt: p.createdAt || new Date().toISOString()
+    }
+  };
+  const result = saveFeedbackData_(payload.feedback);
+  return jsonp_(e, result);
+}
+
+function saveFeedbackData_(data) {
+  const sheet = getFeedbackSheet_();
+  data = (data && typeof data === 'object') ? data : {};
   const scores = isObject_(data.scores) ? data.scores : data;
   const texts = isObject_(data.texts) ? data.texts : data;
   const row = [
@@ -454,8 +492,10 @@ function saveFeedback_(body) {
     safeJson_(data)
   ];
   sheet.appendRow(row);
-  return jsonOutput_({ ok: true, message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] });
+  return { ok: true, message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] };
 }
+
+
 
 function listFeedback_(e) {
   const sheet = getFeedbackSheet_();
@@ -469,7 +509,7 @@ function listFeedback_(e) {
     if (groupFilter && String(entry.groupId || '').trim() !== groupFilter) continue;
     entries.push(entry);
   }
-  return jsonp_(e, { ok: true, entries: entries, summary: summarizeFeedback_(entries), questions: MANOMETER_QUESTIONS, groupId: groupFilter });
+  return jsonp_(e, { ok: true, entries: entries, summary: summarizeFeedback_(entries), questions: MANOMETER_QUESTIONS, groupId: groupFilter, totalRows: Math.max(0, values.length - 1) });
 }
 
 function feedbackRowToEntry_(row, rowNumber) {

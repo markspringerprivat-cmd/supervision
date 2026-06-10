@@ -95,3 +95,8 @@ Diese Version ergänzt einen geführten Ablauf nach der Ergebnissicherung, Pflic
 
 ## Manometer-Feedback
 Diese Version ergänzt nach der Ergebnisübermittlung einen Manometer-Feedbackflow mit QR-Code, Feedbackformular, Auswertungsseite und Apps-Script-Speicherung im Tabellenblatt `Manometer Feedback`. Nach Änderung von `apps-script/Code.gs` muss die Google-Apps-Script-Web-App neu bereitgestellt werden.
+
+
+## Manometer Speicherfix
+
+Das Manometer-Feedback wird ab dieser Version per JSONP/GET gespeichert. Dadurch wartet das Formular auf eine echte Apps-Script-Bestätigung, statt eine no-cors-POST-Anfrage nur scheinbar als erfolgreich zu behandeln. Apps Script muss mit der enthaltenen `apps-script/Code.gs` neu bereitgestellt werden.

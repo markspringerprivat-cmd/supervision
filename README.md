@@ -7,7 +7,7 @@ Diese ZIP ist für GitHub Pages vorbereitet. `index.html` liegt direkt im Root.
 Die Website ist bereits auf diese Apps-Script-Web-App eingestellt:
 
 ```text
-https://script.google.com/macros/s/AKfycbxpvV1wOG5FfImgMgVX0dzznJgXO5rnFJ1OAA5H48DpIH-ruQcYIx6sfzbfAqBQ9Ybm/exec
+https://script.google.com/macros/s/AKfycbwKOyddRuVQQdnuUiy8kmn1att21ivI96DXKshSH8ihYvLuIUrz0rPf8Yfbb4POgXdi/exec
 ```
 
 Die URL ist eingetragen in:

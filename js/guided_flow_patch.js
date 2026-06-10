@@ -233,6 +233,42 @@
     function show(n){ tx=Math.max(0,Math.min(cards.length-1,n)); cards.forEach((c,i)=>{c.hidden=i!==tx;c.classList.toggle('is-active',i===tx);}); refreshLinks(); if(cards[tx] && cards[tx].classList.contains('sv-manometer-card')) startManometerCountdown(); }
     let manometerTimer=null;
     function startManometerCountdown(){ const btn=document.getElementById('manometerFeedbackLink'); const hint=document.getElementById('manometerReadHint'); if(!btn) return; if(manometerTimer) clearInterval(manometerTimer); let left=5; btn.classList.add('disabled'); btn.setAttribute('aria-disabled','true'); btn.style.pointerEvents='none'; btn.textContent='Feedback starten in '+left; if(hint) hint.textContent='Bitte wartet, bis alle den QR-Code gesehen haben. Start möglich in '+left+' Sekunden.'; manometerTimer=setInterval(()=>{ left--; if(left>0){ btn.textContent='Feedback starten in '+left; if(hint) hint.textContent='Bitte wartet, bis alle den QR-Code gesehen haben. Start möglich in '+left+' Sekunden.'; } else { clearInterval(manometerTimer); manometerTimer=null; btn.classList.remove('disabled'); btn.removeAttribute('aria-disabled'); btn.style.pointerEvents=''; btn.textContent='Feedback starten'; if(hint) hint.textContent='Jetzt kann das Manometer-Feedback geöffnet werden. Jede Person füllt das Formular einmal aus.'; } },1000); }
+    async function runTransmitAndShowManometer(submit){
+      if(!submit || submit.dataset.busy==='1') return;
+      submit.dataset.busy='1';
+      submit.dataset.oldText=submit.textContent;
+      submit.textContent='Wird abgesendet …';
+      submit.disabled=true;
+      const st=document.getElementById('submitStatus');
+      if(st){ st.className='notice'; st.textContent='Ergebnisse werden abgesendet …'; }
+      try{
+        if(typeof window.submitResults==='function') await window.submitResults();
+        const failed = st && /warning|danger|error/i.test(st.className||'') && /keine|fehl|nicht|error|fehlgeschlagen/i.test(st.textContent||'');
+        if(!failed){
+          if(st){ st.className='notice'; st.textContent='Bitte warten. Die Übermittlung wird abgeschlossen. Manometer startet in fünf Sekunden …'; }
+          await new Promise(resolve=>setTimeout(resolve,5000));
+          if(typeof renderSummary==='function' && typeof collectSupervisorData==='function') { try{ renderSummary(collectSupervisorData()); }catch(_){} }
+          show(2);
+        }
+      }catch(err){
+        if(st){ st.className='warning'; st.textContent='Senden fehlgeschlagen: '+(err && err.message ? err.message : err); }
+      }finally{
+        submit.disabled=false;
+        submit.textContent=submit.dataset.oldText || 'Ergebnis übermitteln';
+        delete submit.dataset.busy;
+      }
+    }
+    // Wichtig: app.js bindet den Absende-Button an mehreren Stellen selbst und nutzt dort teils
+    // stopPropagation/Clones. Deshalb wird der Manometer-Übergang hier in der Capture-Phase
+    // auf document abgefangen, bevor ältere Button-Handler den Klick schlucken können.
+    document.addEventListener('click', function(e){
+      const submit=e.target.closest && e.target.closest('#submitResults');
+      if(!submit || !main.contains(submit)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+      runTransmitAndShowManometer(submit);
+    }, true);
     main.addEventListener('click', async e=>{
       if(e.target.closest('[data-tx-next]')) show(tx+1);
       if(e.target.closest('[data-tx-prev]')) show(tx-1);
@@ -240,33 +276,6 @@
       if(e.target.closest('[data-show-final-summary]')){
         const panel=document.getElementById('summaryContent');
         if(panel){ panel.hidden=!panel.hidden; e.target.textContent=panel.hidden?'Ergebnisse als Tabelle anzeigen':'Tabellen ausblenden'; }
-      }
-      const submit=e.target.closest('#submitResults');
-      if(submit){
-        e.preventDefault(); e.stopPropagation();
-        if(submit.dataset.busy==='1') return;
-        submit.dataset.busy='1';
-        submit.dataset.oldText=submit.textContent;
-        submit.textContent='Wird abgesendet …';
-        submit.disabled=true;
-        const st=document.getElementById('submitStatus');
-        if(st){ st.className='notice'; st.textContent='Ergebnisse werden abgesendet …'; }
-        try{
-          if(typeof window.submitResults==='function') await window.submitResults();
-          const failed = st && /warning|danger|error/i.test(st.className||'') && /keine|fehl|nicht|error/i.test(st.textContent||'');
-          if(!failed){
-            if(st){ st.className='notice'; st.textContent='Bitte warten. Die Übermittlung wird abgeschlossen. Manometer startet in fünf Sekunden …'; }
-            await new Promise(resolve=>setTimeout(resolve,5000));
-            if(typeof renderSummary==='function' && typeof collectSupervisorData==='function') { try{ renderSummary(collectSupervisorData()); }catch(_){} }
-            show(2);
-          }
-        }catch(err){
-          if(st){ st.className='warning'; st.textContent='Senden fehlgeschlagen: '+(err && err.message ? err.message : err); }
-        }finally{
-          submit.disabled=false;
-          submit.textContent=submit.dataset.oldText || 'Ergebnis übermitteln';
-          delete submit.dataset.busy;
-        }
       }
     });
   }

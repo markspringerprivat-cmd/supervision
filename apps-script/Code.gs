@@ -47,6 +47,27 @@ const COL_PRESENTATION_VERSION = 31;
 const COL_PRESENTATION_UPDATED = 32;
 
 
+function getSpreadsheet_() {
+  // Robustere Tabellen-Erkennung:
+  // 1. Wenn dieses Apps Script an das Google Sheet gebunden ist, nutze direkt diese aktive Tabelle.
+  // 2. Falls es ein Standalone-Script ist, nutze SPREADSHEET_URL.
+  // Dadurch scheitert Manometer nicht mehr an einer alten/falschen kopierten Tabellen-ID.
+  try {
+    const active = SpreadsheetApp.getActiveSpreadsheet();
+    if (active) return active;
+  } catch (err) {}
+
+  if (!SPREADSHEET_URL || SPREADSHEET_URL.indexOf('docs.google.com/spreadsheets') === -1) {
+    throw new Error('SPREADSHEET_URL ist nicht korrekt eingetragen. Bitte die vollständige Google-Sheet-URL einfügen oder das Script direkt über Erweiterungen > Apps Script aus dem Ziel-Sheet öffnen.');
+  }
+  try {
+    return SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  } catch (err) {
+    throw new Error('Die hinterlegte SPREADSHEET_URL konnte nicht geöffnet werden: ' + err.message + ' | Lösung: Code.gs über Erweiterungen > Apps Script direkt aus der Ziel-Tabelle öffnen oder SPREADSHEET_URL durch die echte URL deiner Ergebnis-Tabelle ersetzen.');
+  }
+}
+
+
 const FEEDBACK_HEADERS = [
   'Zeitpunkt',
   'Gruppen-ID',
@@ -74,10 +95,7 @@ const MANOMETER_QUESTIONS = [
 ];
 
 function getSheet_() {
-  if (!SPREADSHEET_URL || SPREADSHEET_URL.indexOf('docs.google.com/spreadsheets') === -1) {
-    throw new Error('SPREADSHEET_URL ist nicht korrekt eingetragen. Bitte die vollständige Google-Sheet-URL einfügen.');
-  }
-  const ss = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  const ss = getSpreadsheet_();
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
   ensureHeader_(sheet);
@@ -115,7 +133,11 @@ function doGet(e) {
     if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
     if (action === 'manometerfeedbacklist' || action === 'manometer_feedback_list' || action === 'feedback_list') return listFeedback_(e);
     if (action === 'manometerfeedbacksave' || action === 'manometer_feedback_save' || action === 'savefeedback') return saveFeedbackGet_(e);
-    if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v4' });
+    if (action === 'ping') {
+      let spreadsheetName = '';
+      try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v5-sheetfix', spreadsheetName: spreadsheetName });
+    }
     if (action === 'test') {
       const sheet = getSheet_();
       return jsonp_(e, {
@@ -418,10 +440,7 @@ function rowToEntry_(row, rowNumber) {
 
 
 function getFeedbackSheet_() {
-  if (!SPREADSHEET_URL || SPREADSHEET_URL.indexOf('docs.google.com/spreadsheets') === -1) {
-    throw new Error('SPREADSHEET_URL ist nicht korrekt eingetragen. Bitte die vollständige Google-Sheet-URL einfügen.');
-  }
-  const ss = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  const ss = getSpreadsheet_();
   let sheet = ss.getSheetByName(FEEDBACK_SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(FEEDBACK_SHEET_NAME);
   ensureFeedbackHeader_(sheet);
@@ -493,7 +512,7 @@ function saveFeedbackData_(data) {
   ];
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v4', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v5-sheetfix', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] };
 }
 
 
@@ -523,7 +542,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v4',
+    feature: 'manometer-v5-sheetfix',
     entries: entries,
     summary: summarizeFeedback_(entries),
     questions: MANOMETER_QUESTIONS,

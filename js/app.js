@@ -1,7 +1,7 @@
 
 // Fallback: Damit die Google-Sheet-Anbindung auch funktioniert, wenn js/config.js
 // versehentlich nicht mit hochgeladen oder vom Browser noch gecacht wurde.
-const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZlKuja2wmWdMpebKdTDEouie4OjNGPqp8pZhfgH_TLR7UP1AK_JSQKXsC6qLVA5Oj/exec";
+const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyF6jvkT9ZmMojzeEISgjZlNGD1hZ5QP5djd85sk0eBqNQe5UVbCpBSkSC3xethiV2N/exec";
 
 function getAppsScriptUrl() {
   const fromConfig = window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL;

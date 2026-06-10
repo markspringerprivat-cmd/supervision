@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-v14-device-registry">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-v13-recreate-delete">
 
   <style>
     .grid > .hero-card:nth-child(1){border:3px solid #d62828!important;box-shadow:0 14px 34px rgba(214,40,40,.10)}
@@ -55,10 +55,10 @@
   </section>
 </main>
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
-<script src="js/config.js?v=manometer-v14-device-registry"></script><script src="js/app.js?v=manometer-v14-device-registry"></script>
-<script src="js/roles_flow_patch.js?v=manometer-v14-device-registry"></script>
+<script src="js/config.js?v=manometer-v13-recreate-delete"></script><script src="js/app.js?v=manometer-v13-recreate-delete"></script>
+<script src="js/roles_flow_patch.js?v=manometer-v13-recreate-delete"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=manometer-v14-device-registry"></script>
+<script src="js/guided_flow_patch.js?v=manometer-v13-recreate-delete"></script>
 
 <script>
 (function(){
@@ -93,8 +93,10 @@
     status.textContent='Bitte warten …';
     try{
       var res=await jsonpLocal(url,{action:action,adminPassword:password});
-      if(!res||res.ok===false) throw new Error((res&&res.error)||'Aktion fehlgeschlagen.');
-      status.textContent=okText+' '+(res.deletedRows!==undefined?('Gelöschte Zeilen: '+res.deletedRows+'.'):(res.clearedRows!==undefined?('Freigegebene IDs: '+res.clearedRows+'.'):''));
+      if(!res||res.ok===false) throw new Error((res&&res.error)||'Aktion fehlgeschlagen.'); if(action==='deleteManometerFeedbackAll' && res.type!=='deleteManometerFeedbackAll') throw new Error('Falscher Apps-Script-Endpunkt: deleteManometerFeedbackAll wurde nicht bestätigt.'); if(action==='deleteManometerFeedbackAll' && (Number(res.feedbackRowsAfter||0)>0 || Number(res.registryRowsAfter||0)>0)) throw new Error('Löschung nicht vollständig bestätigt. Rest Feedback: '+res.feedbackRowsAfter+', Rest Geräte: '+res.registryRowsAfter);
+      if(action==='deleteManometerFeedbackAll' && res.type!=='deleteManometerFeedbackAll') throw new Error('Apps Script ist veraltet oder falsches Deployment: deleteManometerFeedbackAll wurde nicht ausgeführt.');
+      if(action==='resetManometerDeviceIds' && res.type!=='resetManometerDeviceIds') throw new Error('Apps Script ist veraltet oder falsches Deployment: resetManometerDeviceIds wurde nicht ausgeführt.');
+      status.textContent=okText+' '+(res.deletedRows!==undefined?('Gelöschte Zeilen: '+res.deletedRows+'. Übrig: '+(res.feedbackRowsAfter!==undefined?res.feedbackRowsAfter:'?')+'.'):(res.clearedRows!==undefined?('Freigegebene IDs: '+res.clearedRows+'.'):(res.clearedRegistryRows!==undefined?('Freigegebene IDs: '+res.clearedRegistryRows+'.'):'')));
       try{ if(action==='resetManometerDeviceIds') localStorage.removeItem('manometer_voted_global_v2'); }catch(_){}
     }catch(err){status.textContent='Fehler: '+err.message;}
   }

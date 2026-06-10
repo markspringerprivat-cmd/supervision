@@ -5,8 +5,12 @@ const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1egAveeEIyXdI9nC
 const SHEET_NAME = 'Ergebnisse';
 const FEEDBACK_SHEET_NAME = 'Manometer Feedback';
 const DEVICE_REGISTRY_SHEET_NAME = 'Manometer Geräte';
-const DEVICE_REGISTRY_HEADERS = ['Geräte-ID', 'Zeitpunkt', 'Gruppen-ID', 'Gruppenname'];
+const DEVICE_REGISTRY_HEADERS = ['Geräte-ID', 'Zeitpunkt', 'Gruppen-ID', 'Gruppenname', 'Rolle', 'Zugewiesener Name'];
 const MANOMETER_ADMIN_PASSWORD = 'Mark123';
+
+const GROUP_REGISTRY_SHEET_NAME = 'Gruppen Registry';
+const GROUP_REGISTRY_HEADERS = ['Zeitpunkt', 'Gruppen-ID', 'Gruppenname', 'Gruppengröße', 'Teilnehmende JSON', 'Zuweisungen JSON', 'Aktualisiert'];
+
 
 const HEADERS = [
   'Zeitpunkt',
@@ -137,6 +141,9 @@ function doPost(e) {
     if (action === 'deletemanometerfeedbackall' || action === 'delete_manometer_feedback_all' || action === 'clear_manometer_feedback' || action === 'manometerfeedbackdeleteall') return deleteManometerFeedbackAllPost_(body);
     if (action === 'manometeradminstatus' || action === 'manometer_admin_status') return manometerAdminStatusPost_(body);
     if (action === 'groupprogress' || action === 'group_progress') return groupProgressPost_(body);
+    if (action === 'registergroup' || action === 'register_group') return registerGroupPost_(body);
+    if (action === 'registerdevicegroup' || action === 'register_device_group') return registerDeviceGroupPost_(body);
+    if (action === 'resolvedevicegroup' || action === 'resolve_device_group') return resolveDeviceGroupPost_(body);
     return saveEntry_(body);
   } catch (err) {
     return jsonOutput_({ ok: false, error: err.message, stack: err.stack || '' });
@@ -155,10 +162,13 @@ function doGet(e) {
     if (action === 'deletemanometerfeedbackall' || action === 'delete_manometer_feedback_all' || action === 'clear_manometer_feedback' || action === 'manometerfeedbackdeleteall') return deleteManometerFeedbackAllGet_(e);
     if (action === 'manometeradminstatus' || action === 'manometer_admin_status') return manometerAdminStatusGet_(e);
     if (action === 'groupprogress' || action === 'group_progress') return groupProgressGet_(e);
+    if (action === 'registergroup' || action === 'register_group') return registerGroupGet_(e);
+    if (action === 'registerdevicegroup' || action === 'register_device_group') return registerDeviceGroupGet_(e);
+    if (action === 'resolvedevicegroup' || action === 'resolve_device_group') return resolveDeviceGroupGet_(e);
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v14-group-progress', spreadsheetName: spreadsheetName, deviceRegistrySheet: DEVICE_REGISTRY_SHEET_NAME });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v15-group-registry', spreadsheetName: spreadsheetName, deviceRegistrySheet: DEVICE_REGISTRY_SHEET_NAME });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -498,7 +508,9 @@ function registerDeviceId_(data) {
     deviceId,
     new Date(),
     textValue_(data.groupId || data.g || data.groupToken || data.token),
-    textValue_(data.groupName)
+    textValue_(data.groupName),
+    textValue_(data.role || ''),
+    textValue_(data.assignedName || '')
   ]);
   return sheet.getLastRow();
 }
@@ -621,10 +633,10 @@ function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
   const deviceId = textValue_(data.deviceId || data.device || data.browserId);
-  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v14-group-progress', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v15-group-registry', error: 'Keine Geräte-ID übermittelt.' };
   const duplicateRow = findDeviceRegistryRow_(deviceId);
   if (duplicateRow >= 2) {
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v14-group-progress', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow, source: 'deviceRegistry' };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v15-group-registry', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow, source: 'deviceRegistry' };
   }
   const scores = isObject_(data.scores) ? data.scores : data;
   const improvements = isObject_(data.improvements) ? data.improvements : {};
@@ -656,7 +668,7 @@ function saveFeedbackData_(data) {
   const savedRow = sheet.getLastRow();
   registerDeviceId_(data);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v14-group-progress', message: 'Manometer-Feedback gespeichert.', rowNumber: savedRow };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v15-group-registry', message: 'Manometer-Feedback gespeichert.', rowNumber: savedRow };
 }
 
 function findFeedbackRowByDeviceId_(sheet, deviceId) {
@@ -685,7 +697,7 @@ function resetManometerDeviceIdsGet_(e) {
 
 function resetManometerDeviceIds_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v14-group-progress', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v15-group-registry', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const beforeRegistryRows = getDeviceRegistryRowCount_();
@@ -697,7 +709,7 @@ function resetManometerDeviceIds_(password) {
   return {
     ok: true,
     type: 'resetManometerDeviceIds',
-    feature: 'manometer-v14-group-progress',
+    feature: 'manometer-v15-group-registry',
     mode: 'recreatedDeviceRegistry',
     message: 'Manometer-Geräte-IDs wurden freigegeben.',
     clearedRows: beforeRegistryRows,
@@ -721,7 +733,7 @@ function deleteManometerFeedbackAllPost_(body) {
 
 function deleteManometerFeedbackAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v14-group-progress', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v15-group-registry', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const beforeFeedbackRows = getFeedbackRowCount_();
@@ -738,7 +750,7 @@ function deleteManometerFeedbackAll_(password) {
   return {
     ok: true,
     type: 'deleteManometerFeedbackAll',
-    feature: 'manometer-v14-group-progress',
+    feature: 'manometer-v15-group-registry',
     mode: 'recreatedSheets',
     message: 'Manometer-Feedbackblatt und Geräte-Registry wurden neu erstellt.',
     deletedRows: beforeFeedbackRows,
@@ -774,11 +786,136 @@ function manometerAdminStatus_() {
   return {
     ok: true,
     type: 'manometerAdminStatus',
-    feature: 'manometer-v14-group-progress',
+    feature: 'manometer-v15-group-registry',
     feedbackSheetName: FEEDBACK_SHEET_NAME,
     deviceRegistrySheetName: DEVICE_REGISTRY_SHEET_NAME,
     feedbackRows: getFeedbackRowCount_(),
     deviceRegistryRows: getDeviceRegistryRowCount_()
+  };
+}
+
+
+
+function getGroupRegistrySheet_() {
+  const ss = getSpreadsheet_();
+  let sheet = ss.getSheetByName(GROUP_REGISTRY_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(GROUP_REGISTRY_SHEET_NAME);
+  ensureGroupRegistryHeader_(sheet);
+  return sheet;
+}
+
+function ensureGroupRegistryHeader_(sheet) {
+  sheet.getRange(1, 1, 1, GROUP_REGISTRY_HEADERS.length).setValues([GROUP_REGISTRY_HEADERS]);
+  sheet.setFrozenRows(1);
+}
+
+function findGroupRegistryRow_(groupId) {
+  const sheet = getGroupRegistrySheet_();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const needle = textValue_(groupId);
+  if (!needle) return 0;
+  const values = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+  for (let i = 0; i < values.length; i++) {
+    if (textValue_(values[i][0]) === needle) return i + 2;
+  }
+  return 0;
+}
+
+function registerGroupGet_(e) {
+  const p = (e && e.parameter) || {};
+  return jsonp_(e, registerGroup_(p));
+}
+
+function registerGroupPost_(body) {
+  return jsonOutput_(registerGroup_(body || {}));
+}
+
+function registerGroup_(params) {
+  const groupId = textValue_(params.groupId || params.g || params.groupToken || params.token);
+  if (!groupId) return { ok: false, type: 'registerGroup', feature: 'manometer-v15-group-registry', error: 'Keine Gruppen-ID übermittelt.' };
+  const sheet = getGroupRegistrySheet_();
+  const now = new Date();
+  const groupName = textValue_(params.groupName || groupId);
+  const groupSize = Number(params.groupSize || params.size || 0) || 0;
+  const participants = textValue_(params.participants || params.participantsJson || '');
+  const assignments = textValue_(params.assignments || params.assignmentsJson || '');
+  const row = [now, groupId, groupName, groupSize, participants, assignments, now];
+  const existing = findGroupRegistryRow_(groupId);
+  if (existing >= 2) {
+    sheet.getRange(existing, 1, 1, GROUP_REGISTRY_HEADERS.length).setValues([row]);
+    SpreadsheetApp.flush();
+    return { ok: true, type: 'registerGroup', feature: 'manometer-v15-group-registry', mode: 'updated', groupId: groupId, rowNumber: existing };
+  }
+  sheet.appendRow(row);
+  SpreadsheetApp.flush();
+  return { ok: true, type: 'registerGroup', feature: 'manometer-v15-group-registry', mode: 'created', groupId: groupId, rowNumber: sheet.getLastRow() };
+}
+
+function registerDeviceGroupGet_(e) {
+  const p = (e && e.parameter) || {};
+  return jsonp_(e, registerDeviceGroup_(p));
+}
+
+function registerDeviceGroupPost_(body) {
+  return jsonOutput_(registerDeviceGroup_(body || {}));
+}
+
+function registerDeviceGroup_(params) {
+  const deviceId = textValue_(params.deviceId || params.device || params.browserId);
+  const groupId = textValue_(params.groupId || params.g || params.groupToken || params.token);
+  if (!deviceId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v15-group-registry', error: 'Keine Geräte-ID übermittelt.' };
+  if (!groupId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v15-group-registry', error: 'Keine Gruppen-ID übermittelt.' };
+
+  const sheet = getDeviceRegistrySheet_();
+  const existing = findDeviceRegistryRow_(deviceId);
+  const row = [
+    deviceId,
+    new Date(),
+    groupId,
+    textValue_(params.groupName || groupId),
+    textValue_(params.role || ''),
+    textValue_(params.assignedName || '')
+  ];
+
+  ensureDeviceRegistryHeader_(sheet);
+  if (existing >= 2) {
+    sheet.getRange(existing, 1, 1, Math.max(DEVICE_REGISTRY_HEADERS.length, row.length)).setValues([row]);
+    SpreadsheetApp.flush();
+    return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v15-group-registry', mode: 'updated', deviceId: deviceId, groupId: groupId, rowNumber: existing };
+  }
+  sheet.appendRow(row);
+  SpreadsheetApp.flush();
+  return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v15-group-registry', mode: 'created', deviceId: deviceId, groupId: groupId, rowNumber: sheet.getLastRow() };
+}
+
+function resolveDeviceGroupGet_(e) {
+  const p = (e && e.parameter) || {};
+  return jsonp_(e, resolveDeviceGroup_(p));
+}
+
+function resolveDeviceGroupPost_(body) {
+  return jsonOutput_(resolveDeviceGroup_(body || {}));
+}
+
+function resolveDeviceGroup_(params) {
+  const deviceId = textValue_(params.deviceId || params.device || params.browserId);
+  if (!deviceId) return { ok: false, type: 'resolveDeviceGroup', feature: 'manometer-v15-group-registry', error: 'Keine Geräte-ID übermittelt.' };
+  const sheet = getDeviceRegistrySheet_();
+  const row = findDeviceRegistryRow_(deviceId);
+  if (row < 2) return { ok: true, type: 'resolveDeviceGroup', feature: 'manometer-v15-group-registry', found: false };
+  const values = sheet.getRange(row, 1, 1, Math.max(sheet.getLastColumn(), DEVICE_REGISTRY_HEADERS.length)).getValues()[0];
+  return {
+    ok: true,
+    type: 'resolveDeviceGroup',
+    feature: 'manometer-v15-group-registry',
+    found: true,
+    deviceId: values[0] || '',
+    timestamp: formatDate_(values[1]),
+    groupId: values[2] || '',
+    groupName: values[3] || '',
+    role: values[4] || '',
+    assignedName: values[5] || ''
   };
 }
 
@@ -806,7 +943,7 @@ function groupProgress_(params) {
   return {
     ok: true,
     type: 'groupProgress',
-    feature: 'manometer-v14-group-progress',
+    feature: 'manometer-v15-group-registry',
     groupId: groupId,
     groupName: (latestResult && (latestResult.groupName || (latestResult.data && latestResult.data.groupName))) || (feedbackEntries[0] && feedbackEntries[0].groupName) || '',
     groupSize: groupSize,
@@ -893,7 +1030,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v14-group-progress',
+    feature: 'manometer-v15-group-registry',
     anonymous: true,
     groupIndependent: true,
     entries: entries,

@@ -150,7 +150,7 @@ function doGet(e) {
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v8-split-feedback', spreadsheetName: spreadsheetName });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v9-list-feedback', spreadsheetName: spreadsheetName });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -496,14 +496,36 @@ function saveFeedbackGet_(e) {
   return jsonp_(e, result);
 }
 
+
+function listFeedbackValues_(value) {
+  if (Array.isArray(value)) {
+    return value.map(function(v) { return textValue_(v); }).filter(function(v) { return v; });
+  }
+  if (value && typeof value === 'object') {
+    return Object.keys(value).map(function(k) { return textValue_(value[k]); }).filter(function(v) { return v; });
+  }
+  const txt = textValue_(value);
+  if (!txt) return [];
+  try {
+    const parsed = JSON.parse(txt);
+    if (Array.isArray(parsed)) return parsed.map(function(v) { return textValue_(v); }).filter(function(v) { return v; });
+  } catch (err) {}
+  return [txt];
+}
+
+function listFeedbackJson_(value) {
+  return safeJson_(listFeedbackValues_(value));
+}
+
+
 function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
   const deviceId = textValue_(data.deviceId || data.device || data.browserId);
-  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v8-split-feedback', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v9-list-feedback', error: 'Keine Geräte-ID übermittelt.' };
   const duplicateRow = findFeedbackRowByDeviceId_(sheet, deviceId);
   if (duplicateRow >= 2) {
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v8-split-feedback', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v9-list-feedback', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
   }
   const scores = isObject_(data.scores) ? data.scores : data;
   const improvements = isObject_(data.improvements) ? data.improvements : {};
@@ -523,9 +545,9 @@ function saveFeedbackData_(data) {
     numberFeedback_(scores.creativeOptions),
     safeJson_(improvements),
     textValue_(data.generalFeedback || data.general || data.feedbackText),
-    textValue_(data.generalPraise || data.praise),
-    textValue_(data.generalCriticism || data.criticism),
-    textValue_(data.generalSuggestions || data.suggestions),
+    listFeedbackJson_(data.generalPraise || data.praise),
+    listFeedbackJson_(data.generalCriticism || data.criticism),
+    listFeedbackJson_(data.generalSuggestions || data.suggestions),
     textValue_(data.avoidCriticism),
     textValue_(data.llmUsed),
     textValue_(data.llmDetails),
@@ -533,7 +555,7 @@ function saveFeedbackData_(data) {
   ];
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v8-split-feedback', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v9-list-feedback', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
 }
 
 function findFeedbackRowByDeviceId_(sheet, deviceId) {
@@ -562,12 +584,12 @@ function resetManometerDeviceIdsGet_(e) {
 
 function resetManometerDeviceIds_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v8-split-feedback', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v9-list-feedback', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
   const sheet = getFeedbackSheet_();
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v8-split-feedback', message: 'Keine gespeicherten Geräte-IDs vorhanden.', clearedRows: 0 };
+    return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v9-list-feedback', message: 'Keine gespeicherten Geräte-IDs vorhanden.', clearedRows: 0 };
   }
   const range = sheet.getRange(2, 2, lastRow - 1, 1);
   const values = range.getValues();
@@ -578,7 +600,7 @@ function resetManometerDeviceIds_(password) {
   });
   range.setValues(clearedValues);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v8-split-feedback', message: 'Manometer-Geräte-IDs wurden freigegeben.', clearedRows: cleared };
+  return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v9-list-feedback', message: 'Manometer-Geräte-IDs wurden freigegeben.', clearedRows: cleared };
 }
 
 function normalizeGroupKey_(value) {
@@ -601,7 +623,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v8-split-feedback',
+    feature: 'manometer-v9-list-feedback',
     anonymous: true,
     groupIndependent: true,
     entries: entries,
@@ -617,17 +639,20 @@ function feedbackRowToEntry_(row, rowNumber) {
   let raw = {};
   try { improvements = JSON.parse(row[13] || '{}'); } catch (err) { improvements = {}; }
 
-  // v7 hatte 19 Spalten. Diese Version ergänzt drei getrennte optionale Felder:
-  // allgemeines Lob, allgemeine Kritik, allgemeine Anregungen.
   const hasSplitGeneralFields = row.length >= 22;
   const rawIndex = hasSplitGeneralFields ? 21 : 18;
 
   try { raw = JSON.parse(row[rawIndex] || '{}'); } catch (err) { raw = {}; }
 
+  function parsedListFromCell_(cell, fallback) {
+    const base = (cell !== undefined && cell !== null && String(cell).trim() !== '') ? cell : fallback;
+    return listFeedbackValues_(base);
+  }
+
   const generalFeedback = row[14] || '';
-  const generalPraise = hasSplitGeneralFields ? (row[15] || '') : (raw.generalPraise || raw.praise || '');
-  const generalCriticism = hasSplitGeneralFields ? (row[16] || '') : (raw.generalCriticism || raw.criticism || '');
-  const generalSuggestions = hasSplitGeneralFields ? (row[17] || '') : (raw.generalSuggestions || raw.suggestions || '');
+  const generalPraise = hasSplitGeneralFields ? parsedListFromCell_(row[15], raw.generalPraise || raw.praise) : parsedListFromCell_(raw.generalPraise || raw.praise, '');
+  const generalCriticism = hasSplitGeneralFields ? parsedListFromCell_(row[16], raw.generalCriticism || raw.criticism) : parsedListFromCell_(raw.generalCriticism || raw.criticism, '');
+  const generalSuggestions = hasSplitGeneralFields ? parsedListFromCell_(row[17], raw.generalSuggestions || raw.suggestions) : parsedListFromCell_(raw.generalSuggestions || raw.suggestions, '');
 
   return {
     id: rowNumber,

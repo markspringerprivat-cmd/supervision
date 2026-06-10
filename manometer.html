@@ -1,172 +1,94 @@
-
 <!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-loadfix-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-list-feedback-v1">
   <style>
     :root{
-      --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.95); --panel-strong:#fff;
-      --text:#122033; --muted:#60748b; --line:#d7e2ee; --accent:#255c93; --accent2:#71a8dd;
-      --success:#16a34a; --danger:#e11d48; --warning:#ffb000; --radius:28px;
-      --shadow:0 22px 70px rgba(7,19,35,.18);
+      --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.95);
+      --text:#122033; --muted:#60748b; --line:#d7e2ee;
+      --accent:#255c93; --accent2:#71a8dd; --success:#00c853; --danger:#ff1744; --orange:#ff6d00;
+      --shadow:0 16px 46px rgba(7,19,35,.18); --radius:28px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     *{box-sizing:border-box}
     body[data-mode="manometer"]{
-      margin:0; min-height:100vh; color:var(--text);
-      background:radial-gradient(circle at top left, rgba(113,168,221,.24), transparent 34%), radial-gradient(circle at right center, rgba(74,222,128,.14), transparent 24%), linear-gradient(140deg,var(--bg),var(--bg2));
-      overflow:hidden;
+      margin:0; min-height:100vh; color:var(--text); overflow:hidden;
+      background:radial-gradient(circle at top left, rgba(113,168,221,.24), transparent 34%),radial-gradient(circle at right center,rgba(74,222,128,.14),transparent 24%),linear-gradient(140deg,var(--bg),var(--bg2));
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     body[data-mode="manometer"] footer{display:none}
-    body[data-mode="manometer"] header{
-      background:transparent; border:0; color:#fff; padding:18px 18px 0;
-    }
-    body[data-mode="manometer"] header .wrap{
-      width:min(1360px,100%); margin:0 auto; max-width:none; padding:16px 18px; border-radius:24px;
-      background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); box-shadow:0 8px 22px rgba(0,0,0,.14);
-    }
-    body[data-mode="manometer"] header h1{margin:0; font-size:1.3rem; font-weight:950}
-    body[data-mode="manometer"] header p{margin:4px 0 0; color:rgba(255,255,255,.78)}
-    .loading-screen{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:25; background:radial-gradient(circle at top left, rgba(113,168,221,.24), transparent 34%), linear-gradient(140deg,var(--bg),var(--bg2)); color:#fff; transition:opacity .35s ease, visibility .35s ease}
-    .loading-screen.hidden{opacity:0; visibility:hidden}
-    .loading-card{width:min(560px,calc(100% - 32px)); border-radius:28px; padding:30px 28px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); box-shadow:0 12px 32px rgba(0,0,0,.14); text-align:center}
-    .loading-card h2{margin:0 0 10px; font-size:1.6rem}.loading-card p{margin:0 0 16px; color:rgba(255,255,255,.8)}
-    .loading-track{height:14px; border-radius:999px; background:rgba(255,255,255,.14); overflow:hidden; border:1px solid rgba(255,255,255,.14)}
-    .loading-fill{height:100%; width:0; background:linear-gradient(90deg,#7ab3f0,#d8efff); transition:width .3s ease}
-    .loading-status{margin-top:14px; font-weight:800; color:rgba(255,255,255,.88)}
+    body[data-mode="manometer"] header{background:transparent;border:0;color:#fff;padding:18px 18px 0}
+    body[data-mode="manometer"] header .wrap{width:min(1360px,100%);max-width:none;margin:0 auto;padding:16px 18px;border-radius:24px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);box-shadow:0 8px 22px rgba(0,0,0,.14)}
+    body[data-mode="manometer"] header h1{margin:0;font-size:1.3rem;font-weight:950}
+    body[data-mode="manometer"] header p{margin:4px 0 0;color:rgba(255,255,255,.78)}
+    body[data-mode="manometer"] .local-reset-bar{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:60!important;margin:0!important;border-radius:0!important;box-shadow:0 8px 22px rgba(0,0,0,.14)!important}
+    body[data-mode="manometer"] header{padding-top:92px!important}
 
-    .mano-shell{min-height:100vh; display:flex; flex-direction:column; padding:0 18px 24px; gap:16px}
-    .progress-wrap{position:relative; width:min(1360px,100%); margin:0 auto; height:10px; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.12); overflow:hidden}
-    .progress-bar{height:100%; width:0; background:linear-gradient(90deg,#7ab3f0,#d4ebff); transition:width .45s ease}
-    .feedback-stage-wrap{flex:1; display:flex; align-items:center; justify-content:center; min-height:0}
-    .feedback-stage{position:relative; width:min(1360px,100%); height:min(80vh,920px); min-height:620px; opacity:0; transition:opacity .35s ease}
+    .loading-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:25;background:radial-gradient(circle at top left,rgba(113,168,221,.24),transparent 34%),linear-gradient(140deg,var(--bg),var(--bg2));color:#fff;transition:opacity .35s ease,visibility .35s ease}
+    .loading-screen.hidden{opacity:0;visibility:hidden}
+    .loading-card{width:min(560px,calc(100% - 32px));border-radius:28px;padding:30px 28px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);box-shadow:0 12px 32px rgba(0,0,0,.14);text-align:center}
+    .loading-card h2{margin:0 0 10px;font-size:1.6rem}.loading-card p{margin:0 0 16px;color:rgba(255,255,255,.8)}
+    .loading-track{height:14px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;border:1px solid rgba(255,255,255,.14)}
+    .loading-fill{height:100%;width:0;background:linear-gradient(90deg,#7ab3f0,#d8efff);transition:width .3s ease}.loading-status{margin-top:14px;font-weight:800;color:rgba(255,255,255,.88)}
+
+    .mano-shell{min-height:100vh;display:flex;flex-direction:column;padding:0 18px 24px;gap:16px}
+    .progress-wrap{position:relative;width:min(1360px,100%);margin:0 auto;height:10px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.12);overflow:hidden}
+    .progress-bar{height:100%;width:0;background:linear-gradient(90deg,#7ab3f0,#d4ebff);transition:width .45s ease}
+    .feedback-stage-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+    .feedback-stage{position:relative;width:min(1360px,100%);height:min(80vh,930px);min-height:640px;opacity:0;transition:opacity .35s ease}
     .feedback-stage.ready{opacity:1}
-    .step-card{position:absolute; inset:0; display:flex; flex-direction:column; background:var(--panel); border:1px solid rgba(255,255,255,.48); border-radius:var(--radius); box-shadow:0 16px 46px rgba(7,19,35,.18); overflow:hidden; opacity:0; transform:translate3d(74px,0,0) scale(.975); pointer-events:none; transition:transform .72s cubic-bezier(.16,.84,.22,1), opacity .52s ease; will-change:transform,opacity; contain:layout paint style; content-visibility:hidden}
-    .step-card.active{opacity:1; transform:translate3d(0,0,0) scale(1); pointer-events:auto; z-index:3; content-visibility:visible}
-    .step-card.prev{opacity:0; transform:translate3d(-86px,0,0) scale(.975); z-index:1; content-visibility:visible}
-    .step-card.next{opacity:0; transform:translate3d(86px,0,0) scale(.975); z-index:1; content-visibility:visible}
-    .step-card.far{visibility:hidden; content-visibility:hidden}
-    .step-inner{display:flex; flex-direction:column; height:100%; padding:30px 32px 28px; overflow:hidden}
-    .step-head{display:flex; justify-content:space-between; gap:20px; align-items:flex-start; margin-bottom:16px; flex:0 0 auto}
-    .step-kicker{display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:999px; background:#eaf2fb; color:#234972; font-weight:900; text-transform:uppercase; letter-spacing:.05em; font-size:.78rem}
-    .step-counter{color:var(--muted); font-weight:800; white-space:nowrap}
-    .step-card h2{margin:0 0 12px; font-size:clamp(1.55rem,2.2vw,2.35rem); line-height:1.14; font-weight:950}
-    .step-card p{margin:0; color:var(--muted); font-size:1.05rem; line-height:1.55}
-    .intro-layout{display:grid; grid-template-columns:1.08fr .92fr; gap:20px; flex:1; min-height:0}
-    .intro-panel,.intro-side,.text-panel,.review-panel,.submit-panel,.thankyou-panel{border:1px solid var(--line); border-radius:24px; background:linear-gradient(180deg,#fff,#f7fbff); box-shadow:0 14px 34px rgba(15,23,42,.07); padding:24px; min-height:0}
-    .intro-panel{background:radial-gradient(circle at top left, rgba(113,168,221,.18), transparent 32%), linear-gradient(180deg,#fff,#f7fbff)}
-    .intro-big{font-size:clamp(2.1rem,4vw,4.2rem)!important; letter-spacing:-.04em; margin-bottom:10px!important}
-    .summary-list{display:grid; gap:14px; margin-top:18px}
-    .summary-note{border-radius:18px; padding:16px 18px; background:#fff; border:1px solid var(--line); box-shadow:0 10px 24px rgba(15,23,42,.05); opacity:0; transform:translateX(18px)}
-    .summary-note h3{margin:0 0 8px; font-size:1rem; color:#1a3a60}.summary-note p{margin:0; color:#51657c; line-height:1.5}
-    .step-card.play .summary-note{animation:slideIn .75s ease forwards}.step-card.play .summary-note:nth-child(2){animation-delay:.12s}.step-card.play .summary-note:nth-child(3){animation-delay:.24s}
+    .step-card{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid rgba(255,255,255,.48);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;opacity:0;transform:translate3d(74px,0,0) scale(.975);pointer-events:none;transition:transform .72s cubic-bezier(.16,.84,.22,1),opacity .52s ease;will-change:transform,opacity;contain:layout paint style;content-visibility:hidden}
+    .step-card.active{opacity:1;transform:translate3d(0,0,0) scale(1);pointer-events:auto;z-index:3;content-visibility:visible}
+    .step-card.prev{opacity:0;transform:translate3d(-86px,0,0) scale(.975);z-index:1;content-visibility:visible}.step-card.next{opacity:0;transform:translate3d(86px,0,0) scale(.975);z-index:1;content-visibility:visible}.step-card.far{visibility:hidden;content-visibility:hidden}
+    .step-inner{display:flex;flex-direction:column;height:100%;padding:30px 32px 28px;overflow:hidden}
+    .step-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:14px;flex:0 0 auto}
+    .step-kicker{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#eaf2fb;color:#234972;font-weight:900;text-transform:uppercase;letter-spacing:.05em;font-size:.78rem}
+    .step-counter{color:var(--muted);font-weight:800;white-space:nowrap}
+    .step-card h2{margin:0 0 8px;font-size:clamp(1.5rem,2.05vw,2.2rem);line-height:1.12;font-weight:950}
+    .step-card p{margin:0;color:var(--muted);font-size:1.02rem;line-height:1.5}
 
-    .question-grid{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr); gap:22px; align-items:stretch; min-height:0; flex:1; height:100%; overflow:hidden}
-    .question-left,.question-right{border:1px solid rgba(216,227,239,.95); border-radius:24px; background:linear-gradient(180deg,#fff,#f7fbff); box-shadow:0 14px 34px rgba(15,23,42,.07); padding:20px; min-height:0; height:100%; align-self:stretch}
-    .question-left{display:grid; grid-template-rows:166px minmax(0,1fr); gap:18px; overflow:hidden}
-    .metric-row{display:grid; grid-template-columns:170px 1fr; gap:16px; min-height:0}
-    .score-tile{border-radius:24px; background:linear-gradient(145deg,#ff1744,#ff6d00); color:#fff; padding:20px; min-height:0; height:100%; display:flex; flex-direction:column; justify-content:center; box-shadow:0 18px 34px rgba(31,75,122,.16); transition:background .45s ease}
-    .score-tile strong{font-size:3.35rem; line-height:1; font-weight:950}.score-tile span{font-weight:850; color:rgba(255,255,255,.92); margin-top:8px}
-    .mini-help{display:grid; gap:10px}
-    .mini-card{border-radius:18px; background:#eef6ff; border:1px solid #d7e6f5; padding:14px 16px; color:#1f426b; font-weight:900; opacity:0; transform:translateY(16px)}
-    .mini-card span{display:block; color:#64758a; font-weight:750; font-size:.86rem; margin-top:4px}
-    .step-card.play .mini-card{animation:rise .7s ease forwards}.step-card.play .mini-card:nth-child(2){animation-delay:.12s}
-    .scale-panel{position:relative; border:1px solid #d9e5f1; border-radius:24px; padding:18px 16px 14px; background:radial-gradient(circle at top left,rgba(111,168,220,.14),transparent 36%), linear-gradient(180deg,#fbfdff,#f3f8fd); min-height:0; height:100%; overflow:hidden; display:flex; flex-direction:column}
-    .scale-title{font-weight:950; color:#1b3f67; margin-bottom:8px}
-    .range-box{margin-top:6px}
-    .range-wrap{padding:14px 18px 18px; border-radius:22px; border:1px solid #dce7f2; background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(241,247,253,.95))}
-    .range-bg{position:relative; padding:18px 0 8px}
-    .range-bg::before{content:''; position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:16px; border-radius:999px; background:linear-gradient(90deg,#ff1744 0%,#ff6d00 22%,#ffd600 46%,#64dd17 72%,#00c853 100%); opacity:.18}
-    input[type="range"]{appearance:none; -webkit-appearance:none; width:100%; height:16px; background:transparent; position:relative; z-index:2; cursor:pointer}
-    input[type="range"]::-webkit-slider-runnable-track{height:16px; border-radius:999px; background:var(--range-fill, linear-gradient(90deg,#ff1744 0%,#ff1744 50%,#e7eef6 50%,#e7eef6 100%)); border:1px solid #d7e2ee}
-    input[type="range"]::-moz-range-track{height:16px; border-radius:999px; background:var(--range-fill, linear-gradient(90deg,#ff1744 0%,#ff1744 50%,#e7eef6 50%,#e7eef6 100%)); border:1px solid #d7e2ee}
-    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:30px; height:30px; margin-top:-8px; border-radius:50%; border:4px solid #fff; background:#255c93; box-shadow:0 6px 18px rgba(15,23,42,.2)}
-    input[type="range"]::-moz-range-thumb{width:30px; height:30px; border-radius:50%; border:4px solid #fff; background:#255c93; box-shadow:0 6px 18px rgba(15,23,42,.2)}
-    .scale-labels{display:flex; justify-content:space-between; gap:8px; color:var(--muted); font-weight:800; font-size:.9rem; margin-top:12px}
-    .tick-row{display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:6px; margin-top:12px}
-    .tick-pill{display:grid; place-items:center; height:30px; border-radius:999px; border:1px solid #dbe6f2; background:#fff; color:#33516f; font-weight:950; font-size:.84rem; opacity:0; transform:translateY(12px)}
-    .step-card.play .tick-pill{animation:rise .65s ease forwards}
-    .conditional-note{display:flex; flex-direction:column; min-height:0; overflow:auto; border:1px solid #ffd8c2; background:#fff7f2; border-radius:22px; padding:18px}
-    .conditional-note.hidden{display:none}
-    .conditional-note strong{color:#9a3412}
-    .conditional-note textarea,.text-grid textarea,.llm-extra textarea{width:100%; box-sizing:border-box; border:1px solid #ccd9e8; border-radius:16px; padding:14px; font:inherit; min-height:130px; background:#fff; resize:vertical; margin-top:10px}
-    .question-right{display:flex; flex-direction:column; overflow:hidden}
-    .hint-stack{display:grid; gap:12px; margin-top:0}
-    .hint-box{border-radius:18px; background:#fff; border:1px solid var(--line); box-shadow:0 10px 24px rgba(15,23,42,.05); padding:16px 18px; opacity:0; transform:translateY(18px)}
-    .hint-box h3{margin:0 0 8px; color:#1a3a60; font-size:1rem}.hint-box p{margin:0; color:#51657c}
-    .step-card.play .hint-box{animation:rise .75s ease forwards}.step-card.play .hint-box:nth-child(2){animation-delay:.12s}.step-card.play .hint-box:nth-child(3){animation-delay:.24s}
+    .intro-layout,.question-grid,.text-layout,.choice-layout,.submit-layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);gap:22px;align-items:stretch;min-height:0;flex:1;height:100%;overflow:hidden}
+    .panel{border:1px solid rgba(216,227,239,.95);border-radius:24px;background:linear-gradient(180deg,#fff,#f7fbff);box-shadow:0 14px 34px rgba(15,23,42,.07);padding:20px;min-height:0;height:100%;overflow:hidden}
+    .panel.scroll{overflow:auto}
+    .intro-panel{background:radial-gradient(circle at top left,rgba(113,168,221,.18),transparent 32%),linear-gradient(180deg,#fff,#f7fbff)}
+    .intro-big{font-size:clamp(2rem,3.8vw,4rem)!important;letter-spacing:-.04em;margin-bottom:10px!important}
+    .summary-list{display:grid;gap:14px;margin-top:18px}.summary-note{border-radius:18px;padding:16px 18px;background:#fff;border:1px solid var(--line);box-shadow:0 10px 24px rgba(15,23,42,.05);opacity:0;transform:translateX(18px)}.summary-note h3{margin:0 0 8px;color:#1a3a60;font-size:1rem}.summary-note p{margin:0;color:#51657c;line-height:1.5}.step-card.play .summary-note{animation:slideIn .75s ease forwards}.step-card.play .summary-note:nth-child(2){animation-delay:.12s}.step-card.play .summary-note:nth-child(3){animation-delay:.24s}
 
-    .text-layout,.choice-layout{display:grid; grid-template-columns:1.05fr .95fr; gap:22px; flex:1; min-height:0}
-    .text-grid{display:grid; gap:14px; min-height:0; overflow:auto}
-    .text-grid label,.llm-extra label{display:block; font-weight:800; color:#17375e}
-    .text-grid textarea::placeholder,.llm-extra textarea::placeholder{color:#8da1b7}
-    .review-panel h3{margin:0 0 10px; color:#1a3a60}.review-panel ul{margin:0; padding-left:18px; color:#51657c; line-height:1.6}
-    .choice-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:stretch; min-height:0}
-    .choice-card{background:linear-gradient(180deg,#fff,#f8fbff); border:1px solid var(--line); border-radius:22px; padding:22px; box-shadow:0 12px 24px rgba(15,23,42,.05); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; cursor:pointer; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease, background .18s ease}
-    .choice-card:hover{transform:translateY(-2px); border-color:#a9c7e7; box-shadow:0 16px 28px rgba(15,23,42,.08)}
-    .choice-card.selected{border-color:#255c93; background:linear-gradient(180deg,#eef6ff,#fff)}
-    .choice-card input{position:absolute; opacity:0; pointer-events:none}
-    .choice-icon{display:grid; place-items:center; width:58px; height:58px; border-radius:20px; font-size:1.45rem; font-weight:950; color:#fff}
-    .choice-card.yes .choice-icon{background:linear-gradient(145deg,#00c853,#16a34a)} .choice-card.no .choice-icon{background:linear-gradient(145deg,#ff6d00,#ff1744)}
-    .choice-card strong{font-size:1.38rem; color:#16355b; line-height:1.1} .choice-card span{color:#60758b; font-weight:700; text-align:center}
-    .llm-extra{margin-top:18px}
+    .question-left{display:grid;grid-template-rows:156px minmax(0,1fr);gap:18px;overflow:hidden}
+    .metric-row{display:grid;grid-template-columns:170px 1fr;gap:16px;min-height:0}
+    .score-tile{border-radius:24px;background:linear-gradient(145deg,#ff1744,#ff6d00);color:#fff;padding:20px;height:100%;display:flex;flex-direction:column;justify-content:center;box-shadow:0 18px 34px rgba(31,75,122,.16);transition:background .45s ease}.score-tile strong{font-size:3.25rem;line-height:1;font-weight:950}.score-tile span{font-weight:850;color:rgba(255,255,255,.92);margin-top:8px}
+    .mini-help{display:grid;gap:10px}.mini-card{border-radius:18px;background:#eef6ff;border:1px solid #d7e6f5;padding:14px 16px;color:#1f426b;font-weight:900;opacity:0;transform:translateY(16px)}.mini-card span{display:block;color:#64758a;font-weight:750;font-size:.86rem;margin-top:4px}.mini-card.plain{display:flex;align-items:center;font-size:1.02rem;line-height:1.45}.step-card.play .mini-card{animation:rise .7s ease forwards}.step-card.play .mini-card:nth-child(2){animation-delay:.12s}
+    .scale-panel{position:relative;border:1px solid #d9e5f1;border-radius:24px;padding:18px 16px 14px;background:radial-gradient(circle at top left,rgba(111,168,220,.14),transparent 36%),linear-gradient(180deg,#fbfdff,#f3f8fd);height:100%;overflow:hidden;display:flex;flex-direction:column}.scale-title{font-weight:950;color:#1b3f67;margin-bottom:8px}
+    .range-wrap{padding:14px 18px 18px;border-radius:22px;border:1px solid #dce7f2;background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(241,247,253,.95))}
+    .range-bg{position:relative;padding:18px 0 8px}.range-bg::before{content:'';position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:16px;border-radius:999px;background:linear-gradient(90deg,#ff1744 0%,#ff6d00 22%,#ffd600 46%,#64dd17 72%,#00c853 100%);opacity:.18}
+    input[type="range"]{appearance:none;-webkit-appearance:none;width:100%;height:16px;background:transparent;position:relative;z-index:2;cursor:pointer}
+    input[type="range"]::-webkit-slider-runnable-track{height:16px;border-radius:999px;background:var(--range-fill);border:1px solid #d7e2ee}input[type="range"]::-moz-range-track{height:16px;border-radius:999px;background:var(--range-fill);border:1px solid #d7e2ee}
+    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;margin-top:-8px;border-radius:50%;border:4px solid #fff;background:#255c93;box-shadow:0 6px 18px rgba(15,23,42,.2)}input[type="range"]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;border:4px solid #fff;background:#255c93;box-shadow:0 6px 18px rgba(15,23,42,.2)}
+    .scale-labels{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-weight:800;font-size:.9rem;margin-top:12px}.tick-row{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-top:12px}.tick-pill{display:grid;place-items:center;height:30px;border-radius:999px;border:1px solid #dbe6f2;background:#fff;color:#33516f;font-weight:950;font-size:.84rem;opacity:0;transform:translateY(12px)}.step-card.play .tick-pill{animation:rise .65s ease forwards}
 
-    .submit-layout{display:grid; grid-template-columns:1fr 1fr; gap:22px; flex:1; min-height:0}
-    .submit-panel ul{margin:12px 0 0; padding-left:18px; color:#51657c; line-height:1.65}
-    .submit-panel button{margin-top:18px}
-    .thankyou-screen{display:none; width:min(1360px,100%); margin:0 auto; min-height:min(80vh,920px);}
-    .thankyou-screen.visible{display:block}
-    .thankyou-card{min-height:min(80vh,920px); border:1px solid rgba(255,255,255,.48); border-radius:var(--radius); background:linear-gradient(135deg,#f3f8ff,#eaf2fb 58%,#edf8f1); box-shadow:0 16px 46px rgba(7,19,35,.18); display:flex; align-items:center; justify-content:center; text-align:center; padding:40px; position:relative; overflow:hidden}
-    .thankyou-card .inner{max-width:760px; position:relative; z-index:2}.thankyou-card h2{font-size:clamp(2rem,4vw,4rem); margin:0 0 16px; color:#17375e}.thankyou-card p{margin:0 0 22px; color:#60758b; font-size:1.15rem; line-height:1.6}
-    .status-row{width:min(1360px,100%); margin:0 auto; display:grid; gap:14px}
-    .manometer-status{padding:14px 16px; border-radius:16px; background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.12)}
-    .manometer-status.error{background:#fff2f2; color:#8a1f1f; border-color:#efc5c5}.manometer-status.ok{background:#e9f8ef; color:#256142; border-color:#bde7cc}
-    .already-voted{border:1px solid #bde7cc; background:#e9f8ef; border-radius:18px; padding:16px; color:#256142; text-align:center; font-weight:800}
-    .nav-dock{width:min(1360px,100%); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); border-radius:24px; padding:14px 16px; color:#fff}
-    .nav-left,.nav-right{display:flex; align-items:center; gap:12px; flex-wrap:wrap}.nav-center{font-weight:800; color:rgba(255,255,255,.85)}
-    .nav-dock button,.nav-dock a,.thankyou-card a,.submit-panel button{border:none; border-radius:999px; padding:13px 18px; font-weight:900; cursor:pointer; text-decoration:none; font:inherit}
-    .nav-dock .primary,.submit-panel button{background:#fff; color:#16355b}.nav-dock .secondary,.thankyou-card a{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.16)}
-    .nav-dock button:disabled{opacity:.45; cursor:not-allowed}
+    .feedback-list-panel{display:flex;flex-direction:column;gap:12px;height:100%;overflow:hidden}
+    .feedback-list-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.feedback-list-head h3{margin:0;color:#193557;font-size:1.05rem}.add-btn{border:0;border-radius:999px;background:#255c93;color:#fff;font-weight:950;padding:10px 14px;cursor:pointer;box-shadow:0 8px 18px rgba(37,92,147,.18)}.add-btn:hover{transform:translateY(-1px)}
+    .entry-list{display:grid;gap:10px;overflow:auto;min-height:0;padding-right:4px;align-content:start}.entry-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;opacity:0;transform:translateY(16px)}.step-card.play .entry-row{animation:rise .65s ease forwards}.entry-row textarea{width:100%;min-height:74px;border:1px solid #ccd9e8;border-radius:16px;padding:12px 14px;background:#fff;font:inherit;resize:vertical;color:#122033}.entry-row textarea:focus{outline:3px solid rgba(37,92,147,.14);border-color:#9fc1e4}.remove-entry{border:1px solid #dbe6f2;border-radius:14px;background:#fff;color:#9a3412;font-weight:950;width:40px;height:40px;cursor:pointer}
+    .required-note{border:1px solid #ffd8c2;background:#fff7f2;border-radius:16px;padding:10px 12px;color:#9a3412;font-size:.9rem;font-weight:800}
+    .hidden{display:none!important}
 
-    .enter-up,.enter-right,.enter-soft{opacity:0}
-    .step-card.play .enter-up{animation:rise .75s ease forwards}
-    .step-card.play .enter-right{animation:slideIn .75s ease forwards}
-    .step-card.play .enter-soft{animation:fadeIn .75s ease forwards}
-    .delay-1{animation-delay:.12s!important}.delay-2{animation-delay:.24s!important}.delay-3{animation-delay:.36s!important}.delay-4{animation-delay:.48s!important}
+    .text-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;min-height:0;height:100%}.list-column{display:flex;flex-direction:column;gap:12px;min-height:0}.list-column .entry-row textarea{min-height:68px}
 
+    .choice-main{display:flex;align-items:center;justify-content:center;height:100%}.choice-stack{display:grid;grid-template-columns:repeat(2,minmax(220px,300px));gap:24px;align-items:stretch;justify-content:center}.choice-card{background:linear-gradient(180deg,#fff,#f8fbff);border:1px solid var(--line);border-radius:28px;padding:32px;box-shadow:0 12px 24px rgba(15,23,42,.05);display:flex;justify-content:center;align-items:center;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;min-height:230px}.choice-card:hover{transform:translateY(-2px);border-color:#a9c7e7;box-shadow:0 16px 28px rgba(15,23,42,.08)}.choice-card.selected{border-color:#255c93;background:linear-gradient(180deg,#eef6ff,#fff)}.choice-card input{position:absolute;opacity:0;pointer-events:none}.choice-icon{display:grid;place-items:center;width:128px;height:128px;border-radius:34px;font-size:2.2rem;font-weight:950;color:#fff}.choice-card.yes .choice-icon{background:linear-gradient(145deg,#00c853,#16a34a)}.choice-card.no .choice-icon{background:linear-gradient(145deg,#ff6d00,#ff1744)}
+    .small-warning{align-self:end;border:1px solid #ffd8c2;background:#fff7f2;border-radius:16px;padding:10px 12px;color:#9a3412;font-size:.88rem;font-weight:800}.llm-line{width:min(680px,100%);margin:18px auto 0}.llm-line input{width:100%;border:1px solid #ccd9e8;border-radius:999px;padding:13px 16px;background:#fff;font:inherit;color:#122033}.llm-line input:focus{outline:3px solid rgba(37,92,147,.14);border-color:#9fc1e4}
+    .submit-layout{display:grid;grid-template-columns:1fr 1fr;gap:22px;flex:1;min-height:0}.submit-panel ul{margin:12px 0 0;padding-left:18px;color:#51657c;line-height:1.65}.submit-panel button{margin-top:18px;border:none;border-radius:999px;padding:13px 18px;font-weight:900;background:#fff;color:#16355b;cursor:pointer}
 
-    /* Feedbackmodus: lokale Admin-/Reset-Leiste ganz oben platzieren */
-    body[data-mode="manometer"] .local-reset-bar{
-      position:fixed!important;
-      top:0!important;
-      left:0!important;
-      right:0!important;
-      z-index:60!important;
-      margin:0!important;
-      border-radius:0!important;
-      box-shadow:0 8px 22px rgba(0,0,0,.14)!important;
-    }
-    body[data-mode="manometer"] header{
-      padding-top:92px!important;
-    }
+    .thankyou-screen{display:none;width:min(1360px,100%);margin:0 auto;min-height:min(80vh,920px)}.thankyou-screen.visible{display:block}.thankyou-card{min-height:min(80vh,920px);border:1px solid rgba(255,255,255,.48);border-radius:var(--radius);background:linear-gradient(135deg,#f3f8ff,#eaf2fb 58%,#edf8f1);box-shadow:0 16px 46px rgba(7,19,35,.18);display:flex;align-items:center;justify-content:center;text-align:center;padding:40px}.thankyou-card .inner{max-width:760px}.thankyou-card h2{font-size:clamp(2rem,4vw,4rem);margin:0 0 16px;color:#17375e}.thankyou-card p{margin:0 0 22px;color:#60758b;font-size:1.15rem;line-height:1.6}.thankyou-card a{border-radius:999px;padding:13px 18px;font-weight:900;text-decoration:none;background:#255c93;color:#fff}
+    .status-row{width:min(1360px,100%);margin:0 auto;display:grid;gap:14px}.manometer-status{padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.12)}.manometer-status.error{background:#fff2f2;color:#8a1f1f;border-color:#efc5c5}.manometer-status.ok{background:#e9f8ef;color:#256142;border-color:#bde7cc}.already-voted{border:1px solid #bde7cc;background:#e9f8ef;border-radius:18px;padding:16px;color:#256142;text-align:center;font-weight:800}
+    .nav-dock{width:min(1360px,100%);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:14px 16px;color:#fff}.nav-left,.nav-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.nav-center{font-weight:800;color:rgba(255,255,255,.85)}.nav-dock button,.nav-dock a{border:none;border-radius:999px;padding:12px 18px;font-weight:900;cursor:pointer;text-decoration:none;font:inherit}.nav-dock .primary{background:#fff;color:#16355b}.nav-dock .secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.16)}.nav-dock button:disabled{opacity:.45;cursor:not-allowed}
 
-    @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @media (max-width:980px){
-      .intro-layout,.question-grid,.text-layout,.choice-layout,.submit-layout,.metric-row{grid-template-columns:1fr}
-      .question-left{grid-template-rows:auto minmax(0,1fr)}
-      .feedback-stage{height:82vh; min-height:680px}
-      .step-inner{overflow:auto}
-    }
-    @media (max-width:720px){
-      body[data-mode="manometer"] header, .mano-shell{padding-left:14px; padding-right:14px}
-      .nav-dock{flex-direction:column; align-items:stretch}.nav-left,.nav-right{width:100%}.nav-center{text-align:center}
-      .step-inner{padding:24px 20px 20px}.choice-grid{grid-template-columns:1fr}.feedback-stage{height:84vh; min-height:700px}
-      .progress-wrap,.feedback-stage,.status-row,.nav-dock,.thankyou-screen{width:100%}
-    }
+    .enter-up,.enter-right,.enter-soft{opacity:0}.step-card.play .enter-up{animation:rise .75s ease forwards}.step-card.play .enter-right{animation:slideIn .75s ease forwards}.step-card.play .enter-soft{animation:fadeIn .75s ease forwards}.delay-1{animation-delay:.12s!important}.delay-2{animation-delay:.24s!important}.delay-3{animation-delay:.36s!important}.delay-4{animation-delay:.48s!important}
+    @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @media(max-width:980px){.intro-layout,.question-grid,.text-layout,.choice-layout,.submit-layout,.metric-row{grid-template-columns:1fr}.text-three{grid-template-columns:1fr}.feedback-stage{height:82vh;min-height:720px}.step-inner{overflow:auto}.choice-stack{grid-template-columns:1fr}.choice-card{min-height:150px}.question-left{grid-template-rows:auto minmax(0,1fr)}}
+    @media(max-width:720px){body[data-mode="manometer"] header,.mano-shell{padding-left:14px;padding-right:14px}.nav-dock{flex-direction:column;align-items:stretch}.nav-left,.nav-right{width:100%}.nav-center{text-align:center}.step-inner{padding:24px 20px 20px}.feedback-stage{height:84vh;min-height:740px}.progress-wrap,.feedback-stage,.status-row,.nav-dock,.thankyou-screen{width:100%}}
   </style>
 </head>
 <body data-mode="manometer">
@@ -174,152 +96,63 @@
 <header><div class="wrap"><h1>Manometer</h1><p>Anonyme Reflexion zur Gruppensupervision</p></div></header>
 <main class="mano-shell">
   <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
-
-  <form id="manometerForm">
-    <div class="feedback-stage-wrap"><div class="feedback-stage" id="feedbackStage">
-      <section class="step-card active" data-step="intro">
-        <div class="step-inner">
-          <div class="step-head"><div><span class="step-kicker">Start</span><h2 class="intro-big enter-up">Manometer startet</h2><p class="enter-up delay-1">Gehe die Karten nacheinander durch. Deine Antworten werden anonym gespeichert.</p></div><div class="step-counter">Einführung</div></div>
-          <div class="intro-layout">
-            <section class="intro-panel">
-              <p class="enter-up delay-2">Die Skala reicht von <strong>1</strong> = trifft gar nicht zu bis <strong>10</strong> = trifft vollständig zu.</p>
-              <div class="summary-list">
-                <div class="summary-note"><h3>Kartenweise Bearbeitung</h3><p>Jede Frage erscheint einzeln und kann in Ruhe beantwortet werden.</p></div>
-                <div class="summary-note"><h3>Anonyme Abgabe</h3><p>Die Rückmeldung wird anonym gespeichert und unabhängig von der Gruppen-ID ausgewertet.</p></div>
-                <div class="summary-note"><h3>Pflichtfeld bei Werten unter 10</h3><p>Wenn du nicht die volle Punktzahl vergibst, erscheint automatisch ein Pflichtfeld für Verbesserungsvorschläge.</p></div>
-              </div>
-            </section>
-            <aside class="intro-side enter-right delay-2"><h3 style="margin:0 0 12px;color:#1a3a60">Ablauf</h3><ul style="margin:0;padding-left:18px;color:#51657c;line-height:1.7"><li>Skalenfragen zum inhaltlichen Verständnis</li><li>Fragen zur technischen Umsetzung und zur Präsentation</li><li>Optionale Freitextfelder für Lob, Kritik und Anregungen</li><li>Zwei Ja/Nein-Zusatzfragen</li><li>Abschließende anonyme Übermittlung</li></ul></aside>
-          </div>
-        </div>
-      </section>
-    </div></div>
-  </form>
-
-  <div class="status-row">
-    <p id="manometerStatus" class="manometer-status" hidden></p>
-    <div id="alreadyVotedBox" class="already-voted" hidden>Von diesem Gerät wurde bereits Feedback abgegeben. Falls die Administration die Hardware-IDs freigegeben hat, kannst du erneut abstimmen; andernfalls blockiert Apps Script die Mehrfachabgabe.</div>
-  </div>
-
-  <section id="thankyouScreen" class="thankyou-screen">
-    <div class="thankyou-card"><div class="inner"><span class="step-kicker">Abschluss</span><h2>Vielen Dank für deine Rückmeldung.</h2><p>Dein Feedback wurde gespeichert. Die Auswertung wird später durch die Administration gezeigt.</p><a href="index.html">Zurück zur Startseite</a></div></div>
-  </section>
-
-  <section id="navDock" class="nav-dock">
-    <div class="nav-left"><button id="prevStep" type="button" class="secondary">← Zurück</button><button id="nextStep" type="button" class="primary">Weiter →</button></div>
-    <div class="nav-center"><span id="stepCounter">Kachel 1 / 1</span><br><span style="font-size:.92rem;color:rgba(255,255,255,.8)">Mit Pfeiltasten oder den Buttons durch den Feedbackbogen navigieren.</span></div>
-    <div class="nav-right"><a class="secondary" href="index.html">Zurück zur Startseite</a></div>
-  </section>
+  <form id="manometerForm"><div class="feedback-stage-wrap"><div class="feedback-stage" id="feedbackStage">
+    <section class="step-card active" data-step="intro"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Start</span><h2 class="intro-big enter-up">Manometer startet</h2><p class="enter-up delay-1">Gehe die Karten nacheinander durch. Deine Antworten werden anonym gespeichert.</p></div><div class="step-counter">Einführung</div></div><div class="intro-layout"><section class="panel intro-panel"><p class="enter-up delay-2">Die Skala reicht von <strong>1</strong> = trifft gar nicht zu bis <strong>10</strong> = trifft vollständig zu.</p><div class="summary-list"><div class="summary-note"><h3>Kartenweise Bearbeitung</h3><p>Jede Frage erscheint einzeln und kann in Ruhe beantwortet werden.</p></div><div class="summary-note"><h3>Listen statt Einzeltext</h3><p>Kritik und Verbesserungsvorschläge können als mehrere einzelne Einträge erfasst werden.</p></div><div class="summary-note"><h3>Pflichtfeld bei Werten unter 10</h3><p>Bei niedrigeren Bewertungen wird rechts eine Eingabeliste für konkrete Hinweise eingeblendet.</p></div></div></section><aside class="panel scroll enter-right delay-2"><h3 style="margin:0 0 12px;color:#1a3a60">Ablauf</h3><ul style="margin:0;padding-left:18px;color:#51657c;line-height:1.7"><li>Skalenfragen beantworten</li><li>bei Bedarf mehrere Kritik-/Verbesserungseinträge ergänzen</li><li>Lob, Kritik und Anregungen optional getrennt notieren</li><li>Ja/Nein-Fragen beantworten</li><li>Feedback anonym speichern</li></ul></aside></div></div></section>
+  </div></div></form>
+  <div class="status-row"><p id="manometerStatus" class="manometer-status" hidden></p><div id="alreadyVotedBox" class="already-voted" hidden>Von diesem Gerät wurde bereits Feedback abgegeben. Falls die Administration die Hardware-IDs freigegeben hat, kannst du erneut abstimmen; andernfalls blockiert Apps Script die Mehrfachabgabe.</div></div>
+  <section id="thankyouScreen" class="thankyou-screen"><div class="thankyou-card"><div class="inner"><span class="step-kicker">Abschluss</span><h2>Vielen Dank für deine Rückmeldung.</h2><p>Dein Feedback wurde gespeichert. Die Auswertung wird später durch die Administration gezeigt.</p><a href="index.html">Zurück zur Startseite</a></div></div></section>
+  <section id="navDock" class="nav-dock"><div class="nav-left"><button id="prevStep" type="button" class="secondary">← Zurück</button><button id="nextStep" type="button" class="primary">Weiter →</button></div><div class="nav-center"><span id="stepCounter">Kachel 1 / 1</span><br><span style="font-size:.92rem;color:rgba(255,255,255,.8)">Mit Pfeiltasten oder den Buttons durch den Feedbackbogen navigieren.</span></div><div class="nav-right"><a class="secondary" href="index.html">Zurück zur Startseite</a></div></section>
 </main>
 <footer><div class="wrap">Manometer · anonymes Reflexionsfeedback</div></footer>
-<script src="js/config.js?v=manometer-feedback-loadfix-v1"></script>
-<script src="js/app.js?v=manometer-feedback-loadfix-v1"></script>
+<script src="js/config.js?v=manometer-list-feedback-v1"></script>
+<script src="js/app.js?v=manometer-list-feedback-v1"></script>
 <script>
 (function(){
-  var QUESTIONS = [
-    {key:'presentationPressure', category:'Startfrage', label:'Die Aussicht auf eine zufällige Präsentation im Plenum hat dazu geführt, dass die Aufgaben gewissenhafter bearbeitet wurden.'},
-    {key:'caseConsultation', category:'Inhaltliches Verständnis', label:'Ich kenne verschiedene Arten der Fallberatung.'},
-    {key:'phaseUnderstanding', category:'Inhaltliches Verständnis', label:'Ich verstehe die Phasen einer strukturierten Gruppensupervision.'},
-    {key:'rolePerspective', category:'Inhaltliches Verständnis', label:'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.'},
-    {key:'technicalClarity', category:'Technische Umsetzung und Bedienbarkeit', label:'Die technische Umsetzung der Anwendung war verständlich.'},
-    {key:'usability', category:'Technische Umsetzung und Bedienbarkeit', label:'Die Anwendung war gut bedienbar.'},
-    {key:'presentationDesign', category:'Allgemeine Gestaltung der Präsentation', label:'Die Gestaltung der Präsentation war übersichtlich und ansprechend.'},
-    {key:'presentationUsefulness', category:'Allgemeine Gestaltung der Präsentation', label:'Die erstellte Präsentation eignet sich gut, um Ergebnisse im Plenum vorzustellen.'},
-    {key:'creativeOptions', category:'Allgemeine Gestaltung der Präsentation', label:'Die Bearbeitungsmöglichkeiten der Präsentation waren hilfreich.'}
+  var QUESTIONS=[
+    {key:'presentationPressure',category:'Startfrage',label:'Die Aussicht auf eine zufällige Präsentation im Plenum hat dazu geführt, dass die Aufgaben gewissenhafter bearbeitet wurden.'},
+    {key:'caseConsultation',category:'Inhaltliches Verständnis',label:'Ich kenne verschiedene Arten der Fallberatung.'},
+    {key:'phaseUnderstanding',category:'Inhaltliches Verständnis',label:'Ich verstehe die Phasen einer strukturierten Gruppensupervision.'},
+    {key:'rolePerspective',category:'Inhaltliches Verständnis',label:'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.'},
+    {key:'technicalClarity',category:'Technische Umsetzung und Bedienbarkeit',label:'Die technische Umsetzung der Anwendung war verständlich.'},
+    {key:'usability',category:'Technische Umsetzung und Bedienbarkeit',label:'Die Anwendung war gut bedienbar.'},
+    {key:'presentationDesign',category:'Allgemeine Gestaltung der Präsentation',label:'Die Gestaltung der Präsentation war übersichtlich und ansprechend.'},
+    {key:'presentationUsefulness',category:'Allgemeine Gestaltung der Präsentation',label:'Die erstellte Präsentation eignet sich gut, um Ergebnisse im Plenum vorzustellen.'},
+    {key:'creativeOptions',category:'Allgemeine Gestaltung der Präsentation',label:'Die Bearbeitungsmöglichkeiten der Präsentation waren hilfreich.'}
   ];
-  var steps = []; var current = 0; var votedKey = 'manometer_voted_global_v2'; var playTimer = null;
-  function gid(){ try{ if(typeof getGroupId==='function') return getGroupId(); }catch(_){} return new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_group_id') || ''; }
-  function appUrl(){ try{ if(typeof getAppsScriptUrl==='function') return getAppsScriptUrl(); }catch(_){} return (window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''; }
-  function groupName(){ try{ return (typeof loadText==='function' && loadText('summary_group_name')) || localStorage.getItem('sv_group_name') || gid() || 'Gruppe'; }catch(_){ return gid() || 'Gruppe'; } }
-  function deviceId(){ var key='manometer_device_id_v2'; try{ var existing=localStorage.getItem(key); if(existing) return existing; var id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,12); localStorage.setItem(key,id); return id; }catch(_){ return 'dev_session_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); } }
-  function setLoading(progress, text){ document.getElementById('loadingFill').style.width = Math.max(0, Math.min(100, progress)) + '%'; if(text) document.getElementById('loadingStatus').textContent = text; }
-  function setStatus(msg, cls){ var st=document.getElementById('manometerStatus'); st.hidden=false; st.className='manometer-status '+(cls||''); st.textContent=msg; }
-  function clearStatus(){ document.getElementById('manometerStatus').hidden=true; }
-  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function scoreColor(value){ var pct = Math.max(0, Math.min(1, (Number(value||1)-1)/9)); var hue = 0 + (132 * pct); return 'hsl(' + hue + ',92%,' + (46 - 8*pct) + '%)'; }
-  function rangeGradient(value){ var v = Number(value||5), pct = ((v-1)/9)*100, c = scoreColor(v); return 'linear-gradient(90deg,'+c+' 0%,'+c+' '+pct+'%,#e7eef6 '+pct+'%,#e7eef6 100%)'; }
-
-  function buildQuestionCard(q, idx){
-    var ticks=''; for(var i=1;i<=10;i++){ ticks += '<span class="tick-pill" style="animation-delay:'+(0.05*i).toFixed(2)+'s">'+i+'</span>'; }
-    return '<section class="step-card" data-step="scale" data-key="'+q.key+'">'
-      + '<div class="step-inner">'
-      + '<div class="step-head"><div><span class="step-kicker">'+escapeHtml(q.category)+'</span><h2 class="enter-up">'+escapeHtml(q.label)+'</h2><p class="enter-up delay-1">Wähle einen Wert von 1 bis 10.</p></div><div class="step-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div>'
-      + '<div class="question-grid">'
-      + '<section class="question-left">'
-      + '<div class="metric-row"><div class="score-tile" data-color-for="'+q.key+'"><strong data-value-for="'+q.key+'">5</strong><span>Bewertung<br>von 10</span></div><div class="mini-help"><div class="mini-card"><strong>1–10</strong><span>Skala von gar nicht bis vollständig</span></div><div class="mini-card"><strong>Hinweis</strong><span>Unter 10 wird automatisch ein Pflichtfeld eingeblendet.</span></div></div></div>'
-      + '<div class="scale-panel"><div class="scale-title">Deine Punktevergabe</div><div class="range-box"><div class="range-wrap"><div class="range-bg"><input id="'+q.key+'" name="'+q.key+'" type="range" min="1" max="10" step="1" value="5" data-scale-key="'+q.key+'" style="--range-fill:'+rangeGradient(5)+'"></div><div class="scale-labels"><span>1 · gar nicht</span><span>10 · vollständig</span></div><div class="tick-row">'+ticks+'</div></div></div></div>'
-      + '</section>'
-      + '<aside class="question-right">'
-      + '<div class="hint-stack"><div class="hint-box"><h3>Bewertungsidee</h3><p>Gib an, wie gut die Aussage für dich zutrifft.</p></div><div class="hint-box"><h3>Reflexion</h3><p>Nutze das Pflichtfeld bei niedrigeren Werten, um konkrete Verbesserungen zu benennen.</p></div></div>'
-      + '<div class="conditional-note" data-improve-wrap="'+q.key+'"><label><strong>Pflichtfeld, solange keine 10 ausgewählt ist:</strong><br>Was müsste verbessert werden, damit du hier eine 10 geben würdest?<textarea id="improve_'+q.key+'" data-improve-for="'+q.key+'" rows="4" required></textarea></label></div>'
-      + '</aside>'
-      + '</div></div></section>';
-  }
-  function buildStaticCards(){
-    var stage=document.getElementById('feedbackStage');
-    QUESTIONS.forEach(function(q,i){ stage.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)); });
-    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="generalText"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Allgemeine Rückmeldung</span><h2 class="enter-up">Allgemeines Lob, Kritik und Anregungen</h2><p class="enter-up delay-1">Diese Felder sind optional und anonym.</p></div><div class="step-counter">Freitext</div></div><div class="text-layout"><section class="text-panel"><div class="text-grid"><label class="enter-up delay-1">Allgemeines Lob<textarea id="generalPraise" rows="4" placeholder="Was war besonders gelungen?"></textarea></label><label class="enter-up delay-2">Allgemeine Kritik<textarea id="generalCriticism" rows="4" placeholder="Was war nicht gelungen oder sollte verändert werden?"></textarea></label><label class="enter-up delay-3">Anregungen<textarea id="generalSuggestions" rows="4" placeholder="Welche Ideen oder Vorschläge hast du noch?"></textarea></label></div></section><aside class="review-panel enter-right delay-2"><h3>Hinweis</h3><ul><li>Alle drei Felder sind optional.</li><li>Trage nur das ein, was du zusätzlich rückmelden möchtest.</li><li>Die Texte werden später anonym in der Auswertung angezeigt.</li></ul></aside></div></div></section>');
-    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="avoidCheck"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Zusatzfrage</span><h2 class="enter-up">Volle Punktzahl und Pflichtangaben</h2><p class="enter-up delay-1">Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</p></div><div class="step-counter">Ja / Nein</div></div><div class="choice-layout"><section class="text-panel"><div class="choice-grid"><label class="choice-card yes enter-up delay-1"><input type="radio" name="avoidCriticism" value="ja" required><div class="choice-icon">Ja</div><strong>Ja</strong><span>Ich habe das mindestens einmal so gemacht.</span></label><label class="choice-card no enter-up delay-2"><input type="radio" name="avoidCriticism" value="nein" required><div class="choice-icon">Nein</div><strong>Nein</strong><span>Ich habe das nicht gemacht.</span></label></div></section><aside class="review-panel enter-right delay-2"><h3>Warum diese Frage?</h3><ul><li>Die Rückmeldung hilft, Pflichtfelder fair zu interpretieren.</li><li>Es geht nicht um Kontrolle, sondern um Einordnung der Daten.</li></ul></aside></div></div></section>');
-    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="llm"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Letzte Frage</span><h2 class="enter-up">Wurde ChatGPT oder eine andere KI genutzt?</h2><p class="enter-up delay-1">Wurde zur Antwortengenerierung ChatGPT oder ein anderes Large Language Model verwendet?</p></div><div class="step-counter">Ja / Nein</div></div><div class="choice-layout"><section class="text-panel"><div class="choice-grid"><label class="choice-card yes enter-up delay-1"><input type="radio" name="llmUsed" value="ja" required><div class="choice-icon">Ja</div><strong>Ja</strong><span>Zur Unterstützung wurde ein LLM eingesetzt.</span></label><label class="choice-card no enter-up delay-2"><input type="radio" name="llmUsed" value="nein" required><div class="choice-icon">Nein</div><strong>Nein</strong><span>Es wurde kein LLM verwendet.</span></label></div><div class="llm-extra enter-up delay-3"><label>Optionale Hinweise zur LLM-Nutzung<textarea id="llmDetails" rows="4" placeholder="Optional: welches Tool oder wofür wurde es genutzt?"></textarea></label></div></section><aside class="review-panel enter-right delay-2"><h3>Einordnung</h3><ul><li>Die Angabe dient nur der Reflexion.</li><li>Sie wird anonym gesammelt und später aggregiert dargestellt.</li></ul></aside></div></div></section>');
-    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="submit"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Absenden</span><h2 class="enter-up">Feedback speichern</h2><p class="enter-up delay-1">Deine Antworten werden anonym und unabhängig von der Gruppen-ID gespeichert.</p></div><div class="step-counter">Letzter Schritt</div></div><div class="submit-layout"><section class="submit-panel enter-up delay-1"><h3 style="margin:0 0 10px;color:#1a3a60">Vor dem Absenden</h3><ul><li>Prüfe deine Eingaben noch einmal.</li><li>Von diesem Gerät bzw. Browser ist nur eine Abgabe möglich.</li><li>Nach dem Absenden erscheint keine Auswertung, sondern nur die Abschlussseite.</li></ul></section><aside class="submit-panel enter-right delay-2"><h3 style="margin:0 0 10px;color:#1a3a60">Bereit?</h3><p>Wenn alles passt, kannst du dein Feedback jetzt speichern.</p><button id="submitManometer" type="submit">Feedback absenden</button></aside></div></div></section>');
-    steps = Array.from(document.querySelectorAll('.step-card'));
-  }
-  function scoreValues(){ var out={}; QUESTIONS.forEach(function(q){ out[q.key]=Number((document.getElementById(q.key)||{}).value||1); }); return out; }
-  function improvementTexts(){ var out={}; QUESTIONS.forEach(function(q){ var el=document.getElementById('improve_'+q.key); out[q.key]=el?el.value.trim():''; }); return out; }
-  function currentVisibleIndex(){ return current; }
-  function updateChoiceStates(){ document.querySelectorAll('.choice-card').forEach(function(card){ var input=card.querySelector('input'); card.classList.toggle('selected', !!(input && input.checked)); }); }
-  function resetCard(card){ if(!card) return; card.classList.remove('play'); }
-  function setActiveByVisibleIndex(i){ if(i<0) i=0; if(i>=steps.length) i=steps.length-1; current=i; if(playTimer) clearTimeout(playTimer); steps.forEach(function(card,idx){ card.classList.remove('active','prev','next','far','play'); if(idx===current) card.classList.add('active'); else if(idx===current-1) card.classList.add('prev'); else if(idx===current+1) card.classList.add('next'); else card.classList.add('far'); if(idx!==current) resetCard(card); }); updateControls(); clearStatus(); playTimer=setTimeout(function(){ var c=steps[current]; if(c) c.classList.add('play'); }, 520); }
-  function updateControls(){ var idx=currentVisibleIndex(); document.getElementById('prevStep').disabled=idx===0; var next=document.getElementById('nextStep'); next.textContent=idx===steps.length-1?'Fertig':'Weiter →'; next.style.display=steps[current].dataset.step==='submit'?'none':''; document.getElementById('progressBar').style.width=((idx+1)/steps.length*100)+'%'; document.getElementById('stepCounter').textContent='Kachel '+(idx+1)+' / '+steps.length; }
-  function validateStep(step){ if(!step) return true; if(step.dataset.step==='scale'){ var key=step.dataset.key; var score=Number(document.getElementById(key).value||1); var txt=(document.getElementById('improve_'+key)||{}).value||''; if(score<10 && !txt.trim()){ setStatus('Bitte ergänze, was für ein besseres Ergebnis verbessert werden müsste.', 'error'); return false; } } if(step.dataset.step==='avoidCheck'){ if(!document.querySelector('input[name="avoidCriticism"]:checked')){ setStatus('Bitte beantworte die Ja/Nein-Frage.', 'error'); return false; } } if(step.dataset.step==='llm'){ if(!document.querySelector('input[name="llmUsed"]:checked')){ setStatus('Bitte gib an, ob ChatGPT oder ein anderes LLM verwendet wurde.', 'error'); return false; } } return true; }
-  function jsonp(url, params){ return new Promise(function(resolve,reject){ var cb='manoSaveCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); var qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); var s=document.createElement('script'); var done=false; window[cb]=function(data){done=true; cleanup(); resolve(data);}; function cleanup(){ try{ delete window[cb]; }catch(_){} if(s&&s.parentNode)s.parentNode.removeChild(s);} s.onerror=function(){ if(!done){cleanup(); reject(new Error('Manometer-Feedback konnte nicht gespeichert werden.'));} }; s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString(); document.body.appendChild(s); setTimeout(function(){ if(!done){cleanup(); reject(new Error('Zeitüberschreitung beim Speichern des Manometer-Feedbacks.'));}},12000); }); }
-  function saveManometer(url, payload){ return jsonp(url,{ action:'manometerFeedbackSave', deviceId:payload.feedback.deviceId, groupId:payload.feedback.groupId, groupName:payload.feedback.groupName, scores:JSON.stringify(payload.feedback.scores), improvements:JSON.stringify(payload.feedback.improvements), generalFeedback:payload.feedback.generalFeedback, generalPraise:payload.feedback.generalPraise, generalCriticism:payload.feedback.generalCriticism, generalSuggestions:payload.feedback.generalSuggestions, avoidCriticism:payload.feedback.avoidCriticism, llmUsed:payload.feedback.llmUsed, llmDetails:payload.feedback.llmDetails, createdAt:payload.feedback.createdAt }); }
-  function updateScaleUI(input){ if(!input) return; var key=input.dataset.scaleKey; var val=Number(input.value||5); var valueEl=document.querySelector('[data-value-for="'+key+'"]'); if(valueEl) valueEl.textContent=String(val); var colorTile=document.querySelector('[data-color-for="'+key+'"]'); if(colorTile) colorTile.style.background='linear-gradient(145deg,'+scoreColor(Math.max(1,val-1))+','+scoreColor(val)+')'; input.style.setProperty('--range-fill', rangeGradient(val)); var wrap=document.querySelector('[data-improve-wrap="'+key+'"]'); var ta=document.getElementById('improve_'+key); if(val===10){ if(wrap) wrap.classList.add('hidden'); if(ta) ta.required=false; } else { if(wrap) wrap.classList.remove('hidden'); if(ta) ta.required=true; } }
-
-  document.addEventListener('input', function(e){ if(e.target && e.target.matches('[data-scale-key]')) updateScaleUI(e.target); });
-  document.addEventListener('change', function(e){ if(e.target && (e.target.name==='avoidCriticism' || e.target.name==='llmUsed')) updateChoiceStates(); });
-  document.getElementById('prevStep').onclick=function(){ setActiveByVisibleIndex(currentVisibleIndex()-1); };
-  document.getElementById('nextStep').onclick=function(){ if(validateStep(steps[current])) setActiveByVisibleIndex(currentVisibleIndex()+1); };
-  document.addEventListener('keydown', function(ev){ if(ev.key==='ArrowRight' || ev.key==='PageDown' || ev.key===' '){ ev.preventDefault(); if(document.getElementById('nextStep').style.display!=='none'){ if(validateStep(steps[current])) setActiveByVisibleIndex(currentVisibleIndex()+1); } } if(ev.key==='ArrowLeft' || ev.key==='PageUp'){ ev.preventDefault(); setActiveByVisibleIndex(currentVisibleIndex()-1); } });
-
-  document.getElementById('manometerForm').addEventListener('submit', async function(e){
-    e.preventDefault(); clearStatus();
-    var url=appUrl(); if(!url){ setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.', 'error'); return; }
-    var btn=document.getElementById('submitManometer'); btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird an Manometer übertragen …');
-    var avoidEl=document.querySelector('input[name="avoidCriticism"]:checked'); var llmEl=document.querySelector('input[name="llmUsed"]:checked');
-    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalPraise:document.getElementById('generalPraise').value.trim(), generalCriticism:document.getElementById('generalCriticism').value.trim(), generalSuggestions:document.getElementById('generalSuggestions').value.trim(), generalFeedback:['Lob: '+document.getElementById('generalPraise').value.trim(),'Kritik: '+document.getElementById('generalCriticism').value.trim(),'Anregungen: '+document.getElementById('generalSuggestions').value.trim()].filter(function(x){return !/:\s*$/.test(x);}).join('\\n\\n'), avoidCriticism:avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
-    try{
-      var res = await saveManometer(url, payload);
-      if(!res || res.ok === false){ if(res && res.duplicate){ localStorage.setItem(votedKey,'1'); throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben.'); } throw new Error((res && res.error) || 'Apps Script hat das Feedback nicht bestätigt.'); }
-      if(res.type !== 'manometerFeedbackSave' || !res.rowNumber) throw new Error('Das aktuell deployte Apps Script unterstützt die neue Manometer-Version noch nicht. Bitte Code.gs aktualisieren und neu bereitstellen.');
-      localStorage.setItem(votedKey,'1');
-      setStatus('Danke. Dein Feedback wurde gespeichert.', 'ok');
-      document.getElementById('manometerForm').style.display='none';
-      document.querySelector('.progress-wrap').style.display='none';
-      document.getElementById('navDock').style.display='none';
-      document.getElementById('thankyouScreen').classList.add('visible');
-    }catch(err){ setStatus('Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err),'error'); btn.disabled=false; btn.textContent='Feedback erneut absenden'; }
-  });
-
-  async function bootManometerFeedback(){
-    setLoading(10,'Karten werden aufgebaut …');
-    buildStaticCards();
-    setLoading(48,'Animationen und Layout werden vorbereitet …');
-    await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
-    steps.forEach(function(step){ step.getBoundingClientRect(); });
-    document.querySelectorAll('[data-scale-key]').forEach(updateScaleUI);
-    updateChoiceStates();
-    if(localStorage.getItem(votedKey)){ document.getElementById('alreadyVotedBox').hidden=false; }
-    setActiveByVisibleIndex(0);
-    setLoading(85,'Feedbackbogen wird finalisiert …');
-    document.getElementById('feedbackStage').classList.add('ready');
-    await new Promise(function(r){ setTimeout(r,220); });
-    setLoading(100,'Bereit');
-    await new Promise(function(r){ setTimeout(r,180); });
-    document.getElementById('loadingScreen').classList.add('hidden');
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootManometerFeedback);
-  else bootManometerFeedback();
+  var steps=[],current=0,votedKey='manometer_voted_global_v2',playTimer=null;
+  function gid(){try{if(typeof getGroupId==='function')return getGroupId()}catch(_){}return new URLSearchParams(location.search).get('g')||localStorage.getItem('sv_group_id')||''}
+  function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
+  function groupName(){try{return(typeof loadText==='function'&&loadText('summary_group_name'))||localStorage.getItem('sv_group_name')||gid()||'Gruppe'}catch(_){return gid()||'Gruppe'}}
+  function deviceId(){var key='manometer_device_id_v2';try{var existing=localStorage.getItem(key);if(existing)return existing;var id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,12);localStorage.setItem(key,id);return id}catch(_){return'dev_session_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10)}}
+  function setLoading(p,t){document.getElementById('loadingFill').style.width=Math.max(0,Math.min(100,p))+'%';if(t)document.getElementById('loadingStatus').textContent=t}
+  function setStatus(msg,cls){var st=document.getElementById('manometerStatus');st.hidden=false;st.className='manometer-status '+(cls||'');st.textContent=msg}
+  function clearStatus(){document.getElementById('manometerStatus').hidden=true}
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function scoreColor(value){var pct=Math.max(0,Math.min(1,(Number(value||1)-1)/9));var hue=0+(132*pct);return'hsl('+hue+',92%,'+(46-8*pct)+'%)'}
+  function rangeGradient(value){var v=Number(value||5),pct=((v-1)/9)*100,c=scoreColor(v);return'linear-gradient(90deg,'+c+' 0%,'+c+' '+pct+'%,#e7eef6 '+pct+'%,#e7eef6 100%)'}
+  function listValues(kind){return Array.from(document.querySelectorAll('[data-list-kind="'+kind+'"] textarea')).map(function(t){return t.value.trim()}).filter(Boolean)}
+  function addEntry(kind, text, required){var list=document.querySelector('[data-entry-list="'+kind+'"]');if(!list)return;var id='entry_'+kind+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);var row=document.createElement('div');row.className='entry-row';row.innerHTML='<textarea id="'+id+'" '+(required?'required':'')+' placeholder="Eintrag hinzufügen …">'+escapeHtml(text||'')+'</textarea><button type="button" class="remove-entry" aria-label="Eintrag entfernen">×</button>';row.querySelector('.remove-entry').onclick=function(){row.remove();};list.appendChild(row);setTimeout(function(){var ta=row.querySelector('textarea');if(ta)ta.focus();},20)}
+  function buildQuestionCard(q,idx){var ticks='';for(var i=1;i<=10;i++)ticks+='<span class="tick-pill" style="animation-delay:'+(0.05*i).toFixed(2)+'s">'+i+'</span>';return'<section class="step-card" data-step="scale" data-key="'+q.key+'"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">'+escapeHtml(q.category)+'</span><h2 class="enter-up">'+escapeHtml(q.label)+'</h2></div><div class="step-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div><div class="question-grid"><section class="panel question-left"><div class="metric-row"><div class="score-tile" data-color-for="'+q.key+'"><strong data-value-for="'+q.key+'">5</strong><span>Bewertung<br>von 10</span></div><div class="mini-help"><div class="mini-card plain">Skala von 1 = gar nicht bis 10 = vollständig.</div><div class="mini-card"><strong>Hinweis</strong><span>Unter 10 wird rechts ein Pflichtfeld eingeblendet. Dort kannst du Kritik und Verbesserungsvorschläge als einzelne Einträge ergänzen.</span></div></div></div><div class="scale-panel"><div class="scale-title">Deine Punktevergabe</div><div class="range-wrap"><div class="range-bg"><input id="'+q.key+'" name="'+q.key+'" type="range" min="1" max="10" step="1" value="5" data-scale-key="'+q.key+'" style="--range-fill:'+rangeGradient(5)+'"></div><div class="scale-labels"><span>1 · gar nicht</span><span>10 · vollständig</span></div><div class="tick-row">'+ticks+'</div></div></div></section><aside class="panel feedback-list-panel"><div class="feedback-list-head"><h3>Kritik / Verbesserungsvorschläge</h3><button type="button" class="add-btn" data-add-entry="'+q.key+'">+ Eintrag</button></div><p class="required-note" data-required-note="'+q.key+'">Bei Werten unter 10 ist mindestens ein Eintrag erforderlich.</p><div class="entry-list" data-entry-list="'+q.key+'" data-list-kind="'+q.key+'"></div></aside></div></div></section>'}
+  function buildStaticCards(){var stage=document.getElementById('feedbackStage');QUESTIONS.forEach(function(q,i){stage.insertAdjacentHTML('beforeend',buildQuestionCard(q,i))});stage.insertAdjacentHTML('beforeend','<section class="step-card" data-step="generalText"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Allgemeine Rückmeldung</span><h2 class="enter-up">Allgemeines Lob, Kritik und Anregungen</h2><p class="enter-up delay-1">Diese Listen sind optional und anonym.</p></div><div class="step-counter">Freitext</div></div><div class="text-three"><section class="panel list-column"><div class="feedback-list-head"><h3>Lob</h3><button type="button" class="add-btn" data-add-entry="generalPraise">+ Eintrag</button></div><div class="entry-list" data-entry-list="generalPraise" data-list-kind="generalPraise"></div></section><section class="panel list-column"><div class="feedback-list-head"><h3>Kritik</h3><button type="button" class="add-btn" data-add-entry="generalCriticism">+ Eintrag</button></div><div class="entry-list" data-entry-list="generalCriticism" data-list-kind="generalCriticism"></div></section><section class="panel list-column"><div class="feedback-list-head"><h3>Anregungen</h3><button type="button" class="add-btn" data-add-entry="generalSuggestions">+ Eintrag</button></div><div class="entry-list" data-entry-list="generalSuggestions" data-list-kind="generalSuggestions"></div></section></div></div></section>');stage.insertAdjacentHTML('beforeend','<section class="step-card" data-step="avoidCheck"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Zusatzfrage</span><h2 class="enter-up">Volle Punktzahl und Pflichtangaben</h2></div><div class="step-counter">Ja / Nein</div></div><div class="choice-main"><div><p class="enter-up delay-1" style="text-align:center;margin-bottom:22px">Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</p><div class="choice-stack"><label class="choice-card yes enter-up delay-1"><input type="radio" name="avoidCriticism" value="ja" required><div class="choice-icon">Ja</div></label><label class="choice-card no enter-up delay-2"><input type="radio" name="avoidCriticism" value="nein" required><div class="choice-icon">Nein</div></label></div><p class="small-warning" style="margin-top:24px">Bitte wähle Ja oder Nein.</p></div></div></div></section>');stage.insertAdjacentHTML('beforeend','<section class="step-card" data-step="llm"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Letzte Frage</span><h2 class="enter-up">Wurde ChatGPT oder eine andere KI genutzt?</h2></div><div class="step-counter">Ja / Nein</div></div><div class="choice-main"><div style="width:min(760px,100%)"><p class="enter-up delay-1" style="text-align:center;margin-bottom:22px">Wurde zur Antwortengenerierung ChatGPT oder ein anderes Large Language Model verwendet?</p><div class="choice-stack"><label class="choice-card yes enter-up delay-1"><input type="radio" name="llmUsed" value="ja" required><div class="choice-icon">Ja</div></label><label class="choice-card no enter-up delay-2"><input type="radio" name="llmUsed" value="nein" required><div class="choice-icon">Nein</div></label></div><div class="llm-line enter-up delay-3"><input id="llmDetails" type="text" placeholder="Optionaler Hinweis zur LLM-Nutzung"></div><p class="small-warning enter-up delay-4" style="margin-top:12px;text-align:center">Bitte wähle Ja oder Nein.</p></div></div></div></section>');stage.insertAdjacentHTML('beforeend','<section class="step-card" data-step="submit"><div class="step-inner"><div class="step-head"><div><span class="step-kicker">Absenden</span><h2 class="enter-up">Feedback speichern</h2><p class="enter-up delay-1">Deine Antworten werden anonym und unabhängig von der Gruppen-ID gespeichert.</p></div><div class="step-counter">Letzter Schritt</div></div><div class="submit-layout"><section class="panel scroll submit-panel enter-up delay-1"><h3 style="margin:0 0 10px;color:#1a3a60">Vor dem Absenden</h3><ul><li>Prüfe deine Eingaben noch einmal.</li><li>Von diesem Gerät bzw. Browser ist nur eine Abgabe möglich.</li><li>Nach dem Absenden erscheint keine Auswertung, sondern nur die Abschlussseite.</li></ul></section><aside class="panel submit-panel enter-right delay-2"><h3 style="margin:0 0 10px;color:#1a3a60">Bereit?</h3><p>Wenn alles passt, kannst du dein Feedback jetzt speichern.</p><button id="submitManometer" type="submit">Feedback absenden</button></aside></div></div></section>');steps=Array.from(document.querySelectorAll('.step-card'))}
+  function scoreValues(){var out={};QUESTIONS.forEach(function(q){out[q.key]=Number((document.getElementById(q.key)||{}).value||1)});return out}
+  function improvementTexts(){var out={};QUESTIONS.forEach(function(q){out[q.key]=listValues(q.key)});return out}
+  function updateChoiceStates(){document.querySelectorAll('.choice-card').forEach(function(card){var input=card.querySelector('input');card.classList.toggle('selected',!!(input&&input.checked))})}
+  function resetCard(card){if(card)card.classList.remove('play')}
+  function setActiveByVisibleIndex(i){if(i<0)i=0;if(i>=steps.length)i=steps.length-1;current=i;if(playTimer)clearTimeout(playTimer);steps.forEach(function(card,idx){card.classList.remove('active','prev','next','far','play');if(idx===current)card.classList.add('active');else if(idx===current-1)card.classList.add('prev');else if(idx===current+1)card.classList.add('next');else card.classList.add('far');if(idx!==current)resetCard(card)});updateControls();clearStatus();playTimer=setTimeout(function(){var c=steps[current];if(c)c.classList.add('play')},520)}
+  function updateControls(){document.getElementById('prevStep').disabled=current===0;var next=document.getElementById('nextStep');next.textContent=current===steps.length-1?'Fertig':'Weiter →';next.style.display=steps[current].dataset.step==='submit'?'none':'';document.getElementById('progressBar').style.width=((current+1)/steps.length*100)+'%';document.getElementById('stepCounter').textContent='Kachel '+(current+1)+' / '+steps.length}
+  function validateStep(step){if(!step)return true;if(step.dataset.step==='scale'){var key=step.dataset.key,score=Number(document.getElementById(key).value||1),vals=listValues(key);if(score<10&&vals.length<1){setStatus('Bitte ergänze mindestens einen Kritik- oder Verbesserungseintrag.', 'error');return false}}if(step.dataset.step==='avoidCheck'&&!document.querySelector('input[name="avoidCriticism"]:checked')){setStatus('Bitte beantworte die Ja/Nein-Frage.','error');return false}if(step.dataset.step==='llm'&&!document.querySelector('input[name="llmUsed"]:checked')){setStatus('Bitte gib an, ob ChatGPT oder ein anderes LLM verwendet wurde.','error');return false}return true}
+  function jsonp(url,params){return new Promise(function(resolve,reject){var cb='manoSaveCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9),qs=new URLSearchParams(params||{}),s=document.createElement('script'),done=false;qs.set('callback',cb);qs.set('_',Date.now());window[cb]=function(data){done=true;cleanup();resolve(data)};function cleanup(){try{delete window[cb]}catch(_){}if(s&&s.parentNode)s.parentNode.removeChild(s)}s.onerror=function(){if(!done){cleanup();reject(new Error('Manometer-Feedback konnte nicht gespeichert werden.'))}};s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString();document.body.appendChild(s);setTimeout(function(){if(!done){cleanup();reject(new Error('Zeitüberschreitung beim Speichern des Manometer-Feedbacks.'))}},12000)})}
+  function saveManometer(url,payload){return jsonp(url,{action:'manometerFeedbackSave',deviceId:payload.feedback.deviceId,groupId:payload.feedback.groupId,groupName:payload.feedback.groupName,scores:JSON.stringify(payload.feedback.scores),improvements:JSON.stringify(payload.feedback.improvements),generalFeedback:payload.feedback.generalFeedback,generalPraise:JSON.stringify(payload.feedback.generalPraise),generalCriticism:JSON.stringify(payload.feedback.generalCriticism),generalSuggestions:JSON.stringify(payload.feedback.generalSuggestions),avoidCriticism:payload.feedback.avoidCriticism,llmUsed:payload.feedback.llmUsed,llmDetails:payload.feedback.llmDetails,createdAt:payload.feedback.createdAt})}
+  function updateScaleUI(input){if(!input)return;var key=input.dataset.scaleKey,val=Number(input.value||5),valueEl=document.querySelector('[data-value-for="'+key+'"]');if(valueEl)valueEl.textContent=String(val);var tile=document.querySelector('[data-color-for="'+key+'"]');if(tile)tile.style.background='linear-gradient(145deg,'+scoreColor(Math.max(1,val-1))+','+scoreColor(val)+')';input.style.setProperty('--range-fill',rangeGradient(val));var note=document.querySelector('[data-required-note="'+key+'"]');if(note)note.classList.toggle('hidden',val===10)}
+  document.addEventListener('click',function(e){var add=e.target.closest('[data-add-entry]');if(add){e.preventDefault();var kind=add.dataset.addEntry;var scoreInput=document.querySelector('[data-scale-key="'+kind+'"]');addEntry(kind,'',scoreInput&&Number(scoreInput.value)<10);return}})
+  document.addEventListener('input',function(e){if(e.target&&e.target.matches('[data-scale-key]'))updateScaleUI(e.target)})
+  document.addEventListener('change',function(e){if(e.target&&(e.target.name==='avoidCriticism'||e.target.name==='llmUsed'))updateChoiceStates()})
+  document.getElementById('prevStep').onclick=function(){setActiveByVisibleIndex(current-1)}
+  document.getElementById('nextStep').onclick=function(){if(validateStep(steps[current]))setActiveByVisibleIndex(current+1)}
+  document.addEventListener('keydown',function(ev){if(ev.key==='ArrowRight'||ev.key==='PageDown'||ev.key===' '){ev.preventDefault();if(document.getElementById('nextStep').style.display!=='none'&&validateStep(steps[current]))setActiveByVisibleIndex(current+1)}if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault();setActiveByVisibleIndex(current-1)}})
+  document.getElementById('manometerForm').addEventListener('submit',async function(e){e.preventDefault();clearStatus();var url=appUrl();if(!url){setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.','error');return}var btn=document.getElementById('submitManometer');btn.disabled=true;btn.textContent='Feedback wird gespeichert …';setStatus('Bitte warten. Dein Feedback wird an Manometer übertragen …');var avoidEl=document.querySelector('input[name="avoidCriticism"]:checked'),llmEl=document.querySelector('input[name="llmUsed"]:checked');var praise=listValues('generalPraise'),criticism=listValues('generalCriticism'),suggestions=listValues('generalSuggestions');var payload={action:'manometerFeedback',feedback:{deviceId:deviceId(),groupId:gid(),groupName:groupName(),scores:scoreValues(),improvements:improvementTexts(),generalPraise:praise,generalCriticism:criticism,generalSuggestions:suggestions,generalFeedback:['Lob: '+praise.join(' | '),'Kritik: '+criticism.join(' | '),'Anregungen: '+suggestions.join(' | ')].filter(function(x){return !/:\s*$/.test(x)}).join('\\n\\n'),avoidCriticism:avoidEl?avoidEl.value:'',llmUsed:llmEl?llmEl.value:'',llmDetails:document.getElementById('llmDetails').value.trim(),createdAt:new Date().toISOString()}};try{var res=await saveManometer(url,payload);if(!res||res.ok===false){if(res&&res.duplicate){localStorage.setItem(votedKey,'1');throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben.')}throw new Error((res&&res.error)||'Apps Script hat das Feedback nicht bestätigt.')}if(res.type!=='manometerFeedbackSave'||!res.rowNumber)throw new Error('Das aktuell deployte Apps Script unterstützt die neue Manometer-Version noch nicht. Bitte Code.gs aktualisieren und neu bereitstellen.');localStorage.setItem(votedKey,'1');setStatus('Danke. Dein Feedback wurde gespeichert.','ok');document.getElementById('manometerForm').style.display='none';document.querySelector('.progress-wrap').style.display='none';document.getElementById('navDock').style.display='none';document.getElementById('thankyouScreen').classList.add('visible')}catch(err){setStatus('Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err),'error');btn.disabled=false;btn.textContent='Feedback erneut absenden'}})
+  async function boot(){setLoading(10,'Karten werden aufgebaut …');buildStaticCards();QUESTIONS.forEach(function(q){addEntry(q.key,'',true)});setLoading(48,'Animationen und Layout werden vorbereitet …');await new Promise(function(r){requestAnimationFrame(function(){requestAnimationFrame(r)})});steps.forEach(function(s){s.getBoundingClientRect()});document.querySelectorAll('[data-scale-key]').forEach(updateScaleUI);updateChoiceStates();if(localStorage.getItem(votedKey)){document.getElementById('alreadyVotedBox').hidden=false}setActiveByVisibleIndex(0);setLoading(85,'Feedbackbogen wird finalisiert …');document.getElementById('feedbackStage').classList.add('ready');await new Promise(function(r){setTimeout(r,220)});setLoading(100,'Bereit');await new Promise(function(r){setTimeout(r,180)});document.getElementById('loadingScreen').classList.add('hidden')}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
 </body>

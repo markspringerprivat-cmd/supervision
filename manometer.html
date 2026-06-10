@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-v14-game-startfix">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-v12-polish">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -39,10 +39,10 @@
     .loading-status{margin-top:14px; color:rgba(255,255,255,.9); font-weight:700}
 
     .shell{height:100%; display:flex; flex-direction:column; padding:74px 18px 18px; gap:16px}
-    .progress-wrap{width:min(1540px, calc(100vw - 36px)); margin:0 auto; height:10px; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.14); overflow:hidden}
+    .progress-wrap{width:min(1500px, calc(100vw - 36px)); margin:0 auto; height:10px; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.14); overflow:hidden}
     .progress-bar{height:100%; width:0; background:linear-gradient(90deg,#9bcbff,#f2fbff); transition:width .42s ease}
-    .stage-wrap{position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; width:min(1580px, calc(100vw - 36px)); margin:0 auto}
-    .feedback-stage{position:relative; width:100%; height:min(86vh, 1020px); min-height:740px; opacity:0; transition:opacity .32s ease}
+    .stage-wrap{position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; width:min(1500px, calc(100vw - 36px)); margin:0 auto}
+    .feedback-stage{position:relative; width:100%; height:min(82vh, 940px); min-height:680px; opacity:0; transition:opacity .32s ease}
     .feedback-stage.ready{opacity:1}
     .stage-arrow{position:absolute; top:50%; transform:translateY(-50%); z-index:20; width:58px; height:58px; border-radius:50%; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.10); color:#fff; font-size:2rem; font-weight:700; cursor:pointer; display:grid; place-items:center; box-shadow:0 14px 34px rgba(0,0,0,.18); backdrop-filter:blur(12px); transition:transform .18s ease, background .18s ease, opacity .18s ease}
     .stage-arrow:hover{transform:translateY(-50%) scale(1.05); background:rgba(255,255,255,.14)}
@@ -70,7 +70,7 @@
     .intro-note{padding:16px 18px; border-radius:18px; background:#fff; border:1px solid var(--line)}
     .intro-note strong{display:block; margin-bottom:6px; color:#1a3a60; font-weight:700}
 
-    .question-left{display:grid; grid-template-rows:128px minmax(0,1fr); gap:18px; min-height:0}
+    .question-left{display:grid; grid-template-rows:auto minmax(0,1fr); gap:18px; min-height:0}
     .metrics{display:grid; grid-template-columns:152px 1fr; gap:14px; min-height:0}
     .score-tile{border-radius:24px; padding:18px; color:#fff; display:flex; flex-direction:column; justify-content:center; background:linear-gradient(145deg,#ff3b30,#ff9f0a); box-shadow:0 14px 30px rgba(18,35,58,.12); transition:background .35s ease}
     .score-tile .value{font-size:3.05rem; line-height:1; font-weight:760}
@@ -80,13 +80,14 @@
     .slider-panel{padding:18px; display:flex; flex-direction:column; overflow:hidden}
     .slider-panel h3,.question-right h3{margin:0; color:#1b3f67; font-size:1.05rem; font-weight:720}
     .slider-box{flex:1; min-height:0; border-radius:24px; border:1px solid #dce7f2; background:radial-gradient(circle at top left, rgba(111,168,220,.13), transparent 36%), linear-gradient(180deg,#fbfdff,#f3f8fd); padding:18px 18px 14px; display:flex; flex-direction:column; justify-content:flex-start}
-    .range-bg{position:relative; padding:18px 0 4px}
-    .range-bg::before{content:''; position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:16px; border-radius:999px; background:linear-gradient(90deg,#ff3b30 0%,#ff9500 25%,#ffd60a 50%,#7fe238 74%,#10c44c 100%); opacity:.14}
-    input[type=range]{appearance:none; -webkit-appearance:none; width:100%; height:16px; background:transparent; position:relative; z-index:2; cursor:pointer}
-    input[type=range]::-webkit-slider-runnable-track{height:16px; border-radius:999px; background:var(--range-fill); border:1px solid #d7e2ee}
-    input[type=range]::-moz-range-track{height:16px; border-radius:999px; background:var(--range-fill); border:1px solid #d7e2ee}
-    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:28px; height:28px; margin-top:-7px; border-radius:50%; background:#295c92; border:4px solid #fff; box-shadow:0 6px 16px rgba(15,23,42,.18)}
+    .range-bg{position:relative; padding:24px 0 6px}
+    .range-bg::before{content:''; position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:22px; border-radius:999px; background:linear-gradient(90deg,#ff3b30 0%,#ff9500 25%,#ffd60a 50%,#7fe238 74%,#10c44c 100%); opacity:.14}
+    input[type=range]{appearance:none; -webkit-appearance:none; width:100%; height:22px; background:transparent; position:relative; z-index:2; cursor:pointer}
+    input[type=range]::-webkit-slider-runnable-track{height:22px; border-radius:999px; background:var(--range-fill); border:1px solid #d7e2ee}
+    input[type=range]::-moz-range-track{height:22px; border-radius:999px; background:var(--range-fill); border:1px solid #d7e2ee}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:34px; height:34px; margin-top:-7px; border-radius:50%; background:#295c92; border:4px solid #fff; box-shadow:0 6px 16px rgba(15,23,42,.18)}
     input[type=range]::-moz-range-thumb{width:28px; height:28px; border-radius:50%; background:#295c92; border:4px solid #fff; box-shadow:0 6px 16px rgba(15,23,42,.18)}
+    .scale-warning{margin-top:14px; padding:10px 12px; border:1px solid #ffd8c2; background:#fff7f2; color:#9a3412; border-radius:16px; font-size:.92rem; font-weight:650}.scale-warning.hidden{display:none!important}.primary-btn:disabled,.stage-arrow:disabled,#nextBtn:disabled{opacity:.38!important;cursor:not-allowed!important;filter:grayscale(.2)}
     .range-ends{display:flex; justify-content:space-between; color:#5a7088; font-weight:600; font-size:.93rem; margin-top:12px}
     .tick-row{display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:7px; margin-top:14px}
     .tick-pill{height:30px; display:grid; place-items:center; border:1px solid #dbe6f2; border-radius:999px; background:#fff; color:#355270; font-weight:650; font-size:.85rem}
@@ -117,13 +118,13 @@
     .yn-card:hover{transform:translateY(-2px)}
     .yn-card.yes{background:linear-gradient(145deg,#12d95d,#09b447)}
     .yn-card.no{background:linear-gradient(145deg,#ff6a00,#ff2d55)}
-    .yn-card.selected{box-shadow:0 0 0 5px rgba(41,92,146,.14), 0 18px 34px rgba(15,23,42,.16)}
+    .yn-card.selected{box-shadow:0 0 0 7px rgba(41,92,146,.20), 0 20px 38px rgba(15,23,42,.20);transform:translateY(-3px) scale(1.03);filter:saturate(1.12)}
     .yn-card input{display:none}
     .small-warn{width:min(760px,100%); padding:10px 12px; border:1px solid #ffd8c2; background:#fff7f2; color:#9a3412; border-radius:16px; font-size:.9rem; font-weight:650; text-align:center}
     .llm-box{width:min(520px,100%); display:grid; gap:10px}
     .llm-input{border-radius:999px; padding:12px 16px}
 
-    .submit-state{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; gap:16px; transition:opacity .28s ease, transform .28s ease}
+    .blocked-card{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;height:100%;gap:18px}.blocked-card h2{font-size:clamp(1.8rem,3vw,3.4rem);font-weight:760;margin:0}.blocked-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}.submit-state{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; gap:16px; transition:opacity .28s ease, transform .28s ease}
     .submit-state.hidden{opacity:0; transform:translateY(18px); pointer-events:none; position:absolute; inset:34px}
     .submit-state h2{margin-bottom:2px}
     .primary-btn,.secondary-btn{border:none; border-radius:999px; padding:12px 18px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:1rem}
@@ -141,66 +142,15 @@
     .game-canvas-wrap{border:1px solid #dce7f2; border-radius:26px; overflow:hidden; background:linear-gradient(180deg,#fff,#f5f9ff); position:relative}
     #runnerCanvas{display:block; width:100%; height:auto}
     .game-footer{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap}
-    .game-msg{color:#5f738b; font-weight:600}
+    .game-msg{color:#5f738b; font-weight:600}.game-box button:disabled{opacity:.42;cursor:not-allowed;filter:grayscale(.35)}
 
-    .nav-dock{width:min(1540px, calc(100vw - 36px)); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:24px; padding:14px 16px; color:#fff}
+    .nav-dock{width:min(1500px, calc(100vw - 36px)); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:24px; padding:14px 16px; color:#fff}
     .nav-side{display:flex; gap:12px; align-items:center; flex-wrap:wrap}.nav-info{text-align:center; font-weight:650; color:rgba(255,255,255,.88)}
     .nav-dock .secondary-btn,.nav-dock .primary-btn{padding:11px 17px}
-    .status-row{width:min(1540px, calc(100vw - 36px)); margin:0 auto; display:grid; gap:10px}
+    .status-row{width:min(1500px, calc(100vw - 36px)); margin:0 auto; display:grid; gap:10px}
     .status{padding:14px 16px; border-radius:16px; font-weight:650; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.12); color:#fff}
     .status.ok{background:#e9f8ef; color:#256142; border-color:#bde7cc}.status.error{background:#fff2f2; color:#8a1f1f; border-color:#efc5c5}
     .already-voted{padding:14px 16px; border-radius:16px; background:#e9f8ef; color:#256142; border:1px solid #bde7cc; font-weight:650}[hidden]{display:none!important}
-
-
-    .card.is-submitted .stage-arrow,
-    .card.is-submitted ~ .stage-arrow{display:none}
-    .submit-state{
-      opacity:1;
-      transform:translateY(0);
-      transition:opacity .42s ease, transform .42s ease;
-    }
-    .submit-state.hidden{
-      opacity:0!important;
-      transform:translateY(18px)!important;
-      pointer-events:none!important;
-      position:absolute!important;
-      inset:34px!important;
-      display:flex!important;
-    }
-    .submit-state.revealed{
-      animation:submitReveal .48s ease both;
-    }
-    @keyframes submitReveal{
-      from{opacity:0;transform:translateY(18px)}
-      to{opacity:1;transform:translateY(0)}
-    }
-
-
-    /* Reliable same-card submit transition */
-    .submit-state{
-      position:relative;
-      opacity:1;
-      transform:translateY(0);
-      transition:opacity .34s ease, transform .34s ease;
-    }
-    .submit-state.hidden{
-      display:none!important;
-      opacity:0!important;
-      pointer-events:none!important;
-      transform:translateY(14px)!important;
-    }
-    .submit-state.revealed{
-      display:flex!important;
-      animation:sameCardFadeIn .36s ease both;
-    }
-    @keyframes sameCardFadeIn{
-      from{opacity:0;transform:translateY(14px)}
-      to{opacity:1;transform:translateY(0)}
-    }
-    .card[data-step="submit"].submit-locked ~ .stage-arrow,
-    .stage-wrap.submit-locked .stage-arrow{
-      display:none!important;
-    }
 
     @media (max-width:1650px){.stage-arrow.left{left:-24px}.stage-arrow.right{right:-24px}}
     @media (max-width:1180px){.question-grid,.intro-grid,.text-grid{grid-template-columns:1fr}.feedback-stage{height:min(87vh,1060px); min-height:780px}.text-lists{grid-template-columns:1fr}.card-inner{overflow:auto}.stage-arrow.left{left:8px}.stage-arrow.right{right:8px}.question-left{grid-template-rows:auto auto}}
@@ -230,11 +180,11 @@
     <div id="navDock" class="nav-dock">
       <div class="nav-side"><button id="prevBtn" type="button" class="secondary-btn">← Zurück</button><button id="nextBtn" type="button" class="primary-btn">Weiter →</button></div>
       <div class="nav-info"><span id="stepCounter">Kachel 1 / 1</span></div>
-      <div class="nav-side" style="justify-content:flex-end"><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div>
+      <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-feedback-v14-game-startfix"></script>
-  <script src="js/app.js?v=manometer-feedback-v14-game-startfix"></script>
+  <script src="js/config.js?v=manometer-feedback-v12-polish"></script>
+  <script src="js/app.js?v=manometer-feedback-v12-polish"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -262,214 +212,77 @@
     function rangeGradient(value){const v=Number(value||5); const pct=((v-1)/9)*100; const col=scoreColor(v); return `linear-gradient(90deg, ${col} 0%, ${col} ${pct}%, #e7eef6 ${pct}%, #e7eef6 100%)`}
     function listValues(kind){return Array.from(document.querySelectorAll(`[data-entry-list="${kind}"] .entry-field`)).map(el=>el.value.trim()).filter(Boolean)}
     function createEntryRow(kind, value){const isSmall=['praise','criticism','suggestions'].includes(kind)||kind==='llmDetails'; const row=document.createElement('div'); row.className='entry-row'; row.innerHTML=isSmall?`<input class="entry-field" type="text" value="${escapeHtml(value||'')}" placeholder="Eintrag hinzufügen …"><button type="button" class="remove-entry" aria-label="Eintrag entfernen">×</button>`:`<textarea class="entry-field" placeholder="Eintrag hinzufügen …">${escapeHtml(value||'')}</textarea><button type="button" class="remove-entry" aria-label="Eintrag entfernen">×</button>`; row.querySelector('.remove-entry').addEventListener('click',()=>{const list=document.querySelector(`[data-entry-list="${kind}"]`); row.remove(); if(list && !list.children.length) addEntry(kind,'')}); return row}
-    function addEntry(kind, value){const list=document.querySelector(`[data-entry-list="${kind}"]`); if(!list) return; list.appendChild(createEntryRow(kind, value))}
+    function addEntry(kind, value){const list=document.querySelector(`[data-entry-list="${kind}"]`); if(!list) return; const row=createEntryRow(kind, value); list.appendChild(row); const field=row.querySelector('.entry-field'); if(field){setTimeout(()=>field.focus(),20); field.addEventListener('input', updateControls);} updateControls();}
     function buildQuestionCard(question, index){const tickPills=Array.from({length:10},(_,i)=>`<span class="tick-pill">${i+1}</span>`).join(''); return `
       <section class="card" data-step="scale" data-key="${question.key}">
         <div class="card-inner">
-          <div class="card-head"><div><span class="kicker">${escapeHtml(question.category)}</span><h2>${escapeHtml(question.label)}</h2></div><div class="counter">Frage ${index+1} von ${QUESTIONS.length}</div></div>
+          <div class="card-head"><div><span class="kicker">${escapeHtml(question.category)}</span></div><div class="counter">Frage ${index+1} von ${QUESTIONS.length}</div></div>
           <div class="question-grid">
             <div class="question-left">
               <div class="metrics">
                 <div class="score-tile" data-color-for="${question.key}"><div class="value" data-value-for="${question.key}">5</div><div class="caption">Bewertung von 10</div></div>
-                <div class="mini-stack"><div class="mini-box">Skala von 1 = gar nicht bis 10 = vollständig.</div><div class="mini-box">Unter 10 wird mindestens ein Kritik- oder Verbesserungseintrag benötigt.</div></div>
+                <div class="mini-stack"><div class="mini-box">Skala von 1 = gar nicht bis 10 = vollständig.</div></div>
               </div>
-              <div class="panel slider-panel"><h3>Deine Punktevergabe</h3><div class="slider-box"><div class="range-bg"><input data-scale-key="${question.key}" id="${question.key}" type="range" min="1" max="10" step="1" value="5"></div><div class="range-ends"><span>1 · gar nicht</span><span>10 · vollständig</span></div><div class="tick-row">${tickPills}</div></div></div>
+              <div class="panel slider-panel"><h2>${escapeHtml(question.label)}</h2><h3>Deine Punktevergabe</h3><div class="slider-box"><div class="range-bg"><input data-scale-key="${question.key}" id="${question.key}" type="range" min="1" max="10" step="1" value="5"></div><div class="range-ends"><span>1 · gar nicht</span><span>10 · vollständig</span></div><div class="tick-row">${tickPills}</div><div class="scale-warning" data-scale-warning="${question.key}">Mindestens ein Kritik- oder Verbesserungseintrag ist erforderlich.</div></div></div>
             </div>
             <div class="panel question-right">
               <div class="list-head"><h3>Kritik / Verbesserungsvorschläge</h3><button type="button" class="add-btn" data-add-entry="${question.key}">+ Eintrag</button></div>
-              <div class="req-note">Bei Werten unter 10 ist mindestens ein Eintrag erforderlich.</div>
               <div class="entry-list" data-entry-list="${question.key}"></div>
             </div>
           </div>
         </div>
       </section>`}
+    
+    function showAlreadyVotedOnly(){
+      const stage=document.getElementById('feedbackStage');
+      stage.innerHTML=`<section class="card active"><div class="card-inner"><div class="blocked-card"><span class="kicker">Bereits abgestimmt</span><h2>Von diesem Gerät wurde bereits Feedback abgegeben.</h2><p>Eine erneute Abgabe ist erst möglich, wenn die Administration die Hardware-IDs für das Feedback freigibt.</p><div class="blocked-actions"><a href="gruppe-ergebnis.html" class="primary-btn">Zurück zu den Gruppenergebnissen</a><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div></div></section>`;
+      steps=Array.from(stage.querySelectorAll('.card'));
+      document.getElementById('navDock').style.display='none';
+      document.getElementById('arrowPrev').style.display='none';
+      document.getElementById('arrowNext').style.display='none';
+      document.querySelector('.progress-wrap').style.display='none';
+      stage.classList.add('ready');
+    }
     function buildMarkup(){
       const stage=document.getElementById('feedbackStage');
       stage.innerHTML=`
       <section class="card active" data-step="intro"><div class="card-inner"><div class="card-head"><div><span class="kicker">Start</span><h2>Deine Rückmeldung</h2><p>Beantworte die Fragen einzeln. Die Auswertung erfolgt anonym und unabhängig von der Gruppen-ID.</p></div><div class="counter">Einführung</div></div><div class="intro-grid"><div class="panel intro-left"><h2>Manometer</h2><p>Nutze den Regler, um jede Aussage von 1 bis 10 einzuschätzen. Bei Werten unter 10 kannst du rechts konkrete Kritik und Verbesserungsvorschläge ergänzen.</p><div class="intro-points"><div class="intro-note"><strong>1–10 Skala</strong>1 bedeutet „trifft gar nicht zu“, 10 bedeutet „trifft vollständig zu“.</div><div class="intro-note"><strong>Anonym</strong>Die Auswertung wird anonym gespeichert und später nur in der Präsentationsansicht angezeigt.</div><div class="intro-note"><strong>Einmal pro Gerät</strong>Von einem Gerät kann nur einmal abgestimmt werden, bis die Administration die Gerätefreigabe zurücksetzt.</div></div></div><div class="panel padded scroll"><h3 style="margin:0 0 10px; color:#1b3f67; font-size:1.05rem; font-weight:720">Ablauf</h3><p>1. Skalenfragen beantworten</p><p>2. Optionales Lob, Kritik und Anregungen ergänzen</p><p>3. Zwei Ja/Nein-Fragen beantworten</p><p>4. Feedback absenden</p><div style="margin-top:18px"><button type="button" class="primary-btn" id="startSurveyBtn">Feedback starten →</button></div></div></div></div></section>`;
       QUESTIONS.forEach((q,i)=>stage.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)));
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="generalText"><div class="card-inner"><div class="card-head"><div><span class="kicker">Freitext</span><h2>Allgemeines Lob, Kritik und Anregungen</h2><p>Diese drei Listen sind optional. Jeder Eintrag wird einzeln gespeichert und später einzeln dargestellt.</p></div><div class="counter">Freitext</div></div><div class="text-grid"><div class="text-lists"><div class="list-column"><div class="panel"><div class="list-head"><h3>Lob</h3><button type="button" class="add-btn" data-add-entry="praise">+ Eintrag</button></div><div class="entry-list" data-entry-list="praise"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Kritik</h3><button type="button" class="add-btn" data-add-entry="criticism">+ Eintrag</button></div><div class="entry-list" data-entry-list="criticism"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Anregungen</h3><button type="button" class="add-btn" data-add-entry="suggestions">+ Eintrag</button></div><div class="entry-list" data-entry-list="suggestions"></div></div></div></div></div></div></section>`);
-      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="avoidCheck"><div class="card-inner"><div class="card-head"><div><span class="kicker">Zusatzfrage</span><h2>Volle Punktzahl und Pflichtangaben</h2></div><div class="counter">Ja / Nein</div></div><div class="yn-layout"><p class="yn-question">Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</p><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="avoidCriticism" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="avoidCriticism" value="Nein"><span>Nein</span></label></div><div class="small-warn">Bitte wähle Ja oder Nein.</div></div></div></section>`);
-      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="llmCheck"><div class="card-inner"><div class="card-head"><div><span class="kicker">Zusatzfrage</span><h2>LLM / ChatGPT</h2></div><div class="counter">Ja / Nein</div></div><div class="yn-layout"><p class="yn-question">Wurde für die Antwortengenerierung ChatGPT oder ein anderes LLM verwendet?</p><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="llmUsed" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="llmUsed" value="Nein"><span>Nein</span></label></div><div class="llm-box"><input id="llmDetails" class="llm-input" type="text" placeholder="Optionale Hinweise zu LLM-Nutzung …"><div class="small-warn">Bitte wähle Ja oder Nein. Das Textfeld ist optional.</div></div></div></div></section>`);
-      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="submit" id="submitCard"><div class="card-inner"><div id="submitInitial" class="submit-state"><span class="kicker">Abschluss</span><h2>Vielen Dank für dein Feedback.</h2><p>Wenn alles passt, kannst du deine Rückmeldung jetzt absenden.</p><button id="submitBtn" type="submit" class="primary-btn">Feedback absenden</button></div><div id="submitSuccess" class="submit-state hidden"><span class="kicker">Gespeichert</span><h2>Vielen Dank für deine Teilnahme.</h2><p>Deine Rückmeldung wurde gespeichert. Du kannst jetzt direkt auf dieser Seite das Spiel starten oder zur Startseite zurückkehren.</p><div class="separator"></div><div class="inline-actions"><button id="openGameInlineBtn" type="button" class="primary-btn">Spiel starten</button><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div id="submitGame" class="submit-state hidden"><div class="game-box"><div class="game-head"><div><span class="kicker">Spiel</span><h3>Überbrückung bis zur Präsentationsphase</h3><p>Leertaste, Klick oder Tippen zum Springen. Du hast <strong>1 Extraleben</strong>.</p></div><div class="inline-actions"><button id="startGameBtn" type="button" class="primary-btn">Spiel starten</button><button id="restartGameBtn" type="button" class="secondary-btn">Neu starten</button><a href="uebermittlung.html" class="secondary-btn">Zurück zu den Gruppenergebnissen</a><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div class="game-stats"><div class="chip">Punkte: <span id="gameScore">0</span></div><div class="chip">Highscore: <span id="gameHighscore">0</span></div><div class="chip">Leben: <span id="gameLives">2</span></div></div><div class="game-canvas-wrap"><canvas id="runnerCanvas" width="960" height="260" tabindex="0"></canvas></div><div class="game-footer"><div id="gameMessage" class="game-msg">Starte die Überbrückung bis zur Präsentationsphase.</div></div></div></div></div></section>`);
+      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="avoidCheck"><div class="card-inner"><div class="card-head"><div><span class="kicker">Zusatzfrage</span><h2>Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</h2></div><div class="counter">Ja / Nein</div></div><div class="yn-layout"><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="avoidCriticism" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="avoidCriticism" value="Nein"><span>Nein</span></label></div></div></div></section>`);
+      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="llmCheck"><div class="card-inner"><div class="card-head"><div><span class="kicker">Zusatzfrage</span><h2>Wurde für die Antwortengenerierung ChatGPT oder ein anderes LLM verwendet?</h2></div><div class="counter">Ja / Nein</div></div><div class="yn-layout"><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="llmUsed" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="llmUsed" value="Nein"><span>Nein</span></label></div><div class="llm-box"><input id="llmDetails" class="llm-input" type="text" placeholder="Optionale Hinweise zu LLM-Nutzung …"></div></div></div></section>`);
+      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="submit"><div class="card-inner"><div id="submitInitial" class="submit-state"><span class="kicker">Abschluss</span><h2>Vielen Dank für dein Feedback.</h2><p>Wenn alles passt, kannst du deine Rückmeldung jetzt absenden.</p><button id="submitBtn" type="submit" class="primary-btn">Feedback absenden</button></div><div id="submitSuccess" class="submit-state hidden"><span class="kicker">Gespeichert</span><h2>Vielen Dank für deine Teilnahme.</h2><p>Deine Rückmeldung wurde gespeichert. Du kannst jetzt direkt auf dieser Seite das Spiel starten oder zur Startseite zurückkehren.</p><div class="separator"></div><div class="inline-actions"><button id="openGameInlineBtn" type="button" class="primary-btn">Spiel starten</button><a href="gruppe-ergebnis.html" class="secondary-btn">Zurück zu den Gruppenergebnissen</a><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div id="submitGame" class="submit-state hidden"><div class="game-box"><div class="game-head"><div><span class="kicker">Spiel</span><h3>Manometer Runner</h3><p>Leertaste, Klick oder Tippen zum Springen. Du hast <strong>1 Extraleben</strong>.</p></div><div class="inline-actions"><button id="startGameBtn" type="button" class="primary-btn">Spiel starten</button><button id="restartGameBtn" type="button" class="secondary-btn" disabled>Neu starten</button><a href="gruppe-ergebnis.html" class="secondary-btn">Zurück zu den Gruppenergebnissen</a><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div class="game-stats"><div class="chip">Punkte: <span id="gameScore">0</span></div><div class="chip">Highscore: <span id="gameHighscore">0</span></div><div class="chip">Leben: <span id="gameLives">2</span></div></div><div class="game-canvas-wrap"><canvas id="runnerCanvas" width="960" height="260"></canvas></div><div class="game-footer"><div id="gameMessage" class="game-msg">Klicke auf „Spiel starten“, um loszulegen.</div></div></div></div></div></section>`);
       steps=Array.from(stage.querySelectorAll('.card'));
       QUESTIONS.forEach(q=>addEntry(q.key,'')); ['praise','criticism','suggestions'].forEach(kind=>addEntry(kind,''));
       bindDynamicEvents(); document.getElementById('startSurveyBtn').addEventListener('click',()=>setActive(1)); document.getElementById('openGameInlineBtn').addEventListener('click', showGameInline);
     }
     function bindDynamicEvents(){document.querySelectorAll('[data-add-entry]').forEach(btn=>btn.addEventListener('click',()=>addEntry(btn.dataset.addEntry,''))); document.querySelectorAll('[data-scale-key]').forEach(input=>{input.addEventListener('input',()=>updateScaleUI(input)); updateScaleUI(input)}); document.querySelectorAll('.yn-card input').forEach(input=>input.addEventListener('change',updateChoiceStates)); updateChoiceStates()}
-    function updateChoiceStates(){document.querySelectorAll('.yn-card').forEach(card=>{const input=card.querySelector('input'); card.classList.toggle('selected',!!(input&&input.checked))})}
-    function updateScaleUI(input){const key=input.dataset.scaleKey; const value=Number(input.value||5); input.style.setProperty('--range-fill', rangeGradient(value)); const valueEl=document.querySelector(`[data-value-for="${key}"]`); if(valueEl)valueEl.textContent=String(value); const tile=document.querySelector(`[data-color-for="${key}"]`); if(tile)tile.style.background=`linear-gradient(145deg, ${scoreColor(Math.max(1,value-1))}, ${scoreColor(value)})`}
+    function updateChoiceStates(){document.querySelectorAll('.yn-card').forEach(card=>{const input=card.querySelector('input'); card.classList.toggle('selected',!!(input&&input.checked))}); updateControls();}
+    function updateScaleUI(input){const key=input.dataset.scaleKey; const value=Number(input.value||5); input.style.setProperty('--range-fill', rangeGradient(value)); const valueEl=document.querySelector(`[data-value-for="${key}"]`); if(valueEl)valueEl.textContent=String(value); const tile=document.querySelector(`[data-color-for="${key}"]`); if(tile)tile.style.background=`linear-gradient(145deg, ${scoreColor(Math.max(1,value-1))}, ${scoreColor(value)})`; const warn=document.querySelector(`[data-scale-warning="${key}"]`); if(warn)warn.classList.toggle('hidden', value>=10); updateControls();}
     function setActive(index){current=Math.max(0,Math.min(index,steps.length-1)); steps.forEach((step,i)=>{step.classList.remove('active','prev','next','far'); if(i===current)step.classList.add('active'); else if(i===current-1)step.classList.add('prev'); else if(i===current+1)step.classList.add('next'); else step.classList.add('far')}); updateControls(); clearStatus()}
-    function updateControls(){document.getElementById('progressBar').style.width=((current+1)/steps.length*100)+'%'; document.getElementById('stepCounter').textContent=`Kachel ${current+1} / ${steps.length}`; const isFirst=current===0, isLast=current===steps.length-1; document.getElementById('prevBtn').disabled=isFirst; document.getElementById('arrowPrev').disabled=isFirst; document.getElementById('nextBtn').style.display=isLast?'none':''; document.getElementById('arrowNext').style.display=isLast?'none':''}
-    function validateStep(step){if(!step)return true; const type=step.dataset.step; if(type==='scale'){const key=step.dataset.key; const score=Number(document.getElementById(key).value||1); const entries=listValues(key); if(score<10&&entries.length<1){setStatus('Bitte ergänze mindestens einen Kritik- oder Verbesserungseintrag.','error'); return false}} if(type==='avoidCheck'&&!document.querySelector('input[name="avoidCriticism"]:checked')){setStatus('Bitte wähle bei der Zusatzfrage Ja oder Nein.','error'); return false} if(type==='llmCheck'&&!document.querySelector('input[name="llmUsed"]:checked')){setStatus('Bitte wähle bei der LLM-Frage Ja oder Nein.','error'); return false} return true}
+    function isStepComplete(step){if(!step)return true; const type=step.dataset.step; if(type==='scale'){const key=step.dataset.key; const score=Number(document.getElementById(key).value||1); return score>=10 || listValues(key).length>0;} if(type==='avoidCheck')return !!document.querySelector('input[name="avoidCriticism"]:checked'); if(type==='llmCheck')return !!document.querySelector('input[name="llmUsed"]:checked'); return true;}
+    function updateControls(){document.getElementById('progressBar').style.width=((current+1)/steps.length*100)+'%'; document.getElementById('stepCounter').textContent=`Kachel ${current+1} / ${steps.length}`; const isFirst=current===0, isLast=current===steps.length-1; const complete=isStepComplete(steps[current]); document.getElementById('prevBtn').disabled=isFirst; document.getElementById('arrowPrev').disabled=isFirst; document.getElementById('nextBtn').disabled=!complete; document.getElementById('arrowNext').disabled=!complete; document.getElementById('nextBtn').style.display=isLast?'none':''; document.getElementById('arrowNext').style.display=isLast?'none':''}
+    function validateStep(step){if(isStepComplete(step))return true; const type=step&&step.dataset.step; if(type==='scale')setStatus('Bitte ergänze mindestens einen Kritik- oder Verbesserungseintrag.','error'); else setStatus('Bitte wähle Ja oder Nein.','error'); return false}
     function goNext(){if(!validateStep(steps[current]))return; setActive(current+1)}
     function goPrev(){setActive(current-1)}
     function collectScores(){const scores={}; QUESTIONS.forEach(q=>scores[q.key]=Number(document.getElementById(q.key).value||1)); return scores}
     function collectImprovements(){const improvements={}; QUESTIONS.forEach(q=>improvements[q.key]=listValues(q.key)); return improvements}
     function jsonp(url, params){return new Promise((resolve,reject)=>{const cb='manometerCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); const qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); const script=document.createElement('script'); let settled=false; window[cb]=function(data){settled=true; cleanup(); resolve(data)}; function cleanup(){try{delete window[cb]}catch(_){} if(script.parentNode)script.parentNode.removeChild(script)} script.onerror=function(){if(!settled){cleanup(); reject(new Error('Manometer-Feedback konnte nicht übertragen werden.'))}}; script.src=url+(url.includes('?')?'&':'?')+qs.toString(); document.body.appendChild(script); setTimeout(()=>{if(!settled){cleanup(); reject(new Error('Zeitüberschreitung beim Übertragen des Feedbacks.'))}},15000)})}
-    
-    function submitCardIndex(){
-      return steps.findIndex(step => step && step.dataset && step.dataset.step === 'submit');
-    }
-    function ensureSubmitCardActive(){
-      const idx = submitCardIndex();
-      if (idx >= 0 && current !== idx) setActive(idx);
-      return steps[idx] || null;
-    }
-    function switchSubmitState(targetId){
-      ensureSubmitCardActive();
-      const ids = ['submitInitial','submitSuccess','submitGame'];
-      ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const show = id === targetId;
-        el.classList.toggle('hidden', !show);
-        el.classList.toggle('revealed', show);
-      });
-      const locked = targetId !== 'submitInitial';
-      const nav = document.getElementById('navDock');
-      const left = document.getElementById('arrowPrev');
-      const right = document.getElementById('arrowNext');
-      const wrap = document.querySelector('.stage-wrap');
-      const submitCard = document.getElementById('submitCard');
-      if (nav) nav.style.display = locked ? 'none' : '';
-      if (left) left.style.display = locked ? 'none' : '';
-      if (right) right.style.display = locked ? 'none' : '';
-      if (wrap) wrap.classList.toggle('submit-locked', locked);
-      if (submitCard) submitCard.classList.toggle('submit-locked', locked);
-      clearStatus();
-    }
-    function showSubmitSuccess(message){
-      const p = document.querySelector('#submitSuccess p');
-      if (p && message) p.textContent = message;
-      switchSubmitState('submitSuccess');
-    }
-    function showGameInline(){
-      switchSubmitState('submitGame');
-      if(!game) initGame();
-      refreshGameHud();
-    }
-
-    async function saveFeedback(){
-      const button = document.getElementById('submitBtn');
-      if (button) {
-        button.disabled = true;
-        button.textContent = 'Feedback wird gespeichert …';
-      }
-      setStatus('Bitte warten. Dein Feedback wird übertragen …');
-
-      const finishSuccess = function(message){
-        try{ localStorage.setItem(votedKey,'1'); }catch(_){}
-        if (button) {
-          button.disabled = false;
-          button.textContent = 'Feedback absenden';
-        }
-        showSubmitSuccess(message || 'Deine Rückmeldung wurde gespeichert. Du kannst jetzt direkt auf dieser Seite das Spiel starten oder zur Startseite zurückkehren.');
-      };
-
-      const finishDuplicate = function(){
-        finishSuccess('Von diesem Gerät wurde bereits Feedback abgegeben. Du kannst trotzdem zur Startseite zurückkehren oder das Spiel starten.');
-      };
-
-      const url = getAppsUrl();
-      if (!url) {
-        if (button) {
-          button.disabled = false;
-          button.textContent = 'Feedback absenden';
-        }
-        setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.', 'error');
-        return;
-      }
-
-      // Wichtig: Wenn der Browser schon lokal weiß, dass abgestimmt wurde,
-      // nicht erneut im Fehlerzustand hängen bleiben, sondern Abschluss anzeigen.
-      try {
-        if (localStorage.getItem(votedKey)) {
-          finishDuplicate();
-          return;
-        }
-      } catch(_) {}
-
-      const payload={
-        action:'manometerFeedbackSave',
-        deviceId:getDeviceId(),
-        groupId:getGroupId(),
-        groupName:getGroupName(),
-        scores:JSON.stringify(collectScores()),
-        improvements:JSON.stringify(collectImprovements()),
-        generalFeedback:'',
-        generalPraise:JSON.stringify(listValues('praise')),
-        generalCriticism:JSON.stringify(listValues('criticism')),
-        generalSuggestions:JSON.stringify(listValues('suggestions')),
-        avoidCriticism:(document.querySelector('input[name="avoidCriticism"]:checked')||{}).value||'',
-        llmUsed:(document.querySelector('input[name="llmUsed"]:checked')||{}).value||'',
-        llmDetails:document.getElementById('llmDetails').value.trim()
-      };
-
-      try{
-        const result = await jsonp(url,payload);
-        const msg = String((result && (result.error || result.message)) || '');
-        if (!result || result.ok === false) {
-          if ((result && result.duplicate) || /bereits|duplicate|already/i.test(msg)) {
-            finishDuplicate();
-            return;
-          }
-          throw new Error(msg || 'Speichern fehlgeschlagen.');
-        }
-        finishSuccess('Deine Rückmeldung wurde gespeichert. Du kannst jetzt direkt auf dieser Seite das Spiel starten oder zur Startseite zurückkehren.');
-      }catch(err){
-        const msg = String((err && err.message) || err || '');
-        if (/bereits|duplicate|already/i.test(msg)) {
-          finishDuplicate();
-          return;
-        }
-        if (button) {
-          button.disabled = false;
-          button.textContent = 'Feedback absenden';
-        }
-        setStatus('Feedback konnte nicht übertragen werden: '+msg,'error');
-      }
-    }
-    function initGame(){const canvas=document.getElementById('runnerCanvas'); const ctx=canvas.getContext('2d'); const high=Number(localStorage.getItem('manometer_runner_highscore')||0); game={canvas,ctx,running:false,last:0,ground:208,x:80,y:168,width:34,height:40,vy:0,gravity:.82,jump:-13.8,score:0,highscore:high,lives:2,invuln:0,speed:7.2,obstacles:[],clouds:[{x:540,y:60,w:42},{x:780,y:74,w:56}],spawnAt:60,message:'Starte die Überbrückung bis zur Präsentationsphase.'}; const loop=(ts)=>{if(!game)return; if(!game.last)game.last=ts; const dt=Math.min(32,ts-game.last); game.last=ts; if(game.running)updateGame(dt); drawGame(); requestAnimationFrame(loop)}; requestAnimationFrame(loop); const jump=()=>{if(!game||!game.running)return; if(game.y>=168)game.vy=game.jump}; canvas.addEventListener('pointerdown',jump); window.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step!=='submit'||document.getElementById('submitGame').classList.contains('hidden'))return; if(ev.code==='Space'||ev.code==='ArrowUp'){ev.preventDefault(); jump()}}); document.getElementById('startGameBtn').addEventListener('click',startGame); document.getElementById('restartGameBtn').addEventListener('click',startGame)}
-    function startGame(){
-      if(!game) initGame();
-      game.running=true;
-      game.last=0;
-      game.score=0;
-      game.lives=2;
-      game.invuln=0;
-      game.speed=7.2;
-      game.obstacles=[];
-      game.clouds=[{x:540,y:60,w:42},{x:780,y:74,w:56}];
-      game.message='Leertaste, Klick oder Tippen zum Springen.';
-      game.spawnAt=58;
-      game.y=168;
-      game.vy=0;
-      const canvas = document.getElementById('runnerCanvas');
-      if(canvas) canvas.focus && canvas.focus();
-      refreshGameHud();
-      const msg = document.getElementById('gameMessage');
-      if(msg) msg.textContent=game.message;
-      drawGame();
-    }
+    async function saveFeedback(){const url=getAppsUrl(); if(!url){setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.','error'); return} const button=document.getElementById('submitBtn'); button.disabled=true; button.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird übertragen …'); const payload={action:'manometerFeedbackSave', deviceId:getDeviceId(), groupId:getGroupId(), groupName:getGroupName(), scores:JSON.stringify(collectScores()), improvements:JSON.stringify(collectImprovements()), generalFeedback:'', generalPraise:JSON.stringify(listValues('praise')), generalCriticism:JSON.stringify(listValues('criticism')), generalSuggestions:JSON.stringify(listValues('suggestions')), avoidCriticism:(document.querySelector('input[name="avoidCriticism"]:checked')||{}).value||'', llmUsed:(document.querySelector('input[name="llmUsed"]:checked')||{}).value||'', llmDetails:document.getElementById('llmDetails').value.trim()}; try{const result=await jsonp(url,payload); if(!result||result.ok===false) throw new Error(result&&(result.error||result.message)||'Speichern fehlgeschlagen.'); try{localStorage.setItem(votedKey,'1')}catch(_){} setStatus('Feedback erfolgreich gespeichert.','ok'); showSubmitSuccess()}catch(err){setStatus('Feedback konnte nicht übertragen werden: '+err.message,'error')}finally{button.disabled=false; button.textContent='Feedback absenden'}}
+    function switchSubmitState(targetId){['submitInitial','submitSuccess','submitGame'].forEach(id=>{const el=document.getElementById(id); if(!el)return; el.classList.toggle('hidden', id!==targetId)})}
+    function showSubmitSuccess(){switchSubmitState('submitSuccess'); document.getElementById('navDock').style.display='none'; document.getElementById('arrowPrev').style.display='none'; document.getElementById('arrowNext').style.display='none'; document.querySelector('.progress-wrap').style.display='none';}
+    function showGameInline(){switchSubmitState('submitGame'); if(!game) initGame(); refreshGameHud();}
+    function refreshGameHud(){if(!game)return; document.getElementById('gameScore').textContent=Math.floor(game.score); document.getElementById('gameHighscore').textContent=String(game.highscore||0); document.getElementById('gameLives').textContent=String(game.lives)}
+    function initGame(){const canvas=document.getElementById('runnerCanvas'); const ctx=canvas.getContext('2d'); const high=Number(localStorage.getItem('manometer_runner_highscore')||0); game={canvas,ctx,running:false,last:0,ground:208,x:80,y:168,width:34,height:40,vy:0,gravity:.82,jump:-13.8,score:0,highscore:high,lives:2,invuln:0,speed:7.2,obstacles:[],clouds:[{x:540,y:60,w:42},{x:780,y:74,w:56}],spawnAt:60,message:'Klicke auf „Spiel starten“, um loszulegen.'}; const loop=(ts)=>{if(!game)return; if(!game.last)game.last=ts; const dt=Math.min(32,ts-game.last); game.last=ts; if(game.running)updateGame(dt); drawGame(); requestAnimationFrame(loop)}; requestAnimationFrame(loop); const jump=()=>{if(!game||!game.running)return; if(game.y>=168)game.vy=game.jump}; canvas.addEventListener('pointerdown',jump); window.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step!=='submit'||document.getElementById('submitGame').classList.contains('hidden'))return; if(ev.code==='Space'||ev.code==='ArrowUp'){ev.preventDefault(); jump()}}); document.getElementById('startGameBtn').addEventListener('click',startGame); document.getElementById('restartGameBtn').addEventListener('click',startGame)}
+    function startGame(){if(!game) initGame(); const rb=document.getElementById('restartGameBtn'); if(rb)rb.disabled=false; game.running=true; game.last=0; game.score=0; game.lives=2; game.invuln=0; game.speed=7.2; game.obstacles=[]; game.clouds=[{x:540,y:60,w:42},{x:780,y:74,w:56}]; game.message='Leertaste, Klick oder Tippen zum Springen.'; game.spawnAt=58; game.y=168; game.vy=0; refreshGameHud(); document.getElementById('gameMessage').textContent=game.message}
     function spawnObstacle(){if(Math.random()<.2)game.obstacles.push({x:game.canvas.width+20,y:156,w:28,h:22,type:'bird'}); else{const w=18+Math.random()*18; const h=28+Math.random()*20; game.obstacles.push({x:game.canvas.width+20,y:game.ground-h,w,h,type:'cactus'})}}
     function intersects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
     function loseLife(){if(game.invuln>0)return; if(game.lives>1){game.lives-=1; game.invuln=1300; game.message='Extraleben genutzt – weiter geht’s!'; game.obstacles.shift()} else {game.lives=0; game.running=false; game.highscore=Math.max(game.highscore,Math.floor(game.score)); localStorage.setItem('manometer_runner_highscore', String(game.highscore)); game.message='Game Over. Klicke auf „Neu starten“.'} refreshGameHud(); document.getElementById('gameMessage').textContent=game.message}
     function updateGame(dt){const f=dt/16.6667; game.score+=0.12*dt; game.speed+=0.0008*dt; game.spawnAt-=f; if(game.spawnAt<=0){spawnObstacle(); game.spawnAt=42+Math.random()*40-Math.min(18,game.speed*1.2)} if(game.invuln>0)game.invuln-=dt; game.vy+=game.gravity*f; game.y+=game.vy*f; if(game.y>168){game.y=168; game.vy=0} game.obstacles.forEach(o=>o.x-=game.speed*f); game.obstacles=game.obstacles.filter(o=>o.x+o.w>-20); game.clouds.forEach(c=>{c.x-=1.2*f; if(c.x+c.w<0){c.x=game.canvas.width+40+Math.random()*100; c.y=42+Math.random()*46; c.w=38+Math.random()*30}}); const player={x:game.x,y:game.y,w:game.width,h:game.height}; for(const obstacle of game.obstacles){if(intersects(player, obstacle)){loseLife(); break}} game.highscore=Math.max(game.highscore,Math.floor(game.score)); refreshGameHud()}
     function drawCloud(ctx,c){ctx.fillStyle='#dbe7f4'; ctx.beginPath(); ctx.arc(c.x,c.y,14,Math.PI*.5,Math.PI*1.5); ctx.arc(c.x+16,c.y-6,16,Math.PI,Math.PI*2); ctx.arc(c.x+34,c.y,13,Math.PI*1.5,Math.PI*.5); ctx.closePath(); ctx.fill()}
-    function drawGame(){if(!game)return; const ctx=game.ctx,c=game.canvas; ctx.clearRect(0,0,c.width,c.height); const sky=ctx.createLinearGradient(0,0,0,c.height); sky.addColorStop(0,'#fdfefe'); sky.addColorStop(1,'#f3f7fb'); ctx.fillStyle=sky; ctx.fillRect(0,0,c.width,c.height); game.clouds.forEach(cloud=>drawCloud(ctx,cloud)); ctx.strokeStyle='#8a93a0'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,game.ground+4); ctx.lineTo(c.width,game.ground+4); ctx.stroke(); for(let x=0;x<c.width;x+=16){ctx.fillStyle='#8a93a0'; ctx.fillRect(x+(((x/16)%2)?2:0),game.ground+7,4,2)} const blink=game.invuln>0&&Math.floor(game.invuln/100)%2===0; if(!blink){ctx.fillStyle='#5c5c5c'; ctx.fillRect(game.x,game.y+10,22,24); ctx.fillRect(game.x+16,game.y,18,16); ctx.fillRect(game.x+28,game.y+5,8,4); ctx.fillRect(game.x+4,game.y+34,6,16); ctx.fillRect(game.x+16,game.y+34,6,16); ctx.fillRect(game.x-6,game.y+12,8,4); ctx.fillStyle='#fff'; ctx.fillRect(game.x+24,game.y+4,4,4)} game.obstacles.forEach(o=>{ctx.fillStyle='#4b5563'; if(o.type==='bird'){ctx.fillRect(o.x,o.y,o.w,6); ctx.fillRect(o.x+6,o.y-6,8,6); ctx.fillRect(o.x+18,o.y+6,8,4)} else {ctx.fillRect(o.x,o.y,o.w,o.h); ctx.fillRect(o.x+4,o.y-12,8,16); ctx.fillRect(o.x+o.w-12,o.y-8,8,12)}}); ctx.fillStyle='#34465d'; ctx.font='600 15px "Aptos","Segoe UI",sans-serif'; ctx.fillText('Leben: '+game.lives,18,24); ctx.fillText('Punkte: '+Math.floor(game.score),18,46); if(!game.running){ctx.fillStyle='rgba(255,255,255,.75)'; ctx.fillRect(0,0,c.width,c.height); ctx.fillStyle='#1c3658'; ctx.font='700 31px "Aptos","Segoe UI",sans-serif'; ctx.textAlign='center'; ctx.fillText('Überbrückung',c.width/2,90); ctx.font='500 18px "Aptos","Segoe UI",sans-serif'; ctx.fillText(game.message,c.width/2,126); ctx.fillText('Klicke auf „Spiel starten“ oder „Neu starten“.',c.width/2,154); ctx.textAlign='left'} document.getElementById('gameMessage').textContent=game.message}
-    
-    document.addEventListener('click', function(ev){
-      const start = ev.target && ev.target.closest && ev.target.closest('#startGameBtn, #restartGameBtn');
-      if(start){
-        ev.preventDefault();
-        if(!game) initGame();
-        startGame();
-      }
-    });
-
-    function boot(){if(booted)return; booted=true; setLoading(10,'Karten werden aufgebaut …'); buildMarkup(); setLoading(45,'Layout wird optimiert …'); requestAnimationFrame(()=>requestAnimationFrame(()=>{setActive(0); if(localStorage.getItem(votedKey)) document.getElementById('alreadyVotedBox').hidden=false; document.getElementById('feedbackStage').classList.add('ready'); setLoading(90,'Interaktionen werden aktiviert …'); setTimeout(()=>{setLoading(100,'Bereit'); setTimeout(()=>document.getElementById('loadingScreen').classList.add('hidden'),180)},120)}))}
-    document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+    function drawGame(){if(!game)return; const ctx=game.ctx,c=game.canvas; ctx.clearRect(0,0,c.width,c.height); const sky=ctx.createLinearGradient(0,0,0,c.height); sky.addColorStop(0,'#fdfefe'); sky.addColorStop(1,'#f3f7fb'); ctx.fillStyle=sky; ctx.fillRect(0,0,c.width,c.height); game.clouds.forEach(cloud=>drawCloud(ctx,cloud)); ctx.strokeStyle='#8a93a0'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,game.ground+4); ctx.lineTo(c.width,game.ground+4); ctx.stroke(); for(let x=0;x<c.width;x+=16){ctx.fillStyle='#8a93a0'; ctx.fillRect(x+(((x/16)%2)?2:0),game.ground+7,4,2)} const blink=game.invuln>0&&Math.floor(game.invuln/100)%2===0; if(!blink){ctx.fillStyle='#5c5c5c'; ctx.fillRect(game.x,game.y+10,22,24); ctx.fillRect(game.x+16,game.y,18,16); ctx.fillRect(game.x+28,game.y+5,8,4); ctx.fillRect(game.x+4,game.y+34,6,16); ctx.fillRect(game.x+16,game.y+34,6,16); ctx.fillRect(game.x-6,game.y+12,8,4); ctx.fillStyle='#fff'; ctx.fillRect(game.x+24,game.y+4,4,4)} game.obstacles.forEach(o=>{ctx.fillStyle='#4b5563'; if(o.type==='bird'){ctx.fillRect(o.x,o.y,o.w,6); ctx.fillRect(o.x+6,o.y-6,8,6); ctx.fillRect(o.x+18,o.y+6,8,4)} else {ctx.fillRect(o.x,o.y,o.w,o.h); ctx.fillRect(o.x+4,o.y-12,8,16); ctx.fillRect(o.x+o.w-12,o.y-8,8,12)}}); ctx.fillStyle='#34465d'; ctx.font='600 15px "Aptos","Segoe UI",sans-serif'; ctx.fillText('Leben: '+game.lives,18,24); ctx.fillText('Punkte: '+Math.floor(game.score),18,46); if(!game.running){ctx.fillStyle='rgba(255,255,255,.75)'; ctx.fillRect(0,0,c.width,c.height); ctx.fillStyle='#1c3658'; ctx.font='700 31px "Aptos","Segoe UI",sans-serif'; ctx.textAlign='center'; ctx.fillText('Manometer Runner',c.width/2,90); ctx.font='500 18px "Aptos","Segoe UI",sans-serif'; ctx.fillText(game.message,c.width/2,126); ctx.fillText('Klicke auf „Spiel starten“ oder „Neu starten“.',c.width/2,154); ctx.textAlign='left'} document.getElementById('gameMessage').textContent=game.message}
+    function boot(){if(booted)return; booted=true; setLoading(10,'Karten werden aufgebaut …'); if(localStorage.getItem(votedKey)){showAlreadyVotedOnly(); setLoading(100,'Bereit'); setTimeout(()=>document.getElementById('loadingScreen').classList.add('hidden'),180); return;} buildMarkup(); setLoading(45,'Layout wird optimiert …'); requestAnimationFrame(()=>requestAnimationFrame(()=>{setActive(0); document.getElementById('feedbackStage').classList.add('ready'); setLoading(90,'Interaktionen werden aktiviert …'); setTimeout(()=>{setLoading(100,'Bereit'); setTimeout(()=>document.getElementById('loadingScreen').classList.add('hidden'),180)},120)}))}
+    document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}if(ev.target&&ev.target.id==='restartGameBtn'&&!ev.target.disabled){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
 </body>

@@ -4,6 +4,8 @@
 const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1egAveeEIyXdI9nC4yQfZCtUUWqn8-byODELn4mvuzYQ/edit?pli=1&gid=0#gid=0';
 const SHEET_NAME = 'Ergebnisse';
 const FEEDBACK_SHEET_NAME = 'Manometer Feedback';
+const DEVICE_REGISTRY_SHEET_NAME = 'Manometer Geräte';
+const DEVICE_REGISTRY_HEADERS = ['Geräte-ID', 'Zeitpunkt', 'Gruppen-ID', 'Gruppenname'];
 const MANOMETER_ADMIN_PASSWORD = 'Mark123';
 
 const HEADERS = [
@@ -132,6 +134,7 @@ function doPost(e) {
     if (action === 'deleterow' || action === 'delete' || action === 'delete_row') return deleteRowPost_(body);
     if (action === 'manometerfeedback' || action === 'manometer_feedback' || action === 'feedback') return saveFeedback_(body);
     if (action === 'resetmanometerdeviceids' || action === 'reset_manometer_device_ids' || action === 'resetfeedbackdevices') return resetManometerDeviceIdsPost_(body);
+    if (action === 'deletemanometerfeedbackall' || action === 'delete_manometer_feedback_all' || action === 'clear_manometer_feedback' || action === 'manometerfeedbackdeleteall') return deleteManometerFeedbackAllPost_(body);
     return saveEntry_(body);
   } catch (err) {
     return jsonOutput_({ ok: false, error: err.message, stack: err.stack || '' });
@@ -151,7 +154,7 @@ function doGet(e) {
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v10-feedback-admin-delete', spreadsheetName: spreadsheetName });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v11-device-registry', spreadsheetName: spreadsheetName, deviceRegistrySheet: DEVICE_REGISTRY_SHEET_NAME });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -454,6 +457,73 @@ function rowToEntry_(row, rowNumber) {
 }
 
 
+
+function getDeviceRegistrySheet_() {
+  const ss = getSpreadsheet_();
+  let sheet = ss.getSheetByName(DEVICE_REGISTRY_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(DEVICE_REGISTRY_SHEET_NAME);
+  ensureDeviceRegistryHeader_(sheet);
+  return sheet;
+}
+
+function ensureDeviceRegistryHeader_(sheet) {
+  sheet.getRange(1, 1, 1, DEVICE_REGISTRY_HEADERS.length).setValues([DEVICE_REGISTRY_HEADERS]);
+  sheet.setFrozenRows(1);
+}
+
+function findDeviceRegistryRow_(deviceId) {
+  const sheet = getDeviceRegistrySheet_();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const needle = String(deviceId || '').trim();
+  if (!needle) return 0;
+  const values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0] || '').trim() === needle) return i + 2;
+  }
+  return 0;
+}
+
+function registerDeviceId_(data) {
+  const deviceId = textValue_(data.deviceId || data.device || data.browserId);
+  if (!deviceId) return 0;
+  const existing = findDeviceRegistryRow_(deviceId);
+  if (existing >= 2) return existing;
+  const sheet = getDeviceRegistrySheet_();
+  sheet.appendRow([
+    deviceId,
+    new Date(),
+    textValue_(data.groupId || data.g || data.groupToken || data.token),
+    textValue_(data.groupName)
+  ]);
+  return sheet.getLastRow();
+}
+
+function clearDeviceRegistry_() {
+  const sheet = getDeviceRegistrySheet_();
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), DEVICE_REGISTRY_HEADERS.length);
+  if (lastRow < 2) return 0;
+  const rows = lastRow - 1;
+  sheet.getRange(2, 1, rows, lastCol).clearContent();
+  return rows;
+}
+
+function clearLegacyFeedbackDeviceIds_() {
+  const sheet = getFeedbackSheet_();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const range = sheet.getRange(2, 2, lastRow - 1, 1);
+  const values = range.getValues();
+  let cleared = 0;
+  const blank = values.map(function(row) {
+    if (String(row[0] || '').trim()) cleared++;
+    return [''];
+  });
+  range.setValues(blank);
+  return cleared;
+}
+
 function getFeedbackSheet_() {
   const ss = getSpreadsheet_();
   let sheet = ss.getSheetByName(FEEDBACK_SHEET_NAME);
@@ -523,10 +593,10 @@ function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
   const deviceId = textValue_(data.deviceId || data.device || data.browserId);
-  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v10-feedback-admin-delete', error: 'Keine Geräte-ID übermittelt.' };
-  const duplicateRow = findFeedbackRowByDeviceId_(sheet, deviceId);
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v11-device-registry', error: 'Keine Geräte-ID übermittelt.' };
+  const duplicateRow = findDeviceRegistryRow_(deviceId);
   if (duplicateRow >= 2) {
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v10-feedback-admin-delete', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v11-device-registry', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow, source: 'deviceRegistry' };
   }
   const scores = isObject_(data.scores) ? data.scores : data;
   const improvements = isObject_(data.improvements) ? data.improvements : {};
@@ -555,8 +625,10 @@ function saveFeedbackData_(data) {
     safeJson_(data)
   ];
   sheet.appendRow(row);
+  const savedRow = sheet.getLastRow();
+  registerDeviceId_(data);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v10-feedback-admin-delete', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v11-device-registry', message: 'Manometer-Feedback gespeichert.', rowNumber: savedRow };
 }
 
 function findFeedbackRowByDeviceId_(sheet, deviceId) {
@@ -585,23 +657,20 @@ function resetManometerDeviceIdsGet_(e) {
 
 function resetManometerDeviceIds_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v10-feedback-admin-delete', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v11-device-registry', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
-  const sheet = getFeedbackSheet_();
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
-    return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v10-feedback-admin-delete', message: 'Keine gespeicherten Geräte-IDs vorhanden.', clearedRows: 0 };
-  }
-  const range = sheet.getRange(2, 2, lastRow - 1, 1);
-  const values = range.getValues();
-  let cleared = 0;
-  const clearedValues = values.map(function(row) {
-    if (String(row[0] || '').trim()) cleared++;
-    return [''];
-  });
-  range.setValues(clearedValues);
+  const clearedRegistryRows = clearDeviceRegistry_();
+  const clearedLegacyIds = clearLegacyFeedbackDeviceIds_();
   SpreadsheetApp.flush();
-  return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v10-feedback-admin-delete', message: 'Manometer-Geräte-IDs wurden freigegeben.', clearedRows: cleared };
+  return {
+    ok: true,
+    type: 'resetManometerDeviceIds',
+    feature: 'manometer-v11-device-registry',
+    message: 'Manometer-Geräte-IDs wurden freigegeben.',
+    clearedRows: clearedRegistryRows,
+    clearedRegistryRows: clearedRegistryRows,
+    clearedLegacyIds: clearedLegacyIds
+  };
 }
 
 
@@ -618,18 +687,26 @@ function deleteManometerFeedbackAllPost_(body) {
 
 function deleteManometerFeedbackAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v10-feedback-admin-delete', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v11-device-registry', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
   const sheet = getFeedbackSheet_();
   const lastRow = sheet.getLastRow();
   const lastCol = Math.max(sheet.getLastColumn(), FEEDBACK_HEADERS.length);
-  if (lastRow < 2) {
-    return { ok: true, type: 'deleteManometerFeedbackAll', feature: 'manometer-v10-feedback-admin-delete', message: 'Keine Manometer-Feedbackeinträge vorhanden.', deletedRows: 0 };
+  let deletedRows = 0;
+  if (lastRow >= 2) {
+    deletedRows = lastRow - 1;
+    sheet.getRange(2, 1, deletedRows, lastCol).clearContent();
   }
-  const deletedRows = lastRow - 1;
-  sheet.getRange(2, 1, deletedRows, lastCol).clearContent();
+  const clearedRegistryRows = clearDeviceRegistry_();
   SpreadsheetApp.flush();
-  return { ok: true, type: 'deleteManometerFeedbackAll', feature: 'manometer-v10-feedback-admin-delete', message: 'Alle Manometer-Feedbackeinträge wurden gelöscht.', deletedRows: deletedRows };
+  return {
+    ok: true,
+    type: 'deleteManometerFeedbackAll',
+    feature: 'manometer-v11-device-registry',
+    message: 'Alle Manometer-Feedbackeinträge und Geräte-Freigaben wurden gelöscht.',
+    deletedRows: deletedRows,
+    clearedRegistryRows: clearedRegistryRows
+  };
 }
 
 function normalizeGroupKey_(value) {
@@ -652,7 +729,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v10-feedback-admin-delete',
+    feature: 'manometer-v11-device-registry',
     anonymous: true,
     groupIndependent: true,
     entries: entries,

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v21-group-registry">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v22-device-progress">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -22,7 +22,7 @@
     .feedback-user.done{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
     .raw-block{white-space:pre-wrap;background:#f8fbff;border:1px solid #dce8f4;border-radius:16px;padding:14px;color:#334b64;max-height:320px;overflow:auto}
     .status{padding:13px 15px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972}
-    .button-row{display:flex;gap:10px;flex-wrap:wrap}
+    .button-row{display:flex;gap:10px;flex-wrap:wrap}.member-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.member-pill{border-radius:999px;background:#eaf2fb;border:1px solid #d7e5f2;color:#1d416a;padding:8px 11px;font-weight:800}
     @media(max-width:900px){.progress-grid{grid-template-columns:1fr}.feedback-users{grid-template-columns:repeat(3,1fr)}}
   </style>
 </head>
@@ -31,7 +31,7 @@
 <main class="progress-shell">
   <section class="progress-hero">
     <h1 id="title">Gruppenfortschritt</h1>
-    <p id="subtitle">Die Übersicht wird geladen …</p>
+    <p id="subtitle">Die Übersicht wird geladen …</p><div id="memberList" class="member-list"></div>
   </section>
   <div id="status" class="status">Bitte warten …</div>
   <section class="progress-grid">
@@ -58,14 +58,17 @@
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=landing-v21-group-registry"></script>
-<script src="js/app.js?v=landing-v21-group-registry"></script>
+<script src="js/config.js?v=landing-v22-device-progress"></script>
+<script src="js/app.js?v=landing-v22-device-progress"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
   function groupId(){
     var p=new URLSearchParams(location.search);
-    return p.get('g') || p.get('groupId') || localStorage.getItem('sv_group_id') || localStorage.getItem('groupId') || localStorage.getItem('supervision_group_id') || '';
+    return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || localStorage.getItem('groupId') || localStorage.getItem('supervision_group_id') || '';
+  }
+  function deviceId(){
+    try{return localStorage.getItem('supervision_device_id_v21') || localStorage.getItem('supervision_device_id_v20') || localStorage.getItem('manometer_device_id_v2') || '';}catch(_){return '';}
   }
   function jsonp(url,params){
     return new Promise(function(resolve,reject){
@@ -96,15 +99,21 @@
   }
   function render(data){
     document.getElementById('status').textContent='';
-    document.getElementById('title').textContent=data.groupName ? 'Gruppenfortschritt: '+data.groupName : 'Gruppenfortschritt';
-    document.getElementById('subtitle').textContent=data.groupId ? 'Gruppen-ID: '+data.groupId : 'Keine Gruppen-ID gefunden.';
+    var names=(data.names&&data.names.length)?data.names:[];
+    document.getElementById('title').textContent=names.length ? names.join(' · ') : (data.groupName ? 'Gruppenfortschritt: '+data.groupName : 'Gruppenfortschritt');
+    document.getElementById('subtitle').textContent=data.groupId ? 'Gruppen-ID: '+data.groupId+(data.resolvedByDevice?' · automatisch über dieses Gerät erkannt':'') : 'Keine Gruppen-ID gefunden.';
+    var memberList=document.getElementById('memberList');
+    if(memberList){
+      memberList.innerHTML=names.length?names.map(function(n){return '<span class="member-pill">'+String(n).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})+'</span>';}).join(''):'';
+    }
     renderActivities(data);
-    renderUsers(data.groupSize||5,data.feedbackCount||0);
+    renderUsers(data.groupSize||Math.max(5,names.length||0),data.feedbackCount||0);
     var result=data.latestResult&&data.latestResult.data;
     document.getElementById('resultsBox').textContent=result?JSON.stringify({
       Gruppe: result.groupName||data.groupName||'',
+      Gruppenmitglieder: names,
       Zeit: data.latestResult.timestamp||'',
-      Rollen: result.assignments||{},
+      Rollen: result.assignments||data.groupRegistry&&data.groupRegistry.assignments||{},
       Ziel: result.p3&&result.p3.gemeinsamesZiel || '',
       Absprachen: result.p4&&result.p4.absprachen || '',
       Praxistransfer: result.p6 || {}
@@ -114,10 +123,9 @@
   }
   async function boot(){
     var gid=groupId(); var status=document.getElementById('status');
-    if(!gid){status.textContent='Noch keine Gruppen-ID vorhanden. Der Gruppenfortschritt wird erst nach der Gruppenzuweisung aktiviert.';render({groupId:'',groupSize:5,feedbackCount:0});return;}
     var url=appUrl(); if(!url){status.textContent='Keine Apps-Script-URL gefunden.';return;}
     status.textContent='Gruppenfortschritt wird geladen …';
-    try{var data=await jsonp(url,{action:'groupProgress',groupId:gid,groupSize:5}); if(!data||data.ok===false)throw new Error(data&&data.error||'Unbekannter Fehler'); render(data);}
+    try{var data=await jsonp(url,{action:'groupProgress',groupId:gid,deviceId:deviceId(),groupSize:5}); if(!data||data.ok===false)throw new Error(data&&data.error||'Unbekannter Fehler'); render(data);}
     catch(err){status.textContent='Fehler: '+err.message;}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

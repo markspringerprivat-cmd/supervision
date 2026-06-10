@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v21-group-registry">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v22-device-progress">
   <style>
     :root{
       --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
@@ -117,30 +117,65 @@
 
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
 
-<script src="js/config.js?v=landing-v21-group-registry"></script>
-<script src="js/app.js?v=landing-v21-group-registry"></script>
-<script src="js/roles_flow_patch.js?v=landing-v21-group-registry"></script>
+<script src="js/config.js?v=landing-v22-device-progress"></script>
+<script src="js/app.js?v=landing-v22-device-progress"></script>
+<script src="js/roles_flow_patch.js?v=landing-v22-device-progress"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=landing-v21-group-registry"></script>
+<script src="js/guided_flow_patch.js?v=landing-v22-device-progress"></script>
 
 <script>
 (function(){
   function localGroupId(){
     var params=new URLSearchParams(location.search);
-    return params.get('g') || params.get('groupId') || localStorage.getItem('sv_group_id') || localStorage.getItem('groupId') || localStorage.getItem('supervision_group_id') || '';
+    return params.get('g') || params.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || localStorage.getItem('groupId') || localStorage.getItem('supervision_group_id') || '';
   }
-  function updateProgressCard(){
-    var id=localGroupId();
+  function getDeviceIdLocal(){
+    try{
+      var id=localStorage.getItem('supervision_device_id_v21') || localStorage.getItem('supervision_device_id_v20') || localStorage.getItem('manometer_device_id_v2');
+      if(id) return id;
+    }catch(_){}
+    return '';
+  }
+  function enableProgressCard(id, label){
     var card=document.getElementById('groupProgressCard');
     var hint=document.getElementById('progressHint');
+    if(!card || !id) return;
+    try{localStorage.setItem('sv_current_group', id);}catch(_){}
+    card.classList.remove('is-disabled');
+    card.removeAttribute('aria-disabled');
+    card.href='gruppe-fortschritt.html?g='+encodeURIComponent(id);
+    card.onclick=null;
+    if(hint){
+      hint.textContent=label || 'Gruppenfortschritt öffnen';
+      hint.style.background='#e9f8ef';
+      hint.style.borderColor='#abe1bd';
+      hint.style.color='#16703a';
+    }
+  }
+  function disableProgressCard(){
+    var card=document.getElementById('groupProgressCard');
     if(!card) return;
-    if(id){
-      card.classList.remove('is-disabled');
-      card.removeAttribute('aria-disabled');
-      card.href='gruppe-fortschritt.html?g='+encodeURIComponent(id);
-      if(hint){hint.textContent='Gruppenfortschritt öffnen';hint.style.background='#e9f8ef';hint.style.borderColor='#abe1bd';hint.style.color='#16703a';}
-    }else{
-      card.addEventListener('click',function(ev){ev.preventDefault();}, {once:false});
+    card.classList.add('is-disabled');
+    card.addEventListener('click',function(ev){ev.preventDefault();}, {once:false});
+  }
+  async function updateProgressCard(){
+    var id=localGroupId();
+    if(id){ enableProgressCard(id); return; }
+    disableProgressCard();
+    var url=getScriptUrlLocal();
+    var deviceId=getDeviceIdLocal();
+    var hint=document.getElementById('progressHint');
+    if(!url || !deviceId) return;
+    if(hint) hint.textContent='Gruppenzuordnung wird geprüft …';
+    try{
+      var res=await jsonpLocal(url,{action:'resolveDeviceGroup',deviceId:deviceId});
+      if(res && res.ok && res.found && res.groupId){
+        enableProgressCard(res.groupId,'Gruppenfortschritt öffnen');
+      }else if(hint){
+        hint.textContent='Erst nach Gruppenzuweisung anklickbar';
+      }
+    }catch(_){
+      if(hint) hint.textContent='Erst nach Gruppenzuweisung anklickbar';
     }
   }
   function getScriptUrlLocal(){try{ if(typeof getAppsScriptUrl === 'function') return getAppsScriptUrl(); }catch(_){} return (window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL) || '';}

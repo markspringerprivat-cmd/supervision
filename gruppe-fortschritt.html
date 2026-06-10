@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v22-device-progress">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v23-result-embed">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -20,7 +20,7 @@
     .feedback-users{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
     .feedback-user{border-radius:18px;border:1px solid #d7e5f2;background:#eef4fa;padding:14px 8px;text-align:center;font-weight:800;color:#506780}
     .feedback-user.done{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
-    .raw-block{white-space:pre-wrap;background:#f8fbff;border:1px solid #dce8f4;border-radius:16px;padding:14px;color:#334b64;max-height:320px;overflow:auto}
+    .raw-block{background:#f8fbff;border:1px solid #dce8f4;border-radius:16px;padding:14px;color:#334b64;max-height:none;overflow:visible}.embedded-result{display:grid;gap:10px}.embedded-result details{border:1px solid #dce8f4;border-radius:14px;overflow:hidden;background:#f8fbff}.embedded-result summary{cursor:pointer;font-weight:800;color:#102a46;padding:12px 14px;background:#edf3fa}.embedded-result table{width:100%;border-collapse:collapse;background:#fff}.embedded-result th,.embedded-result td{border:1px solid #e3ebf3;padding:10px 12px;text-align:left;vertical-align:top}.embedded-result th{background:#eaf2fb;color:#11243a}.presentation-actions{display:grid;gap:12px;margin-top:12px}.presentation-open{font-size:1.05rem;padding:14px 18px}
     .status{padding:13px 15px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972}
     .button-row{display:flex;gap:10px;flex-wrap:wrap}.member-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.member-pill{border-radius:999px;background:#eaf2fb;border:1px solid #d7e5f2;color:#1d416a;padding:8px 11px;font-weight:800}
     @media(max-width:900px){.progress-grid{grid-template-columns:1fr}.feedback-users{grid-template-columns:repeat(3,1fr)}}
@@ -45,21 +45,21 @@
       <div id="feedbackUsers" class="feedback-users"></div>
     </aside>
     <article class="panel">
-      <h2>Ergebnisse</h2>
-      <div id="resultsBox" class="raw-block">Noch keine gespeicherten Ergebnisse geladen.</div>
+      <h2>Gruppenergebnisse</h2>
+      <div id="resultsBox" class="raw-block embedded-result">Noch keine gespeicherten Ergebnisse geladen.</div>
     </article>
     <aside class="panel">
       <h2>Präsentation</h2>
       <p id="presentationInfo">Noch keine Präsentationsdaten geladen.</p>
-      <div class="button-row">
-        <a id="presentationLink" class="button" href="gruppe-ergebnis.html">Gruppenergebnisse öffnen</a>
+      <div class="presentation-actions">
+        <a id="presentationLink" class="button presentation-open" href="presentation.html">Präsentation öffnen</a>
         <a class="button secondary" href="index.html">Zurück zur Startseite</a>
       </div>
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=landing-v22-device-progress"></script>
-<script src="js/app.js?v=landing-v22-device-progress"></script>
+<script src="js/config.js?v=landing-v23-result-embed"></script>
+<script src="js/app.js?v=landing-v23-result-embed"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -97,29 +97,76 @@
     ];
     target.innerHTML=items.map(function(x){return '<div class="activity '+(x[1]?'done':'warn')+'"><strong>'+x[0]+'</strong><span>'+(x[1]?'erledigt':'offen')+'</span></div>'}).join('');
   }
-  function render(data){
+  
+  function escHtml(v){
+    return String(v == null ? '' : v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function tableHtml(headers, rows){
+    return '<table><thead><tr>'+headers.map(function(h){return '<th>'+escHtml(h)+'</th>';}).join('')+'</tr></thead><tbody>'+
+      rows.map(function(row){return '<tr>'+row.map(function(cell){return '<td>'+escHtml(cell || '—')+'</td>';}).join('')+'</tr>';}).join('')+
+      '</tbody></table>';
+  }
+  function renderGroupResultHtml(resultRow, fallbackRegistry){
+    if(!resultRow || !resultRow.data) return '<p>Für diese Gruppe ist noch kein gespeichertes Ergebnis vorhanden.</p>';
+    var data=resultRow.data || {};
+    var raw=data.raw || {};
+    var merged=Object.assign({}, raw, data);
+    ['assignments','p2','p3','p4','p5','p6'].forEach(function(k){ merged[k]=Object.assign({}, raw[k]||{}, data[k]||{}); });
+    if((!merged.assignments || !Object.keys(merged.assignments).length) && fallbackRegistry && fallbackRegistry.assignments){
+      merged.assignments=fallbackRegistry.assignments;
+    }
+    var a=merged.assignments||{}, p2=merged.p2||{}, p3=merged.p3||{}, p4=merged.p4||{}, p5=merged.p5||{}, p6=merged.p6||{};
+    return '<div class="embedded-result">'+
+      '<details open><summary>Gruppenbeteiligte</summary>'+tableHtml(['Rolle','Name'],[
+        ['Supervisor*in',a.supervisor||''],['Schulleitung',a.schulleitung||''],['Lehrkraft A',a['lehrkraft-a']||a.lehrkraftA||''],['Lehrkraft B',a['lehrkraft-b']||a.lehrkraftB||''],['Protokoll',a.protokoll||a.beobachter||'']
+      ])+'</details>'+
+      '<details><summary>Problembeschreibung</summary>'+tableHtml(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'],[
+        ['Schulleitung',p2.slProbleme||p2.slProblem||'',p2.slGefuehle||'',p2.slWuensche||''],
+        ['Lehrkraft A',p2.aProbleme||p2.aPerspektive||'',p2.aGefuehle||'',p2.aWuensche||''],
+        ['Lehrkraft B',p2.bProbleme||p2.bPerspektive||'',p2.bGefuehle||'',p2.bWuensche||'']
+      ])+'</details>'+
+      '<details><summary>Zielformulierung</summary>'+tableHtml(['Bereich','Eintrag'],[
+        ['Ziel Schulleitung',p3.zielSL||''],['Ziel Lehrkraft A',p3.zielA||''],['Ziel Lehrkraft B',p3.zielB||''],['Gemeinsamkeiten',p3.gemeinsamkeiten||''],['Gemeinsame Zielvereinbarung',p3.gemeinsamesZiel||p3.gemeinsameZielformulierung||'']
+      ])+'</details>'+
+      '<details><summary>Vertiefte Problembearbeitung</summary>'+tableHtml(['Aspekt','Ergebnis'],[
+        ['Hilfreiche Kritik',p4.kritik||''],['Absprachen zum weiteren Vorgehen',p4.absprachen||p4.weiteresVorgehen||'']
+      ])+'</details>'+
+      '<details><summary>Umsetzung</summary>'+tableHtml(['Aspekt','Ergebnis'],[
+        ['Zustimmung zur Vereinbarung',p5.zustimmung||''],['Einschätzung der Praxistauglichkeit',p6.praxistauglichkeit||p6.einschaetzung||''],['Unterstützung durch Schulleitung',p6.unterstuetzung||''],['Erste konkrete Umsetzungsschritte',p6.umsetzung||p6.konkreteUmsetzungsschritte||'']
+      ])+'</details>'+
+    '</div>';
+  }
+function render(data){
     document.getElementById('status').textContent='';
     var names=(data.names&&data.names.length)?data.names:[];
     document.getElementById('title').textContent=names.length ? names.join(' · ') : (data.groupName ? 'Gruppenfortschritt: '+data.groupName : 'Gruppenfortschritt');
     document.getElementById('subtitle').textContent=data.groupId ? 'Gruppen-ID: '+data.groupId+(data.resolvedByDevice?' · automatisch über dieses Gerät erkannt':'') : 'Keine Gruppen-ID gefunden.';
     var memberList=document.getElementById('memberList');
     if(memberList){
-      memberList.innerHTML=names.length?names.map(function(n){return '<span class="member-pill">'+String(n).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})+'</span>';}).join(''):'';
+      memberList.innerHTML=names.length?names.map(function(n){return '<span class="member-pill">'+escHtml(n)+'</span>';}).join(''):'';
     }
     renderActivities(data);
     renderUsers(data.groupSize||Math.max(5,names.length||0),data.feedbackCount||0);
-    var result=data.latestResult&&data.latestResult.data;
-    document.getElementById('resultsBox').textContent=result?JSON.stringify({
-      Gruppe: result.groupName||data.groupName||'',
-      Gruppenmitglieder: names,
-      Zeit: data.latestResult.timestamp||'',
-      Rollen: result.assignments||data.groupRegistry&&data.groupRegistry.assignments||{},
-      Ziel: result.p3&&result.p3.gemeinsamesZiel || '',
-      Absprachen: result.p4&&result.p4.absprachen || '',
-      Praxistransfer: result.p6 || {}
-    },null,2):'Für diese Gruppe ist noch kein gespeichertes Ergebnis vorhanden.';
-    document.getElementById('presentationInfo').textContent=data.hasPresentation?'Präsentationsdaten wurden gefunden.':'Noch keine Präsentationsdaten für diese Gruppe gefunden.';
-    var gid=data.groupId||''; document.getElementById('presentationLink').href='gruppe-ergebnis.html?g='+encodeURIComponent(gid);
+
+    var resultRow=data.latestResult||null;
+    document.getElementById('resultsBox').innerHTML=renderGroupResultHtml(resultRow,data.groupRegistry||null);
+
+    var rowNumber=(resultRow&&(resultRow.rowNumber||resultRow.id))||'';
+    var presentationLink=document.getElementById('presentationLink');
+    if(data.hasPresentation && rowNumber){
+      document.getElementById('presentationInfo').textContent='Die fertig übermittelte Präsentation der Gruppe wurde gefunden.';
+      presentationLink.href='presentation.html?row='+encodeURIComponent(rowNumber);
+      presentationLink.classList.remove('secondary');
+      presentationLink.textContent='Präsentation öffnen';
+      presentationLink.style.pointerEvents='';
+      presentationLink.style.opacity='1';
+    }else{
+      document.getElementById('presentationInfo').textContent='Für diese Gruppe wurde noch keine fertige Präsentation übermittelt.';
+      presentationLink.href='#';
+      presentationLink.textContent='Noch keine Präsentation vorhanden';
+      presentationLink.style.pointerEvents='none';
+      presentationLink.style.opacity='.55';
+    }
   }
   async function boot(){
     var gid=groupId(); var status=document.getElementById('status');

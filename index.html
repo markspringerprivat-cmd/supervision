@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v22-device-progress">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v25-admin-group-overview">
   <style>
     :root{
       --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
@@ -26,7 +26,7 @@
     .button-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
     .about-box{border:3px solid #2b65a3!important;border-radius:28px!important;box-shadow:0 18px 42px rgba(43,101,163,.10)!important}
     .about-box h2{color:#143a63}
-    .admin-side-panel{position:fixed;right:18px;top:132px;width:250px;z-index:30;background:rgba(255,255,255,.96);border:2px solid #d7e5f2;border-radius:22px;padding:14px;box-shadow:0 18px 44px rgba(15,31,53,.16);display:none}
+    .admin-side-panel{position:fixed;right:18px;top:188px;width:250px;z-index:30;background:rgba(255,255,255,.96);border:2px solid #d7e5f2;border-radius:22px;padding:14px;box-shadow:0 18px 44px rgba(15,31,53,.16);display:none}
     body.is-global-admin .admin-side-panel{display:block}
     .admin-side-panel h3{margin:0 0 10px;color:#143a63;font-size:1rem}
     .admin-mini-card{display:block;text-decoration:none;color:inherit;border-radius:16px;border:2px solid var(--line);background:#fff;padding:12px;margin-top:10px}
@@ -63,7 +63,7 @@
 <aside class="admin-side-panel" aria-label="Admin-Panel">
   <h3>Admin-Panel</h3>
   <a class="admin-mini-card group" href="gruppenzuweisung.html" data-admin-required="true"><strong>Gruppenzuweisung</strong><small>Teilnehmende und Gruppen verwalten.</small></a>
-  <a class="admin-mini-card results" href="ergebnisse.html" data-admin-required="true"><strong>Ergebnisse ansehen</strong><small>Gespeicherte Gruppenergebnisse öffnen.</small></a>
+  <a class="admin-mini-card results" href="admin-gruppen.html" data-admin-required="true"><strong>Gruppenergebnisse</strong><small>Alle Gruppen, Fortschritt, Abgaben und Präsentationen im Überblick.</small></a>
   <div class="admin-mini-card mano" data-admin-required="true">
     <strong>Manometer-Ergebnisse</strong>
     <small>Feedback-Auswertung und Gerätefreigabe.</small>
@@ -117,11 +117,11 @@
 
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
 
-<script src="js/config.js?v=landing-v22-device-progress"></script>
-<script src="js/app.js?v=landing-v22-device-progress"></script>
-<script src="js/roles_flow_patch.js?v=landing-v22-device-progress"></script>
+<script src="js/config.js?v=landing-v25-admin-group-overview"></script>
+<script src="js/app.js?v=landing-v25-admin-group-overview"></script>
+<script src="js/roles_flow_patch.js?v=landing-v25-admin-group-overview"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=landing-v22-device-progress"></script>
+<script src="js/guided_flow_patch.js?v=landing-v25-admin-group-overview"></script>
 
 <script>
 (function(){

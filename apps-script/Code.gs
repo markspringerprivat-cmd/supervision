@@ -115,7 +115,7 @@ function doGet(e) {
     if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
     if (action === 'manometerfeedbacklist' || action === 'manometer_feedback_list' || action === 'feedback_list') return listFeedback_(e);
     if (action === 'manometerfeedbacksave' || action === 'manometer_feedback_save' || action === 'savefeedback') return saveFeedbackGet_(e);
-    if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME });
+    if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v4' });
     if (action === 'test') {
       const sheet = getSheet_();
       return jsonp_(e, {
@@ -492,24 +492,45 @@ function saveFeedbackData_(data) {
     safeJson_(data)
   ];
   sheet.appendRow(row);
-  return { ok: true, message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] };
+  SpreadsheetApp.flush();
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v4', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] };
 }
 
 
 
+function normalizeGroupKey_(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
 function listFeedback_(e) {
   const sheet = getFeedbackSheet_();
   const values = sheet.getDataRange().getValues();
-  const groupFilter = String(e.parameter.groupId || e.parameter.g || e.parameter.token || '').trim();
+  const groupFilterRaw = String(e.parameter.groupId || e.parameter.g || e.parameter.token || '').trim();
+  const groupFilter = normalizeGroupKey_(groupFilterRaw);
   const entries = [];
+  const allEntries = [];
+  const availableGroupIds = [];
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
     if (isEmptyRow_(row)) continue;
     const entry = feedbackRowToEntry_(row, r + 1);
-    if (groupFilter && String(entry.groupId || '').trim() !== groupFilter) continue;
+    allEntries.push(entry);
+    const rawGroupId = String(entry.groupId || '').trim();
+    if (rawGroupId && availableGroupIds.indexOf(rawGroupId) === -1) availableGroupIds.push(rawGroupId);
+    if (groupFilter && normalizeGroupKey_(entry.groupId) !== groupFilter) continue;
     entries.push(entry);
   }
-  return jsonp_(e, { ok: true, entries: entries, summary: summarizeFeedback_(entries), questions: MANOMETER_QUESTIONS, groupId: groupFilter, totalRows: Math.max(0, values.length - 1) });
+  return jsonp_(e, {
+    ok: true,
+    type: 'manometerFeedbackList',
+    feature: 'manometer-v4',
+    entries: entries,
+    summary: summarizeFeedback_(entries),
+    questions: MANOMETER_QUESTIONS,
+    groupId: groupFilterRaw,
+    totalRows: allEntries.length,
+    availableGroupIds: availableGroupIds.slice(0, 30)
+  });
 }
 
 function feedbackRowToEntry_(row, rowNumber) {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-v3">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-v4">
   <style>
     .dashboard-head{background:linear-gradient(135deg,#eef6ff,#fff);border:1px solid #d8e7f7}
     .feedback-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:18px}
@@ -44,7 +44,7 @@
 </main>
 <footer><div class="wrap">Manometer · Live-Auswertung</div></footer>
 <script src="js/config.js"></script>
-<script src="js/app.js?v=manometer-v3"></script>
+<script src="js/app.js?v=manometer-v4"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -64,12 +64,12 @@
   function render(entries, meta){
     document.getElementById('count').textContent=entries.length;
     var cards=document.getElementById('cards');
-    if(!entries.length){ cards.innerHTML=''; document.getElementById('status').className='card empty'; var total=meta&&Number(meta.totalRows||0); var g=gid(); document.getElementById('status').textContent= total>0 && g ? ('Für diese Gruppen-ID wurden noch keine Rückmeldungen gefunden. Insgesamt liegen '+total+' Manometer-Rückmeldungen vor. Prüfe, ob Feedbackformular und Auswertung denselben QR-Code bzw. dieselbe Gruppen-ID nutzen: '+g) : 'Noch keine Manometer-Rückmeldungen vorhanden. Öffnet das Feedbackformular per Link oder QR-Code.'; renderTexts('takeaways',[], 'takeaway'); renderTexts('improvements',[], 'improvement'); renderTexts('praises',[], 'praise'); return; }
+    if(!entries.length){ cards.innerHTML=''; document.getElementById('status').className='card empty'; var total=meta&&Number(meta.totalRows||0); var g=gid(); var ids=(meta&&Array.isArray(meta.availableGroupIds)?meta.availableGroupIds:[]); var extra=ids.length?' Vorhandene Gruppen-IDs: '+ids.join(', '):''; document.getElementById('status').textContent= total>0 && g ? ('Für diese Gruppen-ID wurden noch keine Rückmeldungen gefunden. Insgesamt liegen '+total+' Manometer-Rückmeldungen vor. Prüfe, ob Feedbackformular und Auswertung dieselbe Gruppen-ID nutzen: '+g+'.'+extra) : 'Noch keine Manometer-Rückmeldungen vorhanden. Öffnet das Feedbackformular per Link oder QR-Code.'; renderTexts('takeaways',[], 'takeaway'); renderTexts('improvements',[], 'improvement'); renderTexts('praises',[], 'praise'); return; }
     document.getElementById('status').hidden=true;
     cards.innerHTML=QUESTIONS.map(function(q){ var values=entries.map(function(e){return Number(e.scores&&e.scores[q.key]);}).filter(function(n){return !isNaN(n);}); var a=avg(values); var bars=values.map(function(v){return '<span title="'+v+'" style="height:'+Math.max(8,v/2)+'px"></span>';}).join(''); return '<article class="feedback-card"><h3>'+esc(q.label)+'</h3><div class="score-big">'+(a==null?'–':a)+'</div><div class="small">Durchschnitt von '+values.length+' Rückmeldungen</div><div class="meter-track"><div class="meter-fill" style="width:'+(a||0)+'%"></div></div><div class="mini-values">'+bars+'</div></article>'; }).join('');
     renderTexts('takeaways', entries, 'takeaway'); renderTexts('improvements', entries, 'improvement'); renderTexts('praises', entries, 'praise');
   }
-  async function load(){ var st=document.getElementById('status'); st.hidden=false; st.className='card'; st.textContent='Manometer-Auswertung wird geladen …'; var url=appUrl(); if(!url){ st.className='card empty'; st.textContent='Keine Apps-Script-URL gefunden.'; return; } try{ var res=await jsonp(url,{action:'manometerFeedbackList',groupId:gid()}); if(!res||res.ok===false) throw new Error((res&&res.error)||'Ungültige Antwort.'); render(Array.isArray(res.entries)?res.entries:[], res); }catch(err){ st.className='card empty'; st.textContent=err&&err.message?err.message:String(err); } }
+  async function load(){ var st=document.getElementById('status'); st.hidden=false; st.className='card'; st.textContent='Manometer-Auswertung wird geladen …'; var url=appUrl(); if(!url){ st.className='card empty'; st.textContent='Keine Apps-Script-URL gefunden.'; return; } try{ var res=await jsonp(url,{action:'manometerFeedbackList',groupId:gid()}); if(!res||res.ok===false) throw new Error((res&&res.error)||'Ungültige Antwort.'); if(res.type !== 'manometerFeedbackList' || !Array.isArray(res.entries)) throw new Error('Das aktuell deployte Apps Script unterstützt Manometer-Auswertung noch nicht. Bitte Code.gs aus dieser ZIP übernehmen und die Web-App neu bereitstellen.'); render(res.entries, res); }catch(err){ st.className='card empty'; st.textContent=err&&err.message?err.message:String(err); } }
   function init(){ var g=gid(); document.querySelectorAll('[data-group-id]').forEach(function(el){el.textContent=g||'ohne Gruppen-ID';}); var f=document.getElementById('formLink'); if(f){ var u=new URL('manometer.html',location.href); if(g) u.searchParams.set('g',g); f.href=u.toString(); } document.getElementById('refreshBtn').addEventListener('click', load); load(); }
   document.addEventListener('DOMContentLoaded', init);
 })();

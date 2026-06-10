@@ -100,3 +100,7 @@ Diese Version ergänzt nach der Ergebnisübermittlung einen Manometer-Feedbackfl
 ## Manometer Speicherfix
 
 Das Manometer-Feedback wird ab dieser Version per JSONP/GET gespeichert. Dadurch wartet das Formular auf eine echte Apps-Script-Bestätigung, statt eine no-cors-POST-Anfrage nur scheinbar als erfolgreich zu behandeln. Apps Script muss mit der enthaltenen `apps-script/Code.gs` neu bereitgestellt werden.
+
+
+## Manometer v4 Hinweis
+Für Manometer muss `apps-script/Code.gs` aus dieser ZIP in Google Apps Script übernommen und die Web-App neu bereitgestellt werden. Das Frontend prüft jetzt, ob der Manometer-Endpunkt wirklich aktiv ist; alte Deployments werden als Fehler angezeigt statt als vermeintlicher Erfolg.

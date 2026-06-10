@@ -4,102 +4,161 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-v4">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-cards-v2">
   <style>
-    .manometer-hero{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #d8e7f7}
-    .manometer-grid{display:grid;gap:18px;margin-top:18px}
-    .meter-card{border:1px solid #e1e8f2;border-radius:18px;padding:18px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.05)}
-    .meter-card label{display:block;font-weight:800;margin-bottom:10px;color:#14233b}
-    .meter-row{display:grid;grid-template-columns:1fr 72px;gap:14px;align-items:center}
-    input[type="range"]{width:100%}
-    .meter-value{font-weight:900;text-align:center;border-radius:14px;background:#eaf2fb;padding:10px 8px;color:#18365d}
-    .text-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-    .manometer-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;align-items:center}
+    .manometer-shell{max-width:980px;margin:0 auto;padding:28px 18px 54px}
+    .manometer-hero{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #d8e7f7;border-radius:24px;padding:24px;box-shadow:0 18px 50px rgba(15,23,42,.08)}
+    .progress-wrap{margin:18px 0 20px;background:#e8eef6;border-radius:999px;height:12px;overflow:hidden;border:1px solid #d7e2ee}
+    .progress-bar{height:100%;width:0;background:#1e4f82;transition:width .25s ease}
+    .step-card{display:none;border:1px solid #e1e8f2;border-radius:24px;padding:28px;background:#fff;box-shadow:0 18px 50px rgba(15,23,42,.08);min-height:420px}
+    .step-card.active{display:block}
+    .step-kicker{font-weight:900;color:#315a88;text-transform:uppercase;letter-spacing:.06em;font-size:.78rem;margin-bottom:8px}
+    .step-card h2{margin:.1rem 0 12px;font-size:clamp(1.7rem,3vw,2.45rem)}
+    .step-card p{font-size:1.05rem;line-height:1.55}
+    .scale-row{display:grid;grid-template-columns:1fr 92px;gap:18px;align-items:center;margin-top:24px}
+    input[type="range"]{width:100%;accent-color:#1e4f82}
+    .scale-value{font-weight:900;text-align:center;border-radius:18px;background:#eaf2fb;padding:16px 12px;color:#18365d;font-size:1.6rem}
+    .scale-labels{display:flex;justify-content:space-between;color:#5b6b80;font-weight:700;font-size:.9rem;margin-top:6px}
+    .conditional-note{display:none;margin-top:20px;border:1px solid #f0b7b7;background:#fff3f3;border-radius:18px;padding:16px}
+    .conditional-note.visible{display:block}
+    .conditional-note textarea,.textarea-block textarea{width:100%;box-sizing:border-box;border:1px solid #cfd9e8;border-radius:14px;padding:14px;font:inherit;min-height:120px;background:#fff}
+    .radio-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px}
+    .radio-pill{display:flex;align-items:center;gap:8px;border:1px solid #d9e3ef;border-radius:999px;padding:12px 16px;background:#f8fbff;font-weight:800;cursor:pointer}
+    .radio-pill input{width:18px;height:18px}
+    .textarea-block{margin-top:20px}
+    .manometer-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;align-items:center;justify-content:space-between}
+    .manometer-actions .left,.manometer-actions .right{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     .manometer-status{margin-top:16px;padding:14px 16px;border-radius:14px;background:#eaf2fb;color:#18365d}
+    .manometer-status.error{background:#fff2f2;color:#8a1f1f;border:1px solid #efc5c5}
+    .manometer-status.ok{background:#e9f8ef;color:#256142;border:1px solid #bde7cc}
+    .small-muted{color:#5b6b80;font-size:.94rem}
+    .already-voted{border:1px solid #bde7cc;background:#e9f8ef;border-radius:18px;padding:16px;margin-top:18px;color:#256142}
+    @media(max-width:700px){.scale-row{grid-template-columns:1fr}.scale-value{text-align:left}.step-card{padding:22px}.manometer-actions{justify-content:flex-start}}
   </style>
 </head>
 <body data-mode="manometer">
-<header><div class="wrap"><h1>Manometer</h1><p>Feedback zur Gruppensupervision</p></div></header>
-<main class="wide-main">
-  <section class="card manometer-hero">
+<header><div class="wrap"><h1>Manometer</h1><p>Anonyme Reflexion zur Gruppensupervision</p></div></header>
+<main class="manometer-shell">
+  <section class="manometer-hero">
     <h2>Deine Rückmeldung</h2>
-    <p>Bitte beantworte die Fragen einzeln. Die Werte reichen von <strong>0</strong> = trifft gar nicht zu bis <strong>100</strong> = trifft vollständig zu. Die Auswertung wird anschließend gesammelt dargestellt.</p>
-    <p class="small">Gruppen-ID: <span data-group-id></span></p>
+    <p>Bitte beantworte die Fragen einzeln. Die Skala reicht von <strong>1</strong> = trifft gar nicht zu bis <strong>10</strong> = trifft vollständig zu.</p>
+    <p>Wenn du bei einer Skalenfrage <strong>nicht 10</strong> auswählst, erscheint ein Pflichtfeld: Dort beschreibst du kurz, was für ein besseres Ergebnis verbessert werden müsste.</p>
+    <p class="small-muted">Die Auswertung erfolgt anonym und unabhängig von der Gruppen-ID. Von diesem Gerät bzw. Browser kann nur einmal abgestimmt werden.</p>
+    <p class="small-muted">Gruppen-ID wird nur technisch mitgesendet: <span data-group-id></span></p>
+    <div id="alreadyVotedBox" class="already-voted" hidden>Von diesem Gerät wurde bereits Feedback abgegeben. Du kannst die Auswertung anzeigen.</div>
   </section>
 
-  <form id="manometerForm" class="manometer-grid">
-    <section class="meter-card">
-      <label for="caseConsultation">Ich kenne verschiedene Arten der Fallberatung.</label>
-      <div class="meter-row"><input id="caseConsultation" name="caseConsultation" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="caseConsultation">50</span></div>
-    </section>
-    <section class="meter-card">
-      <label for="phaseUnderstanding">Ich verstehe die Phasen einer strukturierten Gruppensupervision.</label>
-      <div class="meter-row"><input id="phaseUnderstanding" name="phaseUnderstanding" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="phaseUnderstanding">50</span></div>
-    </section>
-    <section class="meter-card">
-      <label for="rolePerspective">Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.</label>
-      <div class="meter-row"><input id="rolePerspective" name="rolePerspective" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="rolePerspective">50</span></div>
-    </section>
-    <section class="meter-card">
-      <label for="goalAction">Ich fühle mich sicherer beim Formulieren von Zielvereinbarungen und Handlungsschritten.</label>
-      <div class="meter-row"><input id="goalAction" name="goalAction" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="goalAction">50</span></div>
-    </section>
-    <section class="meter-card">
-      <label for="technicalClarity">Die technische Aufarbeitung war verständlich und gut nutzbar.</label>
-      <div class="meter-row"><input id="technicalClarity" name="technicalClarity" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="technicalClarity">50</span></div>
-    </section>
-    <section class="meter-card">
-      <label for="manometerReflection">Manometer hat mir geholfen, die Übung zu reflektieren.</label>
-      <div class="meter-row"><input id="manometerReflection" name="manometerReflection" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="manometerReflection">50</span></div>
-    </section>
+  <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
 
-    <section class="card">
-      <h2>Offene Rückmeldungen</h2>
-      <div class="text-grid">
-        <label>Was nimmst du aus der Übung mit?<textarea id="takeaway" name="takeaway" rows="5" placeholder="z. B. Erkenntnisse, Methoden, Aha-Momente"></textarea></label>
-        <label>Verbesserungsvorschläge<textarea id="improvement" name="improvement" rows="5" placeholder="Was sollte beim nächsten Durchlauf anders sein?"></textarea></label>
-        <label>Lob<textarea id="praise" name="praise" rows="5" placeholder="Was hat gut funktioniert?"></textarea></label>
-      </div>
-      <div class="manometer-actions">
-        <button id="submitManometer" type="submit">Feedback absenden</button>
-        <a id="resultsLink" class="button secondary" href="manometer-auswertung.html">Auswertung anzeigen</a>
-        <a class="button secondary" href="index.html">Zurück zur Startseite</a>
-      </div>
-      <p id="manometerStatus" class="manometer-status" hidden></p>
+  <form id="manometerForm">
+    <section class="step-card active" data-step="intro">
+      <div class="step-kicker">Start</div>
+      <h2>Manometer startet</h2>
+      <p>Gehe die Karten nacheinander durch. Deine Antworten werden anonym gespeichert. Nach dem Absenden kannst du die gemeinsame Auswertung ansehen.</p>
     </section>
   </form>
+
+  <div class="manometer-actions">
+    <div class="left">
+      <button id="prevStep" type="button" class="secondary">Zurück</button>
+      <button id="nextStep" type="button">Weiter</button>
+    </div>
+    <div class="right">
+      <a id="resultsLink" class="button secondary" href="manometer-auswertung.html">Auswertung anzeigen</a>
+      <a class="button secondary" href="index.html">Zurück zur Startseite</a>
+    </div>
+  </div>
+  <p id="manometerStatus" class="manometer-status" hidden></p>
 </main>
-<footer><div class="wrap">Manometer · Reflexionsfeedback</div></footer>
-<script src="js/config.js?v=manometer-urlfix-v2"></script>
-<script src="js/app.js?v=manometer-urlfix-v2"></script>
+<footer><div class="wrap">Manometer · anonymes Reflexionsfeedback</div></footer>
+<script src="js/config.js?v=manometer-cards-v2"></script>
+<script src="js/app.js?v=manometer-cards-v2"></script>
 <script>
 (function(){
+  var QUESTIONS = [
+    {key:'presentationPressure', category:'Startfrage', label:'Die Aussicht auf eine zufällige Präsentation im Plenum hat dazu geführt, dass die Aufgaben gewissenhafter bearbeitet wurden.'},
+    {key:'caseConsultation', category:'Inhaltliches Verständnis', label:'Ich kenne verschiedene Arten der Fallberatung.'},
+    {key:'phaseUnderstanding', category:'Inhaltliches Verständnis', label:'Ich verstehe die Phasen einer strukturierten Gruppensupervision.'},
+    {key:'rolePerspective', category:'Inhaltliches Verständnis', label:'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.'},
+    {key:'technicalClarity', category:'Technische Umsetzung und Bedienbarkeit', label:'Die technische Umsetzung der Anwendung war verständlich.'},
+    {key:'usability', category:'Technische Umsetzung und Bedienbarkeit', label:'Die Anwendung war gut bedienbar.'},
+    {key:'presentationDesign', category:'Allgemeine Gestaltung der Präsentation', label:'Die Gestaltung der Präsentation war übersichtlich und ansprechend.'},
+    {key:'presentationUsefulness', category:'Allgemeine Gestaltung der Präsentation', label:'Die erstellte Präsentation eignet sich gut, um Ergebnisse im Plenum vorzustellen.'},
+    {key:'creativeOptions', category:'Allgemeine Gestaltung der Präsentation', label:'Die Bearbeitungsmöglichkeiten der Präsentation waren hilfreich.'}
+  ];
+  var steps = [];
+  var current = 0;
+  var votedKey = 'manometer_voted_global_v2';
+
   function gid(){ try{ if(typeof getGroupId==='function') return getGroupId(); }catch(_){} return new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_group_id') || ''; }
   function appUrl(){ try{ if(typeof getAppsScriptUrl==='function') return getAppsScriptUrl(); }catch(_){} return (window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''; }
   function groupName(){ try{ return (typeof loadText==='function' && loadText('summary_group_name')) || localStorage.getItem('sv_group_name') || gid() || 'Gruppe'; }catch(_){ return gid() || 'Gruppe'; } }
-  function role(){ try{ return localStorage.getItem('sv_role') || localStorage.getItem('sv_selected_role') || ''; }catch(_){ return ''; } }
-  function updateLinks(){ var g=gid(); document.querySelectorAll('[data-group-id]').forEach(function(el){el.textContent=g||'ohne Gruppen-ID';}); var a=document.getElementById('resultsLink'); if(a){ var u=new URL('manometer-auswertung.html', location.href); if(g) u.searchParams.set('g',g); a.href=u.toString(); } }
-  function values(){ var out={}; ['caseConsultation','phaseUnderstanding','rolePerspective','goalAction','technicalClarity','manometerReflection'].forEach(function(k){ out[k]=Number(document.getElementById(k).value||0); }); return out; }
-  function texts(){ return { takeaway:document.getElementById('takeaway').value.trim(), improvement:document.getElementById('improvement').value.trim(), praise:document.getElementById('praise').value.trim() }; }
+  function deviceId(){ var key='manometer_device_id_v2'; try{ var existing=localStorage.getItem(key); if(existing) return existing; var id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,12); localStorage.setItem(key,id); return id; }catch(_){ return 'dev_session_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); } }
+  function setStatus(msg, cls){ var st=document.getElementById('manometerStatus'); st.hidden=false; st.className='manometer-status '+(cls||''); st.textContent=msg; }
+  function clearStatus(){ document.getElementById('manometerStatus').hidden=true; }
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function updateLinks(){ var g=gid(); document.querySelectorAll('[data-group-id]').forEach(function(el){el.textContent=g||'ohne Gruppen-ID';}); var a=document.getElementById('resultsLink'); if(a){ a.href=new URL('manometer-auswertung.html', location.href).toString(); } }
+  function buildQuestionCard(q, idx){
+    return '<section class="step-card" data-step="scale" data-key="'+q.key+'">'+
+      '<div class="step-kicker">'+escapeHtml(q.category)+' · Frage '+(idx+1)+' von '+QUESTIONS.length+'</div>'+
+      '<h2>'+escapeHtml(q.label)+'</h2>'+
+      '<p>Wähle einen Wert von 1 bis 10.</p>'+
+      '<div class="scale-row"><div><input id="'+q.key+'" name="'+q.key+'" type="range" min="1" max="10" step="1" value="5" data-scale-key="'+q.key+'"><div class="scale-labels"><span>1 · gar nicht</span><span>10 · vollständig</span></div></div><span class="scale-value" data-value-for="'+q.key+'">5</span></div>'+
+      '<div class="conditional-note visible" data-improve-wrap="'+q.key+'"><label><strong>Pflichtfeld, solange keine 10 ausgewählt ist:</strong><br>Was müsste verbessert werden, damit du hier eine 10 geben würdest?<textarea id="improve_'+q.key+'" data-improve-for="'+q.key+'" rows="4" required></textarea></label></div>'+
+      '</section>';
+  }
+  function buildStaticCards(){
+    var form=document.getElementById('manometerForm');
+    QUESTIONS.forEach(function(q,i){ form.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)); });
+    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="generalText"><div class="step-kicker">Allgemeine Rückmeldung</div><h2>Lob, Kritik und Anregungen</h2><p>Dieses Feld ist offen und anonym. Du kannst hier alles notieren, was nicht zu einer einzelnen Skalenfrage passt.</p><div class="textarea-block"><textarea id="generalFeedback" rows="8" placeholder="Lob, Kritik, Anregungen …"></textarea></div></section>');
+    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="avoidCheck"><div class="step-kicker">Zusatzfrage</div><h2>Volle Punktzahl und Pflichtangaben</h2><p>Du hast bei mehr als 70% der Skalenfragen eine 10 vergeben.</p><p>Hast du bei einigen Punktevergaben eine 10 gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="avoidCriticism" value="ja"> Ja</label><label class="radio-pill"><input type="radio" name="avoidCriticism" value="nein"> Nein</label></div></section>');
+    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="llm"><div class="step-kicker">Letzte Frage</div><h2>Wurde ChatGPT oder eine andere KI genutzt?</h2><p>Wurde zur Antwortengenerierung ChatGPT oder ein anderes Large Language Model verwendet?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="llmUsed" value="ja" required> Ja</label><label class="radio-pill"><input type="radio" name="llmUsed" value="nein" required> Nein</label></div><div class="textarea-block"><label>Optional: Welches Tool oder wofür wurde es genutzt?<textarea id="llmDetails" rows="4"></textarea></label></div></section>');
+    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="submit"><div class="step-kicker">Absenden</div><h2>Feedback speichern</h2><p>Deine Antworten werden anonym und unabhängig von der Gruppen-ID gespeichert. Von diesem Gerät bzw. Browser ist nur eine Abgabe möglich.</p><button id="submitManometer" type="submit">Feedback absenden</button></section>');
+    steps = Array.from(document.querySelectorAll('.step-card'));
+  }
+  function scoreValues(){ var out={}; QUESTIONS.forEach(function(q){ out[q.key]=Number((document.getElementById(q.key)||{}).value||1); }); return out; }
+  function improvementTexts(){ var out={}; QUESTIONS.forEach(function(q){ var el=document.getElementById('improve_'+q.key); out[q.key]=el?el.value.trim():''; }); return out; }
+  function tensCount(){ var vals=Object.values(scoreValues()); return vals.filter(function(v){return v===10;}).length; }
+  function shouldShowAvoid(){ return tensCount()/QUESTIONS.length > .7; }
+  function visibleSteps(){ return steps.filter(function(s){ return !(s.dataset.step==='avoidCheck' && !shouldShowAvoid()); }); }
+  function currentVisibleIndex(){ var v=visibleSteps(); return Math.max(0, v.indexOf(steps[current])); }
+  function setActiveByVisibleIndex(i){ var v=visibleSteps(); if(i<0)i=0; if(i>=v.length)i=v.length-1; steps.forEach(function(s){s.classList.remove('active');}); v[i].classList.add('active'); current=steps.indexOf(v[i]); updateControls(); clearStatus(); window.scrollTo({top:0,behavior:'smooth'}); }
+  function updateControls(){ var v=visibleSteps(); var idx=currentVisibleIndex(); document.getElementById('prevStep').disabled=idx===0; var next=document.getElementById('nextStep'); next.textContent=idx===v.length-1?'Fertig':'Weiter'; next.style.display=steps[current].dataset.step==='submit'?'none':''; document.getElementById('progressBar').style.width=((idx+1)/v.length*100)+'%'; }
+  function validateStep(step){
+    if(!step) return true;
+    if(step.dataset.step==='scale'){
+      var key=step.dataset.key; var score=Number(document.getElementById(key).value||1); var txt=(document.getElementById('improve_'+key)||{}).value||'';
+      if(score<10 && !txt.trim()){ setStatus('Bitte ergänze, was für ein besseres Ergebnis verbessert werden müsste.', 'error'); return false; }
+    }
+    if(step.dataset.step==='avoidCheck'){
+      if(!document.querySelector('input[name="avoidCriticism"]:checked')){ setStatus('Bitte beantworte die Ja/Nein-Frage.', 'error'); return false; }
+    }
+    if(step.dataset.step==='llm'){
+      if(!document.querySelector('input[name="llmUsed"]:checked')){ setStatus('Bitte gib an, ob ChatGPT oder ein anderes LLM verwendet wurde.', 'error'); return false; }
+    }
+    return true;
+  }
   function jsonp(url, params){ return new Promise(function(resolve,reject){ var cb='manoSaveCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); var qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); var s=document.createElement('script'); var done=false; window[cb]=function(data){done=true; cleanup(); resolve(data);}; function cleanup(){delete window[cb]; if(s&&s.parentNode)s.parentNode.removeChild(s);} s.onerror=function(){ if(!done){cleanup(); reject(new Error('Manometer-Feedback konnte nicht gespeichert werden.'));} }; s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString(); document.body.appendChild(s); setTimeout(function(){ if(!done){cleanup(); reject(new Error('Zeitüberschreitung beim Speichern des Manometer-Feedbacks.'));}},12000); }); }
-  function saveManometer(url, payload){ return jsonp(url,{ action:'manometerFeedbackSave', groupId:payload.feedback.groupId, groupName:payload.feedback.groupName, participant:payload.feedback.participant, scores:JSON.stringify(payload.feedback.scores), texts:JSON.stringify(payload.feedback.texts), createdAt:payload.feedback.createdAt }); }
-  document.addEventListener('input', function(e){ if(e.target && e.target.type==='range'){ var v=document.querySelector('[data-value-for="'+e.target.id+'"]'); if(v) v.textContent=e.target.value; }});
-  document.addEventListener('DOMContentLoaded', updateLinks);
+  function saveManometer(url, payload){ return jsonp(url,{ action:'manometerFeedbackSave', deviceId:payload.feedback.deviceId, groupId:payload.feedback.groupId, groupName:payload.feedback.groupName, scores:JSON.stringify(payload.feedback.scores), improvements:JSON.stringify(payload.feedback.improvements), generalFeedback:payload.feedback.generalFeedback, avoidCriticism:payload.feedback.avoidCriticism, llmUsed:payload.feedback.llmUsed, llmDetails:payload.feedback.llmDetails, createdAt:payload.feedback.createdAt }); }
+  document.addEventListener('input', function(e){ if(e.target && e.target.matches('[data-scale-key]')){ var key=e.target.dataset.scaleKey; var v=document.querySelector('[data-value-for="'+key+'"]'); if(v) v.textContent=e.target.value; var wrap=document.querySelector('[data-improve-wrap="'+key+'"]'); var ta=document.getElementById('improve_'+key); if(Number(e.target.value)===10){ wrap.classList.remove('visible'); if(ta) ta.required=false; } else { wrap.classList.add('visible'); if(ta) ta.required=true; } updateControls(); } });
+  document.getElementById('prevStep').addEventListener('click', function(){ setActiveByVisibleIndex(currentVisibleIndex()-1); });
+  document.getElementById('nextStep').addEventListener('click', function(){ if(validateStep(steps[current])) setActiveByVisibleIndex(currentVisibleIndex()+1); });
   document.getElementById('manometerForm').addEventListener('submit', async function(e){
-    e.preventDefault();
-    var btn=document.getElementById('submitManometer'); var st=document.getElementById('manometerStatus'); var url=appUrl();
-    st.hidden=false; st.className='manometer-status';
-    if(!url){ st.textContent='Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.'; return; }
-    btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; st.textContent='Bitte warten. Dein Feedback wird an Manometer übertragen …';
-    var payload={ action:'manometerFeedback', feedback:{ groupId:gid(), groupName:groupName(), participant:role(), scores:values(), texts:texts(), createdAt:new Date().toISOString() } };
+    e.preventDefault(); clearStatus();
+    if(localStorage.getItem(votedKey)){ setStatus('Von diesem Gerät wurde bereits Feedback abgegeben. Mehrfachabgaben sind gesperrt.', 'error'); return; }
+    var url=appUrl(); if(!url){ setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.', 'error'); return; }
+    var btn=document.getElementById('submitManometer'); btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird an Manometer übertragen …');
+    var avoidEl=document.querySelector('input[name="avoidCriticism"]:checked'); var llmEl=document.querySelector('input[name="llmUsed"]:checked');
+    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalFeedback:document.getElementById('generalFeedback').value.trim(), avoidCriticism:shouldShowAvoid() && avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
     try{
       var res = await saveManometer(url, payload);
-      if(!res || res.ok === false) throw new Error((res && res.error) || 'Apps Script hat das Feedback nicht bestätigt.');
-      if(res.type !== 'manometerFeedbackSave' || !res.rowNumber) throw new Error('Das aktuell deployte Apps Script unterstützt Manometer-Speichern noch nicht. Bitte Code.gs aus dieser ZIP übernehmen und die Web-App neu bereitstellen.');
-      st.textContent='Danke. Dein Feedback wurde gespeichert. Die Auswertung wird geöffnet …';
-      setTimeout(function(){ var u=new URL('manometer-auswertung.html', location.href); var g=gid(); if(g) u.searchParams.set('g',g); location.href=u.toString(); }, 900);
-    }catch(err){ st.textContent='Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err); btn.disabled=false; btn.textContent='Feedback erneut absenden'; }
+      if(!res || res.ok === false){ if(res && res.duplicate){ localStorage.setItem(votedKey,'1'); throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben.'); } throw new Error((res && res.error) || 'Apps Script hat das Feedback nicht bestätigt.'); }
+      if(res.type !== 'manometerFeedbackSave' || !res.rowNumber) throw new Error('Das aktuell deployte Apps Script unterstützt die neue Manometer-Version noch nicht. Bitte Code.gs aktualisieren und neu bereitstellen.');
+      localStorage.setItem(votedKey,'1'); setStatus('Danke. Dein Feedback wurde gespeichert. Die Auswertung wird geöffnet …','ok');
+      setTimeout(function(){ location.href=new URL('manometer-auswertung.html', location.href).toString(); }, 900);
+    }catch(err){ setStatus('Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err),'error'); btn.disabled=false; btn.textContent='Feedback erneut absenden'; }
   });
+  document.addEventListener('DOMContentLoaded', function(){ buildStaticCards(); updateLinks(); if(localStorage.getItem(votedKey)){ document.getElementById('alreadyVotedBox').hidden=false; } setActiveByVisibleIndex(0); });
 })();
 </script>
 </body>

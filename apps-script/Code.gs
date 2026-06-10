@@ -70,28 +70,36 @@ function getSpreadsheet_() {
 
 const FEEDBACK_HEADERS = [
   'Zeitpunkt',
+  'Geräte-ID',
   'Gruppen-ID',
   'Gruppenname',
-  'Teilnehmer*in / Rolle',
+  'Plenum / Gewissenhaftigkeit',
   'Fallberatungsarten',
   'Phasenverständnis',
   'Rollenperspektiven',
-  'Zielvereinbarung / Handlungsschritte',
   'Technische Umsetzung',
-  'Manometer Reflexion',
-  'Mitgenommen',
-  'Verbesserungsvorschläge',
-  'Lob',
+  'Bedienbarkeit',
+  'Präsentationsgestaltung',
+  'Präsentationsnutzen',
+  'Bearbeitungsmöglichkeiten',
+  'Verbesserungen pro Frage JSON',
+  'Allgemeines Lob / Kritik / Anregungen',
+  '10 gewählt wegen Pflichtkritik?',
+  'ChatGPT / LLM verwendet?',
+  'LLM Details',
   'Rohdaten JSON'
 ];
 
 const MANOMETER_QUESTIONS = [
-  { key: 'caseConsultation', label: 'Ich kenne verschiedene Arten der Fallberatung.' },
-  { key: 'phaseUnderstanding', label: 'Ich verstehe die Phasen einer strukturierten Gruppensupervision.' },
-  { key: 'rolePerspective', label: 'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.' },
-  { key: 'goalAction', label: 'Ich fühle mich sicherer beim Formulieren von Zielvereinbarungen und Handlungsschritten.' },
-  { key: 'technicalClarity', label: 'Die technische Aufarbeitung war verständlich und gut nutzbar.' },
-  { key: 'manometerReflection', label: 'Manometer hat mir geholfen, die Übung zu reflektieren.' }
+  { key: 'presentationPressure', category: 'Startfrage', label: 'Die Aussicht auf eine zufällige Präsentation im Plenum hat dazu geführt, dass die Aufgaben gewissenhafter bearbeitet wurden.' },
+  { key: 'caseConsultation', category: 'Inhaltliches Verständnis', label: 'Ich kenne verschiedene Arten der Fallberatung.' },
+  { key: 'phaseUnderstanding', category: 'Inhaltliches Verständnis', label: 'Ich verstehe die Phasen einer strukturierten Gruppensupervision.' },
+  { key: 'rolePerspective', category: 'Inhaltliches Verständnis', label: 'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.' },
+  { key: 'technicalClarity', category: 'Technische Umsetzung und Bedienbarkeit', label: 'Die technische Umsetzung der Anwendung war verständlich.' },
+  { key: 'usability', category: 'Technische Umsetzung und Bedienbarkeit', label: 'Die Anwendung war gut bedienbar.' },
+  { key: 'presentationDesign', category: 'Allgemeine Gestaltung der Präsentation', label: 'Die Gestaltung der Präsentation war übersichtlich und ansprechend.' },
+  { key: 'presentationUsefulness', category: 'Allgemeine Gestaltung der Präsentation', label: 'Die erstellte Präsentation eignet sich gut, um Ergebnisse im Plenum vorzustellen.' },
+  { key: 'creativeOptions', category: 'Allgemeine Gestaltung der Präsentation', label: 'Die Bearbeitungsmöglichkeiten der Präsentation waren hilfreich.' }
 ];
 
 function getSheet_() {
@@ -136,7 +144,7 @@ function doGet(e) {
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v5-sheetfix', spreadsheetName: spreadsheetName });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v6-cards', spreadsheetName: spreadsheetName });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -457,65 +465,75 @@ function saveFeedback_(body) {
   return jsonOutput_(saveFeedbackData_(data));
 }
 
-
 function saveFeedbackGet_(e) {
   const p = (e && e.parameter) || {};
   let scores = {};
-  let texts = {};
+  let improvements = {};
   try { scores = p.scores ? JSON.parse(p.scores) : {}; } catch (err) { scores = {}; }
-  try { texts = p.texts ? JSON.parse(p.texts) : {}; } catch (err) { texts = {}; }
-  const payload = {
-    feedback: {
-      groupId: p.groupId || p.g || p.groupToken || p.token || '',
-      groupName: p.groupName || '',
-      participant: p.participant || p.role || p.person || p.name || '',
-      scores: Object.keys(scores).length ? scores : {
-        caseConsultation: p.caseConsultation,
-        phaseUnderstanding: p.phaseUnderstanding,
-        rolePerspective: p.rolePerspective,
-        goalAction: p.goalAction,
-        technicalClarity: p.technicalClarity,
-        manometerReflection: p.manometerReflection
-      },
-      texts: Object.keys(texts).length ? texts : {
-        takeaway: p.takeaway || p.mitgenommen || '',
-        improvement: p.improvement || p.verbesserung || '',
-        praise: p.praise || p.lob || ''
-      },
-      createdAt: p.createdAt || new Date().toISOString()
-    }
+  try { improvements = p.improvements ? JSON.parse(p.improvements) : {}; } catch (err) { improvements = {}; }
+  const data = {
+    deviceId: p.deviceId || p.device || p.browserId || '',
+    groupId: p.groupId || p.g || p.groupToken || p.token || '',
+    groupName: p.groupName || '',
+    scores: scores,
+    improvements: improvements,
+    generalFeedback: p.generalFeedback || p.general || p.feedbackText || '',
+    avoidCriticism: p.avoidCriticism || '',
+    llmUsed: p.llmUsed || '',
+    llmDetails: p.llmDetails || '',
+    createdAt: p.createdAt || new Date().toISOString()
   };
-  const result = saveFeedbackData_(payload.feedback);
+  const result = saveFeedbackData_(data);
   return jsonp_(e, result);
 }
 
 function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
+  const deviceId = textValue_(data.deviceId || data.device || data.browserId);
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v6-cards', error: 'Keine Geräte-ID übermittelt.' };
+  const duplicateRow = findFeedbackRowByDeviceId_(sheet, deviceId);
+  if (duplicateRow >= 2) {
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v6-cards', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
+  }
   const scores = isObject_(data.scores) ? data.scores : data;
-  const texts = isObject_(data.texts) ? data.texts : data;
+  const improvements = isObject_(data.improvements) ? data.improvements : {};
   const row = [
     new Date(),
+    deviceId,
     textValue_(data.groupId || data.g || data.groupToken || data.token),
     textValue_(data.groupName),
-    textValue_(data.participant || data.role || data.person || data.name),
+    numberFeedback_(scores.presentationPressure),
     numberFeedback_(scores.caseConsultation),
     numberFeedback_(scores.phaseUnderstanding),
     numberFeedback_(scores.rolePerspective),
-    numberFeedback_(scores.goalAction),
     numberFeedback_(scores.technicalClarity),
-    numberFeedback_(scores.manometerReflection),
-    textValue_(texts.takeaway || texts.mitgenommen),
-    textValue_(texts.improvement || texts.verbesserung),
-    textValue_(texts.praise || texts.lob),
+    numberFeedback_(scores.usability),
+    numberFeedback_(scores.presentationDesign),
+    numberFeedback_(scores.presentationUsefulness),
+    numberFeedback_(scores.creativeOptions),
+    safeJson_(improvements),
+    textValue_(data.generalFeedback || data.general || data.feedbackText),
+    textValue_(data.avoidCriticism),
+    textValue_(data.llmUsed),
+    textValue_(data.llmDetails),
     safeJson_(data)
   ];
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v5-sheetfix', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v6-cards', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
 }
 
-
+function findFeedbackRowByDeviceId_(sheet, deviceId) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const values = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+  const needle = String(deviceId || '').trim();
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0] || '').trim() === needle) return i + 2;
+  }
+  return 0;
+}
 
 function normalizeGroupKey_(value) {
   return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -524,64 +542,74 @@ function normalizeGroupKey_(value) {
 function listFeedback_(e) {
   const sheet = getFeedbackSheet_();
   const values = sheet.getDataRange().getValues();
-  const groupFilterRaw = String(e.parameter.groupId || e.parameter.g || e.parameter.token || '').trim();
-  const groupFilter = normalizeGroupKey_(groupFilterRaw);
   const entries = [];
-  const allEntries = [];
   const availableGroupIds = [];
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
     if (isEmptyRow_(row)) continue;
     const entry = feedbackRowToEntry_(row, r + 1);
-    allEntries.push(entry);
+    entries.push(entry);
     const rawGroupId = String(entry.groupId || '').trim();
     if (rawGroupId && availableGroupIds.indexOf(rawGroupId) === -1) availableGroupIds.push(rawGroupId);
-    if (groupFilter && normalizeGroupKey_(entry.groupId) !== groupFilter) continue;
-    entries.push(entry);
   }
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v5-sheetfix',
+    feature: 'manometer-v6-cards',
+    anonymous: true,
+    groupIndependent: true,
     entries: entries,
     summary: summarizeFeedback_(entries),
     questions: MANOMETER_QUESTIONS,
-    groupId: groupFilterRaw,
-    totalRows: allEntries.length,
-    availableGroupIds: availableGroupIds.slice(0, 30)
+    totalRows: entries.length,
+    availableGroupIds: availableGroupIds.slice(0, 50)
   });
 }
 
 function feedbackRowToEntry_(row, rowNumber) {
+  let improvements = {};
+  let raw = {};
+  try { improvements = JSON.parse(row[13] || '{}'); } catch (err) { improvements = {}; }
+  try { raw = JSON.parse(row[18] || '{}'); } catch (err) { raw = {}; }
   return {
     id: rowNumber,
     rowNumber: rowNumber,
     timestamp: formatDate_(row[0]),
-    groupId: row[1] || '',
-    groupName: row[2] || '',
-    participant: row[3] || '',
+    groupId: row[2] || '',
+    groupName: row[3] || '',
     scores: {
-      caseConsultation: numberFeedback_(row[4]),
-      phaseUnderstanding: numberFeedback_(row[5]),
-      rolePerspective: numberFeedback_(row[6]),
-      goalAction: numberFeedback_(row[7]),
+      presentationPressure: numberFeedback_(row[4]),
+      caseConsultation: numberFeedback_(row[5]),
+      phaseUnderstanding: numberFeedback_(row[6]),
+      rolePerspective: numberFeedback_(row[7]),
       technicalClarity: numberFeedback_(row[8]),
-      manometerReflection: numberFeedback_(row[9])
+      usability: numberFeedback_(row[9]),
+      presentationDesign: numberFeedback_(row[10]),
+      presentationUsefulness: numberFeedback_(row[11]),
+      creativeOptions: numberFeedback_(row[12])
     },
-    texts: {
-      takeaway: row[10] || '',
-      improvement: row[11] || '',
-      praise: row[12] || ''
-    }
+    improvements: improvements,
+    generalFeedback: row[14] || '',
+    avoidCriticism: row[15] || '',
+    llmUsed: row[16] || '',
+    llmDetails: row[17] || '',
+    raw: raw
   };
 }
 
 function summarizeFeedback_(entries) {
   const summary = {};
   MANOMETER_QUESTIONS.forEach(function(q){
-    const values = entries.map(function(e){ return numberFeedback_(e.scores && e.scores[q.key]); }).filter(function(n){ return !isNaN(n); });
-    const avg = values.length ? Math.round(values.reduce(function(a,b){return a+b;}, 0) / values.length) : null;
-    summary[q.key] = { label: q.label, count: values.length, average: avg, values: values };
+    const values = entries.map(function(e){ return numberFeedback_(e.scores && e.scores[q.key]); }).filter(function(n){ return n !== '' && !isNaN(n); });
+    const avg = values.length ? values.reduce(function(a,b){return a+b;}, 0) / values.length : null;
+    const sorted = values.slice().sort(function(a,b){ return a-b; });
+    const mid = Math.floor(sorted.length / 2);
+    const med = sorted.length ? (sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2) : null;
+    const counts = {};
+    for (let i = 1; i <= 10; i++) counts[i] = 0;
+    values.forEach(function(v){ if (counts[v] !== undefined) counts[v]++; });
+    const improvements = entries.map(function(e){ return e.improvements && e.improvements[q.key]; }).filter(function(t){ return textValue_(t); });
+    summary[q.key] = { label: q.label, category: q.category, count: values.length, average: avg, median: med, values: values, counts: counts, improvements: improvements };
   });
   return summary;
 }
@@ -589,7 +617,7 @@ function summarizeFeedback_(entries) {
 function numberFeedback_(value) {
   const n = Number(value);
   if (isNaN(n)) return '';
-  return Math.max(0, Math.min(100, Math.round(n)));
+  return Math.max(1, Math.min(10, Math.round(n)));
 }
 
 function deleteAllGet_(e) {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-ui-polish-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-scale-layout-v1">
   <style>
     :root{
       --bg:#0b1324;
@@ -181,6 +181,205 @@
       100%{transform:translate3d(var(--drift),calc(100vh + 80px),0) rotate(520deg);opacity:0}
     }
 
+
+    .scale-slide-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);
+      gap:22px;
+      align-items:stretch;
+      min-height:0;
+      flex:1;
+    }
+    .scale-panel,.feedback-panel{
+      border:1px solid rgba(216,227,239,.95);
+      border-radius:24px;
+      background:linear-gradient(180deg,#ffffff,#f7fbff);
+      box-shadow:0 14px 34px rgba(15,23,42,.07);
+      padding:22px;
+      min-height:0;
+    }
+    .scale-panel{
+      display:grid;
+      grid-template-rows:auto auto 1fr;
+      gap:18px;
+    }
+    .feedback-panel{
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .modern-metric{
+      display:grid;
+      grid-template-columns:160px 1fr;
+      gap:16px;
+      align-items:stretch;
+    }
+    .avg-tile{
+      border-radius:24px;
+      background:linear-gradient(145deg,#1d4d80,#3477b9);
+      color:#fff;
+      padding:22px;
+      min-height:150px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      box-shadow:0 18px 34px rgba(31,75,122,.22);
+    }
+    .avg-tile strong{font-size:3.3rem;line-height:1;font-weight:950}
+    .avg-tile span{font-weight:850;color:rgba(255,255,255,.9);margin-top:8px}
+    .mini-stats{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .mini-stat{
+      border-radius:18px;
+      background:#eef6ff;
+      border:1px solid #d7e6f5;
+      padding:14px 16px;
+      color:#1f426b;
+      font-weight:900;
+    }
+    .mini-stat span{display:block;color:#64758a;font-weight:750;font-size:.86rem;margin-top:4px}
+    .scale-viz{
+      position:relative;
+      border:1px solid #d9e5f1;
+      border-radius:24px;
+      padding:18px 16px 16px;
+      background:
+        radial-gradient(circle at top left,rgba(111,168,220,.14),transparent 36%),
+        linear-gradient(180deg,#fbfdff,#f3f8fd);
+      min-height:270px;
+    }
+    .distribution{
+      display:grid;
+      grid-template-columns:repeat(10,1fr);
+      gap:8px;
+      align-items:end;
+      min-height:160px;
+      padding:18px 4px 0;
+      border-top:1px solid #e3ebf4;
+      margin-top:14px;
+    }
+    .column{
+      height:100%;
+      min-width:0;
+      display:grid;
+      grid-template-rows:22px 1fr 24px;
+      align-items:end;
+      justify-items:center;
+      gap:6px;
+    }
+    .stack{
+      width:100%;
+      min-height:112px;
+      display:flex;
+      flex-direction:column-reverse;
+      align-items:center;
+      justify-content:flex-start;
+      gap:4px;
+      padding:4px 0;
+      border-radius:999px;
+      background:linear-gradient(180deg,rgba(234,242,251,.15),rgba(234,242,251,.72));
+    }
+    .dot{
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(180deg,#2f74b8,#1d4d80);
+      box-shadow:0 2px 7px rgba(31,75,122,.25);
+    }
+    .tick{
+      width:28px;
+      height:24px;
+      display:grid;
+      place-items:center;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid #dbe6f2;
+      font-weight:950;
+      color:#33516f;
+      font-size:.86rem;
+    }
+    .count-badge{
+      display:grid;
+      place-items:center;
+      min-width:26px;
+      height:22px;
+      border-radius:999px;
+      background:#e8f1fb;
+      color:#285b91;
+      font-weight:950;
+      font-size:.78rem;
+    }
+    .median-marker{
+      position:absolute;
+      top:78px;
+      bottom:46px;
+      width:3px;
+      background:#d9480f;
+      border-radius:999px;
+      box-shadow:0 0 0 7px rgba(217,72,15,.08);
+    }
+    .median-marker::before{
+      content:'Median';
+      position:absolute;
+      top:-28px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:.76rem;
+      font-weight:950;
+      color:#d9480f;
+      white-space:nowrap;
+      background:#fff4ed;
+      border:1px solid #ffd8c2;
+      border-radius:999px;
+      padding:4px 8px;
+    }
+    .feedback-panel h3{
+      margin:0 0 12px;
+      font-size:1.05rem;
+      color:#193557;
+    }
+    .feedback-panel .comment-list{
+      overflow:auto;
+      padding-right:4px;
+      display:grid;
+      gap:10px;
+    }
+    .feedback-panel .comment{
+      border-left:0;
+      background:#ffffff;
+      border:1px solid #dfe8f1;
+      border-radius:16px;
+      padding:13px 15px;
+      color:#20344c;
+      box-shadow:0 8px 20px rgba(15,23,42,.045);
+    }
+    .general-feedback-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:16px;
+      min-height:0;
+      flex:1;
+    }
+    .general-feedback-column{
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:linear-gradient(180deg,#fff,#f8fbff);
+      padding:18px;
+      min-height:0;
+      overflow:auto;
+    }
+    .general-feedback-column h3{
+      margin:0 0 12px;
+      color:#193557;
+    }
+    @media (max-width:980px){
+      .scale-slide-grid,.modern-metric,.general-feedback-grid{grid-template-columns:1fr}
+      .feedback-panel{max-height:320px}
+    }
+
     @media (max-width:980px){
       .metric-row,.summary-grid,.choice-grid{grid-template-columns:1fr}
       .deck{height:min(76vh,940px);min-height:620px}
@@ -233,8 +432,8 @@
     </div>
   </section>
 </main>
-<script src="js/config.js?v=manometer-ui-polish-v1"></script>
-<script src="js/app.js?v=manometer-ui-polish-v1"></script>
+<script src="js/config.js?v=manometer-scale-layout-v1"></script>
+<script src="js/app.js?v=manometer-scale-layout-v1"></script>
 <script>
 (function(){
   var QUESTIONS = [
@@ -284,8 +483,9 @@
     var counts={}; for(var i=1;i<=10;i++) counts[i]=0; vals.forEach(function(v){ counts[v]=(counts[v]||0)+1; });
     var med=median(vals); var av=avg(vals);
     var improvements=entries.map(function(e){ return e.improvements&&e.improvements[q.key]; }).filter(function(t){ return String(t||'').trim(); });
+    var maxCount=Math.max(1, Math.max.apply(null, Object.keys(counts).map(function(k){return counts[k];})));
     var cols=''; for(var d=1;d<=10;d++){
-      cols += '<div class="column"><div class="count-badge">'+(counts[d]||0)+'</div><div class="stack">';
+      cols += '<div class="column"><div class="count-badge">'+(counts[d]||0)+'</div><div class="stack" title="'+(counts[d]||0)+' Rückmeldungen mit '+d+' Punkt(en)">';
       for(var c=0;c<counts[d];c++) cols += '<span class="dot" title="'+d+'"></span>';
       cols += '</div><div class="tick">'+d+'</div></div>';
     }
@@ -294,20 +494,46 @@
     return '<article class="slide" data-card="scale">'
       + '<div class="slide-inner">'
       + '<div class="slide-head"><div><span class="slide-label">'+escapeHtml(q.category)+'</span><h2>'+escapeHtml(q.label)+'</h2></div><div class="slide-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div>'
-      + '<div class="metric-row">'
-      + '<div class="avg-box"><strong>'+(av===null?'–':av.toFixed(1))+'</strong><span class="sub">Durchschnitt von 10</span><span class="mini">'+vals.length+' Antworten · Median '+(med===null?'–':med)+'</span></div>'
-      + '<div class="scale-viz">'
-      + marker
-      + '<div class="scale-head"><div class="scale-title">Einzelne Punktevergaben aller Geräte</div></div>'
-      + '<div class="distribution">'+cols+'</div>'
-      + '</div></div>'
-      + '<div class="comments"><h3>Gesammelte Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></div>'
+      + '<div class="scale-slide-grid">'
+      + '<section class="scale-panel">'
+      + '<div class="modern-metric">'
+      + '<div class="avg-tile"><strong>'+(av===null?'–':av.toFixed(1))+'</strong><span>Durchschnitt von 10</span></div>'
+      + '<div class="mini-stats"><div class="mini-stat">'+(med===null?'–':med)+'<span>Median</span></div><div class="mini-stat">'+vals.length+'<span>Antworten</span></div></div>'
+      + '</div>'
+      + '<div class="scale-viz">'+marker+'<div class="scale-head"><div class="scale-title">Punkteverteilung</div></div><div class="distribution">'+cols+'</div></div>'
+      + '</section>'
+      + '<aside class="feedback-panel"><h3>Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></aside>'
+      + '</div>'
       + '</div></article>';
   }
 
   function renderTextCard(title, kicker, texts){
     var body = texts.length ? '<div class="text-card-list">'+texts.map(function(t){ return '<div class="text-entry">'+escapeHtml(t)+'</div>'; }).join('')+'</div>' : '<p class="empty">Keine Einträge vorhanden.</p>';
     return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">Offene Antworten</div></div><div class="text-block"><h3>Gesammelte Aussagen</h3>'+body+'</div></div></article>';
+  }
+
+  function splitGeneralFeedback(entry, kind){
+    var raw = String(entry.generalFeedback || '');
+    var direct = '';
+    if(kind === 'praise') direct = entry.generalPraise || '';
+    if(kind === 'criticism') direct = entry.generalCriticism || '';
+    if(kind === 'suggestions') direct = entry.generalSuggestions || '';
+    if(String(direct || '').trim()) return String(direct).trim();
+    var labels = {praise:'Lob:', criticism:'Kritik:', suggestions:'Anregungen:'};
+    var label = labels[kind];
+    var parts = raw.split(/\n\s*\n/);
+    for(var i=0;i<parts.length;i++){
+      if(parts[i].indexOf(label) === 0) return parts[i].replace(label,'').trim();
+    }
+    return '';
+  }
+
+  function renderGeneralFeedbackCard(entries){
+    function list(kind){
+      var items = entries.map(function(e){ return splitGeneralFeedback(e, kind); }).filter(Boolean);
+      return items.length ? items.map(function(t){ return '<div class="text-entry">'+escapeHtml(t)+'</div>'; }).join('') : '<p class="empty">Keine Einträge vorhanden.</p>';
+    }
+    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">Offene Antworten</span><h2>Allgemeines Lob, Kritik und Anregungen</h2></div><div class="slide-counter">Optional</div></div><div class="general-feedback-grid"><section class="general-feedback-column"><h3>Lob</h3>'+list('praise')+'</section><section class="general-feedback-column"><h3>Kritik</h3>'+list('criticism')+'</section><section class="general-feedback-column"><h3>Anregungen</h3>'+list('suggestions')+'</section></div></div></article>';
   }
 
   function renderChoiceCard(title, kicker, entries, key){
@@ -338,7 +564,7 @@
     document.getElementById('responseCount').textContent = entries.length;
     var html = renderIntro(entries);
     QUESTIONS.forEach(function(q,i){ html += renderScale(q, entries, i); });
-    html += renderTextCard('Allgemeines Lob, Kritik und Anregungen','Offene Antworten', entries.map(function(e){ return e.generalFeedback; }).filter(Boolean));
+    html += renderGeneralFeedbackCard(entries);
     html += renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage', entries, 'avoidCriticism');
     html += renderLlmCard(entries);
     html += renderThanksCard();

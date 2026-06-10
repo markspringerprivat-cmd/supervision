@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-ui-polish-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-scale-layout-v1">
   <style>
     :root{
       --m-bg:#eef4fb;
@@ -304,8 +304,8 @@
   </div>
 </main>
 <footer><div class="wrap">Manometer · anonymes Reflexionsfeedback</div></footer>
-<script src="js/config.js?v=manometer-ui-polish-v1"></script>
-<script src="js/app.js?v=manometer-ui-polish-v1"></script>
+<script src="js/config.js?v=manometer-scale-layout-v1"></script>
+<script src="js/app.js?v=manometer-scale-layout-v1"></script>
 <script>
 (function(){
   var QUESTIONS = [
@@ -343,7 +343,7 @@
   function buildStaticCards(){
     var stage=document.getElementById('feedbackStage');
     QUESTIONS.forEach(function(q,i){ stage.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)); });
-    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="generalText"><div class="step-kicker">Allgemeine Rückmeldung</div><h2>Lob, Kritik und Anregungen</h2><p>Dieses Feld ist offen und anonym. Du kannst hier alles notieren, was nicht zu einer einzelnen Skalenfrage passt.</p><div class="textarea-block"><textarea id="generalFeedback" rows="8" placeholder="Lob, Kritik, Anregungen …"></textarea></div></section>');
+    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="generalText"><div class="step-kicker">Allgemeine Rückmeldung</div><h2>Allgemeines Lob, Kritik und Anregungen</h2><p>Diese Felder sind optional und anonym. Trage nur das ein, was du zusätzlich rückmelden möchtest.</p><div class="textarea-block"><label>Allgemeines Lob<textarea id="generalPraise" rows="4" placeholder="Was war besonders gelungen?"></textarea></label></div><div class="textarea-block"><label>Allgemeine Kritik<textarea id="generalCriticism" rows="4" placeholder="Was war nicht gelungen oder sollte verändert werden?"></textarea></label></div><div class="textarea-block"><label>Anregungen<textarea id="generalSuggestions" rows="4" placeholder="Welche Ideen oder Vorschläge hast du noch?"></textarea></label></div></section>');
     stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="avoidCheck"><div class="step-kicker">Zusatzfrage</div><h2>Volle Punktzahl und Pflichtangaben</h2><p>Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="avoidCriticism" value="ja" required> Ja</label><label class="radio-pill"><input type="radio" name="avoidCriticism" value="nein" required> Nein</label></div></section>');
     stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="llm"><div class="step-kicker">Letzte Frage</div><h2>Wurde ChatGPT oder eine andere KI genutzt?</h2><p>Wurde zur Antwortengenerierung ChatGPT oder ein anderes Large Language Model verwendet?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="llmUsed" value="ja" required> Ja</label><label class="radio-pill"><input type="radio" name="llmUsed" value="nein" required> Nein</label></div><div class="textarea-block"><label>Optionale Hinweise zur LLM-Nutzung<textarea id="llmDetails" rows="4" placeholder="Optional: welches Tool oder wofür wurde es genutzt?"></textarea></label></div></section>');
     stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="submit"><div class="step-kicker">Absenden</div><h2>Feedback speichern</h2><p>Deine Antworten werden anonym und unabhängig von der Gruppen-ID gespeichert. Von diesem Gerät bzw. Browser ist nur eine Abgabe möglich.</p><button id="submitManometer" type="submit">Feedback absenden</button></section>');
@@ -383,7 +383,7 @@
     return true;
   }
   function jsonp(url, params){ return new Promise(function(resolve,reject){ var cb='manoSaveCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); var qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); var s=document.createElement('script'); var done=false; window[cb]=function(data){done=true; cleanup(); resolve(data);}; function cleanup(){delete window[cb]; if(s&&s.parentNode)s.parentNode.removeChild(s);} s.onerror=function(){ if(!done){cleanup(); reject(new Error('Manometer-Feedback konnte nicht gespeichert werden.'));} }; s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString(); document.body.appendChild(s); setTimeout(function(){ if(!done){cleanup(); reject(new Error('Zeitüberschreitung beim Speichern des Manometer-Feedbacks.'));}},12000); }); }
-  function saveManometer(url, payload){ return jsonp(url,{ action:'manometerFeedbackSave', deviceId:payload.feedback.deviceId, groupId:payload.feedback.groupId, groupName:payload.feedback.groupName, scores:JSON.stringify(payload.feedback.scores), improvements:JSON.stringify(payload.feedback.improvements), generalFeedback:payload.feedback.generalFeedback, avoidCriticism:payload.feedback.avoidCriticism, llmUsed:payload.feedback.llmUsed, llmDetails:payload.feedback.llmDetails, createdAt:payload.feedback.createdAt }); }
+  function saveManometer(url, payload){ return jsonp(url,{ action:'manometerFeedbackSave', deviceId:payload.feedback.deviceId, groupId:payload.feedback.groupId, groupName:payload.feedback.groupName, scores:JSON.stringify(payload.feedback.scores), improvements:JSON.stringify(payload.feedback.improvements), generalFeedback:payload.feedback.generalFeedback, generalPraise:payload.feedback.generalPraise, generalCriticism:payload.feedback.generalCriticism, generalSuggestions:payload.feedback.generalSuggestions, avoidCriticism:payload.feedback.avoidCriticism, llmUsed:payload.feedback.llmUsed, llmDetails:payload.feedback.llmDetails, createdAt:payload.feedback.createdAt }); }
   document.addEventListener('input', function(e){ if(e.target && e.target.matches('[data-scale-key]')){ var key=e.target.dataset.scaleKey; var v=document.querySelector('[data-value-for="'+key+'"]'); if(v) v.textContent=e.target.value; var wrap=document.querySelector('[data-improve-wrap="'+key+'"]'); var ta=document.getElementById('improve_'+key); if(Number(e.target.value)===10){ wrap.classList.remove('visible'); if(ta) ta.required=false; } else { wrap.classList.add('visible'); if(ta) ta.required=true; } updateControls(); } });
   document.getElementById('prevStep').addEventListener('click', function(){ setActiveByVisibleIndex(currentVisibleIndex()-1); });
   document.getElementById('nextStep').addEventListener('click', function(){ if(validateStep(steps[current])) setActiveByVisibleIndex(currentVisibleIndex()+1); });
@@ -392,7 +392,7 @@
     var url=appUrl(); if(!url){ setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.', 'error'); return; }
     var btn=document.getElementById('submitManometer'); btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird an Manometer übertragen …');
     var avoidEl=document.querySelector('input[name="avoidCriticism"]:checked'); var llmEl=document.querySelector('input[name="llmUsed"]:checked');
-    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalFeedback:document.getElementById('generalFeedback').value.trim(), avoidCriticism:avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
+    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalPraise:document.getElementById('generalPraise').value.trim(), generalCriticism:document.getElementById('generalCriticism').value.trim(), generalSuggestions:document.getElementById('generalSuggestions').value.trim(), generalFeedback:['Lob: '+document.getElementById('generalPraise').value.trim(),'Kritik: '+document.getElementById('generalCriticism').value.trim(),'Anregungen: '+document.getElementById('generalSuggestions').value.trim()].filter(function(x){return !/:\s*$/.test(x);}).join('\n\n'), avoidCriticism:avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
     try{
       var res = await saveManometer(url, payload);
       if(!res || res.ok === false){ if(res && res.duplicate){ localStorage.setItem(votedKey,'1'); throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben.'); } throw new Error((res && res.error) || 'Apps Script hat das Feedback nicht bestätigt.'); }

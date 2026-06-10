@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-presentation-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-loadfix-v1">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.95); --panel-strong:#fff;
@@ -136,6 +136,22 @@
     .step-card.play .enter-soft{animation:fadeIn .75s ease forwards}
     .delay-1{animation-delay:.12s!important}.delay-2{animation-delay:.24s!important}.delay-3{animation-delay:.36s!important}.delay-4{animation-delay:.48s!important}
 
+
+    /* Feedbackmodus: lokale Admin-/Reset-Leiste ganz oben platzieren */
+    body[data-mode="manometer"] .local-reset-bar{
+      position:fixed!important;
+      top:0!important;
+      left:0!important;
+      right:0!important;
+      z-index:60!important;
+      margin:0!important;
+      border-radius:0!important;
+      box-shadow:0 8px 22px rgba(0,0,0,.14)!important;
+    }
+    body[data-mode="manometer"] header{
+      padding-top:92px!important;
+    }
+
     @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -196,8 +212,8 @@
   </section>
 </main>
 <footer><div class="wrap">Manometer · anonymes Reflexionsfeedback</div></footer>
-<script src="js/config.js?v=manometer-feedback-presentation-v1"></script>
-<script src="js/app.js?v=manometer-feedback-presentation-v1"></script>
+<script src="js/config.js?v=manometer-feedback-loadfix-v1"></script>
+<script src="js/app.js?v=manometer-feedback-loadfix-v1"></script>
 <script>
 (function(){
   var QUESTIONS = [
@@ -271,9 +287,7 @@
     var url=appUrl(); if(!url){ setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.', 'error'); return; }
     var btn=document.getElementById('submitManometer'); btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird an Manometer übertragen …');
     var avoidEl=document.querySelector('input[name="avoidCriticism"]:checked'); var llmEl=document.querySelector('input[name="llmUsed"]:checked');
-    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalPraise:document.getElementById('generalPraise').value.trim(), generalCriticism:document.getElementById('generalCriticism').value.trim(), generalSuggestions:document.getElementById('generalSuggestions').value.trim(), generalFeedback:['Lob: '+document.getElementById('generalPraise').value.trim(),'Kritik: '+document.getElementById('generalCriticism').value.trim(),'Anregungen: '+document.getElementById('generalSuggestions').value.trim()].filter(function(x){return !/:\s*$/.test(x);}).join('
-
-'), avoidCriticism:avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
+    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalPraise:document.getElementById('generalPraise').value.trim(), generalCriticism:document.getElementById('generalCriticism').value.trim(), generalSuggestions:document.getElementById('generalSuggestions').value.trim(), generalFeedback:['Lob: '+document.getElementById('generalPraise').value.trim(),'Kritik: '+document.getElementById('generalCriticism').value.trim(),'Anregungen: '+document.getElementById('generalSuggestions').value.trim()].filter(function(x){return !/:\s*$/.test(x);}).join('\\n\\n'), avoidCriticism:avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
     try{
       var res = await saveManometer(url, payload);
       if(!res || res.ok === false){ if(res && res.duplicate){ localStorage.setItem(votedKey,'1'); throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben.'); } throw new Error((res && res.error) || 'Apps Script hat das Feedback nicht bestätigt.'); }
@@ -287,7 +301,7 @@
     }catch(err){ setStatus('Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err),'error'); btn.disabled=false; btn.textContent='Feedback erneut absenden'; }
   });
 
-  document.addEventListener('DOMContentLoaded', async function(){
+  async function bootManometerFeedback(){
     setLoading(10,'Karten werden aufgebaut …');
     buildStaticCards();
     setLoading(48,'Animationen und Layout werden vorbereitet …');
@@ -303,7 +317,9 @@
     setLoading(100,'Bereit');
     await new Promise(function(r){ setTimeout(r,180); });
     document.getElementById('loadingScreen').classList.add('hidden');
-  });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootManometerFeedback);
+  else bootManometerFeedback();
 })();
 </script>
 </body>

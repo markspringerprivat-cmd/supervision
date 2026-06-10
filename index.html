@@ -4,7 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-ui-polish-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-v13-admin-delete">
+
+  <style>
+    .grid > .hero-card:nth-child(1){border:3px solid #d62828!important;box-shadow:0 14px 34px rgba(214,40,40,.10)}
+    .grid > .hero-card:nth-child(2){border:3px solid #f77f00!important;box-shadow:0 14px 34px rgba(247,127,0,.10)}
+    .grid > .hero-card:nth-child(3){border:3px solid #f2c94c!important;box-shadow:0 14px 34px rgba(242,201,76,.14)}
+    .grid > .hero-card:nth-child(4){border:3px solid #2f9e44!important;box-shadow:0 14px 34px rgba(47,158,68,.12)}
+    .danger-soft{background:#fff2f2!important;color:#8a1f1f!important;border:1px solid #efc5c5!important}
+    .card-action-row{gap:10px;flex-wrap:wrap}
+  </style>
+
 </head>
 <body data-mode="landing">
 <header><div class="wrap topbar"><div><h1>Simulation einer Gruppensupervision</h1><p>Teamteaching, ESE-Fall und Konfliktklärung im schulischen Kontext</p></div><div class="header-actions"><button id="globalAdminBtn" class="secondary" type="button" data-admin-login>Administrator</button></div></div></header>
@@ -30,8 +40,10 @@
       <div class="card-action-row">
         <a class="button" href="manometer-auswertung.html">Auswertung öffnen</a>
         <button id="resetManometerDevicesBtn" type="button" class="secondary">Hardware-IDs freigeben</button>
+        <button id="deleteManometerFeedbackBtn" type="button" class="secondary danger-soft">Alle Einträge löschen</button>
       </div>
       <p id="resetManometerDevicesStatus" class="small" aria-live="polite"></p>
+      <p id="deleteManometerFeedbackStatus" class="small" aria-live="polite"></p>
       <p class="small admin-lock-note">Nur im Administrationsmodus verfügbar.</p>
     </div>
   </div>
@@ -43,9 +55,70 @@
   </section>
 </main>
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
-<script src="js/config.js?v=manometer-ui-polish-v1"></script><script src="js/app.js?v=manometer-ui-polish-v1"></script>
-<script src="js/roles_flow_patch.js?v=manometer-ui-polish-v1"></script>
+<script src="js/config.js?v=manometer-feedback-v13-admin-delete"></script><script src="js/app.js?v=manometer-feedback-v13-admin-delete"></script>
+<script src="js/roles_flow_patch.js?v=manometer-feedback-v13-admin-delete"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=manometer-ui-polish-v1"></script>
+<script src="js/guided_flow_patch.js?v=manometer-feedback-v13-admin-delete"></script>
+
+<script>
+(function(){
+  function getScriptUrlLocal(){
+    try{ if(typeof getAppsScriptUrl === 'function') return getAppsScriptUrl(); }catch(_){}
+    return (window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL) || '';
+  }
+  function adminPasswordLocal(){
+    try{return localStorage.getItem('sv_admin_password') || localStorage.getItem('adminPassword') || '';}catch(_){return '';}
+  }
+  function jsonpLocal(url, params){
+    return new Promise(function(resolve,reject){
+      var cb='manoAdminCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+      var qs=new URLSearchParams(params||{});
+      qs.set('callback',cb);qs.set('_',Date.now());
+      var s=document.createElement('script');var done=false;
+      window[cb]=function(data){done=true;cleanup();resolve(data);};
+      function cleanup(){try{delete window[cb];}catch(_){} if(s.parentNode)s.parentNode.removeChild(s);}
+      s.onerror=function(){if(!done){cleanup();reject(new Error('Apps Script konnte nicht erreicht werden.'));}};
+      s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString();
+      document.body.appendChild(s);
+      setTimeout(function(){if(!done){cleanup();reject(new Error('Zeitüberschreitung.'));}},12000);
+    });
+  }
+  async function callManometerAdmin(action, statusId, okText){
+    var status=document.getElementById(statusId);
+    var url=getScriptUrlLocal();
+    if(!url){status.textContent='Keine Apps-Script-URL gefunden.';return;}
+    var password=adminPasswordLocal();
+    if(!password){password=prompt('Admin-Passwort eingeben:')||'';}
+    if(!password){status.textContent='Vorgang abgebrochen.';return;}
+    status.textContent='Bitte warten …';
+    try{
+      var res=await jsonpLocal(url,{action:action,adminPassword:password});
+      if(!res||res.ok===false) throw new Error((res&&res.error)||'Aktion fehlgeschlagen.');
+      status.textContent=okText+' '+(res.deletedRows!==undefined?('Gelöschte Zeilen: '+res.deletedRows+'.'):(res.clearedRows!==undefined?('Freigegebene IDs: '+res.clearedRows+'.'):''));
+      try{ if(action==='resetManometerDeviceIds') localStorage.removeItem('manometer_voted_global_v2'); }catch(_){}
+    }catch(err){status.textContent='Fehler: '+err.message;}
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    var del=document.getElementById('deleteManometerFeedbackBtn');
+    if(del){
+      del.addEventListener('click',function(ev){
+        ev.preventDefault();ev.stopPropagation();
+        if(!confirm('Wirklich alle Manometer-Feedbackeinträge löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+        callManometerAdmin('deleteManometerFeedbackAll','deleteManometerFeedbackStatus','Alle Manometer-Feedbackeinträge wurden gelöscht.');
+      });
+    }
+    var reset=document.getElementById('resetManometerDevicesBtn');
+    if(reset){
+      var clone=reset.cloneNode(true);
+      reset.parentNode.replaceChild(clone, reset);
+      clone.addEventListener('click',function(ev){
+        ev.preventDefault();ev.stopPropagation();
+        callManometerAdmin('resetManometerDeviceIds','resetManometerDevicesStatus','Hardware-IDs wurden freigegeben.');
+      });
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

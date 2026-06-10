@@ -147,10 +147,11 @@ function doGet(e) {
     if (action === 'manometerfeedbacklist' || action === 'manometer_feedback_list' || action === 'feedback_list') return listFeedback_(e);
     if (action === 'manometerfeedbacksave' || action === 'manometer_feedback_save' || action === 'savefeedback') return saveFeedbackGet_(e);
     if (action === 'resetmanometerdeviceids' || action === 'reset_manometer_device_ids' || action === 'resetfeedbackdevices') return resetManometerDeviceIdsGet_(e);
+    if (action === 'deletemanometerfeedbackall' || action === 'delete_manometer_feedback_all' || action === 'clear_manometer_feedback' || action === 'manometerfeedbackdeleteall') return deleteManometerFeedbackAllGet_(e);
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v9-list-feedback', spreadsheetName: spreadsheetName });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v10-feedback-admin-delete', spreadsheetName: spreadsheetName });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -522,10 +523,10 @@ function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
   const deviceId = textValue_(data.deviceId || data.device || data.browserId);
-  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v9-list-feedback', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v10-feedback-admin-delete', error: 'Keine Geräte-ID übermittelt.' };
   const duplicateRow = findFeedbackRowByDeviceId_(sheet, deviceId);
   if (duplicateRow >= 2) {
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v9-list-feedback', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v10-feedback-admin-delete', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
   }
   const scores = isObject_(data.scores) ? data.scores : data;
   const improvements = isObject_(data.improvements) ? data.improvements : {};
@@ -555,7 +556,7 @@ function saveFeedbackData_(data) {
   ];
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v9-list-feedback', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v10-feedback-admin-delete', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
 }
 
 function findFeedbackRowByDeviceId_(sheet, deviceId) {
@@ -584,12 +585,12 @@ function resetManometerDeviceIdsGet_(e) {
 
 function resetManometerDeviceIds_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v9-list-feedback', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v10-feedback-admin-delete', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
   const sheet = getFeedbackSheet_();
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v9-list-feedback', message: 'Keine gespeicherten Geräte-IDs vorhanden.', clearedRows: 0 };
+    return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v10-feedback-admin-delete', message: 'Keine gespeicherten Geräte-IDs vorhanden.', clearedRows: 0 };
   }
   const range = sheet.getRange(2, 2, lastRow - 1, 1);
   const values = range.getValues();
@@ -600,7 +601,35 @@ function resetManometerDeviceIds_(password) {
   });
   range.setValues(clearedValues);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v9-list-feedback', message: 'Manometer-Geräte-IDs wurden freigegeben.', clearedRows: cleared };
+  return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v10-feedback-admin-delete', message: 'Manometer-Geräte-IDs wurden freigegeben.', clearedRows: cleared };
+}
+
+
+function deleteManometerFeedbackAllGet_(e) {
+  const p = (e && e.parameter) || {};
+  const password = String(p.adminPassword || p.password || p.admin || p.key || '');
+  return jsonp_(e, deleteManometerFeedbackAll_(password));
+}
+
+function deleteManometerFeedbackAllPost_(body) {
+  const password = String((body && (body.adminPassword || body.password || body.admin || body.key)) || '');
+  return jsonOutput_(deleteManometerFeedbackAll_(password));
+}
+
+function deleteManometerFeedbackAll_(password) {
+  if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
+    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v10-feedback-admin-delete', error: 'Admin-Passwort fehlt oder ist falsch.' };
+  }
+  const sheet = getFeedbackSheet_();
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), FEEDBACK_HEADERS.length);
+  if (lastRow < 2) {
+    return { ok: true, type: 'deleteManometerFeedbackAll', feature: 'manometer-v10-feedback-admin-delete', message: 'Keine Manometer-Feedbackeinträge vorhanden.', deletedRows: 0 };
+  }
+  const deletedRows = lastRow - 1;
+  sheet.getRange(2, 1, deletedRows, lastCol).clearContent();
+  SpreadsheetApp.flush();
+  return { ok: true, type: 'deleteManometerFeedbackAll', feature: 'manometer-v10-feedback-admin-delete', message: 'Alle Manometer-Feedbackeinträge wurden gelöscht.', deletedRows: deletedRows };
 }
 
 function normalizeGroupKey_(value) {
@@ -623,7 +652,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v9-list-feedback',
+    feature: 'manometer-v10-feedback-admin-delete',
     anonymous: true,
     groupIndependent: true,
     entries: entries,

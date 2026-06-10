@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-v12-polish">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-feedback-v13-admin-delete">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -140,8 +140,8 @@
 <body data-mode="manometer-results">
 <div id="loadingScreen" class="loading-screen"><div class="loading-card"><h2>Auswertung wird geladen</h2><p>Die Präsentation wird vorbereitet.</p><div class="loading-track"><div id="loadingFill" class="loading-fill"></div></div><div id="loadingStatus" class="loading-status">Daten werden geladen …</div></div></div>
 <main class="results-shell">
-  <section class="topbar"><div class="brand"><h1>Manometer – Auswertung</h1><p>Präsentationsansicht für das Plenum.</p></div><div class="topbar-right"><span class="meta-pill"><span id="responseCount">0</span> Rückmeldungen</span><button id="fullscreenBtn" type="button">Vollbild starten (V)</button><a class="button secondary" href="index.html">Startseite</a></div></section>
-  <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
+  <section class="topbar"><div class="brand"><h1>Manometer – Auswertung</h1><p>Präsentationsansicht für das Plenum.</p></div><div class="topbar-right"><span class="meta-pill"><span id="responseCount">0</span> Rückmeldungen</span><button id="fullscreenBtn" type="button">Vollbild starten (V)</button><button id="deleteManometerFeedbackBtn" type="button">Alle Einträge löschen</button><a class="button secondary" href="index.html">Startseite</a></div></section>
+  <p id="deleteManometerFeedbackStatus" style="margin:0;color:#fff;font-weight:800" aria-live="polite"></p><div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
   <section class="stage" aria-live="polite"><div id="deck" class="deck"></div></section>
   <section class="nav-dock"><div class="nav-left"><button id="prevCard" type="button" class="secondary">← Zurück</button><button id="nextCard" type="button" class="primary">Weiter →</button></div><div class="nav-center"><span id="slideCounter">Kachel 1 / 1</span><br><span class="present-tip">Mit Pfeiltasten, Leertaste oder V für Vollbild durch die Präsentation navigieren.</span></div><div class="nav-right"><p id="status" class="status">Auswertung wird vorbereitet …</p></div></section>
 </main>
@@ -154,8 +154,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=manometer-feedback-v12-polish"></script>
-<script src="js/app.js?v=manometer-feedback-v12-polish"></script>
+<script src="js/config.js?v=manometer-feedback-v13-admin-delete"></script>
+<script src="js/app.js?v=manometer-feedback-v13-admin-delete"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -281,7 +281,7 @@
     },520);
   }
   function next(){setActive(current+1)}function prev(){setActive(current-1)}
-  document.getElementById('prevCard').onclick=prev;document.getElementById('nextCard').onclick=next;
+  document.getElementById('prevCard').onclick=prev;document.getElementById('nextCard').onclick=next;var deleteBtn=document.getElementById('deleteManometerFeedbackBtn');if(deleteBtn)deleteBtn.onclick=deleteAllFeedbackEntries;
   document.addEventListener('keydown',function(ev){if(ev.key==='ArrowRight'||ev.key==='PageDown'||ev.key===' '){ev.preventDefault();next()}if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault();prev()}if((ev.key||'').toLowerCase()==='v'){ev.preventDefault();toggleFullscreen()}})
   function updateFullscreenBtn(){fullscreenBtn.textContent=document.fullscreenElement?'Vollbild beenden (V)':'Vollbild starten (V)'}function toggleFullscreen(){if(!document.fullscreenElement){(document.documentElement.requestFullscreen?document.documentElement.requestFullscreen():Promise.reject()).catch(function(){})}else if(document.exitFullscreen){document.exitFullscreen()}}fullscreenBtn.onclick=toggleFullscreen;document.addEventListener('fullscreenchange',updateFullscreenBtn)
   
@@ -305,6 +305,27 @@
     if(ev.target&&ev.target.id==='entryPopup') closeEntryPopup();
   });
   var popupClose=document.getElementById('entryPopupClose');if(popupClose)popupClose.onclick=closeEntryPopup;
+
+  
+  function adminPasswordLocal(){
+    try{return localStorage.getItem('sv_admin_password') || localStorage.getItem('adminPassword') || '';}catch(_){return '';}
+  }
+  async function deleteAllFeedbackEntries(){
+    var status=document.getElementById('deleteManometerFeedbackStatus');
+    if(!confirm('Wirklich alle Manometer-Feedbackeinträge löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+    var url=appUrl();
+    if(!url){status.textContent='Keine Apps-Script-URL gefunden.';return;}
+    var password=adminPasswordLocal();
+    if(!password){password=prompt('Admin-Passwort eingeben:')||'';}
+    if(!password){status.textContent='Vorgang abgebrochen.';return;}
+    status.textContent='Bitte warten …';
+    try{
+      var res=await jsonp(url,{action:'deleteManometerFeedbackAll',adminPassword:password});
+      if(!res||res.ok===false) throw new Error((res&&res.error)||'Löschen fehlgeschlagen.');
+      status.textContent='Alle Einträge wurden gelöscht. Gelöschte Zeilen: '+(res.deletedRows||0)+'.';
+      setTimeout(function(){ location.reload(); }, 800);
+    }catch(err){status.textContent='Fehler: '+err.message;}
+  }
 
   async function boot(){var url=appUrl();if(!url){setLoading(100,'Keine Apps-Script-URL gefunden.');statusEl.textContent='Keine Apps-Script-URL gefunden.';return}try{setLoading(8,'Verbindung wird hergestellt …');await new Promise(function(r){setTimeout(r,120)});var data=await jsonp(url,{action:'manometerFeedbackList'});if(!data||data.ok===false)throw new Error((data&&data.error)||'Keine Daten erhalten.');setLoading(46,'Folien werden vorbereitet …');render(data);setLoading(72,'Layout und Animationen werden vorgeladen …');await new Promise(function(r){requestAnimationFrame(function(){requestAnimationFrame(r)})});cards.forEach(function(card){card.getBoundingClientRect()});setLoading(88,'Präsentation wird finalisiert …');await new Promise(function(r){setTimeout(r,180)});deck.classList.add('ready');setLoading(100,'Präsentation bereit');await new Promise(function(r){setTimeout(r,180)});loadingScreen.classList.add('hidden')}catch(err){setLoading(100,'Fehler beim Laden');statusEl.textContent='Auswertung konnte nicht geladen werden: '+(err&&err.message?err.message:err)}}
   document.addEventListener('DOMContentLoaded',boot);

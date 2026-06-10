@@ -4,68 +4,308 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-admin-reset-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-ui-polish-v1">
   <style>
-    .manometer-shell{max-width:980px;margin:0 auto;padding:28px 18px 54px}
-    .manometer-hero{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #d8e7f7;border-radius:24px;padding:24px;box-shadow:0 18px 50px rgba(15,23,42,.08)}
-    .progress-wrap{margin:18px 0 20px;background:#e8eef6;border-radius:999px;height:12px;overflow:hidden;border:1px solid #d7e2ee}
-    .progress-bar{height:100%;width:0;background:#1e4f82;transition:width .25s ease}
-    .step-card{display:none;border:1px solid #e1e8f2;border-radius:24px;padding:28px;background:#fff;box-shadow:0 18px 50px rgba(15,23,42,.08);min-height:420px}
-    .step-card.active{display:block}
-    .step-kicker{font-weight:900;color:#315a88;text-transform:uppercase;letter-spacing:.06em;font-size:.78rem;margin-bottom:8px}
-    .step-card h2{margin:.1rem 0 12px;font-size:clamp(1.7rem,3vw,2.45rem)}
-    .step-card p{font-size:1.05rem;line-height:1.55}
-    .scale-row{display:grid;grid-template-columns:1fr 92px;gap:18px;align-items:center;margin-top:24px}
-    input[type="range"]{width:100%;accent-color:#1e4f82}
-    .scale-value{font-weight:900;text-align:center;border-radius:18px;background:#eaf2fb;padding:16px 12px;color:#18365d;font-size:1.6rem}
-    .scale-labels{display:flex;justify-content:space-between;color:#5b6b80;font-weight:700;font-size:.9rem;margin-top:6px}
-    .conditional-note{display:none;margin-top:20px;border:1px solid #f0b7b7;background:#fff3f3;border-radius:18px;padding:16px}
+    :root{
+      --m-bg:#eef4fb;
+      --m-bg2:#f8fbff;
+      --m-card:#ffffff;
+      --m-text:#102033;
+      --m-muted:#5c7088;
+      --m-line:#dbe6f2;
+      --m-accent:#285b91;
+      --m-accent2:#6fa8dc;
+      --m-danger:#b42318;
+      --m-success:#256142;
+      --m-shadow:0 24px 70px rgba(15,23,42,.12);
+    }
+    body[data-mode="manometer"]{
+      background:
+        radial-gradient(circle at top left, rgba(111,168,220,.24), transparent 34%),
+        linear-gradient(180deg,var(--m-bg2),var(--m-bg));
+      min-height:100vh;
+      color:var(--m-text);
+    }
+    body[data-mode="manometer"] header{
+      background:transparent;
+      color:var(--m-text);
+      border:0;
+      box-shadow:none;
+      padding-top:16px;
+    }
+    body[data-mode="manometer"] header .wrap{
+      max-width:1120px;
+      border:1px solid rgba(219,230,242,.9);
+      background:rgba(255,255,255,.72);
+      backdrop-filter:blur(14px);
+      border-radius:24px;
+      padding:18px 22px;
+      box-shadow:0 12px 30px rgba(15,23,42,.06);
+    }
+    body[data-mode="manometer"] header h1{margin:0;font-size:1.45rem}
+    body[data-mode="manometer"] header p{margin:4px 0 0;color:var(--m-muted)}
+    .manometer-shell{
+      width:min(1120px,100%);
+      margin:0 auto;
+      padding:18px 18px 54px;
+    }
+    .progress-wrap{
+      height:10px;
+      border-radius:999px;
+      background:#dfe9f4;
+      border:1px solid #d2deeb;
+      overflow:hidden;
+      margin:12px auto 18px;
+      max-width:980px;
+    }
+    .progress-bar{
+      height:100%;
+      width:0;
+      background:linear-gradient(90deg,var(--m-accent),var(--m-accent2));
+      transition:width .22s ease;
+    }
+    .feedback-stage{
+      position:relative;
+      width:min(980px,100%);
+      height:min(70vh,680px);
+      min-height:520px;
+      margin:0 auto;
+    }
+    .step-card{
+      position:absolute;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      border:1px solid var(--m-line);
+      border-radius:30px;
+      padding:38px clamp(22px,5vw,58px);
+      background:rgba(255,255,255,.94);
+      box-shadow:var(--m-shadow);
+      opacity:0;
+      transform:translateX(54px) scale(.985);
+      pointer-events:none;
+      transition:opacity .24s ease, transform .28s cubic-bezier(.22,.8,.28,1);
+      overflow:auto;
+    }
+    .step-card.active{
+      opacity:1;
+      transform:translateX(0) scale(1);
+      pointer-events:auto;
+      z-index:2;
+    }
+    .step-card.was-left{transform:translateX(-54px) scale(.985)}
+    .step-kicker{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:9px 14px;
+      border-radius:999px;
+      background:#eaf2fb;
+      color:#234b78;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.055em;
+      font-size:.78rem;
+      margin-bottom:18px;
+    }
+    .step-card h2{
+      margin:0 0 16px;
+      max-width:780px;
+      font-size:clamp(1.65rem,3.4vw,2.75rem);
+      line-height:1.12;
+      font-weight:950;
+    }
+    .step-card p{
+      margin:0 auto 12px;
+      max-width:720px;
+      color:var(--m-muted);
+      font-size:1.08rem;
+      line-height:1.55;
+    }
+    .scale-row{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 96px;
+      gap:20px;
+      align-items:center;
+      width:min(760px,100%);
+      margin:28px auto 0;
+      text-align:left;
+    }
+    input[type="range"]{
+      width:100%;
+      accent-color:var(--m-accent);
+      cursor:pointer;
+    }
+    .scale-value{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:76px;
+      border-radius:22px;
+      background:linear-gradient(160deg,#eaf2fb,#ffffff);
+      color:#17375e;
+      border:1px solid #d8e4f0;
+      font-size:2rem;
+      font-weight:950;
+      box-shadow:0 10px 24px rgba(15,23,42,.06);
+    }
+    .scale-labels{
+      display:flex;
+      justify-content:space-between;
+      color:var(--m-muted);
+      font-weight:800;
+      font-size:.9rem;
+      margin-top:8px;
+    }
+    .conditional-note{
+      display:none;
+      width:min(760px,100%);
+      margin:22px auto 0;
+      text-align:left;
+      border:1px solid #f0c1c1;
+      background:#fff7f7;
+      border-radius:20px;
+      padding:16px;
+    }
     .conditional-note.visible{display:block}
-    .conditional-note textarea,.textarea-block textarea{width:100%;box-sizing:border-box;border:1px solid #cfd9e8;border-radius:14px;padding:14px;font:inherit;min-height:120px;background:#fff}
-    .radio-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px}
-    .radio-pill{display:flex;align-items:center;gap:8px;border:1px solid #d9e3ef;border-radius:999px;padding:12px 16px;background:#f8fbff;font-weight:800;cursor:pointer}
+    .conditional-note strong{color:#81201b}
+    .conditional-note textarea,
+    .textarea-block textarea{
+      width:100%;
+      box-sizing:border-box;
+      border:1px solid #ccd9e8;
+      border-radius:16px;
+      padding:14px;
+      font:inherit;
+      min-height:120px;
+      background:#fff;
+      resize:vertical;
+      margin-top:10px;
+    }
+    .textarea-block{
+      width:min(760px,100%);
+      margin:20px auto 0;
+      text-align:left;
+    }
+    .radio-row{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top:22px;
+    }
+    .radio-pill{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:150px;
+      justify-content:center;
+      border:1px solid #d4e1ef;
+      border-radius:999px;
+      padding:14px 18px;
+      background:#f8fbff;
+      font-weight:900;
+      cursor:pointer;
+      transition:transform .16s ease,border-color .16s ease,background .16s ease;
+    }
+    .radio-pill:hover{transform:translateY(-1px);border-color:#9fc1e4;background:#eef6ff}
     .radio-pill input{width:18px;height:18px}
-    .textarea-block{margin-top:20px}
-    .manometer-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;align-items:center;justify-content:space-between}
+    .manometer-actions{
+      width:min(980px,100%);
+      margin:18px auto 0;
+      display:flex;
+      gap:14px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
     .manometer-actions .left,.manometer-actions .right{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    .manometer-status{margin-top:16px;padding:14px 16px;border-radius:14px;background:#eaf2fb;color:#18365d}
-    .manometer-status.error{background:#fff2f2;color:#8a1f1f;border:1px solid #efc5c5}
-    .manometer-status.ok{background:#e9f8ef;color:#256142;border:1px solid #bde7cc}
-    .small-muted{color:#5b6b80;font-size:.94rem}
-    .already-voted{border:1px solid #bde7cc;background:#e9f8ef;border-radius:18px;padding:16px;margin-top:18px;color:#256142}
-    @media(max-width:700px){.scale-row{grid-template-columns:1fr}.scale-value{text-align:left}.step-card{padding:22px}.manometer-actions{justify-content:flex-start}}
+    .manometer-status{
+      width:min(980px,100%);
+      margin:14px auto 0;
+      padding:14px 16px;
+      border-radius:16px;
+      background:#eaf2fb;
+      color:#18365d;
+      border:1px solid #d1e1f1;
+    }
+    .manometer-status.error{background:#fff2f2;color:#8a1f1f;border-color:#efc5c5}
+    .manometer-status.ok{background:#e9f8ef;color:var(--m-success);border-color:#bde7cc}
+    .already-voted{
+      width:min(980px,100%);
+      margin:14px auto 0;
+      border:1px solid #bde7cc;
+      background:#e9f8ef;
+      border-radius:18px;
+      padding:16px;
+      color:var(--m-success);
+      text-align:center;
+      font-weight:800;
+    }
+    .thankyou-panel{
+      display:none;
+      width:min(980px,100%);
+      margin:14px auto 0;
+      text-align:center;
+      border:1px solid #bde7cc;
+      background:#e9f8ef;
+      color:var(--m-success);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:0 12px 28px rgba(15,23,42,.06);
+    }
+    .thankyou-panel.visible{display:block}
+    @media(max-width:760px){
+      .feedback-stage{height:72vh;min-height:560px}
+      .step-card{padding:28px 20px}
+      .scale-row{grid-template-columns:1fr}
+      .scale-value{min-height:58px}
+      .manometer-actions{justify-content:flex-start}
+      .manometer-actions .left,.manometer-actions .right{width:100%}
+      .manometer-actions button,.manometer-actions a{flex:1}
+    }
   </style>
 </head>
 <body data-mode="manometer">
 <header><div class="wrap"><h1>Manometer</h1><p>Anonyme Reflexion zur Gruppensupervision</p></div></header>
 <main class="manometer-shell">
-
   <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
 
   <form id="manometerForm">
-    <section class="step-card active" data-step="intro">
-      <div class="step-kicker">Start</div>
-      <h2>Manometer startet</h2>
-      <p>Gehe die Karten nacheinander durch. Deine Antworten werden anonym gespeichert. Nach dem Absenden kannst du die gemeinsame Auswertung ansehen.</p>
-    </section>
+    <div class="feedback-stage" id="feedbackStage">
+      <section class="step-card active" data-step="intro">
+        <div class="step-kicker">Start</div>
+        <h2>Manometer startet</h2>
+        <p>Gehe die Karten nacheinander durch. Deine Antworten werden anonym gespeichert.</p>
+        <p>Die Skala reicht von <strong>1</strong> = trifft gar nicht zu bis <strong>10</strong> = trifft vollständig zu.</p>
+      </section>
+    </div>
   </form>
 
   <div class="manometer-actions">
     <div class="left">
-      <button id="prevStep" type="button" class="secondary">Zurück</button>
-      <button id="nextStep" type="button">Weiter</button>
+      <button id="prevStep" type="button" class="secondary">← Zurück</button>
+      <button id="nextStep" type="button">Weiter →</button>
     </div>
     <div class="right">
-      <a id="resultsLink" class="button secondary" href="manometer-auswertung.html">Auswertung anzeigen</a>
       <a class="button secondary" href="index.html">Zurück zur Startseite</a>
     </div>
   </div>
+
   <p id="manometerStatus" class="manometer-status" hidden></p>
   <div id="alreadyVotedBox" class="already-voted" hidden>Von diesem Gerät wurde bereits Feedback abgegeben. Falls die Administration die Hardware-IDs freigegeben hat, kannst du erneut abstimmen; andernfalls blockiert Apps Script die Mehrfachabgabe.</div>
+  <div id="thankyouPanel" class="thankyou-panel">
+    <h2>Vielen Dank für deine Rückmeldung.</h2>
+    <p>Dein Feedback wurde gespeichert. Die Auswertung wird später durch die Administration gezeigt.</p>
+    <a class="button" href="index.html">Zurück zur Startseite</a>
+  </div>
 </main>
 <footer><div class="wrap">Manometer · anonymes Reflexionsfeedback</div></footer>
-<script src="js/config.js?v=manometer-admin-reset-v1"></script>
-<script src="js/app.js?v=manometer-admin-reset-v1"></script>
+<script src="js/config.js?v=manometer-ui-polish-v1"></script>
+<script src="js/app.js?v=manometer-ui-polish-v1"></script>
 <script>
 (function(){
   var QUESTIONS = [
@@ -90,7 +330,7 @@
   function setStatus(msg, cls){ var st=document.getElementById('manometerStatus'); st.hidden=false; st.className='manometer-status '+(cls||''); st.textContent=msg; }
   function clearStatus(){ document.getElementById('manometerStatus').hidden=true; }
   function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function updateLinks(){ var g=gid(); document.querySelectorAll('[data-group-id]').forEach(function(el){el.textContent=g||'ohne Gruppen-ID';}); var a=document.getElementById('resultsLink'); if(a){ a.href=new URL('manometer-auswertung.html', location.href).toString(); } }
+
   function buildQuestionCard(q, idx){
     return '<section class="step-card" data-step="scale" data-key="'+q.key+'">'+
       '<div class="step-kicker">'+escapeHtml(q.category)+' · Frage '+(idx+1)+' von '+QUESTIONS.length+'</div>'+
@@ -101,22 +341,33 @@
       '</section>';
   }
   function buildStaticCards(){
-    var form=document.getElementById('manometerForm');
-    QUESTIONS.forEach(function(q,i){ form.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)); });
-    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="generalText"><div class="step-kicker">Allgemeine Rückmeldung</div><h2>Lob, Kritik und Anregungen</h2><p>Dieses Feld ist offen und anonym. Du kannst hier alles notieren, was nicht zu einer einzelnen Skalenfrage passt.</p><div class="textarea-block"><textarea id="generalFeedback" rows="8" placeholder="Lob, Kritik, Anregungen …"></textarea></div></section>');
-    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="avoidCheck"><div class="step-kicker">Zusatzfrage</div><h2>Volle Punktzahl und Pflichtangaben</h2><p>Du hast bei mehr als 70% der Skalenfragen eine 10 vergeben.</p><p>Hast du bei einigen Punktevergaben eine 10 gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="avoidCriticism" value="ja"> Ja</label><label class="radio-pill"><input type="radio" name="avoidCriticism" value="nein"> Nein</label></div></section>');
-    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="llm"><div class="step-kicker">Letzte Frage</div><h2>Wurde ChatGPT oder eine andere KI genutzt?</h2><p>Wurde zur Antwortengenerierung ChatGPT oder ein anderes Large Language Model verwendet?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="llmUsed" value="ja" required> Ja</label><label class="radio-pill"><input type="radio" name="llmUsed" value="nein" required> Nein</label></div><div class="textarea-block"><label>Optional: Welches Tool oder wofür wurde es genutzt?<textarea id="llmDetails" rows="4"></textarea></label></div></section>');
-    form.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="submit"><div class="step-kicker">Absenden</div><h2>Feedback speichern</h2><p>Deine Antworten werden anonym und unabhängig von der Gruppen-ID gespeichert. Von diesem Gerät bzw. Browser ist nur eine Abgabe möglich.</p><button id="submitManometer" type="submit">Feedback absenden</button></section>');
+    var stage=document.getElementById('feedbackStage');
+    QUESTIONS.forEach(function(q,i){ stage.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)); });
+    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="generalText"><div class="step-kicker">Allgemeine Rückmeldung</div><h2>Lob, Kritik und Anregungen</h2><p>Dieses Feld ist offen und anonym. Du kannst hier alles notieren, was nicht zu einer einzelnen Skalenfrage passt.</p><div class="textarea-block"><textarea id="generalFeedback" rows="8" placeholder="Lob, Kritik, Anregungen …"></textarea></div></section>');
+    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="avoidCheck"><div class="step-kicker">Zusatzfrage</div><h2>Volle Punktzahl und Pflichtangaben</h2><p>Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="avoidCriticism" value="ja" required> Ja</label><label class="radio-pill"><input type="radio" name="avoidCriticism" value="nein" required> Nein</label></div></section>');
+    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="llm"><div class="step-kicker">Letzte Frage</div><h2>Wurde ChatGPT oder eine andere KI genutzt?</h2><p>Wurde zur Antwortengenerierung ChatGPT oder ein anderes Large Language Model verwendet?</p><div class="radio-row"><label class="radio-pill"><input type="radio" name="llmUsed" value="ja" required> Ja</label><label class="radio-pill"><input type="radio" name="llmUsed" value="nein" required> Nein</label></div><div class="textarea-block"><label>Optionale Hinweise zur LLM-Nutzung<textarea id="llmDetails" rows="4" placeholder="Optional: welches Tool oder wofür wurde es genutzt?"></textarea></label></div></section>');
+    stage.insertAdjacentHTML('beforeend', '<section class="step-card" data-step="submit"><div class="step-kicker">Absenden</div><h2>Feedback speichern</h2><p>Deine Antworten werden anonym und unabhängig von der Gruppen-ID gespeichert. Von diesem Gerät bzw. Browser ist nur eine Abgabe möglich.</p><button id="submitManometer" type="submit">Feedback absenden</button></section>');
     steps = Array.from(document.querySelectorAll('.step-card'));
   }
   function scoreValues(){ var out={}; QUESTIONS.forEach(function(q){ out[q.key]=Number((document.getElementById(q.key)||{}).value||1); }); return out; }
   function improvementTexts(){ var out={}; QUESTIONS.forEach(function(q){ var el=document.getElementById('improve_'+q.key); out[q.key]=el?el.value.trim():''; }); return out; }
-  function tensCount(){ var vals=Object.values(scoreValues()); return vals.filter(function(v){return v===10;}).length; }
-  function shouldShowAvoid(){ return tensCount()/QUESTIONS.length > .7; }
-  function visibleSteps(){ return steps.filter(function(s){ return !(s.dataset.step==='avoidCheck' && !shouldShowAvoid()); }); }
+  function visibleSteps(){ return steps; }
   function currentVisibleIndex(){ var v=visibleSteps(); return Math.max(0, v.indexOf(steps[current])); }
-  function setActiveByVisibleIndex(i){ var v=visibleSteps(); if(i<0)i=0; if(i>=v.length)i=v.length-1; steps.forEach(function(s){s.classList.remove('active');}); v[i].classList.add('active'); current=steps.indexOf(v[i]); updateControls(); clearStatus(); window.scrollTo({top:0,behavior:'smooth'}); }
-  function updateControls(){ var v=visibleSteps(); var idx=currentVisibleIndex(); document.getElementById('prevStep').disabled=idx===0; var next=document.getElementById('nextStep'); next.textContent=idx===v.length-1?'Fertig':'Weiter'; next.style.display=steps[current].dataset.step==='submit'?'none':''; document.getElementById('progressBar').style.width=((idx+1)/v.length*100)+'%'; }
+  function setActiveByVisibleIndex(i){
+    var v=visibleSteps(); if(i<0)i=0; if(i>=v.length)i=v.length-1;
+    var old=current;
+    steps.forEach(function(s,idx){s.classList.remove('active','was-left'); if(idx < i) s.classList.add('was-left');});
+    v[i].classList.add('active'); current=steps.indexOf(v[i]);
+    updateControls(); clearStatus();
+  }
+  function updateControls(){
+    var v=visibleSteps(); var idx=currentVisibleIndex();
+    document.getElementById('prevStep').disabled=idx===0;
+    var next=document.getElementById('nextStep');
+    next.textContent=idx===v.length-1?'Fertig':'Weiter →';
+    next.style.display=steps[current].dataset.step==='submit'?'none':'';
+    document.getElementById('progressBar').style.width=((idx+1)/v.length*100)+'%';
+  }
   function validateStep(step){
     if(!step) return true;
     if(step.dataset.step==='scale'){
@@ -141,16 +392,20 @@
     var url=appUrl(); if(!url){ setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.', 'error'); return; }
     var btn=document.getElementById('submitManometer'); btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird an Manometer übertragen …');
     var avoidEl=document.querySelector('input[name="avoidCriticism"]:checked'); var llmEl=document.querySelector('input[name="llmUsed"]:checked');
-    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalFeedback:document.getElementById('generalFeedback').value.trim(), avoidCriticism:shouldShowAvoid() && avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
+    var payload={ action:'manometerFeedback', feedback:{ deviceId:deviceId(), groupId:gid(), groupName:groupName(), scores:scoreValues(), improvements:improvementTexts(), generalFeedback:document.getElementById('generalFeedback').value.trim(), avoidCriticism:avoidEl ? avoidEl.value : '', llmUsed:llmEl ? llmEl.value : '', llmDetails:document.getElementById('llmDetails').value.trim(), createdAt:new Date().toISOString() } };
     try{
       var res = await saveManometer(url, payload);
       if(!res || res.ok === false){ if(res && res.duplicate){ localStorage.setItem(votedKey,'1'); throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben.'); } throw new Error((res && res.error) || 'Apps Script hat das Feedback nicht bestätigt.'); }
       if(res.type !== 'manometerFeedbackSave' || !res.rowNumber) throw new Error('Das aktuell deployte Apps Script unterstützt die neue Manometer-Version noch nicht. Bitte Code.gs aktualisieren und neu bereitstellen.');
-      localStorage.setItem(votedKey,'1'); setStatus('Danke. Dein Feedback wurde gespeichert. Die Auswertung wird geöffnet …','ok');
-      setTimeout(function(){ location.href=new URL('manometer-auswertung.html', location.href).toString(); }, 900);
+      localStorage.setItem(votedKey,'1');
+      setStatus('Danke. Dein Feedback wurde gespeichert.', 'ok');
+      document.getElementById('thankyouPanel').classList.add('visible');
+      document.getElementById('manometerForm').style.display='none';
+      document.querySelector('.progress-wrap').style.display='none';
+      document.querySelector('.manometer-actions').style.display='none';
     }catch(err){ setStatus('Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err),'error'); btn.disabled=false; btn.textContent='Feedback erneut absenden'; }
   });
-  document.addEventListener('DOMContentLoaded', function(){ buildStaticCards(); updateLinks(); if(localStorage.getItem(votedKey)){ document.getElementById('alreadyVotedBox').hidden=false; } setActiveByVisibleIndex(0); });
+  document.addEventListener('DOMContentLoaded', function(){ buildStaticCards(); if(localStorage.getItem(votedKey)){ document.getElementById('alreadyVotedBox').hidden=false; } setActiveByVisibleIndex(0); });
 })();
 </script>
 </body>

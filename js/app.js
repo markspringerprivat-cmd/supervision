@@ -2317,7 +2317,7 @@ function updateAdminProtectedLinks() {
     el.onclick = (event) => {
       if (isGlobalAdminActive()) return true;
       event.preventDefault();
-      alert("Die Gruppenzuweisung ist nur im Administrationsmodus verfügbar. Bitte oben auf Administrator klicken und das Passwort eingeben.");
+      alert("Diese Kachel ist nur im Administrationsmodus verfügbar. Bitte oben den Adminmodus aktivieren.");
       return false;
     };
   });
@@ -9419,7 +9419,7 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
 
   function updateManometerAdminPanel(){
     const btn = document.getElementById('resetManometerDevicesBtn');
-    const panel = document.getElementById('manometerAdminPanel');
+    const panel = document.getElementById('manometerAdminPanel') || document.querySelector('.manometer-admin-card');
     if (!btn) return;
     const active = (typeof isGlobalAdminActive === 'function') && isGlobalAdminActive();
     btn.disabled = !active;

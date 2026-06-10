@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-admin-reset-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-ui-polish-v1">
   <style>
     :root{
       --bg:#0b1324;
@@ -67,12 +67,12 @@
       position:absolute;inset:0;display:flex;flex-direction:column;
       background:var(--panel);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.48);
       border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
-      opacity:0;transform:translateX(90px) scale(.96);pointer-events:none;
-      transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease;
+      opacity:0;transform:translateX(58px) scale(.985);pointer-events:none;
+      transition:transform .32s cubic-bezier(.22,.85,.24,1), opacity .24s ease;
     }
     .slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto;z-index:3}
-    .slide.prev{opacity:0;transform:translateX(-110px) scale(.95);z-index:1}
-    .slide.next{opacity:0;transform:translateX(110px) scale(.95);z-index:1}
+    .slide.prev{opacity:0;transform:translateX(-70px) scale(.985);z-index:1}
+    .slide.next{opacity:0;transform:translateX(70px) scale(.985);z-index:1}
     .slide-inner{display:flex;flex-direction:column;height:100%;padding:34px 34px 28px;overflow:auto}
 
     .intro-hero{
@@ -141,6 +141,46 @@
     .present-tip{font-size:.92rem;color:rgba(255,255,255,.8)}
 
     .fs body[data-mode="manometer-results"] .results-shell{padding:14px}
+
+    .thanks-slide .slide-inner{
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(135deg,#ffffff,#eef7ff 55%,#eefaf3);
+    }
+    .thanks-slide h2{
+      font-size:clamp(2rem,4vw,4rem);
+      margin-bottom:16px;
+    }
+    .thanks-slide p{
+      max-width:680px;
+      color:var(--muted);
+      font-size:1.2rem;
+      line-height:1.55;
+    }
+    .confetti-layer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+    }
+    .confetti-piece{
+      position:absolute;
+      top:-30px;
+      width:10px;
+      height:16px;
+      border-radius:3px;
+      opacity:.85;
+      animation:confettiFall 4.2s linear infinite;
+    }
+    @keyframes confettiFall{
+      0%{transform:translate3d(0,-40px,0) rotate(0deg);opacity:0}
+      12%{opacity:.9}
+      100%{transform:translate3d(var(--drift),calc(100vh + 80px),0) rotate(520deg);opacity:0}
+    }
+
     @media (max-width:980px){
       .metric-row,.summary-grid,.choice-grid{grid-template-columns:1fr}
       .deck{height:min(76vh,940px);min-height:620px}
@@ -193,8 +233,8 @@
     </div>
   </section>
 </main>
-<script src="js/config.js?v=manometer-admin-reset-v1"></script>
-<script src="js/app.js?v=manometer-admin-reset-v1"></script>
+<script src="js/config.js?v=manometer-ui-polish-v1"></script>
+<script src="js/app.js?v=manometer-ui-polish-v1"></script>
 <script>
 (function(){
   var QUESTIONS = [
@@ -258,7 +298,7 @@
       + '<div class="avg-box"><strong>'+(av===null?'–':av.toFixed(1))+'</strong><span class="sub">Durchschnitt von 10</span><span class="mini">'+vals.length+' Antworten · Median '+(med===null?'–':med)+'</span></div>'
       + '<div class="scale-viz">'
       + marker
-      + '<div class="scale-head"><div class="scale-title">Einzelne Punktevergaben aller Geräte</div><div class="scale-sub">Jeder Punkt steht für eine anonyme Rückmeldung.</div></div>'
+      + '<div class="scale-head"><div class="scale-title">Einzelne Punktevergaben aller Geräte</div></div>'
       + '<div class="distribution">'+cols+'</div>'
       + '</div></div>'
       + '<div class="comments"><h3>Gesammelte Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></div>'
@@ -273,8 +313,24 @@
   function renderChoiceCard(title, kicker, entries, key){
     var yes = entries.filter(function(e){ return String(e[key]||'').toLowerCase()==='ja'; }).length;
     var no = entries.filter(function(e){ return String(e[key]||'').toLowerCase()==='nein'; }).length;
-    var other = entries.length - yes - no;
-    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">Ja / Nein</div></div><div class="choice-grid"><div class="choice-card"><strong>'+yes+'</strong><span>Ja</span></div><div class="choice-card"><strong>'+no+'</strong><span>Nein</span></div><div class="choice-card"><strong>'+other+'</strong><span>Keine Angabe</span></div></div></div></article>';
+    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">Ja / Nein</div></div><div class="choice-grid"><div class="choice-card"><strong>'+yes+'</strong><span>Ja</span></div><div class="choice-card"><strong>'+no+'</strong><span>Nein</span></div></div></div></article>';
+  }
+
+  function renderLlmCard(entries){
+    var yes = entries.filter(function(e){ return String(e.llmUsed||'').toLowerCase()==='ja'; }).length;
+    var no = entries.filter(function(e){ return String(e.llmUsed||'').toLowerCase()==='nein'; }).length;
+    var details = entries.map(function(e){ return e.llmDetails; }).filter(Boolean);
+    var body = details.length ? '<div class="text-card-list">'+details.map(function(t){ return '<div class="text-entry">'+escapeHtml(t)+'</div>'; }).join('')+'</div>' : '<p class="empty">Keine optionalen Hinweise zur LLM-Nutzung vorhanden.</p>';
+    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">KI / LLM</span><h2>Wurde ChatGPT oder ein anderes LLM verwendet?</h2></div><div class="slide-counter">Ja / Nein</div></div><div class="choice-grid"><div class="choice-card"><strong>'+yes+'</strong><span>Ja</span></div><div class="choice-card"><strong>'+no+'</strong><span>Nein</span></div></div><div class="comments"><h3>Optionale Hinweise zur LLM-Nutzung</h3>'+body+'</div></div></article>';
+  }
+
+  function renderThanksCard(){
+    var colors = ['#5c95d1','#2f9e44','#f59f00','#c2255c','#7048e8','#1098ad'];
+    var pieces = '';
+    for(var i=0;i<52;i++){
+      pieces += '<span class="confetti-piece" style="left:'+(Math.random()*100).toFixed(2)+'%;background:'+colors[i%colors.length]+';animation-delay:'+(Math.random()*2.4).toFixed(2)+'s;animation-duration:'+(3.2+Math.random()*2.2).toFixed(2)+'s;--drift:'+((-60+Math.random()*120).toFixed(1))+'px"></span>';
+    }
+    return '<article class="slide thanks-slide"><div class="slide-inner"><div class="confetti-layer">'+pieces+'</div><span class="slide-label">Abschluss</span><h2>Vielen Dank für eure Teilnahme.</h2><p>Die anonyme Manometer-Auswertung ist abgeschlossen. Ihr könnt die Präsentation jetzt beenden oder zur Startseite zurückkehren.</p></div></article>';
   }
 
   function render(data){
@@ -284,8 +340,8 @@
     QUESTIONS.forEach(function(q,i){ html += renderScale(q, entries, i); });
     html += renderTextCard('Allgemeines Lob, Kritik und Anregungen','Offene Antworten', entries.map(function(e){ return e.generalFeedback; }).filter(Boolean));
     html += renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage', entries, 'avoidCriticism');
-    html += renderChoiceCard('Wurde ChatGPT oder ein anderes LLM verwendet?','KI / LLM', entries, 'llmUsed');
-    html += renderTextCard('Optionale Hinweise zur LLM-Nutzung','Zusatzangaben', entries.map(function(e){ return e.llmDetails; }).filter(Boolean));
+    html += renderLlmCard(entries);
+    html += renderThanksCard();
     deck.innerHTML = html;
     cards = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
     setActive(0);

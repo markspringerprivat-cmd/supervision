@@ -5151,3 +5151,20 @@ body[data-mode="results"] .result-card[aria-current="true"].is-winner{
 .sv-manometer-card .share-grid{align-items:center;}
 .sv-manometer-card .button.disabled,.sv-manometer-card .button[aria-disabled="true"]{opacity:.62;cursor:not-allowed;filter:grayscale(.15);}
 .sv-manometer-card .qr{background:#fff;padding:10px;border-radius:18px;border:1px solid #dbe5ef;}
+
+
+/* Manometer admin card refinement */
+.manometer-admin-card .card-action-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 16px;
+}
+.manometer-admin-card .card-action-row .button,
+.manometer-admin-card .card-action-row button {
+  margin: 0;
+}
+.manometer-admin-card.is-locked .card-action-row {
+  opacity: .75;
+}

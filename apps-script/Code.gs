@@ -4,6 +4,7 @@
 const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1egAveeEIyXdI9nC4yQfZCtUUWqn8-byODELn4mvuzYQ/edit?pli=1&gid=0#gid=0';
 const SHEET_NAME = 'Ergebnisse';
 const FEEDBACK_SHEET_NAME = 'Manometer Feedback';
+const MANOMETER_ADMIN_PASSWORD = 'Mark123';
 
 const HEADERS = [
   'Zeitpunkt',
@@ -127,6 +128,7 @@ function doPost(e) {
     if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAll_();
     if (action === 'deleterow' || action === 'delete' || action === 'delete_row') return deleteRowPost_(body);
     if (action === 'manometerfeedback' || action === 'manometer_feedback' || action === 'feedback') return saveFeedback_(body);
+    if (action === 'resetmanometerdeviceids' || action === 'reset_manometer_device_ids' || action === 'resetfeedbackdevices') return resetManometerDeviceIdsPost_(body);
     return saveEntry_(body);
   } catch (err) {
     return jsonOutput_({ ok: false, error: err.message, stack: err.stack || '' });
@@ -141,10 +143,11 @@ function doGet(e) {
     if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
     if (action === 'manometerfeedbacklist' || action === 'manometer_feedback_list' || action === 'feedback_list') return listFeedback_(e);
     if (action === 'manometerfeedbacksave' || action === 'manometer_feedback_save' || action === 'savefeedback') return saveFeedbackGet_(e);
+    if (action === 'resetmanometerdeviceids' || action === 'reset_manometer_device_ids' || action === 'resetfeedbackdevices') return resetManometerDeviceIdsGet_(e);
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v6-cards', spreadsheetName: spreadsheetName });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v7-admin-reset', spreadsheetName: spreadsheetName });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -491,10 +494,10 @@ function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
   const deviceId = textValue_(data.deviceId || data.device || data.browserId);
-  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v6-cards', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v7-admin-reset', error: 'Keine Geräte-ID übermittelt.' };
   const duplicateRow = findFeedbackRowByDeviceId_(sheet, deviceId);
   if (duplicateRow >= 2) {
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v6-cards', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v7-admin-reset', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow };
   }
   const scores = isObject_(data.scores) ? data.scores : data;
   const improvements = isObject_(data.improvements) ? data.improvements : {};
@@ -521,7 +524,7 @@ function saveFeedbackData_(data) {
   ];
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v6-cards', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v7-admin-reset', message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow() };
 }
 
 function findFeedbackRowByDeviceId_(sheet, deviceId) {
@@ -533,6 +536,40 @@ function findFeedbackRowByDeviceId_(sheet, deviceId) {
     if (String(values[i][0] || '').trim() === needle) return i + 2;
   }
   return 0;
+}
+
+
+
+function resetManometerDeviceIdsPost_(body) {
+  const password = String((body && (body.adminPassword || body.password || body.admin || body.key)) || '');
+  return jsonOutput_(resetManometerDeviceIds_(password));
+}
+
+function resetManometerDeviceIdsGet_(e) {
+  const p = (e && e.parameter) || {};
+  const password = String(p.adminPassword || p.password || p.admin || p.key || '');
+  return jsonp_(e, resetManometerDeviceIds_(password));
+}
+
+function resetManometerDeviceIds_(password) {
+  if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
+    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v7-admin-reset', error: 'Admin-Passwort fehlt oder ist falsch.' };
+  }
+  const sheet = getFeedbackSheet_();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v7-admin-reset', message: 'Keine gespeicherten Geräte-IDs vorhanden.', clearedRows: 0 };
+  }
+  const range = sheet.getRange(2, 2, lastRow - 1, 1);
+  const values = range.getValues();
+  let cleared = 0;
+  const clearedValues = values.map(function(row) {
+    if (String(row[0] || '').trim()) cleared++;
+    return [''];
+  });
+  range.setValues(clearedValues);
+  SpreadsheetApp.flush();
+  return { ok: true, type: 'resetManometerDeviceIds', feature: 'manometer-v7-admin-reset', message: 'Manometer-Geräte-IDs wurden freigegeben.', clearedRows: cleared };
 }
 
 function normalizeGroupKey_(value) {
@@ -555,7 +592,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v6-cards',
+    feature: 'manometer-v7-admin-reset',
     anonymous: true,
     groupIndependent: true,
     entries: entries,

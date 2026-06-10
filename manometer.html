@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-cards-v2">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-admin-reset-v1">
   <style>
     .manometer-shell{max-width:980px;margin:0 auto;padding:28px 18px 54px}
     .manometer-hero{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #d8e7f7;border-radius:24px;padding:24px;box-shadow:0 18px 50px rgba(15,23,42,.08)}
@@ -39,14 +39,6 @@
 <body data-mode="manometer">
 <header><div class="wrap"><h1>Manometer</h1><p>Anonyme Reflexion zur Gruppensupervision</p></div></header>
 <main class="manometer-shell">
-  <section class="manometer-hero">
-    <h2>Deine Rückmeldung</h2>
-    <p>Bitte beantworte die Fragen einzeln. Die Skala reicht von <strong>1</strong> = trifft gar nicht zu bis <strong>10</strong> = trifft vollständig zu.</p>
-    <p>Wenn du bei einer Skalenfrage <strong>nicht 10</strong> auswählst, erscheint ein Pflichtfeld: Dort beschreibst du kurz, was für ein besseres Ergebnis verbessert werden müsste.</p>
-    <p class="small-muted">Die Auswertung erfolgt anonym und unabhängig von der Gruppen-ID. Von diesem Gerät bzw. Browser kann nur einmal abgestimmt werden.</p>
-    <p class="small-muted">Gruppen-ID wird nur technisch mitgesendet: <span data-group-id></span></p>
-    <div id="alreadyVotedBox" class="already-voted" hidden>Von diesem Gerät wurde bereits Feedback abgegeben. Du kannst die Auswertung anzeigen.</div>
-  </section>
 
   <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
 
@@ -69,10 +61,11 @@
     </div>
   </div>
   <p id="manometerStatus" class="manometer-status" hidden></p>
+  <div id="alreadyVotedBox" class="already-voted" hidden>Von diesem Gerät wurde bereits Feedback abgegeben. Falls die Administration die Hardware-IDs freigegeben hat, kannst du erneut abstimmen; andernfalls blockiert Apps Script die Mehrfachabgabe.</div>
 </main>
 <footer><div class="wrap">Manometer · anonymes Reflexionsfeedback</div></footer>
-<script src="js/config.js?v=manometer-cards-v2"></script>
-<script src="js/app.js?v=manometer-cards-v2"></script>
+<script src="js/config.js?v=manometer-admin-reset-v1"></script>
+<script src="js/app.js?v=manometer-admin-reset-v1"></script>
 <script>
 (function(){
   var QUESTIONS = [
@@ -145,7 +138,6 @@
   document.getElementById('nextStep').addEventListener('click', function(){ if(validateStep(steps[current])) setActiveByVisibleIndex(currentVisibleIndex()+1); });
   document.getElementById('manometerForm').addEventListener('submit', async function(e){
     e.preventDefault(); clearStatus();
-    if(localStorage.getItem(votedKey)){ setStatus('Von diesem Gerät wurde bereits Feedback abgegeben. Mehrfachabgaben sind gesperrt.', 'error'); return; }
     var url=appUrl(); if(!url){ setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.', 'error'); return; }
     var btn=document.getElementById('submitManometer'); btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird an Manometer übertragen …');
     var avoidEl=document.querySelector('input[name="avoidCriticism"]:checked'); var llmEl=document.querySelector('input[name="llmUsed"]:checked');

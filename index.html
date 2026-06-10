@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=handoff-design-v1">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-admin-reset-v1">
 </head>
 <body data-mode="landing">
 <header><div class="wrap topbar"><div><h1>Simulation einer Gruppensupervision</h1><p>Teamteaching, ESE-Fall und Konfliktklärung im schulischen Kontext</p></div><div class="header-actions"><button id="globalAdminBtn" class="secondary" type="button" data-admin-login>Administrator</button></div></div></header>
@@ -24,7 +24,19 @@
       <p>Zentrale Übersicht für gespeicherte Gruppenergebnisse aus dem Google Sheet.</p>
       <p class="small admin-lock-note">Nur im Administrationsmodus verfügbar.</p>
     </a>
+    <a class="card hero-card admin-protected-card" href="manometer-auswertung.html" data-admin-required="true">
+      <div class="big">Manometer-Ergebnisse</div>
+      <p>Anonyme Feedback-Auswertung als Präsentationsansicht öffnen.</p>
+      <p class="small admin-lock-note">Nur im Administrationsmodus verfügbar.</p>
+    </a>
   </div>
+
+  <section class="card admin-access-panel" id="manometerAdminPanel" style="margin-top:18px">
+    <h2>Adminbereich · Manometer</h2>
+    <p>Hier kann die Geräte-/Browser-Sperre für das Manometer-Feedback zurückgesetzt werden. Die vorhandenen Feedbackantworten bleiben erhalten; nur die gespeicherten Geräte-IDs werden geleert.</p>
+    <button id="resetManometerDevicesBtn" type="button" class="secondary">Hardware-IDs für Feedback freigeben</button>
+    <p id="resetManometerDevicesStatus" class="small" aria-live="polite"></p>
+  </section>
   <section class="card" style="margin-top:18px">
     <h2>Worum geht es?</h2>
     <p>Die Gruppen simulieren eine kollegiale Fallberatung beziehungsweise Gruppensupervision im schulischen Kontext. Ausgangspunkt ist eine ESE-Klasse, in der die pädagogische Stabilität zunehmend belastet ist: Im Teamteaching werden Regeln, Abläufe und Interventionen unterschiedlich umgesetzt.</p>
@@ -33,9 +45,9 @@
   </section>
 </main>
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
-<script src="js/config.js?v=manometer-urlfix-v2"></script><script src="js/app.js?v=manometer-urlfix-v2"></script>
-<script src="js/roles_flow_patch.js?v=handoff-design-v1"></script>
+<script src="js/config.js?v=manometer-admin-reset-v1"></script><script src="js/app.js?v=manometer-admin-reset-v1"></script>
+<script src="js/roles_flow_patch.js?v=manometer-admin-reset-v1"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=manometer-urlfix-v2"></script>
+<script src="js/guided_flow_patch.js?v=manometer-admin-reset-v1"></script>
 </body>
 </html>

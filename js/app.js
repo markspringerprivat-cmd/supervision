@@ -9375,3 +9375,120 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     return stripLarge(data, 0);
   };
 })();
+
+
+/* ==========================================================
+   MANOMETER ADMIN: Hardware-/Geräte-IDs serverseitig freigeben
+   ========================================================== */
+(function(){
+  const ADMIN_PASSWORD_FOR_RESET = (typeof GLOBAL_ADMIN_PASSWORD_VISIBLE_FINAL !== 'undefined') ? GLOBAL_ADMIN_PASSWORD_VISIBLE_FINAL : 'Mark123';
+
+  function manoAdminJsonp(url, params){
+    return new Promise(function(resolve, reject){
+      const cb = 'manoAdminResetCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e9);
+      const qs = new URLSearchParams(params || {});
+      qs.set('callback', cb);
+      qs.set('_', Date.now());
+      const script = document.createElement('script');
+      let done = false;
+      window[cb] = function(data){
+        done = true;
+        cleanup();
+        resolve(data);
+      };
+      function cleanup(){
+        try { delete window[cb]; } catch(_) {}
+        if (script && script.parentNode) script.parentNode.removeChild(script);
+      }
+      script.onerror = function(){
+        if (!done) {
+          cleanup();
+          reject(new Error('Apps Script konnte nicht erreicht werden.'));
+        }
+      };
+      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + qs.toString();
+      document.body.appendChild(script);
+      setTimeout(function(){
+        if (!done) {
+          cleanup();
+          reject(new Error('Zeitüberschreitung beim Zurücksetzen der Geräte-IDs.'));
+        }
+      }, 12000);
+    });
+  }
+
+  function updateManometerAdminPanel(){
+    const btn = document.getElementById('resetManometerDevicesBtn');
+    const panel = document.getElementById('manometerAdminPanel');
+    if (!btn) return;
+    const active = (typeof isGlobalAdminActive === 'function') && isGlobalAdminActive();
+    btn.disabled = !active;
+    btn.classList.toggle('primary', active);
+    btn.classList.toggle('secondary', !active);
+    btn.title = active ? 'Manometer-Geräte-IDs zurücksetzen' : 'Nur im Adminmodus verfügbar';
+    if (panel) panel.classList.toggle('is-locked', !active);
+  }
+
+  async function resetManometerDevices(){
+    const btn = document.getElementById('resetManometerDevicesBtn');
+    const status = document.getElementById('resetManometerDevicesStatus');
+    if (!btn) return;
+    if (!(typeof isGlobalAdminActive === 'function' && isGlobalAdminActive())) {
+      if (status) status.textContent = 'Bitte zuerst den Adminmodus aktivieren.';
+      return;
+    }
+    if (!confirm('Alle gespeicherten Manometer-Geräte-IDs freigeben? Die Feedbackantworten bleiben erhalten, aber dieselben Geräte können danach erneut abstimmen.')) return;
+    const url = (typeof getAppsScriptUrl === 'function') ? getAppsScriptUrl() : '';
+    if (!url) {
+      if (status) status.textContent = 'Keine Apps-Script-URL gefunden.';
+      return;
+    }
+    const oldText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Hardware-IDs werden freigegeben …';
+    if (status) status.textContent = 'Bitte warten …';
+    try {
+      const res = await manoAdminJsonp(url, {
+        action: 'resetManometerDeviceIds',
+        adminPassword: ADMIN_PASSWORD_FOR_RESET
+      });
+      if (!res || res.ok === false) throw new Error((res && res.error) || 'Apps Script hat das Zurücksetzen nicht bestätigt.');
+      try {
+        localStorage.removeItem('manometer_voted_global_v2');
+      } catch(_) {}
+      if (status) status.textContent = 'Hardware-IDs wurden freigegeben. Betroffene Feedbackzeilen: ' + (res.clearedRows || 0) + '.';
+    } catch (err) {
+      if (status) status.textContent = 'Freigabe fehlgeschlagen: ' + (err && err.message ? err.message : err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = oldText;
+      updateManometerAdminPanel();
+    }
+  }
+
+  function installManometerAdminReset(){
+    const btn = document.getElementById('resetManometerDevicesBtn');
+    if (!btn || btn.__manometerResetInstalled) return;
+    btn.__manometerResetInstalled = true;
+    btn.addEventListener('click', resetManometerDevices);
+    updateManometerAdminPanel();
+  }
+
+  const oldUpdateGlobalAdminUi = (typeof updateGlobalAdminUi === 'function') ? updateGlobalAdminUi : null;
+  if (oldUpdateGlobalAdminUi && !oldUpdateGlobalAdminUi.__manometerResetWrapped) {
+    const wrapped = function(){
+      const result = oldUpdateGlobalAdminUi.apply(this, arguments);
+      updateManometerAdminPanel();
+      return result;
+    };
+    wrapped.__manometerResetWrapped = true;
+    updateGlobalAdminUi = wrapped;
+    window.updateGlobalAdminUi = wrapped;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(installManometerAdminReset, 0);
+    setTimeout(updateManometerAdminPanel, 150);
+    setTimeout(updateManometerAdminPanel, 700);
+  });
+})();

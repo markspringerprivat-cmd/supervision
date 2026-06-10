@@ -192,8 +192,10 @@
   function listPreviewHtml(title, items, emptyText){
     items=asList(items);
     if(!items.length) return '<p class="empty">'+escapeHtml(emptyText||'Keine Einträge vorhanden.')+'</p>';
-    var preview=items.slice(0,5).map(function(t,i){return '<div class="comment" style="animation-delay:'+(0.35+i*0.28).toFixed(2)+'s">'+escapeHtml(t)+'</div>';}).join('');
-    var btn=items.length>5 ? '<button type="button" class="expand-btn" data-popup-title="'+escapeHtml(title)+'" data-popup-items="'+escapeHtml(JSON.stringify(items))+'">Aufklappen</button>' : '';
+    var previewCount=10;
+    var preview=items.slice(0,previewCount).map(function(t,i){return '<div class="comment" style="animation-delay:'+(0.35+i*0.22).toFixed(2)+'s">'+escapeHtml(t)+'</div>';}).join('');
+    var remaining=items.slice(previewCount);
+    var btn=remaining.length ? '<button type="button" class="expand-btn" data-popup-title="'+escapeHtml(title)+'" data-popup-items="'+escapeHtml(JSON.stringify(remaining))+'">Aufklappen</button>' : '';
     return preview+btn;
   }
   function statsForQuestion(q,entries){var vals=entries.map(function(e){return Number(e.scores&&e.scores[q.key])}).filter(function(n){return !isNaN(n)&&n>=1&&n<=10});var improvements=[];entries.forEach(function(e){improvements=improvements.concat(asList(e.improvements&&e.improvements[q.key]));});return{vals:vals,avg:avg(vals),average:avg(vals),improvements:improvements}}

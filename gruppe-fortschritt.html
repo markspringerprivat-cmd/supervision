@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gruppenfortschritt</title>
+  <link rel="stylesheet" href="css/styles.css?v=landing-v18-progress-adminpanel">
+  <style>
+    body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
+    .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
+    .progress-hero{background:#fff;border:3px solid #2f9e44;border-radius:30px;padding:26px;box-shadow:0 18px 42px rgba(47,158,68,.10)}
+    .progress-hero h1{margin:0 0 8px;color:#11243a}
+    .progress-hero p{margin:0;color:#607187}
+    .progress-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:18px}
+    .panel{background:#fff;border:1px solid #d9e5f2;border-radius:24px;padding:22px;box-shadow:0 14px 34px rgba(15,31,53,.06)}
+    .panel h2{margin:0 0 12px;color:#143a63}
+    .activity-list{display:grid;gap:10px}
+    .activity{border:1px solid #dce8f4;border-radius:16px;background:#f8fbff;padding:13px 14px;display:flex;justify-content:space-between;gap:12px}
+    .activity.done{background:#e9f8ef;border-color:#abe1bd}.activity.warn{background:#fff7e8;border-color:#ffd99e}
+    .feedback-users{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+    .feedback-user{border-radius:18px;border:1px solid #d7e5f2;background:#eef4fa;padding:14px 8px;text-align:center;font-weight:800;color:#506780}
+    .feedback-user.done{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
+    .raw-block{white-space:pre-wrap;background:#f8fbff;border:1px solid #dce8f4;border-radius:16px;padding:14px;color:#334b64;max-height:320px;overflow:auto}
+    .status{padding:13px 15px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972}
+    .button-row{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:900px){.progress-grid{grid-template-columns:1fr}.feedback-users{grid-template-columns:repeat(3,1fr)}}
+  </style>
+</head>
+<body>
+<header><div class="wrap topbar"><div><h1>Gruppenfortschritt</h1><p>Eigene Gruppenergebnisse und Feedbackstatus</p></div></div></header>
+<main class="progress-shell">
+  <section class="progress-hero">
+    <h1 id="title">Gruppenfortschritt</h1>
+    <p id="subtitle">Die Übersicht wird geladen …</p>
+  </section>
+  <div id="status" class="status">Bitte warten …</div>
+  <section class="progress-grid">
+    <article class="panel">
+      <h2>Gruppenaktivitäten</h2>
+      <div id="activities" class="activity-list"></div>
+    </article>
+    <aside class="panel">
+      <h2>Feedbackabgabe</h2>
+      <p style="color:#607187;margin-top:0">Grün bedeutet: Für diese Gruppe wurde bereits eine anonyme Rückmeldung abgegeben.</p>
+      <div id="feedbackUsers" class="feedback-users"></div>
+    </aside>
+    <article class="panel">
+      <h2>Ergebnisse</h2>
+      <div id="resultsBox" class="raw-block">Noch keine gespeicherten Ergebnisse geladen.</div>
+    </article>
+    <aside class="panel">
+      <h2>Präsentation</h2>
+      <p id="presentationInfo">Noch keine Präsentationsdaten geladen.</p>
+      <div class="button-row">
+        <a id="presentationLink" class="button" href="gruppe-ergebnis.html">Gruppenergebnisse öffnen</a>
+        <a class="button secondary" href="index.html">Zurück zur Startseite</a>
+      </div>
+    </aside>
+  </section>
+</main>
+<script src="js/config.js?v=landing-v18-progress-adminpanel"></script>
+<script src="js/app.js?v=landing-v18-progress-adminpanel"></script>
+<script>
+(function(){
+  function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
+  function groupId(){
+    var p=new URLSearchParams(location.search);
+    return p.get('g') || p.get('groupId') || localStorage.getItem('sv_group_id') || localStorage.getItem('groupId') || localStorage.getItem('supervision_group_id') || '';
+  }
+  function jsonp(url,params){
+    return new Promise(function(resolve,reject){
+      var cb='groupProgressCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9),qs=new URLSearchParams(params||{}),s=document.createElement('script'),done=false;
+      qs.set('callback',cb);qs.set('_',Date.now());
+      window[cb]=function(data){done=true;cleanup();resolve(data)};
+      function cleanup(){try{delete window[cb]}catch(_){}if(s.parentNode)s.parentNode.removeChild(s)}
+      s.onerror=function(){if(!done){cleanup();reject(new Error('Gruppenfortschritt konnte nicht geladen werden.'))}};
+      s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString();document.body.appendChild(s);
+      setTimeout(function(){if(!done){cleanup();reject(new Error('Zeitüberschreitung.'))}},12000);
+    });
+  }
+  function renderUsers(count,done){
+    var target=document.getElementById('feedbackUsers');target.innerHTML='';
+    var total=Math.max(4,Number(count||5)); var completed=Math.min(total,Number(done||0));
+    for(var i=1;i<=total;i++){var d=document.createElement('div');d.className='feedback-user'+(i<=completed?' done':'');d.textContent='Nutzer '+i;target.appendChild(d);}
+  }
+  function renderActivities(data){
+    var target=document.getElementById('activities');
+    var items=[
+      ['Gruppen-ID zugewiesen',!!data.groupId],
+      ['Gruppenergebnis gespeichert',!!data.hasResult],
+      ['Präsentation vorhanden',!!data.hasPresentation],
+      ['Feedback gestartet',Number(data.feedbackCount||0)>0],
+      ['Feedback vollständig',Number(data.feedbackCount||0)>=Number(data.groupSize||5)]
+    ];
+    target.innerHTML=items.map(function(x){return '<div class="activity '+(x[1]?'done':'warn')+'"><strong>'+x[0]+'</strong><span>'+(x[1]?'erledigt':'offen')+'</span></div>'}).join('');
+  }
+  function render(data){
+    document.getElementById('status').textContent='';
+    document.getElementById('title').textContent=data.groupName ? 'Gruppenfortschritt: '+data.groupName : 'Gruppenfortschritt';
+    document.getElementById('subtitle').textContent=data.groupId ? 'Gruppen-ID: '+data.groupId : 'Keine Gruppen-ID gefunden.';
+    renderActivities(data);
+    renderUsers(data.groupSize||5,data.feedbackCount||0);
+    var result=data.latestResult&&data.latestResult.data;
+    document.getElementById('resultsBox').textContent=result?JSON.stringify({
+      Gruppe: result.groupName||data.groupName||'',
+      Zeit: data.latestResult.timestamp||'',
+      Rollen: result.assignments||{},
+      Ziel: result.p3&&result.p3.gemeinsamesZiel || '',
+      Absprachen: result.p4&&result.p4.absprachen || '',
+      Praxistransfer: result.p6 || {}
+    },null,2):'Für diese Gruppe ist noch kein gespeichertes Ergebnis vorhanden.';
+    document.getElementById('presentationInfo').textContent=data.hasPresentation?'Präsentationsdaten wurden gefunden.':'Noch keine Präsentationsdaten für diese Gruppe gefunden.';
+    var gid=data.groupId||''; document.getElementById('presentationLink').href='gruppe-ergebnis.html?g='+encodeURIComponent(gid);
+  }
+  async function boot(){
+    var gid=groupId(); var status=document.getElementById('status');
+    if(!gid){status.textContent='Noch keine Gruppen-ID vorhanden. Der Gruppenfortschritt wird erst nach der Gruppenzuweisung aktiviert.';render({groupId:'',groupSize:5,feedbackCount:0});return;}
+    var url=appUrl(); if(!url){status.textContent='Keine Apps-Script-URL gefunden.';return;}
+    status.textContent='Gruppenfortschritt wird geladen …';
+    try{var data=await jsonp(url,{action:'groupProgress',groupId:gid,groupSize:5}); if(!data||data.ok===false)throw new Error(data&&data.error||'Unbekannter Fehler'); render(data);}
+    catch(err){status.textContent='Fehler: '+err.message;}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+</body>
+</html>

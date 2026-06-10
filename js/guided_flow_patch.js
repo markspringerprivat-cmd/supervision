@@ -172,7 +172,10 @@
   }
 
   function installTransmissionFlow(){
-    if(!/uebermittlung\.html$/.test(location.pathname)) return;
+    const isTransmissionPage = /uebermittlung\.html$/i.test(location.pathname)
+      || /Ergebnis\s+übermitteln/i.test(document.title || '')
+      || !!document.querySelector('body[data-mode="summary"] #submitResults');
+    if(!isTransmissionPage) return;
     const main=document.querySelector('main'); if(!main || main.dataset.transmissionInstalled==='1') return;
     main.dataset.transmissionInstalled='1';
     main.innerHTML=`

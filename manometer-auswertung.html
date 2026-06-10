@@ -4,585 +4,115 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-presentation-v2">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-presentation-v3">
   <style>
     :root{
-      --bg:#091426;
-      --bg2:#152745;
-      --panel:rgba(255,255,255,.94);
-      --panel-strong:#ffffff;
-      --text:#122033;
-      --muted:#61758d;
-      --line:#d7e2ee;
-      --accent:#255c93;
-      --accent-2:#71a8dd;
-      --accent-3:#eff6ff;
-      --danger:#d9480f;
-      --success:#2b8a3e;
-      --shadow:0 24px 80px rgba(7,19,35,.24);
-      --radius:28px;
+      --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
+      --text:#122033; --muted:#61758d; --line:#d7e2ee;
+      --accent:#255c93; --accent-2:#71a8dd; --danger:#d9480f;
+      --shadow:0 24px 80px rgba(7,19,35,.24); --radius:28px;
     }
     *{box-sizing:border-box}
     body[data-mode="manometer-results"]{
-      min-height:100vh;
-      margin:0;
-      color:var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(113,168,221,.28), transparent 34%),
-        radial-gradient(circle at right center, rgba(74,222,128,.14), transparent 24%),
-        linear-gradient(140deg, var(--bg), var(--bg2));
+      min-height:100vh;margin:0;color:var(--text);
+      background:radial-gradient(circle at top left, rgba(113,168,221,.28), transparent 34%),
+                 radial-gradient(circle at right center, rgba(74,222,128,.14), transparent 24%),
+                 linear-gradient(140deg, var(--bg), var(--bg2));
       overflow:hidden;
     }
-    body[data-mode="manometer-results"] header,
-    body[data-mode="manometer-results"] footer{display:none}
-
+    body[data-mode="manometer-results"] header,body[data-mode="manometer-results"] footer{display:none}
     .results-shell{min-height:100vh;display:flex;flex-direction:column;padding:18px 18px 24px;gap:16px}
-    .topbar{
-      display:flex;align-items:center;justify-content:space-between;gap:16px;
-      background:rgba(255,255,255,.1);backdrop-filter:blur(18px);
-      border:1px solid rgba(255,255,255,.14);border-radius:24px;color:#fff;
-      padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.18)
-    }
-    .brand h1{margin:0;font-size:1.28rem;font-weight:950}
-    .brand p{margin:4px 0 0;color:rgba(255,255,255,.78);font-size:.94rem}
-    .topbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
-    .meta-pill{
-      padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);
-      color:#fff;font-weight:800;border:1px solid rgba(255,255,255,.18)
-    }
-    .topbar .button, .topbar button{
-      border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.12);
-      color:#fff;padding:11px 16px;font-weight:800;cursor:pointer
-    }
-    .topbar .button.secondary{background:rgba(255,255,255,.06)}
-    .progress-wrap{
-      position:relative;height:10px;border-radius:999px;background:rgba(255,255,255,.14);
-      overflow:hidden;border:1px solid rgba(255,255,255,.12)
-    }
-    .progress-bar{height:100%;width:0;background:linear-gradient(90deg,#7ab3f0,#d4ebff);transition:width .25s ease}
-    .stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
-    .deck{
-      position:relative;width:min(1360px,100%);height:min(78vh,880px);min-height:560px;
-      opacity:0;transition:opacity .28s ease;
-    }
-    .deck.ready{opacity:1}
-    .slide{
-      position:absolute;inset:0;display:flex;flex-direction:column;
-      background:var(--panel);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.48);
-      border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
-      opacity:0;transform:translateX(42px) scale(.985);pointer-events:none;
-      transition:transform .22s cubic-bezier(.22,.84,.24,1), opacity .18s ease;
-    }
-    .slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto;z-index:3}
-    .slide.prev{opacity:0;transform:translateX(-46px) scale(.985);z-index:1}
-    .slide.next{opacity:0;transform:translateX(46px) scale(.985);z-index:1}
-    .slide-inner{display:flex;flex-direction:column;height:100%;padding:32px 32px 26px;overflow:auto}
-    .slide-label{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#eaf2fb;color:#234972;font-weight:900;text-transform:uppercase;letter-spacing:.05em;font-size:.78rem}
-    .slide-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}
-    .slide h2{margin:0 0 12px;font-size:clamp(1.55rem,2.2vw,2.25rem);line-height:1.14;font-weight:950}
-    .slide-counter{color:var(--muted);font-weight:800;white-space:nowrap}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;background:rgba(255,255,255,.1);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);border-radius:24px;color:#fff;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+    .brand h1{margin:0;font-size:1.28rem;font-weight:950}.brand p{margin:4px 0 0;color:rgba(255,255,255,.78);font-size:.94rem}
+    .topbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.meta-pill{padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font-weight:800;border:1px solid rgba(255,255,255,.18)}
+    .topbar .button,.topbar button{border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.12);color:#fff;padding:11px 16px;font-weight:800;cursor:pointer}.topbar .button.secondary{background:rgba(255,255,255,.06)}
+    .progress-wrap{position:relative;height:10px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;border:1px solid rgba(255,255,255,.12)}.progress-bar{height:100%;width:0;background:linear-gradient(90deg,#7ab3f0,#d4ebff);transition:width .45s ease}
+    .stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}.deck{position:relative;width:min(1360px,100%);height:min(78vh,880px);min-height:560px;opacity:0;transition:opacity .35s ease}.deck.ready{opacity:1}
+    .slide{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--panel);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.48);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;opacity:0;transform:translateX(74px) scale(.975);pointer-events:none;transition:transform .62s cubic-bezier(.16,.84,.22,1), opacity .46s ease}
+    .slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto;z-index:3}.slide.prev{opacity:0;transform:translateX(-86px) scale(.975);z-index:1}.slide.next{opacity:0;transform:translateX(86px) scale(.975);z-index:1}
+    .slide-inner{display:flex;flex-direction:column;height:100%;padding:32px 32px 26px;overflow:auto}.slide-label{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#eaf2fb;color:#234972;font-weight:900;text-transform:uppercase;letter-spacing:.05em;font-size:.78rem}.slide-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}.slide h2{margin:0 0 12px;font-size:clamp(1.55rem,2.2vw,2.25rem);line-height:1.14;font-weight:950}.slide-counter{color:var(--muted);font-weight:800;white-space:nowrap}
 
-    .loading-screen{
-      position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;
-      background:
-        radial-gradient(circle at top left, rgba(113,168,221,.24), transparent 34%),
-        linear-gradient(140deg, var(--bg), var(--bg2));
-      color:#fff;
-      transition:opacity .35s ease, visibility .35s ease;
-    }
-    .loading-screen.hidden{opacity:0;visibility:hidden}
-    .loading-card{
-      width:min(560px,calc(100% - 32px));
-      border-radius:28px;
-      padding:30px 28px;
-      background:rgba(255,255,255,.1);
-      backdrop-filter:blur(18px);
-      border:1px solid rgba(255,255,255,.15);
-      box-shadow:0 18px 50px rgba(0,0,0,.18);
-      text-align:center;
-    }
-    .loading-card h2{margin:0 0 10px;font-size:1.6rem}
-    .loading-card p{margin:0 0 16px;color:rgba(255,255,255,.8)}
-    .loading-track{
-      height:14px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;border:1px solid rgba(255,255,255,.14);
-    }
-    .loading-fill{height:100%;width:0;background:linear-gradient(90deg,#7ab3f0,#d8efff);transition:width .3s ease}
-    .loading-status{margin-top:14px;font-weight:800;color:rgba(255,255,255,.88)}
+    .loading-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;background:radial-gradient(circle at top left, rgba(113,168,221,.24), transparent 34%),linear-gradient(140deg,var(--bg),var(--bg2));color:#fff;transition:opacity .35s ease,visibility .35s ease}.loading-screen.hidden{opacity:0;visibility:hidden}.loading-card{width:min(560px,calc(100% - 32px));border-radius:28px;padding:30px 28px;background:rgba(255,255,255,.1);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.15);box-shadow:0 18px 50px rgba(0,0,0,.18);text-align:center}.loading-card h2{margin:0 0 10px;font-size:1.6rem}.loading-card p{margin:0 0 16px;color:rgba(255,255,255,.8)}.loading-track{height:14px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;border:1px solid rgba(255,255,255,.14)}.loading-fill{height:100%;width:0;background:linear-gradient(90deg,#7ab3f0,#d8efff);transition:width .3s ease}.loading-status{margin-top:14px;font-weight:800;color:rgba(255,255,255,.88)}
 
-    .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;flex:1;min-height:0}
-    .hero-panel,.hero-side{
-      border:1px solid var(--line);border-radius:26px;background:linear-gradient(180deg,#fff,#f7fbff);
-      box-shadow:0 14px 34px rgba(15,23,42,.07);padding:24px;min-height:0;
-    }
-    .hero-panel{
-      background:
-        radial-gradient(circle at top left, rgba(113,168,221,.18), transparent 32%),
-        linear-gradient(180deg,#ffffff,#f7fbff);
-    }
-    .hero-title{font-size:clamp(1.9rem,3vw,3rem)!important;margin-bottom:10px!important}
-    .hero-lead{margin:0;color:var(--muted);font-size:1.05rem;line-height:1.55;max-width:760px}
-    .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:20px}
-    .summary-card{
-      background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 10px 26px rgba(15,23,42,.05);
-      opacity:0;transform:translateY(18px);animation:rise .45s ease forwards;
-    }
-    .summary-card:nth-child(2){animation-delay:.06s}
-    .summary-card:nth-child(3){animation-delay:.12s}
-    .summary-card:nth-child(4){animation-delay:.18s}
-    .summary-card strong{display:block;font-size:2rem;color:#16355b;line-height:1;font-weight:950}
-    .summary-card span{display:block;margin-top:8px;font-weight:700;color:var(--muted)}
-    .summary-list{display:grid;gap:14px}
-    .summary-note{
-      border-radius:20px;padding:18px;background:#fff;border:1px solid var(--line);box-shadow:0 10px 24px rgba(15,23,42,.05);
-      opacity:0;transform:translateX(18px);animation:slideIn .42s ease forwards;
-    }
-    .summary-note:nth-child(2){animation-delay:.08s}
-    .summary-note:nth-child(3){animation-delay:.14s}
-    .summary-note h3{margin:0 0 8px;color:#1a3a60;font-size:1rem}
-    .summary-note p{margin:0;color:#51657c;line-height:1.5}
+    .cover-slide .slide-inner{align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at top left,rgba(113,168,221,.22),transparent 36%),linear-gradient(135deg,#fff,#f4f9ff 62%,#eefaf3)}
+    .cover-title{font-size:clamp(2.6rem,6vw,6.2rem)!important;margin:12px 0 10px!important;letter-spacing:-.04em}.cover-subtitle{max-width:760px;color:var(--muted);font-size:1.28rem;line-height:1.55;margin:0}.cover-mark{font-size:1.1rem;font-weight:950;color:#24598e;background:#eaf2fb;border:1px solid #d4e4f4;border-radius:999px;padding:11px 18px}
 
-    .scale-slide-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:22px;align-items:stretch;min-height:0;flex:1}
-    .scale-panel,.feedback-panel{border:1px solid rgba(216,227,239,.95);border-radius:24px;background:linear-gradient(180deg,#ffffff,#f7fbff);box-shadow:0 14px 34px rgba(15,23,42,.07);padding:22px;min-height:0}
-    .scale-panel{display:grid;grid-template-rows:auto auto 1fr;gap:18px}
-    .feedback-panel{display:flex;flex-direction:column;overflow:hidden}
-    .modern-metric{display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:stretch}
-    .avg-tile{
-      border-radius:24px;background:linear-gradient(145deg,#1d4d80,#3477b9);color:#fff;padding:22px;min-height:150px;
-      display:flex;flex-direction:column;justify-content:center;box-shadow:0 18px 34px rgba(31,75,122,.22)
-    }
-    .avg-tile strong{font-size:3.35rem;line-height:1;font-weight:950}
-    .avg-tile span{font-weight:850;color:rgba(255,255,255,.9);margin-top:8px}
-    .mini-stats{display:grid;grid-template-columns:1fr;gap:10px}
-    .mini-stat{border-radius:18px;background:#eef6ff;border:1px solid #d7e6f5;padding:14px 16px;color:#1f426b;font-weight:900;opacity:0;transform:translateY(16px)}
-    .mini-stat span{display:block;color:#64758a;font-weight:750;font-size:.86rem;margin-top:4px}
-    .slide.active .mini-stat{animation:rise .34s ease forwards}
-    .slide.active .mini-stat:nth-child(2){animation-delay:.07s}
-    .scale-viz{
-      position:relative;border:1px solid #d9e5f1;border-radius:24px;padding:18px 16px 16px;
-      background:radial-gradient(circle at top left,rgba(111,168,220,.14),transparent 36%), linear-gradient(180deg,#fbfdff,#f3f8fd);
-      min-height:270px;
-    }
-    .scale-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
-    .scale-title{font-weight:950;color:#1b3f67}
-    .distribution{
-      display:grid;grid-template-columns:repeat(10,1fr);gap:8px;align-items:end;min-height:164px;padding:18px 4px 0;border-top:1px solid #e3ebf4;margin-top:14px
-    }
-    .column{height:100%;min-width:0;display:grid;grid-template-rows:22px 1fr 24px;align-items:end;justify-items:center;gap:6px}
-    .stack{
-      width:100%;min-height:116px;display:flex;flex-direction:column-reverse;align-items:center;justify-content:flex-start;gap:4px;padding:4px 0;
-      border-radius:999px;background:linear-gradient(180deg,rgba(234,242,251,.12),rgba(234,242,251,.75));
-    }
-    .dot{
-      width:12px;height:12px;border-radius:999px;background:linear-gradient(180deg,#2f74b8,#1d4d80);
-      box-shadow:0 2px 7px rgba(31,75,122,.25);opacity:0;transform:translateY(8px) scale(.7)
-    }
-    .slide.active .dot{animation:popDot .28s ease forwards}
-    .tick{
-      width:28px;height:24px;display:grid;place-items:center;border-radius:999px;background:#fff;border:1px solid #dbe6f2;
-      font-weight:950;color:#33516f;font-size:.86rem;
-    }
-    .count-badge{display:grid;place-items:center;min-width:26px;height:22px;border-radius:999px;background:#e8f1fb;color:#285b91;font-weight:950;font-size:.78rem}
-    .median-marker{
-      position:absolute;top:78px;bottom:46px;width:3px;background:var(--danger);border-radius:999px;box-shadow:0 0 0 7px rgba(217,72,15,.08);
-      opacity:0;transform:scaleY(.6)
-    }
-    .slide.active .median-marker{animation:showMedian .28s ease .12s forwards}
-    .median-marker::before{
-      content:'Median';position:absolute;top:-28px;left:50%;transform:translateX(-50%);font-size:.76rem;font-weight:950;color:var(--danger);
-      white-space:nowrap;background:#fff4ed;border:1px solid #ffd8c2;border-radius:999px;padding:4px 8px;
-    }
-    .feedback-panel h3,.text-block h3{margin:0 0 12px;font-size:1.06rem;color:#193557}
-    .comment-list,.text-card-list{display:grid;gap:10px}
-    .feedback-panel .comment-list{overflow:auto;padding-right:4px}
-    .comment,.text-entry{
-      border-radius:16px;padding:14px 16px;background:#fff;border:1px solid #dfe8f1;color:#20344c;white-space:pre-wrap;line-height:1.5;
-      box-shadow:0 8px 20px rgba(15,23,42,.045);opacity:0;transform:translateY(-16px)
-    }
-    .slide.active .comment,.slide.active .text-entry{animation:dropIn .34s ease forwards}
-    .empty{color:var(--muted);font-style:italic;margin:0}
-    .general-feedback-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;min-height:0;flex:1}
-    .general-feedback-column{
-      border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,#fff,#f8fbff);padding:18px;min-height:0;overflow:auto
-    }
-    .general-feedback-column h3{margin:0 0 12px;color:#193557}
-    .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:8px}
-    .choice-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 12px 24px rgba(15,23,42,.05)}
-    .choice-card strong{display:block;font-size:2rem;color:#16355b;line-height:1;font-weight:950}
-    .choice-card span{display:block;margin-top:8px;font-weight:700;color:var(--muted)}
-    .thanks-slide .slide-inner{
-      align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;
-      background:linear-gradient(135deg,#ffffff,#eef7ff 55%,#eefaf3);
-    }
-    .thanks-slide h2{font-size:clamp(2rem,4vw,4rem);margin-bottom:16px}
-    .thanks-slide p{max-width:680px;color:var(--muted);font-size:1.2rem;line-height:1.55}
-    .confetti-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-    .confetti-piece{position:absolute;top:-30px;width:10px;height:16px;border-radius:3px;opacity:.85;animation:confettiFall 4.2s linear infinite}
-    .nav-dock{
-      display:flex;align-items:center;justify-content:space-between;gap:16px;background:rgba(255,255,255,.1);backdrop-filter:blur(18px);
-      border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:14px 16px;color:#fff
-    }
-    .nav-left,.nav-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-    .nav-center{font-weight:800;color:rgba(255,255,255,.85)}
-    .nav-dock button,.nav-dock a{border:none;border-radius:999px;padding:12px 18px;font-weight:900;cursor:pointer;text-decoration:none}
-    .nav-dock .primary{background:#fff;color:#16355b}
-    .nav-dock .secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.16)}
-    .nav-dock button:disabled{opacity:.45;cursor:not-allowed}
-    .status{margin:0;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.12)}
-    .present-tip{font-size:.92rem;color:rgba(255,255,255,.8)}
+    .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;flex:1;min-height:0}.hero-panel,.hero-side{border:1px solid var(--line);border-radius:26px;background:linear-gradient(180deg,#fff,#f7fbff);box-shadow:0 14px 34px rgba(15,23,42,.07);padding:24px;min-height:0}.hero-panel{background:radial-gradient(circle at top left,rgba(113,168,221,.18),transparent 32%),linear-gradient(180deg,#fff,#f7fbff)}.hero-title{font-size:clamp(1.9rem,3vw,3rem)!important;margin-bottom:10px!important}.hero-lead{margin:0;color:var(--muted);font-size:1.05rem;line-height:1.55;max-width:760px}.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:20px}.summary-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 10px 26px rgba(15,23,42,.05);opacity:0;transform:translateY(18px)}.slide.active .summary-card{animation:rise .7s ease forwards}.slide.active .summary-card:nth-child(2){animation-delay:.16s}.slide.active .summary-card:nth-child(3){animation-delay:.32s}.slide.active .summary-card:nth-child(4){animation-delay:.48s}.summary-card strong{display:block;font-size:2rem;color:#16355b;line-height:1;font-weight:950}.summary-card span{display:block;margin-top:8px;font-weight:700;color:var(--muted)}.summary-list{display:grid;gap:14px}.summary-note{border-radius:20px;padding:18px;background:#fff;border:1px solid var(--line);box-shadow:0 10px 24px rgba(15,23,42,.05);opacity:0;transform:translateX(18px)}.slide.active .summary-note{animation:slideIn .75s ease forwards}.slide.active .summary-note:nth-child(2){animation-delay:.34s}.slide.active .summary-note:nth-child(3){animation-delay:.68s}.summary-note h3{margin:0 0 8px;color:#1a3a60;font-size:1rem}.summary-note p{margin:0;color:#51657c;line-height:1.5}
 
-    @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
-    @keyframes popDot{from{opacity:0;transform:translateY(8px) scale(.7)}to{opacity:1;transform:translateY(0) scale(1)}}
-    @keyframes showMedian{from{opacity:0;transform:scaleY(.6)}to{opacity:1;transform:scaleY(1)}}
-    @keyframes dropIn{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes confettiFall{
-      0%{transform:translate3d(0,-40px,0) rotate(0deg);opacity:0}
-      12%{opacity:.9}
-      100%{transform:translate3d(var(--drift),calc(100vh + 80px),0) rotate(520deg);opacity:0}
-    }
+    .scale-slide-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:22px;align-items:stretch;min-height:0;flex:1}.scale-panel,.feedback-panel{border:1px solid rgba(216,227,239,.95);border-radius:24px;background:linear-gradient(180deg,#fff,#f7fbff);box-shadow:0 14px 34px rgba(15,23,42,.07);padding:22px;min-height:0}.scale-panel{display:grid;grid-template-rows:auto auto 1fr;gap:18px}.feedback-panel{display:flex;flex-direction:column;overflow:hidden}.modern-metric{display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:stretch}
+    .avg-tile{border-radius:24px;background:linear-gradient(145deg,#b42318,#d9480f);color:#fff;padding:22px;min-height:150px;display:flex;flex-direction:column;justify-content:center;box-shadow:0 18px 34px rgba(31,75,122,.22);transition:background 1s ease}.avg-tile strong{font-size:3.35rem;line-height:1;font-weight:950}.avg-tile span{font-weight:850;color:rgba(255,255,255,.9);margin-top:8px}.mini-stats{display:grid;grid-template-columns:1fr;gap:10px}.mini-stat{border-radius:18px;background:#eef6ff;border:1px solid #d7e6f5;padding:14px 16px;color:#1f426b;font-weight:900;opacity:0;transform:translateY(16px)}.mini-stat span{display:block;color:#64758a;font-weight:750;font-size:.86rem;margin-top:4px}.slide.active .mini-stat{animation:rise .7s ease forwards}.slide.active .mini-stat:nth-child(2){animation-delay:.24s}
+    .scale-viz{position:relative;border:1px solid #d9e5f1;border-radius:24px;padding:18px 16px 16px;background:radial-gradient(circle at top left,rgba(111,168,220,.14),transparent 36%),linear-gradient(180deg,#fbfdff,#f3f8fd);min-height:270px}.scale-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}.scale-title{font-weight:950;color:#1b3f67}.distribution{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;align-items:end;min-height:164px;padding:18px 4px 0;border-top:1px solid #e3ebf4;margin-top:14px}.column{height:100%;min-width:0;display:grid;grid-template-rows:22px 1fr 24px;align-items:end;justify-items:center;gap:6px}.stripe-stack{width:100%;min-height:116px;display:flex;flex-direction:column-reverse;align-items:stretch;justify-content:flex-start;gap:3px;padding:6px;border-radius:18px;background:linear-gradient(180deg,rgba(234,242,251,.18),rgba(234,242,251,.85));border:1px solid #e1ebf5;overflow:hidden}.stripe{height:4px;border-radius:999px;opacity:0;transform:scaleX(.2);transform-origin:left center}.slide.active .stripe{animation:growStripe .42s ease forwards}.tick{width:28px;height:24px;display:grid;place-items:center;border-radius:999px;background:#fff;border:1px solid #dbe6f2;font-weight:950;color:#33516f;font-size:.86rem}.count-badge{display:grid;place-items:center;min-width:26px;height:22px;border-radius:999px;background:#e8f1fb;color:#285b91;font-weight:950;font-size:.78rem}
+    .feedback-panel h3,.text-block h3{margin:0 0 12px;font-size:1.06rem;color:#193557}.comment-list,.text-card-list{display:grid;gap:10px}.feedback-panel .comment-list{overflow:auto;padding-right:4px}.comment,.text-entry{border-radius:16px;padding:14px 16px;background:#fff;border:1px solid #dfe8f1;color:#20344c;white-space:pre-wrap;line-height:1.5;box-shadow:0 8px 20px rgba(15,23,42,.045);opacity:0;transform:translateY(-16px)}.slide.active .comment,.slide.active .text-entry{animation:dropIn .7s ease forwards}.empty{color:var(--muted);font-style:italic;margin:0}
+    .general-feedback-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;min-height:0;flex:1}.general-feedback-column{border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,#fff,#f8fbff);padding:18px;min-height:0;overflow:auto}.general-feedback-column h3{margin:0 0 12px;color:#193557}.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:8px}.choice-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 12px 24px rgba(15,23,42,.05)}.choice-card strong{display:block;font-size:2rem;color:#16355b;line-height:1;font-weight:950}.choice-card span{display:block;margin-top:8px;font-weight:700;color:var(--muted)}
+    .thanks-slide .slide-inner{align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;background:linear-gradient(135deg,#fff,#eef7ff 55%,#eefaf3)}.thanks-slide h2{font-size:clamp(2rem,4vw,4rem);margin-bottom:16px}.thanks-slide p{max-width:680px;color:var(--muted);font-size:1.2rem;line-height:1.55}.confetti-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden}.confetti-piece{position:absolute;top:-30px;width:10px;height:16px;border-radius:3px;opacity:.85;animation:confettiFall 4.2s linear infinite}
+    .nav-dock{display:flex;align-items:center;justify-content:space-between;gap:16px;background:rgba(255,255,255,.1);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:14px 16px;color:#fff}.nav-left,.nav-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.nav-center{font-weight:800;color:rgba(255,255,255,.85)}.nav-dock button,.nav-dock a{border:none;border-radius:999px;padding:12px 18px;font-weight:900;cursor:pointer;text-decoration:none}.nav-dock .primary{background:#fff;color:#16355b}.nav-dock .secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.16)}.nav-dock button:disabled{opacity:.45;cursor:not-allowed}.status{margin:0;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.12)}.present-tip{font-size:.92rem;color:rgba(255,255,255,.8)}
 
-    @media (max-width:980px){
-      .hero-grid,.scale-slide-grid,.modern-metric,.general-feedback-grid,.summary-grid{grid-template-columns:1fr}
-      .feedback-panel{max-height:320px}
-    }
-    @media (max-width:720px){
-      .results-shell{padding:14px;gap:14px}
-      .topbar,.nav-dock{border-radius:20px}
-      .topbar{flex-direction:column;align-items:flex-start}
-      .topbar-right,.nav-left,.nav-right{width:100%}
-      .nav-dock{flex-direction:column;align-items:stretch}
-      .nav-center{text-align:center}
-      .slide-inner{padding:24px 20px 20px}
-      .deck{height:74vh;min-height:560px}
-      .summary-grid,.choice-grid{grid-template-columns:1fr}
-      .hero-panel,.hero-side,.scale-panel,.feedback-panel{padding:18px}
-    }
+    @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}@keyframes growStripe{from{opacity:0;transform:scaleX(.2)}to{opacity:1;transform:scaleX(1)}}@keyframes dropIn{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}@keyframes confettiFall{0%{transform:translate3d(0,-40px,0) rotate(0deg);opacity:0}12%{opacity:.9}100%{transform:translate3d(var(--drift),calc(100vh + 80px),0) rotate(520deg);opacity:0}}
+    @media (max-width:980px){.hero-grid,.scale-slide-grid,.modern-metric,.general-feedback-grid,.summary-grid{grid-template-columns:1fr}.feedback-panel{max-height:320px}}@media (max-width:720px){.results-shell{padding:14px;gap:14px}.topbar,.nav-dock{border-radius:20px}.topbar{flex-direction:column;align-items:flex-start}.topbar-right,.nav-left,.nav-right{width:100%}.nav-dock{flex-direction:column;align-items:stretch}.nav-center{text-align:center}.slide-inner{padding:24px 20px 20px}.deck{height:74vh;min-height:560px}.summary-grid,.choice-grid{grid-template-columns:1fr}.hero-panel,.hero-side,.scale-panel,.feedback-panel{padding:18px}}
   </style>
 </head>
 <body data-mode="manometer-results">
-<div id="loadingScreen" class="loading-screen">
-  <div class="loading-card">
-    <h2>Auswertung wird geladen</h2>
-    <p>Die Präsentation wird vorbereitet.</p>
-    <div class="loading-track"><div id="loadingFill" class="loading-fill"></div></div>
-    <div id="loadingStatus" class="loading-status">Daten werden geladen …</div>
-  </div>
-</div>
-
+<div id="loadingScreen" class="loading-screen"><div class="loading-card"><h2>Auswertung wird geladen</h2><p>Die Präsentation wird vorbereitet.</p><div class="loading-track"><div id="loadingFill" class="loading-fill"></div></div><div id="loadingStatus" class="loading-status">Daten werden geladen …</div></div></div>
 <main class="results-shell">
-  <section class="topbar">
-    <div class="brand">
-      <h1>Manometer – Auswertung</h1>
-      <p>Präsentationsansicht für das Plenum.</p>
-    </div>
-    <div class="topbar-right">
-      <span class="meta-pill"><span id="responseCount">0</span> Rückmeldungen</span>
-      <button id="fullscreenBtn" type="button">Vollbild starten</button>
-      <a class="button secondary" href="index.html">Startseite</a>
-    </div>
-  </section>
-
+  <section class="topbar"><div class="brand"><h1>Manometer – Auswertung</h1><p>Präsentationsansicht für das Plenum.</p></div><div class="topbar-right"><span class="meta-pill"><span id="responseCount">0</span> Rückmeldungen</span><button id="fullscreenBtn" type="button">Vollbild starten</button><a class="button secondary" href="index.html">Startseite</a></div></section>
   <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
-
-  <section class="stage" aria-live="polite">
-    <div id="deck" class="deck"></div>
-  </section>
-
-  <section class="nav-dock">
-    <div class="nav-left">
-      <button id="prevCard" type="button" class="secondary">← Zurück</button>
-      <button id="nextCard" type="button" class="primary">Weiter →</button>
-    </div>
-    <div class="nav-center">
-      <span id="slideCounter">Kachel 1 / 1</span><br>
-      <span class="present-tip">Mit Pfeiltasten, Leertaste oder im Vollbild durch die Präsentation navigieren.</span>
-    </div>
-    <div class="nav-right">
-      <p id="status" class="status">Auswertung wird vorbereitet …</p>
-    </div>
-  </section>
+  <section class="stage" aria-live="polite"><div id="deck" class="deck"></div></section>
+  <section class="nav-dock"><div class="nav-left"><button id="prevCard" type="button" class="secondary">← Zurück</button><button id="nextCard" type="button" class="primary">Weiter →</button></div><div class="nav-center"><span id="slideCounter">Kachel 1 / 1</span><br><span class="present-tip">Mit Pfeiltasten, Leertaste oder im Vollbild durch die Präsentation navigieren.</span></div><div class="nav-right"><p id="status" class="status">Auswertung wird vorbereitet …</p></div></section>
 </main>
-<script src="js/config.js?v=manometer-presentation-v2"></script>
-<script src="js/app.js?v=manometer-presentation-v2"></script>
+<script src="js/config.js?v=manometer-presentation-v3"></script>
+<script src="js/app.js?v=manometer-presentation-v3"></script>
 <script>
 (function(){
-  var QUESTIONS = [
-    {key:'presentationPressure', category:'Startfrage', label:'Die Aussicht auf eine zufällige Präsentation im Plenum hat dazu geführt, dass die Aufgaben gewissenhafter bearbeitet wurden.'},
-    {key:'caseConsultation', category:'Inhaltliches Verständnis', label:'Ich kenne verschiedene Arten der Fallberatung.'},
-    {key:'phaseUnderstanding', category:'Inhaltliches Verständnis', label:'Ich verstehe die Phasen einer strukturierten Gruppensupervision.'},
-    {key:'rolePerspective', category:'Inhaltliches Verständnis', label:'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.'},
-    {key:'technicalClarity', category:'Technische Umsetzung und Bedienbarkeit', label:'Die technische Umsetzung der Anwendung war verständlich.'},
-    {key:'usability', category:'Technische Umsetzung und Bedienbarkeit', label:'Die Anwendung war gut bedienbar.'},
-    {key:'presentationDesign', category:'Allgemeine Gestaltung der Präsentation', label:'Die Gestaltung der Präsentation war übersichtlich und ansprechend.'},
-    {key:'presentationUsefulness', category:'Allgemeine Gestaltung der Präsentation', label:'Die erstellte Präsentation eignet sich gut, um Ergebnisse im Plenum vorzustellen.'},
-    {key:'creativeOptions', category:'Allgemeine Gestaltung der Präsentation', label:'Die Bearbeitungsmöglichkeiten der Präsentation waren hilfreich.'}
+  var QUESTIONS=[
+    {key:'presentationPressure',category:'Startfrage',label:'Die Aussicht auf eine zufällige Präsentation im Plenum hat dazu geführt, dass die Aufgaben gewissenhafter bearbeitet wurden.'},
+    {key:'caseConsultation',category:'Inhaltliches Verständnis',label:'Ich kenne verschiedene Arten der Fallberatung.'},
+    {key:'phaseUnderstanding',category:'Inhaltliches Verständnis',label:'Ich verstehe die Phasen einer strukturierten Gruppensupervision.'},
+    {key:'rolePerspective',category:'Inhaltliches Verständnis',label:'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.'},
+    {key:'technicalClarity',category:'Technische Umsetzung und Bedienbarkeit',label:'Die technische Umsetzung der Anwendung war verständlich.'},
+    {key:'usability',category:'Technische Umsetzung und Bedienbarkeit',label:'Die Anwendung war gut bedienbar.'},
+    {key:'presentationDesign',category:'Allgemeine Gestaltung der Präsentation',label:'Die Gestaltung der Präsentation war übersichtlich und ansprechend.'},
+    {key:'presentationUsefulness',category:'Allgemeine Gestaltung der Präsentation',label:'Die erstellte Präsentation eignet sich gut, um Ergebnisse im Plenum vorzustellen.'},
+    {key:'creativeOptions',category:'Allgemeine Gestaltung der Präsentation',label:'Die Bearbeitungsmöglichkeiten der Präsentation waren hilfreich.'}
   ];
-
-  var cards = [];
-  var current = 0;
-  var deck = document.getElementById('deck');
-  var slideCounter = document.getElementById('slideCounter');
-  var statusEl = document.getElementById('status');
-  var fullscreenBtn = document.getElementById('fullscreenBtn');
-  var progressBar = document.getElementById('progressBar');
-  var loadingScreen = document.getElementById('loadingScreen');
-  var loadingFill = document.getElementById('loadingFill');
-  var loadingStatus = document.getElementById('loadingStatus');
-  var animatedSlides = new WeakSet();
-
-  function setLoading(progress, text){
-    loadingFill.style.width = Math.max(0, Math.min(100, progress)) + '%';
-    if(text) loadingStatus.textContent = text;
+  var cards=[],current=0,animatedSlides=new WeakSet();
+  var deck=document.getElementById('deck'),slideCounter=document.getElementById('slideCounter'),statusEl=document.getElementById('status'),fullscreenBtn=document.getElementById('fullscreenBtn'),progressBar=document.getElementById('progressBar'),loadingScreen=document.getElementById('loadingScreen'),loadingFill=document.getElementById('loadingFill'),loadingStatus=document.getElementById('loadingStatus');
+  function setLoading(p,t){loadingFill.style.width=Math.max(0,Math.min(100,p))+'%';if(t)loadingStatus.textContent=t}
+  function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function jsonp(url,params){return new Promise(function(resolve,reject){var cb='manoListCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9),qs=new URLSearchParams(params||{}),s=document.createElement('script'),done=false;qs.set('callback',cb);qs.set('_',Date.now());window[cb]=function(data){done=true;cleanup();resolve(data)};function cleanup(){try{delete window[cb]}catch(_){}if(s&&s.parentNode)s.parentNode.removeChild(s)}s.onerror=function(){if(!done){cleanup();reject(new Error('Manometer-Auswertung konnte nicht geladen werden.'))}};s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString();document.body.appendChild(s);setTimeout(function(){if(!done){cleanup();reject(new Error('Zeitüberschreitung beim Laden der Auswertung.'))}},12000)})}
+  function avg(vals){return vals.length?vals.reduce(function(a,b){return a+b},0)/vals.length:null}
+  function median(vals){if(!vals.length)return null;var a=vals.slice().sort(function(x,y){return x-y}),m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2}
+  function plural(n,s,p){return n===1?s:(p||s+'en')}
+  function statsForQuestion(q,entries){var vals=entries.map(function(e){return Number(e.scores&&e.scores[q.key])}).filter(function(n){return !isNaN(n)&&n>=1&&n<=10});var improvements=entries.map(function(e){return e.improvements&&e.improvements[q.key]}).filter(function(t){return String(t||'').trim()});return{vals:vals,avg:avg(vals),average:avg(vals),improvements:improvements}}
+  function valueColor(v){var pct=Math.max(0,Math.min(1,Number(v||0)/10));var hue=8+(122-8)*pct;return 'hsl('+hue+',70%,38%)'}
+  function stripeColor(i){var pct=Math.max(0,Math.min(1,i/19));var hue=122-(122-0)*pct;var light=42-(12*pct);return 'hsl('+hue+',78%,'+light+'%)'}
+  function renderCover(){return '<article class="slide cover-slide"><div class="slide-inner"><div class="cover-mark">Manometer</div><h2 class="cover-title">Auswertung</h2><p class="cover-subtitle">Präsentationsdeck für die gemeinsame Reflexion im Plenum</p></div></article>'}
+  function renderOverview(entries){
+    var per=QUESTIONS.map(function(q){return{question:q,stat:statsForQuestion(q,entries)}}),all=[];per.forEach(function(x){all=all.concat(x.stat.vals)});var overall=avg(all),strong=per.slice().sort(function(a,b){return(b.stat.avg||0)-(a.stat.avg||0)})[0],feedback=per.slice().sort(function(a,b){return(b.stat.improvements.length||0)-(a.stat.improvements.length||0)})[0],llmYes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,openNotes=entries.reduce(function(sum,e){return sum+(e.generalPraise?1:0)+(e.generalCriticism?1:0)+(e.generalSuggestions?1:0)},0)+per.reduce(function(sum,x){return sum+x.stat.improvements.length},0);
+    return '<article class="slide"><div class="slide-inner"><div class="hero-grid"><section class="hero-panel"><span class="slide-label">Gesamtbild</span><h2 class="hero-title">Manometer – Gesamtbild</h2><p class="hero-lead">Zum Abschluss werden die zentralen Kennzahlen und Auffälligkeiten der Rückmeldungen gebündelt.</p><div class="summary-grid"><div class="summary-card"><strong data-countto="'+(entries.length||0)+'">0</strong><span>'+plural(entries.length,'Rückmeldung','Rückmeldungen')+'</span></div><div class="summary-card"><strong data-countto="'+((overall||0).toFixed(1))+'">0.0</strong><span>Ø Gesamtbewertung</span></div><div class="summary-card"><strong data-countto="'+(openNotes||0)+'">0</strong><span>Textbeiträge</span></div><div class="summary-card"><strong data-countto="'+(llmYes||0)+'">0</strong><span>LLM-Nutzung mit „Ja“</span></div></div></section><aside class="hero-side"><div class="summary-list"><div class="summary-note"><h3>Stärkster Bereich</h3><p><strong>'+escapeHtml((strong&&strong.question.label)||'–')+'</strong>'+(strong&&strong.stat.avg!=null?'<br>Durchschnitt: '+strong.stat.avg.toFixed(1)+' / 10':'')+'</p></div><div class="summary-note"><h3>Meiste Verbesserungshinweise</h3><p><strong>'+escapeHtml((feedback&&feedback.question.label)||'–')+'</strong>'+(feedback?'<br>'+feedback.stat.improvements.length+' Hinweise':'')+'</p></div><div class="summary-note"><h3>Abschluss</h3><p>Danach folgt die Dankesfolie.</p></div></div></aside></div></div></article>'
   }
-  function appUrl(){ try{ if(typeof getAppsScriptUrl==='function') return getAppsScriptUrl(); }catch(_){} return (window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''; }
-  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function jsonp(url, params){ return new Promise(function(resolve,reject){ var cb='manoListCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); var qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); var s=document.createElement('script'); var done=false; window[cb]=function(data){ done=true; cleanup(); resolve(data); }; function cleanup(){ try{ delete window[cb]; }catch(_){} if(s&&s.parentNode)s.parentNode.removeChild(s);} s.onerror=function(){ if(!done){ cleanup(); reject(new Error('Manometer-Auswertung konnte nicht geladen werden.')); } }; s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString(); document.body.appendChild(s); setTimeout(function(){ if(!done){ cleanup(); reject(new Error('Zeitüberschreitung beim Laden der Auswertung.')); } },12000); }); }
-  function avg(vals){ if(!vals.length) return null; return vals.reduce(function(a,b){ return a+b; },0)/vals.length; }
-  function median(vals){ if(!vals.length) return null; var a=vals.slice().sort(function(x,y){ return x-y; }); var m=Math.floor(a.length/2); return a.length%2 ? a[m] : (a[m-1]+a[m])/2; }
-  function plural(n,sing,plur){ return n===1?sing:(plur||sing+'en'); }
-
-  function statsForQuestion(q, entries){
-    var vals=entries.map(function(e){ return Number(e.scores&&e.scores[q.key]); }).filter(function(n){ return !isNaN(n)&&n>=1&&n<=10; });
-    var improvements=entries.map(function(e){ return e.improvements&&e.improvements[q.key]; }).filter(function(t){ return String(t||'').trim(); });
-    return {vals:vals, avg:avg(vals), median:median(vals), improvements:improvements};
+  function renderScale(q,entries,idx){
+    var vals=entries.map(function(e){return Number(e.scores&&e.scores[q.key])}).filter(function(n){return !isNaN(n)&&n>=1&&n<=10}),counts={};for(var i=1;i<=10;i++)counts[i]=0;vals.forEach(function(v){counts[v]=(counts[v]||0)+1});var av=avg(vals),improvements=entries.map(function(e){return e.improvements&&e.improvements[q.key]}).filter(function(t){return String(t||'').trim()});var maxCount=Math.max(1,Math.max.apply(null,Object.keys(counts).map(function(k){return counts[k]})));var cols='',stripeCounter=0;for(var d=1;d<=10;d++){var n=counts[d]||0,scaled=Math.round((n/maxCount)*20);if(n>0&&scaled<1)scaled=1;cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack">';for(var s=0;s<scaled;s++){cols+='<span class="stripe" style="background:'+stripeColor(s)+';animation-delay:'+(0.12+stripeCounter*0.045).toFixed(3)+'s"></span>';stripeCounter++}cols+='</div><div class="tick">'+d+'</div></div>'}
+    var comments=improvements.length?improvements.map(function(t,i){return'<div class="comment" style="animation-delay:'+(0.35+i*0.28).toFixed(2)+'s">'+escapeHtml(t)+'</div>'}).join(''):'<p class="empty">Keine Verbesserungsvorschläge oder Kritik zu dieser Frage vorhanden.</p>';
+    return '<article class="slide" data-card="scale"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(q.category)+'</span><h2>'+escapeHtml(q.label)+'</h2></div><div class="slide-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div><div class="scale-slide-grid"><section class="scale-panel"><div class="modern-metric"><div class="avg-tile" data-color-target="'+(av===null?0:av.toFixed(1))+'"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt von 10</span></div><div class="mini-stats"><div class="mini-stat"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt</span></div><div class="mini-stat"><strong data-countto="'+vals.length+'">0</strong><span>Antworten</span></div></div></div><div class="scale-viz"><div class="scale-head"><div class="scale-title">Punkteverteilung</div></div><div class="distribution">'+cols+'</div></div></section><aside class="feedback-panel"><h3>Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></aside></div></div></article>'
   }
-
-  function renderIntro(entries){
-    var perQuestion = QUESTIONS.map(function(q){ return {question:q, stat:statsForQuestion(q, entries)}; });
-    var allScores = [];
-    perQuestion.forEach(function(item){ allScores = allScores.concat(item.stat.vals); });
-    var overall = avg(allScores);
-    var strongest = perQuestion.slice().sort(function(a,b){ return (b.stat.avg||0) - (a.stat.avg||0); })[0];
-    var mostFeedback = perQuestion.slice().sort(function(a,b){ return (b.stat.improvements.length||0) - (a.stat.improvements.length||0); })[0];
-    var llmYes = entries.filter(function(e){ return String(e.llmUsed||'').toLowerCase()==='ja'; }).length;
-    var openNotes = entries.reduce(function(sum,e){
-      var extra = 0;
-      if(e.generalPraise) extra++;
-      if(e.generalCriticism) extra++;
-      if(e.generalSuggestions) extra++;
-      return sum + extra;
-    },0) + perQuestion.reduce(function(sum, item){ return sum + item.stat.improvements.length; },0);
-
-    return '<article class="slide">'
-      + '<div class="slide-inner">'
-      + '<div class="hero-grid">'
-      + '<section class="hero-panel">'
-      + '<span class="slide-label">Überblick</span>'
-      + '<h2 class="hero-title">Manometer – Gesamtbild</h2>'
-      + '<p class="hero-lead">Die Rückmeldungen sind jetzt als Präsentation aufbereitet. Im nächsten Schritt könnt ihr Frage für Frage durch die Auswertung gehen.</p>'
-      + '<div class="summary-grid">'
-      + '<div class="summary-card"><strong data-countto="'+(entries.length||0)+'">0</strong><span>'+plural(entries.length,'Rückmeldung','Rückmeldungen')+'</span></div>'
-      + '<div class="summary-card"><strong data-countto="'+((overall||0).toFixed(1))+'">0.0</strong><span>Ø Gesamtbewertung</span></div>'
-      + '<div class="summary-card"><strong data-countto="'+(openNotes||0)+'">0</strong><span>Textbeiträge</span></div>'
-      + '<div class="summary-card"><strong data-countto="'+(llmYes||0)+'">0</strong><span>LLM-Nutzung mit „Ja“</span></div>'
-      + '</div>'
-      + '</section>'
-      + '<aside class="hero-side"><div class="summary-list">'
-      + '<div class="summary-note"><h3>Stärkster Bereich</h3><p><strong>'+escapeHtml((strongest&&strongest.question.label)||'–')+'</strong>'+(strongest&&strongest.stat.avg!=null ? '<br>Durchschnitt: '+strongest.stat.avg.toFixed(1)+' / 10' : '')+'</p></div>'
-      + '<div class="summary-note"><h3>Meiste Verbesserungshinweise</h3><p><strong>'+escapeHtml((mostFeedback&&mostFeedback.question.label)||'–')+'</strong>'+(mostFeedback ? '<br>'+mostFeedback.stat.improvements.length+' Hinweise' : '')+'</p></div>'
-      + '<div class="summary-note"><h3>Präsentationshinweis</h3><p>Die ersten Folien zeigen die Skalenwerte, danach folgen offene Antworten, Zusatzfragen und der Abschluss.</p></div>'
-      + '</div></aside>'
-      + '</div></div></article>';
-  }
-
-  function renderScale(q, entries, idx){
-    var vals=entries.map(function(e){ return Number(e.scores&&e.scores[q.key]); }).filter(function(n){ return !isNaN(n)&&n>=1&&n<=10; });
-    var counts={}; for(var i=1;i<=10;i++) counts[i]=0; vals.forEach(function(v){ counts[v]=(counts[v]||0)+1; });
-    var med=median(vals); var av=avg(vals);
-    var improvements=entries.map(function(e){ return e.improvements&&e.improvements[q.key]; }).filter(function(t){ return String(t||'').trim(); });
-    var cols=''; var dotIndex = 0;
-    for(var d=1;d<=10;d++){
-      cols += '<div class="column"><div class="count-badge">'+(counts[d]||0)+'</div><div class="stack">';
-      for(var c=0;c<counts[d];c++){
-        cols += '<span class="dot" style="animation-delay:'+(dotIndex*0.035).toFixed(3)+'s" title="'+d+'"></span>';
-        dotIndex++;
-      }
-      cols += '</div><div class="tick">'+d+'</div></div>';
-    }
-    var marker = med ? '<div class="median-marker" style="left:calc('+((((med-1)/9)*100).toFixed(4))+'% - 1px)"></div>' : '';
-    var comments = improvements.length ? improvements.map(function(t, i){ return '<div class="comment" style="animation-delay:'+((i*0.06)+0.18).toFixed(2)+'s">'+escapeHtml(t)+'</div>'; }).join('') : '<p class="empty">Keine Verbesserungsvorschläge oder Kritik zu dieser Frage vorhanden.</p>';
-    return '<article class="slide" data-card="scale">'
-      + '<div class="slide-inner">'
-      + '<div class="slide-head"><div><span class="slide-label">'+escapeHtml(q.category)+'</span><h2>'+escapeHtml(q.label)+'</h2></div><div class="slide-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div>'
-      + '<div class="scale-slide-grid">'
-      + '<section class="scale-panel">'
-      + '<div class="modern-metric">'
-      + '<div class="avg-tile"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt von 10</span></div>'
-      + '<div class="mini-stats"><div class="mini-stat"><strong data-countto="'+(med===null?'0':med)+'">0</strong><span>Median</span></div><div class="mini-stat"><strong data-countto="'+vals.length+'">0</strong><span>Antworten</span></div></div>'
-      + '</div>'
-      + '<div class="scale-viz">'+marker+'<div class="scale-head"><div class="scale-title">Punkteverteilung</div></div><div class="distribution">'+cols+'</div></div>'
-      + '</section>'
-      + '<aside class="feedback-panel"><h3>Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></aside>'
-      + '</div></div></article>';
-  }
-
-  function renderTextCard(title, kicker, texts){
-    var body = texts.length ? '<div class="text-card-list">'+texts.map(function(t, i){ return '<div class="text-entry" style="animation-delay:'+((i*0.05)+0.08).toFixed(2)+'s">'+escapeHtml(t)+'</div>'; }).join('')+'</div>' : '<p class="empty">Keine Einträge vorhanden.</p>';
-    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">Offene Antworten</div></div><div class="text-block"><h3>Gesammelte Aussagen</h3>'+body+'</div></div></article>';
-  }
-
-  function splitGeneralFeedback(entry, kind){
-    var direct = '';
-    if(kind === 'praise') direct = entry.generalPraise || '';
-    if(kind === 'criticism') direct = entry.generalCriticism || '';
-    if(kind === 'suggestions') direct = entry.generalSuggestions || '';
-    if(String(direct || '').trim()) return String(direct).trim();
-    var raw = String(entry.generalFeedback || '');
-    var labels = {praise:'Lob:', criticism:'Kritik:', suggestions:'Anregungen:'};
-    var label = labels[kind];
-    var parts = raw.split(/\n\s*\n/);
-    for(var i=0;i<parts.length;i++){
-      if(parts[i].indexOf(label) === 0) return parts[i].replace(label,'').trim();
-    }
-    return '';
-  }
-
-  function renderGeneralFeedbackCard(entries){
-    function list(kind){
-      var items = entries.map(function(e){ return splitGeneralFeedback(e, kind); }).filter(Boolean);
-      return items.length ? items.map(function(t, i){ return '<div class="text-entry" style="animation-delay:'+((i*0.05)+0.08).toFixed(2)+'s">'+escapeHtml(t)+'</div>'; }).join('') : '<p class="empty">Keine Einträge vorhanden.</p>';
-    }
-    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">Offene Antworten</span><h2>Allgemeines Lob, Kritik und Anregungen</h2></div><div class="slide-counter">Optional</div></div><div class="general-feedback-grid"><section class="general-feedback-column"><h3>Lob</h3>'+list('praise')+'</section><section class="general-feedback-column"><h3>Kritik</h3>'+list('criticism')+'</section><section class="general-feedback-column"><h3>Anregungen</h3>'+list('suggestions')+'</section></div></div></article>';
-  }
-
-  function renderChoiceCard(title, kicker, entries, key){
-    var yes = entries.filter(function(e){ return String(e[key]||'').toLowerCase()==='ja'; }).length;
-    var no = entries.filter(function(e){ return String(e[key]||'').toLowerCase()==='nein'; }).length;
-    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">Ja / Nein</div></div><div class="choice-grid"><div class="choice-card"><strong data-countto="'+yes+'">0</strong><span>Ja</span></div><div class="choice-card"><strong data-countto="'+no+'">0</strong><span>Nein</span></div></div></div></article>';
-  }
-
-  function renderLlmCard(entries){
-    var yes = entries.filter(function(e){ return String(e.llmUsed||'').toLowerCase()==='ja'; }).length;
-    var no = entries.filter(function(e){ return String(e.llmUsed||'').toLowerCase()==='nein'; }).length;
-    var details = entries.map(function(e){ return e.llmDetails; }).filter(Boolean);
-    var body = details.length ? '<div class="text-card-list">'+details.map(function(t, i){ return '<div class="text-entry" style="animation-delay:'+((i*0.05)+0.08).toFixed(2)+'s">'+escapeHtml(t)+'</div>'; }).join('')+'</div>' : '<p class="empty">Keine optionalen Hinweise zur LLM-Nutzung vorhanden.</p>';
-    return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">KI / LLM</span><h2>Wurde ChatGPT oder ein anderes LLM verwendet?</h2></div><div class="slide-counter">Ja / Nein</div></div><div class="choice-grid"><div class="choice-card"><strong data-countto="'+yes+'">0</strong><span>Ja</span></div><div class="choice-card"><strong data-countto="'+no+'">0</strong><span>Nein</span></div></div><div class="comments"><h3>Optionale Hinweise zur LLM-Nutzung</h3>'+body+'</div></div></article>';
-  }
-
-  function renderThanksCard(){
-    var colors = ['#5c95d1','#2f9e44','#f59f00','#c2255c','#7048e8','#1098ad'];
-    var pieces = '';
-    for(var i=0;i<52;i++){
-      pieces += '<span class="confetti-piece" style="left:'+(Math.random()*100).toFixed(2)+'%;background:'+colors[i%colors.length]+';animation-delay:'+(Math.random()*2.4).toFixed(2)+'s;animation-duration:'+(3.2+Math.random()*2.2).toFixed(2)+'s;--drift:'+((-60+Math.random()*120).toFixed(1))+'px"></span>';
-    }
-    return '<article class="slide thanks-slide"><div class="slide-inner"><div class="confetti-layer">'+pieces+'</div><span class="slide-label">Abschluss</span><h2>Vielen Dank für eure Teilnahme.</h2><p>Die anonyme Manometer-Auswertung ist abgeschlossen. Ihr könnt die Präsentation jetzt beenden oder zur Startseite zurückkehren.</p></div></article>';
-  }
-
-  function render(data){
-    var entries = (data && data.entries) || [];
-    document.getElementById('responseCount').textContent = entries.length;
-    var html = renderIntro(entries);
-    QUESTIONS.forEach(function(q,i){ html += renderScale(q, entries, i); });
-    html += renderGeneralFeedbackCard(entries);
-    html += renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage', entries, 'avoidCriticism');
-    html += renderLlmCard(entries);
-    html += renderThanksCard();
-    deck.innerHTML = html;
-    cards = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
-    cards.forEach(function(card){ card.getBoundingClientRect(); }); // pre-layout all slides
-    setActive(0);
-    statusEl.textContent = 'Auswertung geladen.';
-  }
-
-  function updateProgress(){
-    if(!cards.length) return;
-    progressBar.style.width = (((current+1)/cards.length)*100)+'%';
-    slideCounter.textContent = 'Kachel '+(current+1)+' / '+cards.length;
-  }
-
-  function animateCount(el){
-    if(!el || el.dataset.countAnimated === '1') return;
-    var target = Number(el.getAttribute('data-countto') || 0);
-    if(isNaN(target)) return;
-    el.dataset.countAnimated = '1';
-    var decimals = String(el.getAttribute('data-countto')).indexOf('.') >= 0 ? 1 : 0;
-    var start = performance.now();
-    var duration = 650;
-    function frame(now){
-      var p = Math.min(1, (now - start) / duration);
-      var eased = 1 - Math.pow(1-p, 3);
-      var value = target * eased;
-      el.textContent = decimals ? value.toFixed(decimals) : Math.round(value);
-      if(p < 1) requestAnimationFrame(frame);
-      else el.textContent = decimals ? target.toFixed(decimals) : Math.round(target);
-    }
-    requestAnimationFrame(frame);
-  }
-
-  function animateSlide(card){
-    if(!card || animatedSlides.has(card)) return;
-    animatedSlides.add(card);
-    card.querySelectorAll('[data-countto]').forEach(animateCount);
-  }
-
-  function setActive(i){
-    if(!cards.length) return;
-    if(i<0) i=0;
-    if(i>=cards.length) i=cards.length-1;
-    current=i;
-    cards.forEach(function(card, idx){
-      card.classList.remove('active','prev','next');
-      if(idx < current) card.classList.add('prev');
-      else if(idx > current) card.classList.add('next');
-      else card.classList.add('active');
-    });
-    document.getElementById('prevCard').disabled = current===0;
-    document.getElementById('nextCard').disabled = current===cards.length-1;
-    updateProgress();
-    animateSlide(cards[current]);
-  }
-
-  function next(){ setActive(current+1); }
-  function prev(){ setActive(current-1); }
-
-  document.getElementById('prevCard').addEventListener('click', prev);
-  document.getElementById('nextCard').addEventListener('click', next);
-
-  document.addEventListener('keydown', function(ev){
-    if(ev.key==='ArrowRight' || ev.key==='PageDown' || ev.key===' '){ ev.preventDefault(); next(); }
-    if(ev.key==='ArrowLeft' || ev.key==='PageUp'){ ev.preventDefault(); prev(); }
-    if((ev.key||'').toLowerCase()==='f'){ ev.preventDefault(); toggleFullscreen(); }
-  });
-
-  function updateFullscreenBtn(){ fullscreenBtn.textContent = document.fullscreenElement ? 'Vollbild beenden' : 'Vollbild starten'; }
-  function toggleFullscreen(){
-    if(!document.fullscreenElement){
-      (document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen() : Promise.reject()).catch(function(){});
-    } else if(document.exitFullscreen){ document.exitFullscreen(); }
-  }
-  fullscreenBtn.addEventListener('click', toggleFullscreen);
-  document.addEventListener('fullscreenchange', updateFullscreenBtn);
-
-  async function boot(){
-    var url = appUrl();
-    if(!url){
-      setLoading(100, 'Keine Apps-Script-URL gefunden.');
-      statusEl.textContent='Keine Apps-Script-URL gefunden.';
-      return;
-    }
-    try{
-      setLoading(8, 'Verbindung wird hergestellt …');
-      await new Promise(function(r){ setTimeout(r, 120); });
-      const data = await jsonp(url, {action:'manometerFeedbackList'});
-      if(!data || data.ok===false) throw new Error((data&&data.error)||'Keine Daten erhalten.');
-      setLoading(46, 'Folien werden vorbereitet …');
-      render(data);
-      setLoading(72, 'Layout und Animationen werden vorgeladen …');
-      await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
-      cards.forEach(function(card){ card.getBoundingClientRect(); });
-      setLoading(88, 'Präsentation wird finalisiert …');
-      await new Promise(function(r){ setTimeout(r, 180); });
-      deck.classList.add('ready');
-      setLoading(100, 'Präsentation bereit');
-      await new Promise(function(r){ setTimeout(r, 180); });
-      loadingScreen.classList.add('hidden');
-    }catch(err){
-      setLoading(100, 'Fehler beim Laden');
-      statusEl.textContent='Auswertung konnte nicht geladen werden: '+(err&&err.message?err.message:err);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', boot);
+  function splitGeneralFeedback(entry,kind){var direct='';if(kind==='praise')direct=entry.generalPraise||'';if(kind==='criticism')direct=entry.generalCriticism||'';if(kind==='suggestions')direct=entry.generalSuggestions||'';if(String(direct||'').trim())return String(direct).trim();var raw=String(entry.generalFeedback||''),labels={praise:'Lob:',criticism:'Kritik:',suggestions:'Anregungen:'},label=labels[kind],parts=raw.split(/\n\s*\n/);for(var i=0;i<parts.length;i++){if(parts[i].indexOf(label)===0)return parts[i].replace(label,'').trim()}return''}
+  function renderGeneralFeedbackCard(entries){function list(kind){var items=entries.map(function(e){return splitGeneralFeedback(e,kind)}).filter(Boolean);return items.length?items.map(function(t,i){return'<div class="text-entry" style="animation-delay:'+(0.2+i*0.28).toFixed(2)+'s">'+escapeHtml(t)+'</div>'}).join(''):'<p class="empty">Keine Einträge vorhanden.</p>'}return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">Offene Antworten</span><h2>Allgemeines Lob, Kritik und Anregungen</h2></div><div class="slide-counter">Optional</div></div><div class="general-feedback-grid"><section class="general-feedback-column"><h3>Lob</h3>'+list('praise')+'</section><section class="general-feedback-column"><h3>Kritik</h3>'+list('criticism')+'</section><section class="general-feedback-column"><h3>Anregungen</h3>'+list('suggestions')+'</section></div></div></article>'}
+  function renderChoiceCard(title,kicker,entries,key){var yes=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='nein'}).length;return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">Ja / Nein</div></div><div class="choice-grid"><div class="choice-card"><strong data-countto="'+yes+'">0</strong><span>Ja</span></div><div class="choice-card"><strong data-countto="'+no+'">0</strong><span>Nein</span></div></div></div></article>'}
+  function renderLlmCard(entries){var yes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='nein'}).length,details=entries.map(function(e){return e.llmDetails}).filter(Boolean),body=details.length?'<div class="text-card-list">'+details.map(function(t,i){return'<div class="text-entry" style="animation-delay:'+(0.2+i*0.28).toFixed(2)+'s">'+escapeHtml(t)+'</div>'}).join('')+'</div>':'<p class="empty">Keine optionalen Hinweise zur LLM-Nutzung vorhanden.</p>';return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">KI / LLM</span><h2>Wurde ChatGPT oder ein anderes LLM verwendet?</h2></div><div class="slide-counter">Ja / Nein</div></div><div class="choice-grid"><div class="choice-card"><strong data-countto="'+yes+'">0</strong><span>Ja</span></div><div class="choice-card"><strong data-countto="'+no+'">0</strong><span>Nein</span></div></div><div class="comments"><h3>Optionale Hinweise zur LLM-Nutzung</h3>'+body+'</div></div></article>'}
+  function renderThanksCard(){var colors=['#5c95d1','#2f9e44','#f59f00','#c2255c','#7048e8','#1098ad'],pieces='';for(var i=0;i<52;i++){pieces+='<span class="confetti-piece" style="left:'+(Math.random()*100).toFixed(2)+'%;background:'+colors[i%colors.length]+';animation-delay:'+(Math.random()*2.4).toFixed(2)+'s;animation-duration:'+(3.2+Math.random()*2.2).toFixed(2)+'s;--drift:'+((-60+Math.random()*120).toFixed(1))+'px"></span>'}return '<article class="slide thanks-slide"><div class="slide-inner"><div class="confetti-layer">'+pieces+'</div><span class="slide-label">Abschluss</span><h2>Vielen Dank für eure Teilnahme.</h2><p>Die anonyme Manometer-Auswertung ist abgeschlossen. Ihr könnt die Präsentation jetzt beenden oder zur Startseite zurückkehren.</p></div></article>'}
+  function render(data){var entries=(data&&data.entries)||[];document.getElementById('responseCount').textContent=entries.length;var html=renderCover();QUESTIONS.forEach(function(q,i){html+=renderScale(q,entries,i)});html+=renderGeneralFeedbackCard(entries);html+=renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage',entries,'avoidCriticism');html+=renderLlmCard(entries);html+=renderOverview(entries);html+=renderThanksCard();deck.innerHTML=html;cards=Array.prototype.slice.call(deck.querySelectorAll('.slide'));cards.forEach(function(card){card.getBoundingClientRect()});setActive(0);statusEl.textContent='Auswertung geladen.'}
+  function updateProgress(){if(!cards.length)return;progressBar.style.width=(((current+1)/cards.length)*100)+'%';slideCounter.textContent='Kachel '+(current+1)+' / '+cards.length}
+  function animateCount(el){if(!el||el.dataset.countAnimated==='1')return;var target=Number(el.getAttribute('data-countto')||0);if(isNaN(target))return;el.dataset.countAnimated='1';var decimals=String(el.getAttribute('data-countto')).indexOf('.')>=0?1:0,start=performance.now(),duration=2200;function frame(now){var p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,3),value=target*eased;el.textContent=decimals?value.toFixed(decimals):Math.round(value);if(p<1)requestAnimationFrame(frame);else el.textContent=decimals?target.toFixed(decimals):Math.round(target)}requestAnimationFrame(frame)}
+  function animateAvgColor(tile){if(!tile||tile.dataset.colorAnimated==='1')return;tile.dataset.colorAnimated='1';var target=Number(tile.getAttribute('data-color-target')||0),start=performance.now(),duration=2200;function frame(now){var p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,3),v=target*eased;tile.style.background='linear-gradient(145deg,'+valueColor(v*.82)+','+valueColor(v)+')';if(p<1)requestAnimationFrame(frame)}requestAnimationFrame(frame)}
+  function animateSlide(card){if(!card||animatedSlides.has(card))return;animatedSlides.add(card);card.querySelectorAll('[data-countto]').forEach(animateCount);card.querySelectorAll('[data-color-target]').forEach(animateAvgColor)}
+  function setActive(i){if(!cards.length)return;if(i<0)i=0;if(i>=cards.length)i=cards.length-1;current=i;cards.forEach(function(card,idx){card.classList.remove('active','prev','next');if(idx<current)card.classList.add('prev');else if(idx>current)card.classList.add('next');else card.classList.add('active')});document.getElementById('prevCard').disabled=current===0;document.getElementById('nextCard').disabled=current===cards.length-1;updateProgress();animateSlide(cards[current])}
+  function next(){setActive(current+1)}function prev(){setActive(current-1)}
+  document.getElementById('prevCard').addEventListener('click',next.bind(null,-1));document.getElementById('prevCard').onclick=prev;document.getElementById('nextCard').onclick=next;
+  document.addEventListener('keydown',function(ev){if(ev.key==='ArrowRight'||ev.key==='PageDown'||ev.key===' '){ev.preventDefault();next()}if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault();prev()}if((ev.key||'').toLowerCase()==='f'){ev.preventDefault();toggleFullscreen()}})
+  function updateFullscreenBtn(){fullscreenBtn.textContent=document.fullscreenElement?'Vollbild beenden':'Vollbild starten'}function toggleFullscreen(){if(!document.fullscreenElement){(document.documentElement.requestFullscreen?document.documentElement.requestFullscreen():Promise.reject()).catch(function(){})}else if(document.exitFullscreen){document.exitFullscreen()}}fullscreenBtn.onclick=toggleFullscreen;document.addEventListener('fullscreenchange',updateFullscreenBtn)
+  async function boot(){var url=appUrl();if(!url){setLoading(100,'Keine Apps-Script-URL gefunden.');statusEl.textContent='Keine Apps-Script-URL gefunden.';return}try{setLoading(8,'Verbindung wird hergestellt …');await new Promise(function(r){setTimeout(r,120)});var data=await jsonp(url,{action:'manometerFeedbackList'});if(!data||data.ok===false)throw new Error((data&&data.error)||'Keine Daten erhalten.');setLoading(46,'Folien werden vorbereitet …');render(data);setLoading(72,'Layout und Animationen werden vorgeladen …');await new Promise(function(r){requestAnimationFrame(function(){requestAnimationFrame(r)})});cards.forEach(function(card){card.getBoundingClientRect()});setLoading(88,'Präsentation wird finalisiert …');await new Promise(function(r){setTimeout(r,180)});deck.classList.add('ready');setLoading(100,'Präsentation bereit');await new Promise(function(r){setTimeout(r,180)});loadingScreen.classList.add('hidden')}catch(err){setLoading(100,'Fehler beim Laden');statusEl.textContent='Auswertung konnte nicht geladen werden: '+(err&&err.message?err.message:err)}}
+  document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
 </body>

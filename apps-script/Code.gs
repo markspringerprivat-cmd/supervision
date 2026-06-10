@@ -1,7 +1,7 @@
 // Apps Script für die Supervisions-Webseite.
 // Diese Version nutzt bewusst openByUrl(), weil openById() bei einigen kopierten IDs Probleme machen kann.
 // Falls du eine andere Tabelle verwendest, ersetze nur diese vollständige Google-Sheets-URL.
-const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1egAveElyXdI9nC4yQfZCtUUwqn8-byODELn4mvuzY/edit?gid=0#gid=0';
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1egAveeEIyXdI9nC4yQfZCtUUWqn8-byODELn4mvuzYQ/edit?pli=1&gid=0#gid=0';
 const SHEET_NAME = 'Ergebnisse';
 const FEEDBACK_SHEET_NAME = 'Manometer Feedback';
 

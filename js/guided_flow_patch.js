@@ -190,12 +190,26 @@
           <div class="nav-row"><button type="button" class="secondary" data-tx-prev>Zurück</button><button id="submitResults" type="button">Ergebnis übermitteln</button></div>
           <p id="submitStatus" class="small"></p>
         </article>
-        <article class="sv-guidance-card sv-thank-you-card" data-tx="2" hidden>
+        <article class="sv-guidance-card sv-manometer-card" data-tx="2" hidden>
+          <h2>Manometer – Feedback</h2>
+          <p><strong>Bitte wartet kurz:</strong> Alle Gruppenmitglieder sollen den QR-Code scannen und anschließend die Reflexionsfragen beantworten. Der Startbutton wird nach fünf Sekunden freigeschaltet.</p>
+          <div class="share-grid compact">
+            <img id="manometerQr" class="qr share-qr" alt="QR-Code zum Manometer-Feedback">
+            <div>
+              <a id="manometerFeedbackLink" class="button" href="manometer.html" aria-disabled="true">Feedback starten in 5</a>
+              <a id="manometerResultsLink" class="button secondary" href="manometer-auswertung.html" target="_blank" rel="noopener">Manometer-Auswertung anzeigen</a>
+            </div>
+          </div>
+          <p id="manometerReadHint" class="small">Der Button wird gleich aktiviert. Nutzt die Zeit, damit jede Person aus der Gruppe den QR-Code scannen kann.</p>
+          <div class="nav-row"><button type="button" class="secondary" data-tx-next>Weiter zur Abschlusskarte</button></div>
+        </article>
+        <article class="sv-guidance-card sv-thank-you-card" data-tx="3" hidden>
           <h2>Vielen Dank für deine Teilnahme.</h2>
           <p>Du kannst zur Startseite zurückkehren.</p>
           <div class="nav-row">
             <a id="finalPresentationLink" class="button" href="presentation.html" target="_blank" rel="noopener">Fertige Präsentation anzeigen</a>
             <button type="button" class="secondary" data-show-final-summary>Ergebnisse als Tabelle anzeigen</button>
+            <a id="finalManometerResultsLink" class="button secondary" href="manometer-auswertung.html" target="_blank" rel="noopener">Manometer-Auswertung</a>
             <a class="button secondary" href="index.html">Zurück zur Startseite</a>
           </div>
           <div id="summaryContent" class="summary-panel sv-final-summary" hidden></div>
@@ -209,10 +223,13 @@
     }
     function shareUrl(){ const u=new URL('gruppe-ergebnis.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
     function presentationUrl(){ const u=new URL('presentation.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
-    function refreshLinks(){ const link=shareUrl(); const a=document.getElementById('groupShareLink'); const qr=document.getElementById('groupShareQr'); const p=document.getElementById('finalPresentationLink'); if(a)a.href=link; if(qr)qr.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link); if(p)p.href=presentationUrl(); }
+    function manometerUrl(page){ const u=new URL(page || 'manometer.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
+    function refreshLinks(){ const link=shareUrl(); const a=document.getElementById('groupShareLink'); const qr=document.getElementById('groupShareQr'); const p=document.getElementById('finalPresentationLink'); const mf=document.getElementById('manometerFeedbackLink'); const mr=document.getElementById('manometerResultsLink'); const fmr=document.getElementById('finalManometerResultsLink'); const mqr=document.getElementById('manometerQr'); const feedback=manometerUrl('manometer.html'); const results=manometerUrl('manometer-auswertung.html'); if(a)a.href=link; if(qr)qr.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link); if(p)p.href=presentationUrl(); if(mf)mf.href=feedback; if(mr)mr.href=results; if(fmr)fmr.href=results; if(mqr)mqr.src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(feedback); }
     refreshLinks();
     let tx=0; const cards=Array.from(main.querySelectorAll('[data-tx]'));
-    function show(n){ tx=Math.max(0,Math.min(cards.length-1,n)); cards.forEach((c,i)=>{c.hidden=i!==tx;c.classList.toggle('is-active',i===tx);}); refreshLinks(); }
+    function show(n){ tx=Math.max(0,Math.min(cards.length-1,n)); cards.forEach((c,i)=>{c.hidden=i!==tx;c.classList.toggle('is-active',i===tx);}); refreshLinks(); if(cards[tx] && cards[tx].classList.contains('sv-manometer-card')) startManometerCountdown(); }
+    let manometerTimer=null;
+    function startManometerCountdown(){ const btn=document.getElementById('manometerFeedbackLink'); const hint=document.getElementById('manometerReadHint'); if(!btn) return; if(manometerTimer) clearInterval(manometerTimer); let left=5; btn.classList.add('disabled'); btn.setAttribute('aria-disabled','true'); btn.style.pointerEvents='none'; btn.textContent='Feedback starten in '+left; if(hint) hint.textContent='Bitte wartet, bis alle den QR-Code gesehen haben. Start möglich in '+left+' Sekunden.'; manometerTimer=setInterval(()=>{ left--; if(left>0){ btn.textContent='Feedback starten in '+left; if(hint) hint.textContent='Bitte wartet, bis alle den QR-Code gesehen haben. Start möglich in '+left+' Sekunden.'; } else { clearInterval(manometerTimer); manometerTimer=null; btn.classList.remove('disabled'); btn.removeAttribute('aria-disabled'); btn.style.pointerEvents=''; btn.textContent='Feedback starten'; if(hint) hint.textContent='Jetzt kann das Manometer-Feedback geöffnet werden. Jede Person füllt das Formular einmal aus.'; } },1000); }
     main.addEventListener('click', async e=>{
       if(e.target.closest('[data-tx-next]')) show(tx+1);
       if(e.target.closest('[data-tx-prev]')) show(tx-1);
@@ -235,6 +252,8 @@
           if(typeof window.submitResults==='function') await window.submitResults();
           const failed = st && /warning|danger|error/i.test(st.className||'') && /keine|fehl|nicht|error/i.test(st.textContent||'');
           if(!failed){
+            if(st){ st.className='notice'; st.textContent='Bitte warten. Die Übermittlung wird abgeschlossen. Manometer startet in fünf Sekunden …'; }
+            await new Promise(resolve=>setTimeout(resolve,5000));
             if(typeof renderSummary==='function' && typeof collectSupervisorData==='function') { try{ renderSummary(collectSupervisorData()); }catch(_){} }
             show(2);
           }

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manometer – Feedback</title>
+  <link rel="stylesheet" href="css/styles.css?v=manometer-v1">
+  <style>
+    .manometer-hero{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #d8e7f7}
+    .manometer-grid{display:grid;gap:18px;margin-top:18px}
+    .meter-card{border:1px solid #e1e8f2;border-radius:18px;padding:18px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.05)}
+    .meter-card label{display:block;font-weight:800;margin-bottom:10px;color:#14233b}
+    .meter-row{display:grid;grid-template-columns:1fr 72px;gap:14px;align-items:center}
+    input[type="range"]{width:100%}
+    .meter-value{font-weight:900;text-align:center;border-radius:14px;background:#eaf2fb;padding:10px 8px;color:#18365d}
+    .text-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+    .manometer-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;align-items:center}
+    .manometer-status{margin-top:16px;padding:14px 16px;border-radius:14px;background:#eaf2fb;color:#18365d}
+  </style>
+</head>
+<body data-mode="manometer">
+<header><div class="wrap"><h1>Manometer</h1><p>Feedback zur Gruppensupervision</p></div></header>
+<main class="wide-main">
+  <section class="card manometer-hero">
+    <h2>Deine Rückmeldung</h2>
+    <p>Bitte beantworte die Fragen einzeln. Die Werte reichen von <strong>0</strong> = trifft gar nicht zu bis <strong>100</strong> = trifft vollständig zu. Die Auswertung wird anschließend gesammelt dargestellt.</p>
+    <p class="small">Gruppen-ID: <span data-group-id></span></p>
+  </section>
+
+  <form id="manometerForm" class="manometer-grid">
+    <section class="meter-card">
+      <label for="caseConsultation">Ich kenne verschiedene Arten der Fallberatung.</label>
+      <div class="meter-row"><input id="caseConsultation" name="caseConsultation" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="caseConsultation">50</span></div>
+    </section>
+    <section class="meter-card">
+      <label for="phaseUnderstanding">Ich verstehe die Phasen einer strukturierten Gruppensupervision.</label>
+      <div class="meter-row"><input id="phaseUnderstanding" name="phaseUnderstanding" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="phaseUnderstanding">50</span></div>
+    </section>
+    <section class="meter-card">
+      <label for="rolePerspective">Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.</label>
+      <div class="meter-row"><input id="rolePerspective" name="rolePerspective" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="rolePerspective">50</span></div>
+    </section>
+    <section class="meter-card">
+      <label for="goalAction">Ich fühle mich sicherer beim Formulieren von Zielvereinbarungen und Handlungsschritten.</label>
+      <div class="meter-row"><input id="goalAction" name="goalAction" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="goalAction">50</span></div>
+    </section>
+    <section class="meter-card">
+      <label for="technicalClarity">Die technische Aufarbeitung war verständlich und gut nutzbar.</label>
+      <div class="meter-row"><input id="technicalClarity" name="technicalClarity" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="technicalClarity">50</span></div>
+    </section>
+    <section class="meter-card">
+      <label for="manometerReflection">Manometer hat mir geholfen, die Übung zu reflektieren.</label>
+      <div class="meter-row"><input id="manometerReflection" name="manometerReflection" type="range" min="0" max="100" value="50"><span class="meter-value" data-value-for="manometerReflection">50</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Offene Rückmeldungen</h2>
+      <div class="text-grid">
+        <label>Was nimmst du aus der Übung mit?<textarea id="takeaway" name="takeaway" rows="5" placeholder="z. B. Erkenntnisse, Methoden, Aha-Momente"></textarea></label>
+        <label>Verbesserungsvorschläge<textarea id="improvement" name="improvement" rows="5" placeholder="Was sollte beim nächsten Durchlauf anders sein?"></textarea></label>
+        <label>Lob<textarea id="praise" name="praise" rows="5" placeholder="Was hat gut funktioniert?"></textarea></label>
+      </div>
+      <div class="manometer-actions">
+        <button id="submitManometer" type="submit">Feedback absenden</button>
+        <a id="resultsLink" class="button secondary" href="manometer-auswertung.html">Auswertung anzeigen</a>
+        <a class="button secondary" href="index.html">Zurück zur Startseite</a>
+      </div>
+      <p id="manometerStatus" class="manometer-status" hidden></p>
+    </section>
+  </form>
+</main>
+<footer><div class="wrap">Manometer · Reflexionsfeedback</div></footer>
+<script src="js/config.js"></script>
+<script src="js/app.js?v=manometer-v1"></script>
+<script>
+(function(){
+  function gid(){ try{ if(typeof getGroupId==='function') return getGroupId(); }catch(_){} return new URLSearchParams(location.search).get('g') || localStorage.getItem('sv_group_id') || ''; }
+  function appUrl(){ try{ if(typeof getAppsScriptUrl==='function') return getAppsScriptUrl(); }catch(_){} return (window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''; }
+  function groupName(){ try{ return (typeof loadText==='function' && loadText('summary_group_name')) || localStorage.getItem('sv_group_name') || gid() || 'Gruppe'; }catch(_){ return gid() || 'Gruppe'; } }
+  function role(){ try{ return localStorage.getItem('sv_role') || localStorage.getItem('sv_selected_role') || ''; }catch(_){ return ''; } }
+  function updateLinks(){ var g=gid(); document.querySelectorAll('[data-group-id]').forEach(function(el){el.textContent=g||'ohne Gruppen-ID';}); var a=document.getElementById('resultsLink'); if(a){ var u=new URL('manometer-auswertung.html', location.href); if(g) u.searchParams.set('g',g); a.href=u.toString(); } }
+  function values(){ var out={}; ['caseConsultation','phaseUnderstanding','rolePerspective','goalAction','technicalClarity','manometerReflection'].forEach(function(k){ out[k]=Number(document.getElementById(k).value||0); }); return out; }
+  function texts(){ return { takeaway:document.getElementById('takeaway').value.trim(), improvement:document.getElementById('improvement').value.trim(), praise:document.getElementById('praise').value.trim() }; }
+  document.addEventListener('input', function(e){ if(e.target && e.target.type==='range'){ var v=document.querySelector('[data-value-for="'+e.target.id+'"]'); if(v) v.textContent=e.target.value; }});
+  document.addEventListener('DOMContentLoaded', updateLinks);
+  document.getElementById('manometerForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var btn=document.getElementById('submitManometer'); var st=document.getElementById('manometerStatus'); var url=appUrl();
+    st.hidden=false; st.className='manometer-status';
+    if(!url){ st.textContent='Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.'; return; }
+    btn.disabled=true; btn.textContent='Feedback wird gespeichert …'; st.textContent='Bitte warten. Dein Feedback wird an Manometer übertragen …';
+    var payload={ action:'manometerFeedback', feedback:{ groupId:gid(), groupName:groupName(), participant:role(), scores:values(), texts:texts(), createdAt:new Date().toISOString() } };
+    try{
+      await Promise.race([fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain;charset=utf-8'}}), new Promise(function(resolve){setTimeout(resolve,5000);})]);
+      st.textContent='Danke. Dein Feedback wurde übertragen. Die Auswertung wird geöffnet …';
+      setTimeout(function(){ var u=new URL('manometer-auswertung.html', location.href); var g=gid(); if(g) u.searchParams.set('g',g); location.href=u.toString(); }, 900);
+    }catch(err){ st.textContent='Feedback konnte nicht übertragen werden: '+(err&&err.message?err.message:err); btn.disabled=false; btn.textContent='Feedback erneut absenden'; }
+  });
+})();
+</script>
+</body>
+</html>

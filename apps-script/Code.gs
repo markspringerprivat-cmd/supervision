@@ -3,6 +3,7 @@
 // Falls du eine andere Tabelle verwendest, ersetze nur diese vollständige Google-Sheets-URL.
 const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1egAveElyXdI9nC4yQfZCtUUwqn8-byODELn4mvuzY/edit?gid=0#gid=0';
 const SHEET_NAME = 'Ergebnisse';
+const FEEDBACK_SHEET_NAME = 'Manometer Feedback';
 
 const HEADERS = [
   'Zeitpunkt',
@@ -45,6 +46,33 @@ const COL_PRESENTATION_JSON = 30;
 const COL_PRESENTATION_VERSION = 31;
 const COL_PRESENTATION_UPDATED = 32;
 
+
+const FEEDBACK_HEADERS = [
+  'Zeitpunkt',
+  'Gruppen-ID',
+  'Gruppenname',
+  'Teilnehmer*in / Rolle',
+  'Fallberatungsarten',
+  'Phasenverständnis',
+  'Rollenperspektiven',
+  'Zielvereinbarung / Handlungsschritte',
+  'Technische Umsetzung',
+  'Manometer Reflexion',
+  'Mitgenommen',
+  'Verbesserungsvorschläge',
+  'Lob',
+  'Rohdaten JSON'
+];
+
+const MANOMETER_QUESTIONS = [
+  { key: 'caseConsultation', label: 'Ich kenne verschiedene Arten der Fallberatung.' },
+  { key: 'phaseUnderstanding', label: 'Ich verstehe die Phasen einer strukturierten Gruppensupervision.' },
+  { key: 'rolePerspective', label: 'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.' },
+  { key: 'goalAction', label: 'Ich fühle mich sicherer beim Formulieren von Zielvereinbarungen und Handlungsschritten.' },
+  { key: 'technicalClarity', label: 'Die technische Aufarbeitung war verständlich und gut nutzbar.' },
+  { key: 'manometerReflection', label: 'Manometer hat mir geholfen, die Übung zu reflektieren.' }
+];
+
 function getSheet_() {
   if (!SPREADSHEET_URL || SPREADSHEET_URL.indexOf('docs.google.com/spreadsheets') === -1) {
     throw new Error('SPREADSHEET_URL ist nicht korrekt eingetragen. Bitte die vollständige Google-Sheet-URL einfügen.');
@@ -72,6 +100,7 @@ function doPost(e) {
     const action = String(body.action || '').toLowerCase();
     if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAll_();
     if (action === 'deleterow' || action === 'delete' || action === 'delete_row') return deleteRowPost_(body);
+    if (action === 'manometerfeedback' || action === 'manometer_feedback' || action === 'feedback') return saveFeedback_(body);
     return saveEntry_(body);
   } catch (err) {
     return jsonOutput_({ ok: false, error: err.message, stack: err.stack || '' });
@@ -84,6 +113,7 @@ function doGet(e) {
     if (action === 'list') return listEntries_(e);
     if (action === 'deleteall' || action === 'delete_all' || action === 'clear') return deleteAllGet_(e);
     if (action === 'delete' || action === 'deleterow' || action === 'delete_row') return deleteRowGet_(e);
+    if (action === 'manometerfeedbacklist' || action === 'manometer_feedback_list' || action === 'feedback_list') return listFeedback_(e);
     if (action === 'ping') return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME });
     if (action === 'test') {
       const sheet = getSheet_();
@@ -383,6 +413,103 @@ function rowToEntry_(row, rowNumber) {
     groupId: groupId,
     data: reconstructed
   };
+}
+
+
+function getFeedbackSheet_() {
+  if (!SPREADSHEET_URL || SPREADSHEET_URL.indexOf('docs.google.com/spreadsheets') === -1) {
+    throw new Error('SPREADSHEET_URL ist nicht korrekt eingetragen. Bitte die vollständige Google-Sheet-URL einfügen.');
+  }
+  const ss = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  let sheet = ss.getSheetByName(FEEDBACK_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(FEEDBACK_SHEET_NAME);
+  ensureFeedbackHeader_(sheet);
+  return sheet;
+}
+
+function ensureFeedbackHeader_(sheet) {
+  sheet.getRange(1, 1, 1, FEEDBACK_HEADERS.length).setValues([FEEDBACK_HEADERS]);
+  sheet.setFrozenRows(1);
+}
+
+function saveFeedback_(body) {
+  const sheet = getFeedbackSheet_();
+  const data = (body && body.feedback && typeof body.feedback === 'object') ? body.feedback : ((body && body.data && typeof body.data === 'object') ? body.data : (body || {}));
+  const scores = isObject_(data.scores) ? data.scores : data;
+  const texts = isObject_(data.texts) ? data.texts : data;
+  const row = [
+    new Date(),
+    textValue_(data.groupId || data.g || data.groupToken || data.token),
+    textValue_(data.groupName),
+    textValue_(data.participant || data.role || data.person || data.name),
+    numberFeedback_(scores.caseConsultation),
+    numberFeedback_(scores.phaseUnderstanding),
+    numberFeedback_(scores.rolePerspective),
+    numberFeedback_(scores.goalAction),
+    numberFeedback_(scores.technicalClarity),
+    numberFeedback_(scores.manometerReflection),
+    textValue_(texts.takeaway || texts.mitgenommen),
+    textValue_(texts.improvement || texts.verbesserung),
+    textValue_(texts.praise || texts.lob),
+    safeJson_(data)
+  ];
+  sheet.appendRow(row);
+  return jsonOutput_({ ok: true, message: 'Manometer-Feedback gespeichert.', rowNumber: sheet.getLastRow(), groupId: row[1] });
+}
+
+function listFeedback_(e) {
+  const sheet = getFeedbackSheet_();
+  const values = sheet.getDataRange().getValues();
+  const groupFilter = String(e.parameter.groupId || e.parameter.g || e.parameter.token || '').trim();
+  const entries = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    if (isEmptyRow_(row)) continue;
+    const entry = feedbackRowToEntry_(row, r + 1);
+    if (groupFilter && String(entry.groupId || '').trim() !== groupFilter) continue;
+    entries.push(entry);
+  }
+  return jsonp_(e, { ok: true, entries: entries, summary: summarizeFeedback_(entries), questions: MANOMETER_QUESTIONS, groupId: groupFilter });
+}
+
+function feedbackRowToEntry_(row, rowNumber) {
+  return {
+    id: rowNumber,
+    rowNumber: rowNumber,
+    timestamp: formatDate_(row[0]),
+    groupId: row[1] || '',
+    groupName: row[2] || '',
+    participant: row[3] || '',
+    scores: {
+      caseConsultation: numberFeedback_(row[4]),
+      phaseUnderstanding: numberFeedback_(row[5]),
+      rolePerspective: numberFeedback_(row[6]),
+      goalAction: numberFeedback_(row[7]),
+      technicalClarity: numberFeedback_(row[8]),
+      manometerReflection: numberFeedback_(row[9])
+    },
+    texts: {
+      takeaway: row[10] || '',
+      improvement: row[11] || '',
+      praise: row[12] || ''
+    }
+  };
+}
+
+function summarizeFeedback_(entries) {
+  const summary = {};
+  MANOMETER_QUESTIONS.forEach(function(q){
+    const values = entries.map(function(e){ return numberFeedback_(e.scores && e.scores[q.key]); }).filter(function(n){ return !isNaN(n); });
+    const avg = values.length ? Math.round(values.reduce(function(a,b){return a+b;}, 0) / values.length) : null;
+    summary[q.key] = { label: q.label, count: values.length, average: avg, values: values };
+  });
+  return summary;
+}
+
+function numberFeedback_(value) {
+  const n = Number(value);
+  if (isNaN(n)) return '';
+  return Math.max(0, Math.min(100, Math.round(n)));
 }
 
 function deleteAllGet_(e) {

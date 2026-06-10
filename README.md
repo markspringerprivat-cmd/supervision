@@ -91,3 +91,7 @@ Nach dem Hochladen der ZIP muss `apps-script/Code.gs` in Apps Script neu eingef�
 
 ## Update: Geführter Übermittlungsablauf
 Diese Version ergänzt einen geführten Ablauf nach der Ergebnissicherung, Pflichtfeld-Prüfungen auf den Phasenseiten, eine klickbare Phasenlegende mit Rot/Grün-Status sowie eine Speicherabfrage im Präsentationseditor.
+
+
+## Manometer-Feedback
+Diese Version ergänzt nach der Ergebnisübermittlung einen Manometer-Feedbackflow mit QR-Code, Feedbackformular, Auswertungsseite und Apps-Script-Speicherung im Tabellenblatt `Manometer Feedback`. Nach Änderung von `apps-script/Code.gs` muss die Google-Apps-Script-Web-App neu bereitgestellt werden.

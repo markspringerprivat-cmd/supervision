@@ -2150,3 +2150,156 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     setTimeout(renderCleanFlow,300);
   });
 })();
+
+
+/* ============================================================
+   v104: echte Moderationskarten in den Supervisor-Phasen
+   ============================================================ */
+(function(){
+  const MOD_V104={
+    1:{
+      title:'Moderationskarte Phase 1: Erstkontakt',
+      aim:'Einen sicheren Gesprächsrahmen herstellen.',
+      lines:[
+        '„Willkommen. Ich freue mich, dass Sie alle da sind und sich Zeit für die Klärung nehmen.“',
+        '„Heute geht es nicht um Schuld, sondern darum, die unterschiedlichen Perspektiven zu verstehen.“',
+        '„Wir arbeiten mit Ich-Aussagen, konkreten Beobachtungen und respektvoller Sprache.“',
+        '„Sind alle bereit, zuzuhören und an einer gemeinsamen Klärung mitzuwirken?“'
+      ]
+    },
+    2:{
+      title:'Moderationskarte Phase 2: Problembeschreibung',
+      aim:'Beobachtungen, Gefühle und Wünsche getrennt sammeln.',
+      lines:[
+        '„Ich würde zunächst gerne von der Schulleitung hören: Was haben Sie beobachtet?“',
+        '„Welche Gefühle oder Sorgen löst die Situation bei Ihnen aus?“',
+        '„Welche Wünsche haben Sie an das Teamteaching?“',
+        '„Lehrkraft A, wie stellt sich die Situation aus Ihrer Perspektive dar?“',
+        '„Lehrkraft B, ich stelle Ihnen dieselben Fragen: Perspektive, Gefühle und Wünsche.“',
+        '„Ich fasse kurz zusammen, was ich gehört habe.“'
+      ]
+    },
+    3:{
+      title:'Moderationskarte Phase 3: Zielformulierung',
+      aim:'Aus Einzelzielen eine gemeinsame Zielvereinbarung entwickeln.',
+      lines:[
+        '„Was soll nach dieser Supervision klarer oder anders sein?“',
+        '„Bitte formulieren Sie das Ziel möglichst konkret und positiv.“',
+        '„Welche Gemeinsamkeiten hören wir in diesen Zielen?“',
+        '„Welche gemeinsame Zielformulierung könnten alle mittragen?“',
+        '„Ich halte fest: Unser gemeinsames Ziel lautet … Stimmen Sie dem so zu?“'
+      ]
+    },
+    4:{
+      title:'Moderationskarte Phase 4: Vertiefte Problembearbeitung',
+      aim:'Hilfreiche Kritik und konkrete Absprachen entwickeln.',
+      lines:[
+        '„Wir schauen jetzt darauf, wie Kritik im Teamteaching hilfreich geäußert werden kann.“',
+        '„Was macht Kritik so, dass sie nicht als Angriff ankommt?“',
+        '„Welche Regeln helfen: unter vier Augen, konkret, zeitnah, Ich-Botschaft, Bezug auf die Situation?“',
+        '„Nennen Sie bitte einen Punkt an einer anderen Perspektive, den Sie nachvollziehen können.“',
+        '„Welche konkrete Absprache hilft dem Team ab morgen?“'
+      ]
+    },
+    5:{
+      title:'Moderationskarte Phase 5: Ergebnissicherung',
+      aim:'Ergebnisse bündeln und Zustimmung prüfen.',
+      lines:[
+        '„Ich fasse die zentralen Ergebnisse zusammen.“',
+        '„Habe ich die Beobachtungen, Gefühle, Wünsche und Ziele korrekt erfasst?“',
+        '„Welche Punkte sind noch offen?“',
+        '„Können alle diese Vereinbarung mittragen?“',
+        '„Was muss noch ergänzt werden, damit die Absprache tragfähig ist?“'
+      ]
+    },
+    6:{
+      title:'Moderationskarte Phase 6: Praxistauglichkeit',
+      aim:'Umsetzbarkeit und erste Schritte klären.',
+      lines:[
+        '„Wir prüfen jetzt, ob die Vereinbarung im Schulalltag realistisch ist.“',
+        '„Welche Unterstützung braucht es durch die Schulleitung?“',
+        '„Was ist der erste konkrete Schritt?“',
+        '„Woran merken wir, dass die Vereinbarung funktioniert?“',
+        '„Ich fasse die nächsten Schritte abschließend zusammen.“'
+      ]
+    }
+  };
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function role(){return (document.body&&document.body.dataset&&document.body.dataset.role)||'';}
+  function phase(){return Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;}
+  function groupQuery(){
+    try{
+      const p=new URLSearchParams(location.search);
+      const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+      return gid?'?g='+encodeURIComponent(gid):'';
+    }catch(_){return '';}
+  }
+  function storedNames(){
+    try{return JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{};}catch(_){return {};}
+  }
+  function cachedMembers(){
+    try{
+      const p=new URLSearchParams(location.search);
+      const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+    }catch(_){return [];}
+  }
+  function hasProtocol(){
+    const names=storedNames();
+    if(names.protokoll) return true;
+    const members=cachedMembers();
+    if(Array.isArray(members) && members.some(m=>m&&m.role==='protokoll')) return true;
+    try{
+      const p=new URLSearchParams(location.search);
+      if(p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
+    }catch(_){}
+    return false;
+  }
+  function req(label,key,hint){
+    return '<div class="required-field-wrap"><div class="required-label">Pflichtfeld!</div><label>'+esc(label)+'</label>'+(hint?'<p class="small">'+esc(hint)+'</p>':'')+'<textarea data-save="'+esc(key)+'"></textarea></div>';
+  }
+  function moderationCard(n){
+    const m=MOD_V104[n]||MOD_V104[1];
+    return '<section class="card highlight moderation-only-card equal-fill-card"><p class="role-pill">Supervisor*in</p><h2>'+esc(m.title)+'</h2><p><strong>Ziel:</strong> '+esc(m.aim)+'</p><div class="script-card"><h3>Mögliche Formulierungen</h3><ul class="tight">'+m.lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div></section>';
+  }
+  function protocolCard(n){
+    if(n===1) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 1: Gesprächsrahmen</h2>'+req('Gesprächsrahmen / Regeln / Bereitschaft','sup_p1_rahmen','Zum Beispiel: ausreden lassen, Ich-Aussagen, konkrete Beobachtungen nennen.')+'</section>';
+    if(n===2) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 2: Problembeschreibung</h2><div class="three-col"><div>'+req('Problem / Beobachtung Schulleitung','sup_p2_sl_probleme')+req('Gefühle Schulleitung','sup_p2_sl_gefuehle')+req('Wünsche Schulleitung','sup_p2_sl_wuensche')+'</div><div>'+req('Problem / Perspektive Lehrkraft A','sup_p2_a_probleme')+req('Gefühle Lehrkraft A','sup_p2_a_gefuehle')+req('Wünsche Lehrkraft A','sup_p2_a_wuensche')+'</div><div>'+req('Problem / Perspektive Lehrkraft B','sup_p2_b_probleme')+req('Gefühle Lehrkraft B','sup_p2_b_gefuehle')+req('Wünsche Lehrkraft B','sup_p2_b_wuensche')+'</div></div></section>';
+    if(n===3) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 3: Ziele</h2>'+req('Ziel Schulleitung','sup_p3_ziel_sl')+req('Ziel Lehrkraft A','sup_p3_ziel_a')+req('Ziel Lehrkraft B','sup_p3_ziel_b')+req('Gemeinsamkeiten','sup_p3_gemeinsamkeiten')+req('Gemeinsame Zielformulierung','sup_p3_gemeinsames_ziel')+'</section>';
+    if(n===4) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 4: Vertiefte Problembearbeitung</h2>'+req('Kriterien für hilfreiche Kritik','sup_p4_kritik')+'<div class="three-col">'+req('Positive Rückmeldung zur Schulleitung','sup_p4_pos_sl')+req('Positive Rückmeldung zu Lehrkraft A','sup_p4_pos_a')+req('Positive Rückmeldung zu Lehrkraft B','sup_p4_pos_b')+'</div>'+req('Absprachen zum weiteren Vorgehen','sup_p4_absprachen')+'</section>';
+    if(n===5) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 5: Ergebnissicherung</h2><label>Zustimmung erfolgt?</label><select class="standard-required" data-save="sup_p5_zustimmung_status"><option value="">Bitte auswählen</option><option value="Alle stimmen zu">Alle stimmen zu</option><option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option><option value="Keine Zustimmung">Keine Zustimmung</option></select>'+req('Rückmeldungen / Zustimmung / offene Punkte','sup_p5_zustimmung')+'</section>';
+    return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 6: Praxistauglichkeit</h2>'+req('Einschätzung der Praxistauglichkeit','sup_p6_praxistauglichkeit')+req('Unterstützung durch Schulleitung','sup_p6_unterstuetzung')+req('Erste konkrete Umsetzungsschritte','sup_p6_umsetzung')+'</section>';
+  }
+  function renderSupervisorPhase(){
+    if(role()!=='supervisor') return false;
+    const n=phase();
+    const content=document.getElementById('phaseContent');
+    if(!content||!n) return false;
+    const onlyModeration=hasProtocol();
+    content.innerHTML=onlyModeration
+      ? moderationCard(n)
+      : '<div class="two-col equal-phase-layout">'+moderationCard(n)+protocolCard(n)+'</div>';
+    const label=document.querySelector('.card.muted .role-pill');
+    if(label) label.textContent=onlyModeration?'Supervisor*in – Moderation':'Supervisor*in – Moderation und Protokoll';
+    if(typeof setupSaving==='function') setupSaving();
+    const next=document.getElementById('nextPhase');
+    if(next){
+      if(n<6){next.href='phase'+(n+1)+'-supervisor.html'+groupQuery();next.textContent='Bereit für Phase '+(n+1);}
+      else{next.href=(onlyModeration?'abschluss.html':'zusammenfassung.html')+groupQuery();next.textContent=onlyModeration?'Abschluss':'Ergebnisse zusammenfassen';}
+      next.classList.remove('disabled','is-busy');
+      next.removeAttribute('aria-disabled');
+      next.style.pointerEvents='auto';
+    }
+    return true;
+  }
+  const oldInit=window.initPhase;
+  window.initPhase=function(){
+    if(typeof oldInit==='function') oldInit.apply(this,arguments);
+    renderSupervisorPhase();
+  };
+  window.addEventListener('DOMContentLoaded',function(){
+    renderSupervisorPhase();
+    setTimeout(renderSupervisorPhase,80);
+    setTimeout(renderSupervisorPhase,300);
+  });
+})();

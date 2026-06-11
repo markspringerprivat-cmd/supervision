@@ -375,8 +375,33 @@
     }catch(_){}
   }
 
+
+  function storeGroupRoleContextCleanV119(groupId, members){
+    try{
+      const gid = groupId || currentGroupId || groupIdFromUrl() || '';
+      if(!gid || !Array.isArray(members)) return;
+      const map = {};
+      members.forEach(m => { if(m && m.role) map[m.role] = m.name || m.deviceId || true; });
+      localStorage.setItem('sv_current_group', gid);
+      localStorage.setItem('sv_cached_group_members_'+gid, JSON.stringify(members));
+      localStorage.setItem('sv_cached_group_members_active', JSON.stringify(members));
+      localStorage.setItem('sv_role_names_v58', JSON.stringify(map));
+      localStorage.setItem('sv_'+gid+'_assignments', JSON.stringify(map));
+      localStorage.setItem('sv_'+gid+'_group_assignments', JSON.stringify(map));
+      try{
+        const existing = (typeof loadObj === 'function') ? loadObj('assignments', {}) : {};
+        const merged = Object.assign({}, existing || {}, map);
+        if(typeof saveObj === 'function') saveObj('assignments', merged);
+      }catch(_){}
+      const mode = (members.length >= 5 || !!map.protokoll) ? 'moderation' : 'full';
+      localStorage.setItem('sv_supervisor_mode_'+gid, mode);
+      localStorage.setItem('sv_supervisor_mode_active', mode);
+    }catch(_){}
+  }
+
   function renderMembers(members){
     latestMembers=members||[];
+    storeGroupRoleContextCleanV119(currentGroupId || groupIdFromUrl(), latestMembers);
     storeGroupRoleContextV111(currentGroupId || groupIdFromUrl(), latestMembers);
     updateLeaderState(latestMembers);
     const box=document.getElementById('membersList');

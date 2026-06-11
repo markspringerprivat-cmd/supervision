@@ -1,4 +1,4 @@
-/* v118: Gespräch-starten-Button alleinige stabile Implementierung */
+/* v119: Gespräch-starten-Button alleinige stabile Implementierung */
 (function(){
   'use strict';
 

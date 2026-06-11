@@ -1,6 +1,5 @@
 
 
-/* removed old startPhase popup observer in v118 */
 /* v107 helper: Supervisor*in mit Protokollrolle wird nicht gegen Protokoll-Pflichtfelder geprüft */
 window.__svSupervisorHasProtocolV107 = window.__svSupervisorHasProtocolV107 || function(){
   try{
@@ -282,6 +281,3 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
 
 
 
-/* removed old startPhase popup observer in v118 */
-
-/* removed old startPhase popup observer in v118 */

@@ -1,14 +1,25 @@
 
-/* v108: Supervisor-Modus für 4er/5er stabil halten */
-window.__svSupervisorModeV108 = window.__svSupervisorModeV108 || function(){
+/* v119: zentrale, einzige Supervisor-4er/5er-Erkennung */
+window.__svSupervisorHasProtocolCleanV119 = window.__svSupervisorHasProtocolCleanV119 || function(){
   try{
-    const p=new URLSearchParams(location.search);
-    const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'default';
-    if(p.get('supervisorMode')) return p.get('supervisorMode');
-    if(p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5'||p.get('mode')==='moderation') return 'moderation';
-    return localStorage.getItem('sv_supervisor_mode_'+gid)||localStorage.getItem('sv_supervisor_mode_active')||'';
-  }catch(_){return '';}
+    const p = new URLSearchParams(location.search);
+    if(p.get('supervisorMode') === 'moderation' || p.get('members') === '5' || p.get('size') === '5' || p.get('groupSize') === '5') return true;
+    if(p.get('supervisorMode') === 'full' || p.get('members') === '4' || p.get('size') === '4' || p.get('groupSize') === '4') return false;
+    const gid = p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
+    const members = JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid) || localStorage.getItem('sv_cached_group_members_active') || '[]') || [];
+    if(Array.isArray(members) && (members.length >= 5 || members.some(m => m && m.role === 'protokoll'))) return true;
+    const merged = {};
+    try{ Object.assign(merged, JSON.parse(localStorage.getItem('sv_role_names_v58') || '{}') || {}); }catch(_){}
+    try{ Object.assign(merged, JSON.parse(localStorage.getItem('sv_'+gid+'_assignments') || '{}') || {}); }catch(_){}
+    try{ Object.assign(merged, JSON.parse(localStorage.getItem('sv_'+gid+'_group_assignments') || '{}') || {}); }catch(_){}
+    try{ const a = (typeof loadObj === 'function') ? loadObj('assignments', {}) : {}; Object.assign(merged, a || {}); }catch(_){}
+    return !!merged.protokoll;
+  }catch(_){ return false; }
 };
+window.__svSupervisorModeCleanV119 = function(){ return window.__svSupervisorHasProtocolCleanV119() ? 'moderation' : 'full'; };
+
+
+
 window.__svSupervisorHasProtocolV108 = window.__svSupervisorHasProtocolV108 || function(){
   try{
     const mode=window.__svSupervisorModeV108();
@@ -1393,7 +1404,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
   }
   function roleClass(role){ return 'role-' + String(role || '').replace(/[^a-z0-9-]/g,''); }
   function getAssignments(){ try { return (typeof loadObj === 'function') ? loadObj('assignments', {}) : {}; } catch(_) { return {}; } }
-  function hasProtocol(){ const a = getAssignments(); return !!(a && a.protokoll); }
+  function hasProtocol(){ return !!window.__svSupervisorHasProtocolCleanV119(); }
   function loadSafe(k){ try { return (typeof loadText === 'function') ? loadText(k) : ''; } catch(_) { return ''; } }
   function reqNote(label, saveKey, hint){
     return `<div class="required-field-box"><div class="required-label">Pflichtfeld!</div><label>${esc(label)}</label>${hint?`<p class="small">${esc(hint)}</p>`:''}<textarea data-save="${esc(saveKey)}"></textarea></div>`;
@@ -1722,7 +1733,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
   }
   function roleClass(role){ return 'role-' + String(role || '').replace(/[^a-z0-9-]/g,''); }
   function getAssignments(){ try { return (typeof loadObj === 'function') ? loadObj('assignments', {}) : {}; } catch(_) { return {}; } }
-  function hasProtocol(){ const a = getAssignments(); return !!(a && a.protokoll); }
+  function hasProtocol(){ return !!window.__svSupervisorHasProtocolCleanV119(); }
   function loadSafe(k){ try { return (typeof loadText === 'function') ? loadText(k) : ''; } catch(_) { return ''; } }
   function miniSummary(){ return (typeof miniSummaryHtml === 'function') ? miniSummaryHtml() : ''; }
 
@@ -2101,14 +2112,8 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
 })();
 
 
-/* v101 force renderer removed in v103: clean supervisor flow renderer below. */
-/* v102 direct flowNext interceptor removed in v103: clean flow renderer owns navigation. */
 
 
-
-/* conflicting emergency override removed in v105 */
-
-/* conflicting emergency override removed in v105 */
 
 
 /* ------------------------------------------------------------
@@ -2149,7 +2154,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
       return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid) || localStorage.getItem('sv_cached_group_members_active') || '[]') || [];
     }catch(_){ return []; }
   }
-  function hasProtocol(){ if(typeof window.__svSupervisorHasProtocolV108==='function') return window.__svSupervisorHasProtocolV108(); const a=getAssignments(); return !!(a&&a.protokoll); }
+  function hasProtocol(){ return !!window.__svSupervisorHasProtocolCleanV119(); }
   function loadSafe(k){ try { return (typeof loadText === 'function') ? loadText(k) : ''; } catch(_) { return ''; } }
   function reqNote(label, saveKey, hint){
     return `<div class="required-field-box"><div class="required-label">Pflichtfeld!</div><label>${esc(label)}</label>${hint?`<p class="small">${esc(hint)}</p>`:''}<textarea data-save="${esc(saveKey)}"></textarea></div>`;
@@ -2448,220 +2453,65 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
 })();
 
 
-/* v105: Supervisor*in in 5er-Gruppe hat keine Protokoll-Pflichtfelder */
-(function(){
-  function groupId(){
-    try{
-      const p=new URLSearchParams(location.search);
-      return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
-    }catch(_){return '';}
-  }
-  function cachedMembers(){
-    try{
-      const gid=groupId();
-      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid) || localStorage.getItem('sv_cached_group_members_active') || '[]') || [];
-    }catch(_){return [];}
-  }
-  function hasProtocol(){ if(typeof window.__svSupervisorHasProtocolV108==='function') return window.__svSupervisorHasProtocolV108(); return false; }
-  function link(file){
-    const gid=groupId();
-    return file+(gid?'?g='+encodeURIComponent(gid):'');
-  }
-  document.addEventListener('click', function(ev){
-    const next=ev.target && ev.target.closest && ev.target.closest('#nextPhase');
-    if(!next) return;
-    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
-    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
-    if(role==='supervisor' && ((typeof window.__svSupervisorHasProtocolV108==='function' && window.__svSupervisorHasProtocolV108()) || hasProtocol())){
-      ev.preventDefault();
-      ev.stopPropagation();
-      ev.stopImmediatePropagation();
-      if(phase && phase<6) location.href=link('phase'+(phase+1)+'-supervisor.html');
-      else location.href=link('abschluss.html');
-    }
-  }, true);
-})();
 
 
 
-/* v109: Supervisor-4er/5er-Modus über alle Phasen bis Abschluss erhalten */
-(function(){
-  function gidV109(){
-    try{
-      const p=new URLSearchParams(location.search);
-      return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
-    }catch(_){return localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';}
-  }
-  function modeV109(){
-    try{
-      const p=new URLSearchParams(location.search);
-      const gid=gidV109() || 'default';
-      if(p.get('supervisorMode')) return p.get('supervisorMode');
-      if(p.get('mode')==='moderation' || p.get('members')==='5' || p.get('size')==='5' || p.get('groupSize')==='5') return 'moderation';
-      if(p.get('members')==='4' || p.get('size')==='4' || p.get('groupSize')==='4') return 'full';
-      return localStorage.getItem('sv_supervisor_mode_'+gid) || localStorage.getItem('sv_supervisor_mode_active') || '';
-    }catch(_){return '';}
-  }
-  function rememberModeV109(mode){
-    try{
-      const gid=gidV109() || 'default';
-      if(mode){
-        localStorage.setItem('sv_supervisor_mode_'+gid, mode);
-        localStorage.setItem('sv_supervisor_mode_active', mode);
-      }
-    }catch(_){}
-  }
-  function urlV109(file, mode){
-    const gid=gidV109();
-    const params=new URLSearchParams();
-    if(gid) params.set('g', gid);
-    if(mode){
-      params.set('supervisorMode', mode);
-      params.set('members', mode==='moderation' ? '5' : '4');
-    }
-    const qs=params.toString();
-    return file + (qs ? '?' + qs : '');
-  }
-  function applySupervisorNextV109(){
-    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
-    if(role!=='supervisor') return;
-    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
-    let mode=modeV109();
-    if(!mode && typeof window.__svSupervisorHasProtocolV108==='function') mode=window.__svSupervisorHasProtocolV108()?'moderation':'full';
-    if(!mode) return;
-    rememberModeV109(mode);
-    const next=document.getElementById('nextPhase');
-    if(!next || !phase) return;
-    let target='';
-    if(phase<6) target='phase'+(phase+1)+'-supervisor.html';
-    else target=(mode==='moderation')?'abschluss.html':'zusammenfassung.html';
-    next.href=urlV109(target, mode);
-    next.classList.remove('disabled','is-busy');
-    next.removeAttribute('aria-disabled');
-    next.style.pointerEvents='auto';
-    if(phase<6) next.textContent='Bereit für Phase '+(phase+1);
-    else next.textContent=(mode==='moderation')?'Abschluss':'Ergebnisse zusammenfassen';
-  }
-  document.addEventListener('click', function(ev){
-    const a=ev.target && ev.target.closest && ev.target.closest('#nextPhase');
-    if(!a) return;
-    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
-    if(role!=='supervisor') return;
-    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
-    let mode=modeV109();
-    if(!mode && typeof window.__svSupervisorHasProtocolV108==='function') mode=window.__svSupervisorHasProtocolV108()?'moderation':'full';
-    if(!phase || !mode) return;
-    rememberModeV109(mode);
-    const target = phase<6 ? 'phase'+(phase+1)+'-supervisor.html' : (mode==='moderation' ? 'abschluss.html' : 'zusammenfassung.html');
-    ev.preventDefault();
-    ev.stopPropagation();
-    ev.stopImmediatePropagation();
-    location.href=urlV109(target, mode);
-  }, true);
-  window.__svApplySupervisorNextV109=applySupervisorNextV109;
-  window.__svSupervisorModeV109=modeV109;
-  window.addEventListener('DOMContentLoaded', function(){
-    applySupervisorNextV109();
-    setTimeout(applySupervisorNextV109,80);
-    setTimeout(applySupervisorNextV109,350);
-  });
-})();
 
 
-/* v111: zentrale, datenbasierte 4er-/5er-Logik für Supervisor*in */
+/* v119: zentrale Phasenweiterleitung und Pflichtfeldlogik für Supervisor */
 (function(){
   function gid(){
     try{
       const p=new URLSearchParams(location.search);
-      return p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+      return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
     }catch(_){return '';}
   }
-  function members(){
-    try{
-      const g=gid();
-      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+g)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
-    }catch(_){return [];}
-  }
-  function assignmentMap(){
-    const out={};
-    try{ Object.assign(out, JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{}); }catch(_){}
-    try{
-      const g=gid();
-      Object.assign(out, JSON.parse(localStorage.getItem('sv_'+g+'_assignments')||'{}')||{});
-      Object.assign(out, JSON.parse(localStorage.getItem('sv_'+g+'_group_assignments')||'{}')||{});
-    }catch(_){}
-    try{ members().forEach(m=>{if(m&&m.role)out[m.role]=m.name||m.deviceId||true;}); }catch(_){}
-    return out;
-  }
-  function hasProtocol(){
-    try{
-      const p=new URLSearchParams(location.search);
-      if(p.get('supervisorMode')==='moderation'||p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
-      if(p.get('supervisorMode')==='full'||p.get('members')==='4'||p.get('size')==='4'||p.get('groupSize')==='4') return false;
-    }catch(_){}
-    const m=members();
-    if(Array.isArray(m) && (m.length>=5 || m.some(x=>x&&x.role==='protokoll'))) return true;
-    const a=assignmentMap();
-    return !!(a&&a.protokoll);
+  function link(file){
+    const params = new URLSearchParams();
+    const g = gid();
+    if(g) params.set('g', g);
+    const mode = window.__svSupervisorHasProtocolCleanV119() ? 'moderation' : 'full';
+    params.set('supervisorMode', mode);
+    params.set('members', mode === 'moderation' ? '5' : '4');
+    return file + '?' + params.toString();
   }
   function remember(){
     try{
-      const g=gid()||'default';
-      const mode=hasProtocol()?'moderation':'full';
-      localStorage.setItem('sv_supervisor_mode_'+g,mode);
-      localStorage.setItem('sv_supervisor_mode_active',mode);
+      const g = gid() || 'default';
+      const mode = window.__svSupervisorHasProtocolCleanV119() ? 'moderation' : 'full';
+      localStorage.setItem('sv_supervisor_mode_' + g, mode);
+      localStorage.setItem('sv_supervisor_mode_active', mode);
     }catch(_){}
   }
-  function link(file){
-    const g=gid();
-    const mode=hasProtocol()?'moderation':'full';
-    const p=new URLSearchParams();
-    if(g)p.set('g',g);
-    p.set('supervisorMode',mode);
-    p.set('members',mode==='moderation'?'5':'4');
-    return file+'?'+p.toString();
-  }
-  window.__svSupervisorHasProtocolV111=hasProtocol;
-  window.__svSupervisorHasProtocolV108=hasProtocol;
-  window.__svSupervisorModeV109=function(){return hasProtocol()?'moderation':'full';};
   function apply(){
-    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
-    if(role!=='supervisor')return;
+    const role = (document.body && document.body.dataset && document.body.dataset.role) || '';
+    if(role !== 'supervisor') return;
     remember();
-    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
-    const content=document.getElementById('phaseContent');
-    if(content && phase && typeof moderatorCard==='function' && typeof supervisorFullPhase==='function'){
-      // Use original v87 render functions, but choose by canonical group logic.
-      content.innerHTML = hasProtocol() ? moderatorCard(phase) : supervisorFullPhase(phase);
-      if(typeof setupSaving==='function') setupSaving();
-    }
-    const next=document.getElementById('nextPhase');
+    const phase = Number((document.body && document.body.dataset && document.body.dataset.phase) || '0') || 0;
+    const next = document.getElementById('nextPhase');
     if(next && phase){
-      const target= phase<6 ? ('phase'+(phase+1)+'-supervisor.html') : (hasProtocol()?'abschluss.html':'zusammenfassung.html');
-      next.href=link(target);
+      const target = phase < 6 ? ('phase' + (phase + 1) + '-supervisor.html') : (window.__svSupervisorHasProtocolCleanV119() ? 'abschluss.html' : 'zusammenfassung.html');
+      next.href = link(target);
       next.classList.remove('disabled','is-busy');
       next.removeAttribute('aria-disabled');
-      next.style.pointerEvents='auto';
-      next.textContent=phase<6 ? ('Bereit für Phase '+(phase+1)) : (hasProtocol()?'Abschluss':'Ergebnisse zusammenfassen');
+      next.style.pointerEvents = 'auto';
+      next.textContent = phase < 6 ? ('Bereit für Phase ' + (phase+1)) : (window.__svSupervisorHasProtocolCleanV119() ? 'Abschluss' : 'Ergebnisse zusammenfassen');
     }
   }
-  document.addEventListener('click',function(ev){
-    const a=ev.target&&ev.target.closest&&ev.target.closest('#nextPhase');
-    if(!a)return;
-    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
-    if(role!=='supervisor')return;
-    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
-    if(!phase)return;
+  document.addEventListener('click', function(ev){
+    const next = ev.target && ev.target.closest && ev.target.closest('#nextPhase');
+    if(!next) return;
+    const role = (document.body && document.body.dataset && document.body.dataset.role) || '';
+    if(role !== 'supervisor') return;
+    const phase = Number((document.body && document.body.dataset && document.body.dataset.phase) || '0') || 0;
+    if(!phase) return;
     ev.preventDefault();
     ev.stopPropagation();
     ev.stopImmediatePropagation();
     remember();
-    const target= phase<6 ? ('phase'+(phase+1)+'-supervisor.html') : (hasProtocol()?'abschluss.html':'zusammenfassung.html');
-    location.href=link(target);
-  },true);
-  window.addEventListener('DOMContentLoaded',function(){
-    apply();
-    setTimeout(apply,80);
-    setTimeout(apply,350);
-  });
+    const target = phase < 6 ? ('phase' + (phase + 1) + '-supervisor.html') : (window.__svSupervisorHasProtocolCleanV119() ? 'abschluss.html' : 'zusammenfassung.html');
+    location.href = link(target);
+  }, true);
+  window.__svApplySupervisorCleanV119 = apply;
+  window.addEventListener('DOMContentLoaded', function(){ apply(); setTimeout(apply,80); setTimeout(apply,300); });
 })();

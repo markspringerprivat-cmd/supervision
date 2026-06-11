@@ -9756,8 +9756,4 @@ window.addEventListener('DOMContentLoaded',()=>{
    ============================================================ */
 (function(){
   function neutralRoleStylesV99(){ return; }
-  window.addEventListener('DOMContentLoaded',function(){
-    neutralRoleStylesV99();
-    document.querySelectorAll('a[data-preloaded-v97],button[data-preloaded-v97]').forEach(function(el){delete el.dataset.preloadedV97;el.classList.remove('is-busy');});
-  });
 })();

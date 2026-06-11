@@ -1,4 +1,4 @@
-/* Group session rebuild v35 stepflow and simulation */
+/* Group session rebuild v36 assign timeout fix */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -54,7 +54,7 @@
       s.onerror=()=>{if(!done){cleanup();reject(new Error('Apps Script konnte nicht erreicht werden.'));}};
       s.src=url+(url.includes('?')?'&':'?')+sp.toString();
       document.body.appendChild(s);
-      setTimeout(()=>{if(!done){cleanup();reject(new Error('Zeitüberschreitung.'));}},12000);
+      setTimeout(()=>{if(!done){cleanup();reject(new Error('Zeitüberschreitung. Der Server braucht länger als erwartet. Bitte nicht mehrfach klicken, sondern kurz warten und anschließend aktualisieren.'));}},30000);
     });
   }
   function status(id,msg,cls){

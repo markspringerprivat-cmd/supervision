@@ -2761,6 +2761,14 @@ function updateGlobalAdminUi() {
     statusBtn.classList.toggle("is-inactive", !active);
     statusBtn.title = active ? "Adminmodus deaktivieren" : "Adminmodus aktivieren";
   }
+  document.querySelectorAll("#clearAllLocalBtn,.small-reset").forEach(btn => {
+    btn.style.display = active ? "inline-flex" : "none";
+    btn.hidden = !active;
+  });
+  document.querySelectorAll("[data-admin-autofill]").forEach(btn => {
+    btn.style.display = active ? "inline-flex" : "none";
+    btn.hidden = !active;
+  });
   document.querySelectorAll("#globalAdminBtn, #adminLoginBtn, [data-admin-login]").forEach(btn => {
     if (btn.id === "globalAdminStatusBtn" || btn.dataset.adminStatusButton !== undefined) return;
     btn.style.display = "none";
@@ -9531,3 +9539,79 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   window.svSetButtonBusy=function(el,on){try{el&&el.classList.toggle('is-busy',!!on)}catch(_){}};
 })();
 
+
+
+/* ============================================================
+   v96: globale Startseitenleiste, Admin-Autofill, mobile Toolbar
+   ============================================================ */
+function installGlobalUtilityDockV96(){
+  if(document.getElementById('globalUtilityDockV96')) return;
+  const dock=document.createElement('div');
+  dock.id='globalUtilityDockV96';
+  dock.className='global-utility-dock collapsed';
+  const isHome=/\/(?:index\.html)?$/i.test(location.pathname) || /index\.html$/i.test(location.pathname);
+  dock.innerHTML=`<button type="button" class="utility-toggle" aria-expanded="false">☰</button><div class="utility-actions">${isHome?'': '<a href="index.html" class="utility-home">Zur Startseite</a>'}<button type="button" class="utility-admin" data-admin-login>Admin</button></div>`;
+  document.body.appendChild(dock);
+  const toggle=dock.querySelector('.utility-toggle');
+  const admin=dock.querySelector('.utility-admin');
+  toggle.onclick=()=>{dock.classList.toggle('collapsed');toggle.setAttribute('aria-expanded',String(!dock.classList.contains('collapsed')))};
+  admin.onclick=handleGlobalAdminClick;
+}
+function autofillDummyFieldsV96(){
+  const samples=['Beobachtung: Die Situation ist angespannt, aber klärbar.','Gefühl: Ich bin unsicher und wünsche mir Orientierung.','Wunsch: Wir vereinbaren klare nächste Schritte.','Dummytext für den Admin-Test.'];
+  let i=0;
+  document.querySelectorAll('input, textarea').forEach(el=>{
+    if(el.type && ['button','submit','reset','hidden','password','checkbox','radio','range'].includes(el.type)) return;
+    if(el.readOnly || el.disabled) return;
+    if(el.tagName==='TEXTAREA') el.value=samples[i++%samples.length];
+    else if(!el.value) el.value='Testeintrag '+(++i);
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+    el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+}
+function installAdminAutofillV96(){
+  if(document.getElementById('adminAutofillV96')) return;
+  const hasFields=Array.from(document.querySelectorAll('input,textarea')).some(el=>!(el.type&&['button','submit','reset','hidden','password','checkbox','radio','range'].includes(el.type)));
+  if(!hasFields) return;
+  const btn=document.createElement('button');
+  btn.id='adminAutofillV96';
+  btn.type='button';
+  btn.className='admin-autofill-v96';
+  btn.setAttribute('data-admin-autofill','true');
+  btn.textContent='Admin: Dummytext einfügen';
+  btn.hidden=true;
+  btn.style.display='none';
+  btn.onclick=autofillDummyFieldsV96;
+  document.body.appendChild(btn);
+}
+function installGlobalStylesV96(){
+  if(document.getElementById('globalStylesV96')) return;
+  const st=document.createElement('style');
+  st.id='globalStylesV96';
+  st.textContent=`
+    .local-reset-bar .wrap{padding-top:6px!important;padding-bottom:6px!important}
+    .local-reset-inner{min-height:36px!important;gap:8px!important}
+    .admin-status-button,.small-reset{min-height:34px!important;padding:7px 12px!important;font-size:.84rem!important}
+    .admin-side-panel{width:min(300px,calc(100vw - 28px))!important;padding:12px!important;gap:10px!important}
+    .admin-side-panel h3{font-size:1rem!important;margin:0 0 6px!important}
+    .admin-mini-card{padding:11px!important;border-radius:15px!important}
+    .admin-mini-card strong{font-size:.92rem!important}.admin-mini-card small{font-size:.75rem!important}
+    .admin-actions{gap:6px!important}.admin-actions button{font-size:.76rem!important;padding:7px 9px!important;min-height:32px!important}
+    .global-utility-dock{position:fixed;right:14px;bottom:14px;z-index:9998;display:flex;gap:8px;align-items:flex-end;font-family:Aptos,Segoe UI,Arial,sans-serif}
+    .global-utility-dock .utility-toggle,.global-utility-dock a,.global-utility-dock button{border:0;border-radius:999px;min-height:42px;padding:0 14px;font-weight:850;text-decoration:none;box-shadow:0 10px 24px rgba(0,0,0,.18);cursor:pointer}
+    .global-utility-dock .utility-toggle{width:42px;padding:0;background:#102a46;color:white}
+    .global-utility-dock .utility-actions{display:flex;gap:8px}
+    .global-utility-dock.collapsed .utility-actions{display:none}
+    .global-utility-dock .utility-home{display:inline-flex;align-items:center;background:#fff;color:#102a46}
+    .global-utility-dock .utility-admin{background:#eaf2fb;color:#102a46}
+    .admin-autofill-v96{position:fixed;left:14px;bottom:14px;z-index:9998;border:0;border-radius:999px;background:#7048e8;color:#fff;padding:11px 16px;font-weight:850;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+    @media(max-width:760px){.global-utility-dock{right:10px;bottom:10px}.global-utility-dock .utility-actions{flex-direction:column}.admin-autofill-v96{left:10px;bottom:64px;max-width:calc(100vw - 20px)}}
+  `;
+  document.head.appendChild(st);
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  installGlobalStylesV96();
+  installGlobalUtilityDockV96();
+  installAdminAutofillV96();
+  updateGlobalAdminUi();
+});

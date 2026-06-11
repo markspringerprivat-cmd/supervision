@@ -182,18 +182,9 @@
         if(!tb){tb={id:id,x:12,y:72,w:32,h:12,rot:0,z:80,fontSize:18,text:''};state.textboxes.push(tb);}
         tb.text=el.innerText;
       });
-      // Copy current inline layout positions from visible editor elements.
+      // Layoutdaten werden vom internen Editor-Commit übernommen.
+      // Hier nicht aus DOM-Attributen rekonstruieren, da diese Attribute nicht zuverlässig existieren.
       state.layout=state.layout||{};
-      modal.querySelectorAll('[data-v6-id]').forEach(el=>{
-        const id=el.dataset.v6Id;
-        if(!id) return;
-        const l=state.layout[id]||{};
-        ['x','y','w','h','rot','z','fontSize'].forEach(k=>{
-          const attr=el.getAttribute('data-'+k);
-          if(attr!==null && attr!=='') l[k]=Number(attr);
-        });
-        state.layout[id]=l;
-      });
     }
     state.groupId=groupId;
     state.savedAt=new Date().toISOString();
@@ -222,11 +213,17 @@
     };
   }
   async function saveToSheet(){
-    status('Aktuelle Gruppenpräsentation wird gespeichert …');
-    const state=currentState();
-    if(!state) throw new Error('Kein Präsentationsstand im Gruppeneditor gefunden.');
-    const payload=payloadForSave(loadedRow,state);
-    await postPayload(payload);
+    const saveBtn=document.querySelector('#presentationPrepModalV6 #v6Save');
+    if(saveBtn && saveBtn.dataset.savingGroupPresentationV123==='1') return;
+    if(saveBtn){saveBtn.dataset.savingGroupPresentationV123='1';saveBtn.disabled=true;saveBtn.textContent='Wird gespeichert …';}
+    try{
+      status('Aktuelle Gruppenpräsentation wird gespeichert …');
+      // Der originale Editor-Commit läuft direkt vor diesem Timeout.
+      // Danach liegt der aktuelle Layout-/Textstand im LocalStorage.
+      const state=currentState();
+      if(!state) throw new Error('Kein Präsentationsstand im Gruppeneditor gefunden.');
+      const payload=payloadForSave(loadedRow,state);
+      await postPayload(payload);
     await new Promise(resolve=>setTimeout(resolve,1700));
     try{
       const check=await jsonp({action:'groupProgress',groupId:payload.groupId,groupSize:5});
@@ -244,8 +241,12 @@
         }
       }
     }catch(_){}
-    status('Gespeichert. Die finale Gruppenpräsentation wurde aktualisiert.','ok');
-    setTimeout(()=>{location.href='gruppe-fortschritt.html?g='+encodeURIComponent(payload.groupId);},750);
+      status('Gespeichert. Die finale Gruppenpräsentation wurde aktualisiert.','ok');
+      setTimeout(()=>{location.href='gruppe-fortschritt.html?g='+encodeURIComponent(payload.groupId);},750);
+    } finally {
+      const saveBtn=document.querySelector('#presentationPrepModalV6 #v6Save');
+      if(saveBtn){saveBtn.dataset.savingGroupPresentationV123='0';saveBtn.disabled=false;saveBtn.textContent='Für Gruppe speichern';}
+    }
   }
   function returnWithoutSaving(){
     const groupId=loadedGroupId||gid();
@@ -270,11 +271,11 @@
     if(!saveBtn.dataset.groupEditorV85){
       saveBtn.dataset.groupEditorV85='1';
       saveBtn.addEventListener('click',ev=>{
-        ev.preventDefault();
-        ev.stopPropagation();
-        ev.stopImmediatePropagation();
-        saveToSheet().catch(err=>status(err.message||String(err),'warning'));
-      },true);
+        // Wichtig: nicht in der Capture-Phase blockieren.
+        // Der interne Editor-Commit muss zuerst laufen, damit Layout/Textänderungen
+        // im lokalen Präsentationszustand landen. Danach wird dieser Stand serverseitig gespeichert.
+        setTimeout(()=>saveToSheet().catch(err=>status(err.message||String(err),'warning')),260);
+      },false);
     }
     const closeBtn=modal.querySelector('#v6Close');
     if(closeBtn && !closeBtn.dataset.groupEditorV85){

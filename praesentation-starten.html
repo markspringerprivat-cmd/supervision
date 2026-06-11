@@ -7,37 +7,29 @@
   <style>
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;overflow:hidden;background:#071323;color:#fff;font-family:"Aptos","Segoe UI Variable","Segoe UI",Roboto,Arial,sans-serif}
-    .presenter{position:fixed;inset:0;display:grid;grid-template-rows:56px 1fr 54px;background:radial-gradient(circle at 10% 20%,rgba(60,120,190,.25),transparent 28%),#071323}
-    .topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:rgba(7,19,35,.92);border-bottom:1px solid rgba(255,255,255,.12);z-index:20}
-    .topbar strong{font-size:1rem;letter-spacing:.01em}
-    .topbar .hint{color:rgba(255,255,255,.68);font-size:.92rem}
-    .topbar .spacer{flex:1}
-    button,a.button{border:0;border-radius:999px;padding:9px 14px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-    button.primary,a.primary{background:#2f6fb0;color:#fff}
-    button.light,a.light{background:#eef4fb;color:#10223a}
-    .stage{position:relative;overflow:hidden;display:grid;place-items:center;padding:18px}
-    .slide{position:absolute;inset:18px;display:grid;place-items:center;opacity:0;transform:translateX(70px) scale(.985);transition:opacity .32s ease,transform .42s cubic-bezier(.18,.82,.22,1);pointer-events:none}
+    body{position:relative}
+    .presenter{position:fixed;inset:0;background:radial-gradient(circle at 12% 18%,rgba(60,120,190,.28),transparent 30%),#071323;overflow:hidden}
+    .stage{position:fixed;inset:18px;overflow:hidden;display:grid;place-items:center}
+    .slide{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:translateX(70px) scale(.988);transition:opacity .32s ease,transform .42s cubic-bezier(.18,.82,.22,1);pointer-events:none}
     .slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
-    .slide.prev{opacity:0;transform:translateX(-70px) scale(.985)}
-    .slide img{max-width:100%;max-height:100%;width:auto;height:auto;border-radius:18px;box-shadow:0 28px 90px rgba(0,0,0,.42);background:#fff}
-    .bottom{display:flex;align-items:center;gap:12px;padding:0 16px;background:rgba(7,19,35,.92);border-top:1px solid rgba(255,255,255,.12)}
-    .counter{margin-left:auto;font-weight:900;color:#fff}
-    .nav-arrow{position:fixed;top:50%;transform:translateY(-50%);width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.20);font-size:2.1rem;z-index:30;display:grid;place-items:center}
-    .nav-arrow:hover{background:rgba(255,255,255,.2)}
-    .nav-arrow.left{left:18px}.nav-arrow.right{right:18px}
-    @media(max-width:760px){.topbar .hint{display:none}.slide{inset:10px}.nav-arrow{width:48px;height:48px}}
+    .slide.prev{opacity:0;transform:translateX(-70px) scale(.988)}
+    .slide img{max-width:98.2vw;max-height:96.8vh;width:auto;height:auto;border-radius:18px;box-shadow:0 30px 96px rgba(0,0,0,.45);background:#fff}
+    .fullscreen-hint{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-18px);z-index:50;opacity:0;pointer-events:none;background:rgba(7,19,35,.94);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 44px rgba(0,0,0,.26);color:#fff;border-radius:999px;padding:11px 18px;font-weight:800;letter-spacing:.01em;transition:opacity .28s ease,transform .28s ease}
+    .fullscreen-hint.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .start-overlay{position:fixed;right:18px;bottom:18px;z-index:40;display:flex;gap:10px;transition:opacity .25s ease,transform .25s ease}
+    .start-overlay.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
+    button,a.button{border:0;border-radius:999px;padding:10px 15px;font-weight:850;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+    button.primary{background:#2f6fb0;color:#fff}
+    a.light{background:#eef4fb;color:#10223a}
+    @media(max-width:760px){
+      .stage{inset:10px}
+      .slide img{max-width:99vw;max-height:98vh;border-radius:12px}
+      .fullscreen-hint{width:calc(100vw - 28px);text-align:center;border-radius:18px}
+    }
   </style>
 </head>
 <body>
   <main class="presenter">
-    <div class="topbar">
-      <strong>Supervision in der Schule</strong>
-      <span class="hint">Pfeiltasten oder Leertaste zum Wechseln · F für Vollbild</span>
-      <span class="spacer"></span>
-      <button id="fullscreenBtn" class="primary" type="button">Vollbild starten (F)</button>
-      <a class="button light" href="praesentation-nachschlagen.html">Zur Übersicht</a>
-    </div>
-    <button id="prevBtn" class="nav-arrow left" type="button" aria-label="Vorherige Folie">‹</button>
     <section id="stage" class="stage">
       <section class="slide active" data-slide="1"><img src="assets/ppt_slides/slide-01.png" alt="Folie 1"></section>
       <section class="slide" data-slide="2"><img src="assets/ppt_slides/slide-02.png" alt="Folie 2"></section>
@@ -51,44 +43,58 @@
       <section class="slide" data-slide="10"><img src="assets/ppt_slides/slide-10.png" alt="Folie 10"></section>
       <section class="slide" data-slide="11"><img src="assets/ppt_slides/slide-11.png" alt="Folie 11"></section>
     </section>
-    <button id="nextBtn" class="nav-arrow right" type="button" aria-label="Nächste Folie">›</button>
-    <div class="bottom">
-      <button id="backBtn" class="light" type="button">← Zurück</button>
-      <button id="forwardBtn" class="primary" type="button">Weiter →</button>
-      <span id="counter" class="counter">Folie 1 / 11</span>
+    <div id="fullscreenHint" class="fullscreen-hint">Vollbildmodus mit Escape beenden</div>
+    <div id="startOverlay" class="start-overlay">
+      <button id="fullscreenBtn" class="primary" type="button">Vollbild starten (V)</button>
+      <a class="button light" href="praesentation-nachschlagen.html">Zur Übersicht</a>
     </div>
   </main>
 <script>
 (function(){
   var slides=Array.from(document.querySelectorAll('.slide'));
   var current=0;
+  var hintTimer=null;
   function update(){
     slides.forEach(function(s,i){
       s.classList.remove('active','prev');
       if(i===current)s.classList.add('active');
       else if(i<current)s.classList.add('prev');
     });
-    document.getElementById('counter').textContent='Folie '+(current+1)+' / '+slides.length;
   }
   function next(){current=Math.min(slides.length-1,current+1);update();}
   function prev(){current=Math.max(0,current-1);update();}
-  function toggleFullscreen(){
-    if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}
-    else{document.exitFullscreen&&document.exitFullscreen();}
+  function showHint(){
+    var hint=document.getElementById('fullscreenHint');
+    if(!hint)return;
+    clearTimeout(hintTimer);
+    hint.classList.add('show');
+    hintTimer=setTimeout(function(){hint.classList.remove('show');},4000);
   }
-  document.getElementById('nextBtn').onclick=next;
-  document.getElementById('forwardBtn').onclick=next;
-  document.getElementById('prevBtn').onclick=prev;
-  document.getElementById('backBtn').onclick=prev;
+  function setOverlayVisible(visible){
+    var overlay=document.getElementById('startOverlay');
+    if(!overlay)return;
+    overlay.classList.toggle('hidden',!visible);
+  }
+  function toggleFullscreen(){
+    if(!document.fullscreenElement){
+      var req=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();
+      if(req&&req.then)req.then(function(){showHint();}).catch(function(){showHint();});
+      else showHint();
+    }else{
+      document.exitFullscreen&&document.exitFullscreen();
+    }
+  }
   document.getElementById('fullscreenBtn').onclick=toggleFullscreen;
   document.addEventListener('fullscreenchange',function(){
-    document.getElementById('fullscreenBtn').textContent=document.fullscreenElement?'Vollbild beenden (F)':'Vollbild starten (F)';
+    var isFull=!!document.fullscreenElement;
+    setOverlayVisible(!isFull);
+    if(isFull)showHint();
   });
   document.addEventListener('keydown',function(ev){
     if(ev.key==='ArrowRight'||ev.key==='PageDown'||ev.key===' '){ev.preventDefault();next();}
     if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault();prev();}
-    if((ev.key||'').toLowerCase()==='f'){ev.preventDefault();toggleFullscreen();}
-    if(ev.key==='Escape'&&!document.fullscreenElement){location.href='praesentation-nachschlagen.html';}
+    if((ev.key||'').toLowerCase()==='v'){ev.preventDefault();toggleFullscreen();}
+    if((ev.key||'').toLowerCase()==='f'){ev.preventDefault();}
   });
   update();
 })();

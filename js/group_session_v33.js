@@ -1,4 +1,4 @@
-/* Group session rebuild v46 mobile ppt and remove ui */
+/* Group session rebuild v47 reassign after member change */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -205,6 +205,19 @@
     clearInterval(memberPollTimer);
     memberPollTimer=setInterval(()=>refreshMembers().catch(()=>{}),4000);
   }
+
+  async function goToAssignAfterRefresh(){
+    await refreshMembers();
+    const assigned=rolesAlreadyAssigned(latestMembers);
+    if(assigned){
+      showAssignedOverview(latestMembers);
+    }else{
+      clearAssignedOverviewState();
+      showStep('assign');
+      status('assignSessionStatus','Mitgliederliste wurde aktualisiert. Bitte Rollen neu verteilen.','warning');
+    }
+  }
+
   async function assignRoles(){
     if(!currentGroupId) currentGroupId=groupIdFromUrl();
     if(!currentGroupId){status('assignSessionStatus','Keine Gruppe gefunden.','warning');return;}
@@ -358,7 +371,7 @@
     showStep('loading');
     document.getElementById('createGroupSessionBtn')?.addEventListener('click',()=>createGroup().catch(e=>status('sessionStatus',e.message,'warning')));
     document.getElementById('refreshMembersBtn')?.addEventListener('click',()=>refreshMembers().catch(e=>status('sessionStatus',e.message,'warning')));
-    document.getElementById('groupCompleteBtn')?.addEventListener('click',()=>showStep('assign'));
+    document.getElementById('groupCompleteBtn')?.addEventListener('click',()=>goToAssignAfterRefresh().catch(e=>status('sessionStatus',e.message,'warning')));
     document.getElementById('backToMembersBtn')?.addEventListener('click',()=>showStep('join'));
     document.getElementById('assignRolesSessionBtn')?.addEventListener('click',()=>assignRoles().catch(e=>status('assignSessionStatus',e.message,'warning')));
     document.getElementById('membersList')?.addEventListener('click',e=>{const btn=e.target.closest('[data-remove-device],[data-remove-row]');if(btn){e.preventDefault();removeMember(btn.getAttribute('data-remove-device'),btn.getAttribute('data-remove-row'));}});

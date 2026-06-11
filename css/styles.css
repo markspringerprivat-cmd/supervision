@@ -5644,3 +5644,30 @@ input[readonly].readonly-group-name{
 .v6-modal .v6-base .v6-editable-text{
   min-height:100%;
 }
+
+
+/* v127: Wellenmuster im Präsentationseditor sauber kacheln */
+.v6-slide{
+  background-repeat:repeat;
+  background-position:0 0;
+}
+
+
+/* v128: Editor-Auswahl stabil anzeigen, ohne gespeicherte Ebene zu verändern */
+.v6-modal .v6-el.is-selected,
+.v6-modal .v6-el[data-v6-selected-front="1"]{
+  z-index:2147483000!important;
+  isolation:isolate!important;
+}
+.v6-modal .v6-el.is-selected .v6-editable-text,
+.v6-modal .v6-el[data-v6-selected-front="1"] .v6-editable-text{
+  font-size:inherit!important;
+  --v6-fit-font-size:inherit!important;
+  overflow:visible!important;
+}
+.v6-modal .v6-el:not(.is-selected) .v6-editable-text{
+  font-size:var(--v6-fit-font-size, inherit);
+}
+.v6-modal .v6-handle{
+  z-index:2147483600!important;
+}

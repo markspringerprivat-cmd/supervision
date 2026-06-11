@@ -26,16 +26,17 @@
   const CASE = {
     title: 'Fallbeispiel: Teamteaching in einer ESE-Klasse',
     context: [
-      'Zwei Lehrkräfte unterrichten gemeinsam eine Lerngruppe mit Schüler*innen mit dem Förderschwerpunkt emotionale und soziale Entwicklung.',
-      'Im Unterricht entstehen wiederholt Spannungen darüber, wer in herausfordernden Situationen eingreift, wie konsequent Regeln umgesetzt werden und wie Verantwortung im Team geteilt wird.',
-      'Die Klasse reagiert sensibel auf uneinheitliches Verhalten. Für einzelne Schüler*innen entstehen dadurch Unsicherheit, Unruhe und eine instabile Lernatmosphäre.'
+      'In einer Klasse mit Schüler*innen mit dem Förderschwerpunkt emotionale und soziale Entwicklung nimmt die pädagogische Instabilität spürbar zu. Im Unterricht entstehen häufiger Unruhe, impulsive Reaktionen, Grenzüberschreitungen und Phasen, in denen einzelne Schüler*innen kaum noch in die gemeinsame Arbeit zurückfinden.',
+      'Die Lerngruppe braucht verlässliche Abläufe, klare Zuständigkeiten und ein Team, das nach außen einheitlich handelt. Genau diese Verlässlichkeit gerät im Teamteaching zunehmend unter Druck.',
+      'Eine erfahrene Klassenlehrkraft hält an festen Strukturen, eingeübten Routinen und klaren Regeln fest. Sie sieht darin eine notwendige Orientierung für die Schüler*innen und befürchtet, dass zu viele Veränderungen die Klasse zusätzlich verunsichern.',
+      'Eine neue Lehrkraft, die frisch aus dem Studium kommt, bringt viele innovative Ideen, hohe Motivation und einen starken Wunsch nach individueller Förderung mit. Sie möchte neue Methoden ausprobieren, greift engagiert in Unterrichtssituationen ein und entscheidet in kritischen Momenten teilweise anders als die Klassenlehrkraft.'
     ],
     conflict: [
-      'Lehrkraft A erlebt, dass Absprachen nicht verlässlich eingehalten werden und sie in schwierigen Situationen häufig allein reagieren muss.',
-      'Lehrkraft B empfindet manche Interventionen von Lehrkraft A als zu streng und sieht die Gefahr, dass Beziehungsgestaltung und individuelle Förderung zu kurz kommen.',
-      'Die Schulleitung beobachtet, dass das Teamteaching nach außen nicht geschlossen wirkt und dass die Klasse mehr Klarheit und Stabilität braucht.'
+      'Dadurch entsteht im Teamteaching ein Konflikt: Die Klassenlehrkraft erlebt die neue Kollegin als zu spontan und als Eingriff in bewährte Absprachen. Die neue Lehrkraft erlebt die Klassenlehrkraft dagegen als zu festgelegt und wenig offen für pädagogische Weiterentwicklung.',
+      'Die Schüler*innen nehmen die Uneinigkeit wahr. Regeln werden unterschiedlich ausgelegt, Interventionen wirken widersprüchlich, und die Klasse reagiert mit mehr Unruhe und Unsicherheit.',
+      'Beide Lehrkräfte wenden sich schließlich an die Schulleitung und beschweren sich über das Verhalten der jeweils anderen Person. Die Schulleitung versucht zunächst, den Konflikt intern zu klären, merkt aber, dass die Fronten verhärtet sind und dass ein strukturiertes Gespräch mit externer Gesprächsführung nötig wird.'
     ],
-    question: 'Wie kann das Team ein gemeinsames, verlässliches Vorgehen entwickeln, das pädagogisch tragfähig ist und den Schüler*innen mit ESE-Förderbedarf mehr Orientierung bietet?'
+    question: 'Deshalb wird eine Supervision einberufen. Ziel ist es, die unterschiedlichen Perspektiven zu klären, die Auswirkungen auf die Klasse sichtbar zu machen und ein gemeinsames, verlässliches Vorgehen für das Teamteaching zu entwickeln.'
   };
 
   const ROLE_DATA = {

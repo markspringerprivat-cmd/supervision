@@ -202,6 +202,20 @@
   function svgPattern(svg){
     return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g,'%27').replace(/\"/g,'%22')}")`;
   }
+
+  function svgDataUriV127(svg){
+    return 'url("data:image/svg+xml,' + encodeURIComponent(svg)
+      .replace(/'/g,'%27')
+      .replace(/"/g,'%22') + '")';
+  }
+  function wavePatternCssV127(color){
+    const c = color || '#d7e6f6';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="24" viewBox="0 0 64 24">
+      <path d="M0 12 C8 2 24 2 32 12 S56 22 64 12" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>`;
+    return svgDataUriV127(svg);
+  }
+
   function patternCss(kind,color){
     const c = color || '#dbe4ef';
     if(!kind || kind === 'none') return 'none';
@@ -263,10 +277,14 @@
     document.body.style.backgroundColor = s.background;
     document.body.style.backgroundImage = patternCss(s.backgroundPattern, s.backgroundPatternColor);
     document.body.style.backgroundSize = patternSize(s.backgroundPattern);
+    document.body.style.backgroundRepeat = s.backgroundPattern === 'none' ? 'no-repeat' : 'repeat';
+    document.body.style.backgroundPosition = '0 0';
     const deck = $('deck');
     deck.style.backgroundColor = s.slide;
     deck.style.backgroundImage = patternCss(s.slidePattern, s.slidePatternColor);
     deck.style.backgroundSize = patternSize(s.slidePattern);
+    deck.style.backgroundRepeat = s.slidePattern === 'none' ? 'no-repeat' : 'repeat';
+    deck.style.backgroundPosition = '0 0';
     deck.style.color = s.text;
     deck.style.setProperty('--v6-heading-color', s.heading);
     deck.style.setProperty('--v6-text-color', s.text);

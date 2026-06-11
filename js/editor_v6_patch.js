@@ -232,6 +232,10 @@
   function textFitStyleV106(text, layout){
     return '--v6-fit-font-size:' + textFitFontSizeV106(text, layout) + 'px;';
   }
+  function editorTextStyleV128(layout){
+    const fs = Math.max(8, Math.min(140, Number(layout && layout.fontSize || 18) || 18));
+    return '--v6-fit-font-size:' + fs + 'px;font-size:' + fs + 'px;';
+  }
 
 
   function textForElementV126(el){
@@ -247,7 +251,7 @@
   }
   function fittedTextLayoutV126(layout,text,fontSize){
     const l=Object.assign({},layout||{});
-    const fs=clamp(Number(fontSize||l.fontSize||18)||18,8,96);
+    const fs=clamp(Number(fontSize||l.fontSize||18)||18,8,140);
     let w=clamp(Number(l.w||l.width||20)||20,4,96);
     let h=clamp(Number(l.h||l.height||10)||10,3,96);
     const x=Number(l.x||0)||0, y=Number(l.y||0)||0;
@@ -295,7 +299,7 @@
     if(type === 'table') content = renderTable(elDef.table, draft.values, editable);
     else {
       const txt=getElementText(elDef);
-      content = `<div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-text="${esc(id)}" style="${textFitStyleV106(txt, layout)}">${esc(txt)}</div>`;
+      content = `<div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-text="${esc(id)}" style="${editable ? editorTextStyleV128(layout) : textFitStyleV106(txt, layout)}">${esc(txt)}</div>`;
     }
     return `<div class="v6-el v6-base v6-type-${esc(type)}${selected}" data-v6-id="${esc(id)}" data-v6-type="${esc(type)}" data-v6-deletable="false" style="${styleFor(layout)}">${content}${editable ? handlesHtml(false) : ''}</div>`;
   }
@@ -306,7 +310,7 @@
     const selected = selectedId === tb.id ? ' is-selected' : '';
     const l = Object.assign({}, defaultLayout('textbox'), tb);
     const txt=tb.text || '';
-    return `<div class="v6-el v6-textbox${selected}" data-v6-id="${esc(tb.id)}" data-v6-type="textbox" data-v6-deletable="true" style="${styleFor(l)}"><div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-textbox="${esc(tb.id)}" style="${textFitStyleV106(txt, l)}">${esc(txt)}</div>${editable ? handlesHtml(true) : ''}</div>`;
+    return `<div class="v6-el v6-textbox${selected}" data-v6-id="${esc(tb.id)}" data-v6-type="textbox" data-v6-deletable="true" style="${styleFor(l)}"><div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-textbox="${esc(tb.id)}" style="${editable ? editorTextStyleV128(l) : textFitStyleV106(txt, l)}">${esc(txt)}</div>${editable ? handlesHtml(true) : ''}</div>`;
   }
   function renderSticker(st, editable){
     const selected = selectedId === st.id ? ' is-selected' : '';
@@ -331,6 +335,20 @@
   function svgPattern(svg){
     return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g,'%27').replace(/\"/g,'%22')}")`;
   }
+
+  function svgDataUriV127(svg){
+    return 'url("data:image/svg+xml,' + encodeURIComponent(svg)
+      .replace(/'/g,'%27')
+      .replace(/"/g,'%22') + '")';
+  }
+  function wavePatternCssV127(color){
+    const c = color || '#d7e6f6';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="24" viewBox="0 0 64 24">
+      <path d="M0 12 C8 2 24 2 32 12 S56 22 64 12" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>`;
+    return svgDataUriV127(svg);
+  }
+
   function patternCss(pattern, color){
     color = color || '#dbe4ef';
     if(!pattern || pattern === 'none') return '';
@@ -353,6 +371,8 @@
     slide.style.backgroundColor = s.slide;
     slide.style.backgroundImage = patternCss(s.slidePattern, s.slidePatternColor);
     slide.style.backgroundSize = patternSize(s.slidePattern);
+    slide.style.backgroundRepeat = s.slidePattern === 'none' ? 'no-repeat' : 'repeat';
+    slide.style.backgroundPosition = '0 0';
     slide.style.color = s.text;
     slide.style.setProperty('--v6-heading-color', s.heading);
     slide.style.setProperty('--v6-text-color', s.text);
@@ -436,10 +456,16 @@
     if(tableStyleEl) tableStyleEl.addEventListener('change', () => { if(!editMode) return; pushUndoOnce('tableStyle'); draft.settings.tableStyle = tableStyleEl.value || 'classic'; dirty = true; renderSlide(); });
     $('#v6FontSize').addEventListener('input', () => {
       if(!selectedId || !editMode) return;
-      const fs=clamp(num($('#v6FontSize').value,22),8,96);
+      const fs=clamp(num($('#v6FontSize').value,22),8,140);
       pushUndoOnce('fontsize_'+selectedId);
       const el=getElement(selectedId);
-      if(el){ fitElementToTextV126(el,fs); setSelectedStyle({fontSize:fs}); fitElementToTextV126(el,fs); }
+      if(el){
+        setSelectedStyle({fontSize:fs});
+        const textEl=el.querySelector('.v6-editable-text');
+        if(textEl) textEl.setAttribute('style', editorTextStyleV128(Object.assign({}, getElLayout(el), {fontSize:fs})));
+        fitElementToTextV126(el,fs);
+        markDirty();
+      }
     });
     $('#v6TextColor').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
     $('#v6Front').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(1); });
@@ -592,7 +618,12 @@
     if(id.startsWith('tb_')) { const obj=draft.textboxes.find(x=>x.id===id); if(obj) Object.assign(obj, changes); }
     else if(id.startsWith('st_')) { const obj=draft.stickers.find(x=>x.id===id); if(obj) Object.assign(obj, changes); }
     else setLayout(id,type,changes);
-    const l=getElLayout(el); el.setAttribute('style', styleFor(l)); el.classList.add('is-selected'); el.setAttribute('data-v6-selected-front','1');
+    const l=getElLayout(el);
+    el.setAttribute('style', styleFor(l));
+    el.classList.add('is-selected');
+    el.setAttribute('data-v6-selected-front','1');
+    const textEl=el.querySelector('.v6-editable-text');
+    if(textEl) textEl.setAttribute('style', editorTextStyleV128(l));
   }
   function startTransform(e, el, mode){
     e.preventDefault(); e.stopPropagation();

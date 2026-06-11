@@ -2021,3 +2021,91 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
   };
   try{initRoleCard=window.initRoleCard;}catch(_){}
 })();
+
+
+/* ============================================================
+   v101: Ablaufseiten immer mit Kacheln rendern
+   ============================================================ */
+(function(){
+  const FLOW_STEPS_V101={
+    supervisor:[
+      ['Rolle und Rahmen klären','Du eröffnest das Gespräch, erklärst den Zweck der Supervision und achtest auf Freiwilligkeit, Vertraulichkeit und respektvolle Sprache.'],
+      ['Erstkontakt moderieren','Du prüfst, ob alle Beteiligten bereit sind, zuzuhören, ihre Perspektive einzubringen und an einer gemeinsamen Klärung mitzuwirken.'],
+      ['Problembeschreibung sammeln','Du gibst zunächst der Schulleitung das Wort und lässt anschließend die Lehrkräfte ergänzen. Wichtig: Beobachtungen, Gefühle und Wünsche getrennt erfassen.'],
+      ['Ziele herausarbeiten','Du fragst nach individuellen Zielen und bündelst anschließend Gemeinsamkeiten zu einer gemeinsamen Zielvereinbarung.'],
+      ['Vertiefte Bearbeitung anleiten','Du leitest das Gespräch über hilfreiche Kritik, Anerkennung und mögliche Absprachen für das Teamteaching.'],
+      ['Ergebnisse sichern','Du fasst Probleme, Wünsche, Zielvereinbarung, Absprachen und Praxistauglichkeit zusammen und bereitest die Übermittlung vor.']
+    ],
+    schulleitung:[
+      ['Anlass sortieren','Überlege, warum du die Supervision eingeschaltet hast: Was hast du beobachtet und warum reicht eine direkte Klärung nicht mehr aus?'],
+      ['Eigene Perspektive vorbereiten','Formuliere deine Beobachtung sachlich. Trenne Beobachtung, Gefühl und Wunsch klar voneinander.'],
+      ['Im Gespräch den Rahmen halten','Du bist Teil des Gesprächs, aber auch Leitungsperson. Achte darauf, nicht vorschnell Partei zu ergreifen.'],
+      ['Ziel aus Leitungssicht formulieren','Überlege, was die Schule braucht: mehr Verlässlichkeit, klare Absprachen, Schutz der Klasse, Entlastung des Teams.'],
+      ['Umsetzung prüfen','Du überlegst, welche Unterstützung realistisch ist: Gesprächszeit, Hospitation, gemeinsame Planung oder verbindliche Absprachen.'],
+      ['Praxistauglichkeit einschätzen','Am Ende prüfst du, ob die Vereinbarung im Schulalltag tragfähig ist und wie du die Umsetzung begleiten kannst.']
+    ],
+    lehrkraft:[
+      ['Eigene Rolle klären','Überlege, aus welcher Perspektive du in das Gespräch gehst: Was ist dir wichtig und wo fühlst du dich missverstanden?'],
+      ['Beobachtung statt Vorwurf','Bereite vor, was du konkret beobachtet hast. Vermeide Bewertungen über die andere Person.'],
+      ['Gefühle und Wünsche formulieren','Benenne, was die Situation bei dir auslöst und was du dir für das Teamteaching wünschst.'],
+      ['Ziel formulieren','Überlege, woran du merken würdest, dass die Zusammenarbeit wieder besser funktioniert.'],
+      ['Kritik hilfreich äußern','Achte darauf, Kritik als Wunsch oder konkreten Verbesserungsvorschlag zu formulieren.'],
+      ['Absprachen mittragen','Am Ende prüfst du, welchen konkreten Beitrag du selbst leisten kannst, damit eine gemeinsame Lösung umgesetzt wird.']
+    ],
+    protokoll:[
+      ['Aufgabe klären','Du dokumentierst neutral und knapp. Du moderierst nicht, sondern sicherst Aussagen und Ergebnisse.'],
+      ['Kategorien sauber trennen','Achte auf getrennte Notizen zu Beobachtungen oder Problemen, Gefühlen, Wünschen, Zielen und Absprachen.'],
+      ['Unklare Aussagen absichern','Wenn etwas unklar ist, bitte kurz um Wiederholung oder um eine knappe Zusammenfassung.'],
+      ['Zwischenergebnisse prüfen','Vergleiche deine Notizen mit den Zusammenfassungen der Supervisor*in.'],
+      ['Ergebnisse sichern','Halte Zustimmung, offene Punkte und Vereinbarungen fest.'],
+      ['Übermittlung vorbereiten','Achte darauf, dass die Ergebnisse vollständig für Gruppenergebnis und Präsentation übernommen werden können.']
+    ]
+  };
+  function escV101(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function roleV101(){
+    const body=document.body||{};
+    const params=new URLSearchParams(location.search);
+    let role=params.get('role') || body.dataset.role || body.dataset.flowProfile || '';
+    if(role==='lehrkraft-a'||role==='lehrkraft-b') return 'lehrkraft';
+    if(role==='supervisor'||body.dataset.flowProfile==='supervisor') return 'supervisor';
+    if(role==='schulleitung'||body.dataset.flowProfile==='schulleitung') return 'schulleitung';
+    if(role==='protokoll'||body.dataset.flowProfile==='protokoll') return 'protokoll';
+    return 'supervisor';
+  }
+  function groupQueryV101(){
+    try{
+      const p=new URLSearchParams(location.search);
+      const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+      return gid ? '?g='+encodeURIComponent(gid) : '';
+    }catch(_){return '';}
+  }
+  function thoughtTargetV101(){
+    const params=new URLSearchParams(location.search);
+    let role=params.get('role') || document.body.dataset.role || document.body.dataset.flowProfile || 'supervisor';
+    if(role==='lehrkraft') role='lehrkraft-a';
+    return 'gedanken-'+role+'.html'+groupQueryV101();
+  }
+  function renderFlowCardsV101(){
+    const box=document.getElementById('flowSteps');
+    if(!box) return;
+    const role=roleV101();
+    const steps=FLOW_STEPS_V101[role] || FLOW_STEPS_V101.supervisor;
+    box.innerHTML=steps.map(function(step,idx){
+      return '<article class="card flow-step is-visible is-read"><div class="flow-step-head"><span class="step-badge">'+(idx+1)+'</span><h3>'+escV101(step[0])+'</h3></div><p>'+escV101(step[1])+'</p></article>';
+    }).join('');
+    const next=document.getElementById('flowNext');
+    if(next){
+      next.href=thoughtTargetV101();
+      next.classList.remove('disabled','is-busy');
+      next.removeAttribute('aria-disabled');
+      next.textContent='Weiter: Mach dir Gedanken';
+      next.style.pointerEvents='auto';
+    }
+  }
+  window.renderFlowCardsV101=renderFlowCardsV101;
+  window.addEventListener('DOMContentLoaded',function(){
+    renderFlowCardsV101();
+    setTimeout(renderFlowCardsV101,80);
+    setTimeout(renderFlowCardsV101,350);
+  });
+})();

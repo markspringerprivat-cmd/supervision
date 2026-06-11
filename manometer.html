@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=mobile-compact-v56">
+  <link rel="stylesheet" href="css/styles.css?v=mobile-only-feedback-v57">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -413,6 +413,26 @@
     }
     .jump-btn{display:none}
 
+  
+    /* v57: Korrektur – Manometer-Verdichtung nur im Handy-Hochkantmodus */
+    @media (min-width:701px), (orientation:landscape){
+      .mini-stack,.mini-box,.tick-row,.tick-pill,.slider-panel h3{display:revert!important}
+      .question-title{text-align:left!important}
+      .slider-panel{padding:18px!important}
+      .question-right{margin-top:0!important}
+      .req-note{order:initial!important}
+      .range-bg{order:initial!important}
+      .range-ends{order:initial!important}
+    }
+    @media (max-width:700px) and (orientation:portrait){
+      .mini-stack,.mini-box,.tick-row,.tick-pill,.slider-panel h3{display:none!important}
+      .question-title{font-size:1.02rem!important;line-height:1.18!important;margin:0 0 7px!important;text-align:center!important}
+      .slider-box{display:flex!important;flex-direction:column!important;padding:0!important;gap:6px!important}
+      .req-note{order:1!important;margin:0!important;padding:6px 8px!important;font-size:.69rem!important;line-height:1.25!important}
+      .range-bg{order:2!important;padding:12px 6px 10px!important;border-radius:14px!important}
+      .range-ends{order:3!important;margin-top:0!important;font-size:.8rem!important}
+    }
+
   </style>
 </head>
 <body data-mode="manometer">
@@ -441,8 +461,8 @@
       <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
   </main>
-  <script src="js/config.js?v=mobile-compact-v56"></script>
-  <script src="js/app.js?v=mobile-compact-v56"></script>
+  <script src="js/config.js?v=mobile-only-feedback-v57"></script>
+  <script src="js/app.js?v=mobile-only-feedback-v57"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -462,7 +482,18 @@
     function setLoading(percent, text){document.getElementById('loadingFill').style.width=Math.max(0,Math.min(100,percent))+'%'; if(text)document.getElementById('loadingStatus').textContent=text}
     function setStatus(message, type){const box=document.getElementById('statusBox'); box.hidden=false; box.className='status'+(type?' '+type:''); box.textContent=message}
     function clearStatus(){document.getElementById('statusBox').hidden=true}
-    function getGroupId(){try{if(typeof window.getGroupId==='function') return window.getGroupId()||''}catch(_){} return new URLSearchParams(location.search).get('g')||localStorage.getItem('sv_group_id')||''}
+    function getGroupId(){
+      try{
+        const params=new URLSearchParams(location.search);
+        const urlGroup=params.get('g')||params.get('groupId')||params.get('groupToken')||params.get('token')||'';
+        if(urlGroup){
+          try{localStorage.setItem('sv_current_group',urlGroup);localStorage.setItem('sv_group_id',urlGroup);}catch(_){}
+          return urlGroup;
+        }
+      }catch(_){}
+      try{if(typeof window.getGroupId==='function') return window.getGroupId()||''}catch(_){}
+      return localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+    }
     function getGroupName(){try{if(typeof window.loadText==='function') return window.loadText('summary_group_name')||localStorage.getItem('sv_group_name')||getGroupId()||'Gruppe'}catch(_){} return localStorage.getItem('sv_group_name')||getGroupId()||'Gruppe'}
     function getAppsUrl(){try{if(typeof window.getAppsScriptUrl==='function') return window.getAppsScriptUrl()||''}catch(_){} return (window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
     function getDeviceId(){const key='manometer_device_id_v2'; try{const ex=localStorage.getItem(key); if(ex)return ex; const created='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); localStorage.setItem(key, created); return created}catch(_){return 'dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10)}}
@@ -498,12 +529,15 @@
             <div class="question-left">
               <div class="metrics">
                 <div class="score-tile" data-color-for="${question.key}"><div class="value" data-value-for="${question.key}">5</div><div class="caption">Bewertung von 10</div></div>
+                <div class="mini-stack"><div class="mini-box">Skala von 1 = gar nicht bis 10 = vollständig.</div></div>
               </div>
               <div class="panel slider-panel">
-                <h2 class="question-title">${escapeHtml(question.label)}</h2>
+                <h2 class="question-title" style="font-size:clamp(1.25rem,1.75vw,1.85rem);font-weight:650;margin:0 0 14px">${escapeHtml(question.label)}</h2>
+                <h3>Deine Punktevergabe</h3>
                 <div class="slider-box">
                   <div class="range-bg"><input data-scale-key="${question.key}" id="${question.key}" type="range" min="1" max="10" step="1" value="5"></div>
                   <div class="range-ends"><span>1 · gar nicht</span><span>10 · vollständig</span></div>
+                  <div class="tick-row">${tickPills}</div>
                   <div class="req-note" data-required-note="${question.key}">Bei weniger als zehn Punkten ist mindestens ein Kritik- oder Verbesserungseintrag erforderlich.</div>
                 </div>
               </div>
@@ -525,7 +559,7 @@
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="generalText"><div class="card-inner"><div class="card-head"><div><span class="kicker">Freitext</span><h2>Allgemeines Lob, Kritik und Anregungen</h2><p>Diese drei Listen sind optional. Jeder Eintrag wird einzeln gespeichert und später einzeln dargestellt.</p></div><div class="counter">Freitext</div></div><div class="text-grid"><div class="text-lists"><div class="list-column"><div class="panel"><div class="list-head"><h3>Lob</h3><button type="button" class="add-btn" data-add-entry="praise">+ Eintrag</button></div><div class="entry-list" data-entry-list="praise"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Kritik</h3><button type="button" class="add-btn" data-add-entry="criticism">+ Eintrag</button></div><div class="entry-list" data-entry-list="criticism"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Anregungen</h3><button type="button" class="add-btn" data-add-entry="suggestions">+ Eintrag</button></div><div class="entry-list" data-entry-list="suggestions"></div></div></div></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="avoidCheck"><div class="card-inner"><div class="yn-layout"><h2>Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="avoidCriticism" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="avoidCriticism" value="Nein"><span>Nein</span></label></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="llmCheck"><div class="card-inner"><div class="yn-layout"><h2>Wurde für die Antwortengenerierung ChatGPT oder ein anderes LLM verwendet?</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="llmUsed" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="llmUsed" value="Nein"><span>Nein</span></label></div><div class="llm-box"><input id="llmDetails" class="llm-input" type="text" placeholder="Optionale Hinweise zu LLM-Nutzung …"></div></div></div></section>`);
-      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="submit"><div class="card-inner"><div id="submitInitial" class="submit-state"><span class="kicker">Abschluss</span><h2>Vielen Dank für dein Feedback.</h2><p>Wenn alles passt, kannst du deine Rückmeldung jetzt absenden.</p><button id="submitBtn" type="submit" class="primary-btn">Feedback absenden</button></div><div id="submitSuccess" class="submit-state hidden centered-submit"><span class="kicker">Gespeichert</span><h2>Vielen Dank für deine Teilnahme.</h2><p>Deine Rückmeldung wurde gespeichert.</p><div class="separator"></div><div class="inline-actions centered-actions"><button id="openGameInlineBtn" type="button" class="primary-btn">Spiel starten</button><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div id="submitGame" class="submit-state hidden"><div class="game-box"><div class="game-head"><div><span class="kicker">Spiel</span><h3>Supervisions-Sprint</h3><p>Tippen oder JUMP drücken zum Springen. Als Supervisor*in löst du Konflikte, weichst Hindernissen aus und hast <strong>1 Extraleben</strong>.</p></div><div class="inline-actions centered-actions"><button id="startGameBtn" type="button" class="primary-btn">Spiel starten</button><button id="restartGameBtn" type="button" class="secondary-btn" disabled>Neu starten</button><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div class="game-stats"><div class="chip">Punkte: <span id="gameScore">0</span></div><div class="chip">Highscore: <span id="gameHighscore">0</span></div><div class="chip">Leben: <span id="gameLives">2</span></div></div><div class="game-canvas-wrap"><canvas id="runnerCanvas" width="960" height="260"></canvas></div><button id="jumpBtn" type="button" class="jump-btn">JUMP</button><div class="game-footer"><div id="gameMessage" class="game-msg">Tippen oder JUMP drücken zum Springen.</div></div></div></div></div></section>`);
+      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="submit"><div class="card-inner"><div id="submitInitial" class="submit-state"><span class="kicker">Abschluss</span><h2>Vielen Dank für dein Feedback.</h2><p>Wenn alles passt, kannst du deine Rückmeldung jetzt absenden.</p><button id="submitBtn" type="submit" class="primary-btn">Feedback absenden</button></div><div id="submitSuccess" class="submit-state hidden centered-submit"><span class="kicker">Gespeichert</span><h2>Vielen Dank für deine Teilnahme.</h2><p>Deine Rückmeldung wurde gespeichert.</p><div class="separator"></div><div class="inline-actions centered-actions"><button id="openGameInlineBtn" type="button" class="primary-btn">Spiel starten</button><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div id="submitGame" class="submit-state hidden"><div class="game-box"><div class="game-head"><div><span class="kicker">Spiel</span><h3>Supervisions-Sprint</h3><p>Leertaste, Klick oder Tippen zum Springen. Das Spiel ist bewusst etwas leichter. Du hast <strong>1 Extraleben</strong>.</p></div><div class="inline-actions centered-actions"><button id="startGameBtn" type="button" class="primary-btn">Spiel starten</button><button id="restartGameBtn" type="button" class="secondary-btn" disabled>Neu starten</button><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div class="game-stats"><div class="chip">Punkte: <span id="gameScore">0</span></div><div class="chip">Highscore: <span id="gameHighscore">0</span></div><div class="chip">Leben: <span id="gameLives">2</span></div></div><div class="game-canvas-wrap"><canvas id="runnerCanvas" width="960" height="260"></canvas></div><button id="jumpBtn" type="button" class="jump-btn">JUMP</button><div class="game-footer"><div id="gameMessage" class="game-msg">Tippen oder JUMP drücken zum Springen.</div></div></div></div></div></section>`);
       steps=Array.from(stage.querySelectorAll('.card'));
       QUESTIONS.forEach(q=>addEntry(q.key,'')); ['praise','criticism','suggestions'].forEach(kind=>addEntry(kind,''));
       bindDynamicEvents(); document.getElementById('startSurveyBtn').addEventListener('click',()=>setActive(1)); document.getElementById('openGameInlineBtn').addEventListener('click', showGameInline);
@@ -569,9 +603,10 @@
 
     function progressUrl(){const u=new URL('gruppe-fortschritt.html', location.href); const g=getGroupId(); if(g)u.searchParams.set('g',g); return u.toString()}
     function showAlreadyVotedBlock(){document.body.innerHTML='<div style="min-height:100dvh;display:grid;place-items:center;background:#0d2038;padding:20px;font-family:Aptos,Segoe UI,Arial,sans-serif"><section style="width:min(520px,calc(100vw - 32px));background:#fff;border-radius:26px;padding:26px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.25)"><h1 style="margin:0 0 10px;color:#10223a">Du hast bereits Feedback abgegeben.</h1><p style="color:#607187;line-height:1.5">Von diesem Gerät wurde für diese Gruppe schon eine Rückmeldung gespeichert.</p><a href="'+progressUrl()+'" style="display:inline-flex;margin-top:12px;min-height:44px;align-items:center;justify-content:center;border-radius:999px;background:#2f6fb0;color:white;text-decoration:none;font-weight:800;padding:0 18px">Zurück zum Gruppenfortschritt</a></section></div>'}
-    async function checkAlreadyVotedBeforeStart(){const url=getAppsUrl(); if(!url)return false; try{const res=await jsonp(url,{action:'manometerFeedbackStatus',deviceId:getDeviceId(),groupId:getGroupId()}); if(res&&res.alreadyVoted){showAlreadyVotedBlock(); return true}}catch(_){} return false}
+    function showMissingGroupBlock(){document.body.innerHTML='<div style="min-height:100dvh;display:grid;place-items:center;background:#0d2038;padding:20px;font-family:Aptos,Segoe UI,Arial,sans-serif"><section style="width:min(520px,calc(100vw - 32px));background:#fff;border-radius:26px;padding:26px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.25)"><h1 style="margin:0 0 10px;color:#10223a">Keine Gruppen-ID gefunden.</h1><p style="color:#607187;line-height:1.5">Bitte scanne den Feedback-QR-Code aus dem Gruppenfortschritt erneut. Browserdaten können die lokale Gerätezuordnung löschen.</p><a href="index.html" style="display:inline-flex;margin-top:12px;min-height:44px;align-items:center;justify-content:center;border-radius:999px;background:#2f6fb0;color:white;text-decoration:none;font-weight:800;padding:0 18px">Zur Startseite</a></section></div>'}
+    async function checkAlreadyVotedBeforeStart(){const url=getAppsUrl(); const gid=getGroupId(); if(!gid){showMissingGroupBlock(); return true;} if(!url)return false; try{const res=await jsonp(url,{action:'manometerFeedbackStatus',deviceId:getDeviceId(),groupId:gid}); if(res&&res.alreadyVoted){showAlreadyVotedBlock(); return true}}catch(_){} return false}
 
-    async function saveFeedback(){const url=getAppsUrl(); if(!url){setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.','error'); return} const button=document.getElementById('submitBtn'); button.disabled=true; button.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird übertragen …'); const payload={action:'manometerFeedbackSave', deviceId:getDeviceId(), groupId:getGroupId(), groupName:getGroupName(), scores:JSON.stringify(collectScores()), improvements:JSON.stringify(collectImprovements()), generalFeedback:'', generalPraise:JSON.stringify(listValues('praise')), generalCriticism:JSON.stringify(listValues('criticism')), generalSuggestions:JSON.stringify(listValues('suggestions')), avoidCriticism:(document.querySelector('input[name="avoidCriticism"]:checked')||{}).value||'', llmUsed:(document.querySelector('input[name="llmUsed"]:checked')||{}).value||'', llmDetails:document.getElementById('llmDetails').value.trim()}; try{const result=await jsonp(url,payload); if(!result||result.ok===false){ if(result&&result.duplicate){ throw new Error('Von diesem Gerät wurde bereits Feedback abgegeben. Bitte lass die Hardware-IDs im Adminbereich freigeben und lade die Seite danach neu.'); } throw new Error(result&&(result.error||result.message)||'Speichern fehlgeschlagen.'); } try{localStorage.setItem(votedKey,'1')}catch(_){} setStatus('Feedback erfolgreich gespeichert.','ok'); showSubmitSuccess()}catch(err){setStatus('Feedback konnte nicht übertragen werden: '+err.message,'error')}finally{button.disabled=false; button.textContent='Feedback absenden'}}
+    async function saveFeedback(){const url=getAppsUrl(); if(!url){setStatus('Keine Apps-Script-URL gefunden. Feedback kann nicht gespeichert werden.','error'); return} const button=document.getElementById('submitBtn'); button.disabled=true; button.textContent='Feedback wird gespeichert …'; setStatus('Bitte warten. Dein Feedback wird übertragen …'); const payload={action:'manometerFeedbackSave', deviceId:getDeviceId(), groupId:getGroupId(), groupName:getGroupName(), scores:JSON.stringify(collectScores()), improvements:JSON.stringify(collectImprovements()), generalFeedback:'', generalPraise:JSON.stringify(listValues('praise')), generalCriticism:JSON.stringify(listValues('criticism')), generalSuggestions:JSON.stringify(listValues('suggestions')), avoidCriticism:(document.querySelector('input[name="avoidCriticism"]:checked')||{}).value||'', llmUsed:(document.querySelector('input[name="llmUsed"]:checked')||{}).value||'', llmDetails:document.getElementById('llmDetails').value.trim()}; try{const result=await jsonp(url,payload); if(!result||result.ok===false){ if(result&&result.duplicate){ throw new Error('Von diesem Gerät wurde für diese Gruppe bereits Feedback abgegeben.'); } throw new Error(result&&(result.error||result.message)||'Speichern fehlgeschlagen.'); } try{localStorage.setItem(votedKey,'1')}catch(_){} setStatus('Feedback erfolgreich gespeichert.','ok'); showSubmitSuccess()}catch(err){setStatus('Feedback konnte nicht übertragen werden: '+err.message,'error')}finally{button.disabled=false; button.textContent='Feedback absenden'}}
     function switchSubmitState(targetId){['submitInitial','submitSuccess','submitGame'].forEach(id=>{const el=document.getElementById(id); if(!el)return; el.classList.toggle('hidden', id!==targetId)})}
     function showSubmitSuccess(){switchSubmitState('submitSuccess'); document.getElementById('navDock').style.display='none'; document.getElementById('arrowPrev').style.display='none'; document.getElementById('arrowNext').style.display='none'; document.querySelector('.progress-wrap').style.display='none';}
     function showGameInline(){switchSubmitState('submitGame'); if(!game) initGame(); refreshGameHud();}

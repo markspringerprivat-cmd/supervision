@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-direct-mobile-v75">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-mobile-spacing-v76">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -1612,6 +1612,94 @@
     .yn-card{width:100%!important;height:74px!important;border-radius:16px!important;font-size:1.08rem!important}
   }
 
+
+  /* v76 Smartphone-Feinschliff: Abstände, Skala unter Slider, Buttons links/rechts */
+  @media (max-width:640px){
+    .question-grid-v69{
+      gap:12px!important;
+      grid-template-rows:auto auto minmax(0,1fr)!important;
+    }
+    .question-left-v69{display:contents!important}
+    .metrics-v69{
+      gap:10px!important;
+      margin-bottom:2px!important;
+    }
+    .slider-box-v69{
+      grid-template-rows:26px 20px auto!important;
+      gap:7px!important;
+    }
+    .slider-box-v69 .range-bg{
+      grid-row:1!important;
+      height:26px!important;
+      padding:5px 6px 0!important;
+    }
+    .tick-row-v69{
+      grid-row:2!important;
+      height:20px!important;
+      margin:0!important;
+      padding:0 6px!important;
+    }
+    .tick-row-v69::before{
+      top:0!important;
+    }
+    .tick-row-v69 .tick-pill{
+      padding-top:7px!important;
+      font-size:.60rem!important;
+    }
+    .req-note{
+      grid-row:3!important;
+      margin-top:0!important;
+      padding:8px 9px!important;
+      font-size:.62rem!important;
+      line-height:1.18!important;
+    }
+    .question-right-v69{
+      margin-top:2px!important;
+      padding-top:10px!important;
+      gap:8px!important;
+    }
+    .question-right-v69 .list-head{
+      margin-bottom:2px!important;
+    }
+    .question-right-v69 .entry-list{
+      gap:8px!important;
+    }
+    .question-right-v69 .entry-row textarea,
+    .question-right-v69 .entry-row input{
+      min-height:48px!important;
+      max-height:64px!important;
+    }
+
+    .bottom-nav,.nav-dock{
+      grid-template-columns:1fr auto 1fr!important;
+    }
+    .nav-side:first-child{
+      grid-column:1!important;
+      justify-content:flex-start!important;
+    }
+    .nav-info{
+      grid-column:2!important;
+      justify-self:center!important;
+      align-self:center!important;
+    }
+    .nav-side:last-child{
+      grid-column:3!important;
+      justify-content:flex-end!important;
+      display:flex!important;
+      visibility:visible!important;
+    }
+    #nextBtn{
+      display:inline-flex!important;
+      visibility:visible!important;
+      opacity:1;
+    }
+    #nextBtn:disabled{
+      display:inline-flex!important;
+      visibility:visible!important;
+      opacity:.38!important;
+    }
+  }
+
 </style>
 </head>
 <body data-mode="manometer">
@@ -1640,8 +1728,8 @@
       <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-direct-mobile-v75"></script>
-  <script src="js/app.js?v=manometer-direct-mobile-v75"></script>
+  <script src="js/config.js?v=manometer-mobile-spacing-v76"></script>
+  <script src="js/app.js?v=manometer-mobile-spacing-v76"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -1803,6 +1891,6 @@
     document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}if(ev.target&&ev.target.id==='restartGameBtn'&&!ev.target.disabled){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
-<script src="js/role_personalizer_v62.js?v=manometer-direct-mobile-v75"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-mobile-spacing-v76"></script>
 </body>
 </html>

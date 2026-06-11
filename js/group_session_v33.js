@@ -1,4 +1,4 @@
-/* Group session rebuild v47 reassign after member change */
+/* Group session rebuild v56 join scanner + mobile polish */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -116,16 +116,7 @@
     return u.href;
   }
   function showAlreadyJoined(groupId, member){
-    const main=document.querySelector('main');
-    if(!main)return;
-    const name=member&&member.name?member.name:'dieses Gerät';
-    const role=member&&member.role?`<p>Deine Rolle: <strong>${esc(ROLE_LABELS[member.role]||member.role)}</strong></p>`:'<p>Die Rollen wurden noch nicht verteilt.</p>';
-    main.innerHTML=`<section class="join-shell"><div class="join-card">
-      <h1>Du bist bereits beigetreten</h1>
-      <p>Dieses Gerät ist bereits für <strong>${esc(name)}</strong> in dieser Gruppe registriert.</p>
-      ${role}
-      <a class="button" href="${esc(groupOverviewUrl(groupId))}">Zur Gruppenübersicht</a>
-    </div></section>`;
+    renderPostJoinState(groupId, member, {already:true});
   }
   async function checkAlreadyJoinedOnJoinPage(){
     const groupId=groupIdFromUrl();
@@ -155,6 +146,79 @@
   }
   function groupNameFromMembers(members){
     return (members||[]).map(m=>String(m.name||'').trim()).filter(Boolean).map(n=>n.toLowerCase().replace(/[^a-z0-9äöüß]+/gi,'-').replace(/^-|-$/g,'')).join('-').slice(0,90) || '';
+  }
+
+  let roleScannerStream = null;
+  let roleScannerTimer = null;
+  function normalizeScannedRoleTarget(text){
+    const value=String(text||'').trim();
+    if(!value) return '';
+    if(/^https?:\/\//i.test(value)) return value;
+    if(/\.html(\?|$)/i.test(value)) return new URL(value, location.href).toString();
+    return '';
+  }
+  function closeRoleScanner(){
+    const modal=document.getElementById('roleScannerModal');
+    if(modal) modal.classList.remove('open');
+    const video=document.getElementById('roleScanVideo');
+    if(video) video.srcObject=null;
+    if(roleScannerTimer){ clearInterval(roleScannerTimer); roleScannerTimer=null; }
+    if(roleScannerStream){ roleScannerStream.getTracks().forEach(track=>track.stop()); roleScannerStream=null; }
+  }
+  function roleScannerStatus(msg, cls){
+    const el=document.getElementById('roleScannerStatus');
+    if(!el) return;
+    el.textContent=msg;
+    el.className='scanner-status'+(cls?(' '+cls):'');
+  }
+  async function openRoleScanner(){
+    const modal=document.getElementById('roleScannerModal');
+    const video=document.getElementById('roleScanVideo');
+    if(!modal || !video) return;
+    modal.classList.add('open');
+    roleScannerStatus('Kamera wird geöffnet …');
+    const Barcode=window.BarcodeDetector;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      roleScannerStatus('Dieser Browser unterstützt keinen eingebetteten Kamerazugriff. Bitte füge unten den Link der Rollenkarte ein.','warning');
+      return;
+    }
+    try{
+      roleScannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+      video.srcObject=roleScannerStream;
+      await video.play().catch(()=>{});
+      if(!Barcode){
+        roleScannerStatus('Der eingebaute QR-Scanner wird in diesem Browser nicht unterstützt. Bitte füge unten den Link der Rollenkarte ein.','warning');
+        return;
+      }
+      const detector=new BarcodeDetector({formats:['qr_code']});
+      roleScannerStatus('QR-Code im Kamerabild ausrichten …');
+      roleScannerTimer=setInterval(async()=>{
+        try{
+          if(!video.videoWidth) return;
+          const codes=await detector.detect(video);
+          if(!codes || !codes.length) return;
+          const raw=(codes[0].rawValue||'').trim();
+          const target=normalizeScannedRoleTarget(raw);
+          if(!target){ roleScannerStatus('Der gescannte Code ist keine gültige Rollenkarten-Adresse.','warning'); return; }
+          closeRoleScanner();
+          location.href=target;
+        }catch(_){ }
+      },700);
+    }catch(err){
+      roleScannerStatus('Kamera konnte nicht geöffnet werden. Bitte füge unten den Link der Rollenkarte ein.','warning');
+    }
+  }
+  function renderPostJoinState(groupId, member, opts){
+    const options=opts||{};
+    const main=document.querySelector('main');
+    if(!main) return;
+    const name=member&&member.name?member.name:'dein Gerät';
+    const title=options.already ? 'Du bist dieser Gruppe bereits beigetreten' : 'Du wurdest der Gruppe hinzugefügt';
+    const intro=options.already
+      ? 'Dieses Gerät ist bereits in dieser Gruppe registriert.'
+      : 'Dein Gerät wurde erfolgreich dieser Gruppe zugeordnet.';
+    main.innerHTML=`<section class="join-card"><h1>${esc(title)}</h1><p><strong>${esc(name)}</strong>: ${esc(intro)}</p><p>Warte jetzt, bis die Gruppenleitung die Rollen verteilt hat. Scanne danach im nächsten Schritt den QR-Code deiner zugeteilten Rollenkarte.</p><div class="join-actions"><button id="scanRoleCardBtn" type="button">QR-Code Rollenkarte scannen</button><a class="button-like ghost" href="${esc(groupOverviewUrl(groupId))}">Zur Gruppenübersicht</a></div><p id="joinStatus" class="status ok">Du kannst jetzt auf die Rollenverteilung deiner Gruppe warten.</p></section>`;
+    document.getElementById('scanRoleCardBtn')?.addEventListener('click', openRoleScanner);
   }
 
   async function createGroup(){
@@ -279,7 +343,7 @@
     const res=await jsonp({action:'joinGroupSession',groupId,deviceId:deviceId(),name,deviceType});
     if(!res||res.ok===false)throw new Error(res&&res.error||'Beitritt fehlgeschlagen.');
     localStorage.setItem('sv_current_group',groupId);
-    showAlreadyJoined(groupId,{name:name,deviceType:deviceType,role:(res.member&&res.member.role)||''});
+    renderPostJoinState(groupId,{name:name,deviceType:deviceType,role:(res.member&&res.member.role)||''});
   }
 
   async function guardRoleCard(){
@@ -410,6 +474,9 @@
   async function initJoinSession(){
     const select=document.getElementById('joinDevice');
     if(select)select.value=detectDeviceType();
+    document.getElementById('closeRoleScannerBtn')?.addEventListener('click', closeRoleScanner);
+    document.getElementById('roleScannerModal')?.addEventListener('click', (e)=>{ if(e.target && e.target.id==='roleScannerModal') closeRoleScanner(); });
+    document.getElementById('openScannedRoleBtn')?.addEventListener('click', ()=>{ const value=document.getElementById('roleScanManual')?.value||''; const target=normalizeScannedRoleTarget(value); if(!target){ roleScannerStatus('Bitte einen gültigen Link zur Rollenkarte einfügen.','warning'); return; } closeRoleScanner(); location.href=target; });
     const already=await checkAlreadyJoinedOnJoinPage();
     if(already)return;
     document.getElementById('joinGroupBtn')?.addEventListener('click',()=>joinGroup().catch(e=>status('joinStatus',e.message,'warning')));

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v39-rolecard-repair">
+  <link rel="stylesheet" href="css/styles.css?v=progress-presentation-v40">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -17,13 +17,11 @@
     .activity-list{display:grid;gap:10px}
     .activity{border:1px solid #dce8f4;border-radius:16px;background:#f8fbff;padding:13px 14px;display:flex;justify-content:space-between;gap:12px}
     .activity.done{background:#e9f8ef;border-color:#abe1bd}.activity.warn{background:#fff7e8;border-color:#ffd99e}
-    .feedback-users{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-    .feedback-user{border-radius:18px;border:1px solid #d7e5f2;background:#eef4fa;padding:14px 8px;text-align:center;font-weight:800;color:#506780}
-    .feedback-user.done{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
+    .feedback-users{display:grid;gap:9px}.feedback-user{position:relative;border-radius:14px;border:1px solid #d7e5f2;background:#eef4fa;min-height:38px;overflow:hidden;color:#506780;font-weight:800;display:flex;align-items:center;justify-content:space-between;padding:0 12px}.feedback-user::before{content:"";position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,#b7e4c7,#2f9e44);transition:width .45s ease;z-index:0}.feedback-user.done::before{width:100%}.feedback-user span{position:relative;z-index:1}.feedback-user.done{border-color:#abe1bd;color:#0f5f2c}.feedback-user.open{background:#f7fafc}
     .raw-block{background:#f8fbff;border:1px solid #dce8f4;border-radius:16px;padding:14px;color:#334b64;max-height:none;overflow:visible}.embedded-result{display:grid;gap:10px}.embedded-result details{border:1px solid #dce8f4;border-radius:14px;overflow:hidden;background:#f8fbff}.embedded-result summary{cursor:pointer;font-weight:800;color:#102a46;padding:12px 14px;background:#edf3fa}.embedded-result table{width:100%;border-collapse:collapse;background:#fff}.embedded-result th,.embedded-result td{border:1px solid #e3ebf3;padding:10px 12px;text-align:left;vertical-align:top}.embedded-result th{background:#eaf2fb;color:#11243a}.presentation-actions{display:grid;gap:12px;margin-top:12px}.presentation-open{font-size:1.05rem;padding:14px 18px}
     .status{padding:13px 15px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972}
     .button-row{display:flex;gap:10px;flex-wrap:wrap}.member-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.member-pill{border-radius:999px;background:#eaf2fb;border:1px solid #d7e5f2;color:#1d416a;padding:8px 11px;font-weight:800}
-    @media(max-width:900px){.progress-grid{grid-template-columns:1fr}.feedback-users{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:900px){.progress-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -52,14 +50,15 @@
       <h2>Präsentation</h2>
       <p id="presentationInfo">Noch keine Präsentationsdaten geladen.</p>
       <div class="presentation-actions">
-        <a id="presentationLink" class="button presentation-open" href="presentation.html">Präsentation öffnen</a>
+        <a id="presentationFinalLink" class="button presentation-open" href="presentation.html">Finale Präsentation ansehen</a>
+        <a id="presentationEditLink" class="button secondary presentation-open" href="zusammenfassung.html">Präsentation bearbeiten</a>
         <a class="button secondary" href="index.html">Zurück zur Startseite</a>
       </div>
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=landing-v39-rolecard-repair"></script>
-<script src="js/app.js?v=landing-v39-rolecard-repair"></script>
+<script src="js/config.js?v=progress-presentation-v40"></script>
+<script src="js/app.js?v=progress-presentation-v40"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -84,7 +83,13 @@
   function renderUsers(count,done){
     var target=document.getElementById('feedbackUsers');target.innerHTML='';
     var total=Math.max(4,Number(count||5)); var completed=Math.min(total,Number(done||0));
-    for(var i=1;i<=total;i++){var d=document.createElement('div');d.className='feedback-user'+(i<=completed?' done':'');d.textContent='Nutzer '+i;target.appendChild(d);}
+    for(var i=1;i<=total;i++){
+      var d=document.createElement('div');
+      var isDone=i<=completed;
+      d.className='feedback-user '+(isDone?'done':'open');
+      d.innerHTML='<span>Nutzer '+i+'</span><span>'+(isDone?'Feedback abgegeben':'offen')+'</span>';
+      target.appendChild(d);
+    }
   }
   function renderActivities(data){
     var target=document.getElementById('activities');
@@ -152,20 +157,28 @@ function render(data){
     document.getElementById('resultsBox').innerHTML=renderGroupResultHtml(resultRow,data.groupRegistry||null);
 
     var rowNumber=(resultRow&&(resultRow.rowNumber||resultRow.id))||'';
-    var presentationLink=document.getElementById('presentationLink');
+    var finalLink=document.getElementById('presentationFinalLink');
+    var editLink=document.getElementById('presentationEditLink');
     if(data.hasPresentation && rowNumber){
       document.getElementById('presentationInfo').textContent='Die fertig übermittelte Präsentation der Gruppe wurde gefunden.';
-      presentationLink.href='presentation.html?row='+encodeURIComponent(rowNumber);
-      presentationLink.classList.remove('secondary');
-      presentationLink.textContent='Präsentation öffnen';
-      presentationLink.style.pointerEvents='';
-      presentationLink.style.opacity='1';
+      finalLink.href='presentation.html?row='+encodeURIComponent(rowNumber);
+      finalLink.textContent='Finale Präsentation ansehen';
+      finalLink.style.pointerEvents='';
+      finalLink.style.opacity='1';
+      editLink.href='zusammenfassung.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber);
+      editLink.textContent='Präsentation bearbeiten';
+      editLink.style.pointerEvents='';
+      editLink.style.opacity='1';
     }else{
       document.getElementById('presentationInfo').textContent='Für diese Gruppe wurde noch keine fertige Präsentation übermittelt.';
-      presentationLink.href='#';
-      presentationLink.textContent='Noch keine Präsentation vorhanden';
-      presentationLink.style.pointerEvents='none';
-      presentationLink.style.opacity='.55';
+      finalLink.href='#';
+      finalLink.textContent='Noch keine Präsentation vorhanden';
+      finalLink.style.pointerEvents='none';
+      finalLink.style.opacity='.55';
+      editLink.href='zusammenfassung.html?g='+encodeURIComponent(data.groupId||'');
+      editLink.textContent='Präsentation vorbereiten';
+      editLink.style.pointerEvents='';
+      editLink.style.opacity='1';
     }
   }
   async function boot(){

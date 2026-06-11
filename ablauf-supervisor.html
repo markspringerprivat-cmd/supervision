@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ablauf für Supervisor*in</title>
-  <link rel="stylesheet" href="css/styles.css?v=simulation-flow-layout-v107">
+  <link rel="stylesheet" href="css/styles.css?v=popup-supervisor5-required-fix-v108">
 </head>
 <body data-mode="flow" data-flow-profile="supervisor">
 <header><div class="wrap"><h1>Ablauf für Supervisor*in</h1><p>Moderation, Struktur und Ergebnissicherung der Gruppensupervision.</p></div></header>
@@ -20,9 +20,19 @@
   </div>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
-<script src="js/config.js?v=simulation-flow-layout-v107"></script><script src="js/app.js?v=simulation-flow-layout-v107"></script>
-<script src="js/roles_flow_patch.js?v=simulation-flow-layout-v107"></script>
+<script src="js/config.js?v=popup-supervisor5-required-fix-v108"></script><script src="js/app.js?v=popup-supervisor5-required-fix-v108"></script>
+<script src="js/roles_flow_patch.js?v=popup-supervisor5-required-fix-v108"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=simulation-flow-layout-v107"></script>
+<script src="js/guided_flow_patch.js?v=popup-supervisor5-required-fix-v108"></script>
+<script id="supervisor_mode_marker_v108">
+(function(){
+  try{
+    var p=new URLSearchParams(location.search);
+    var gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'default';
+    localStorage.setItem('sv_supervisor_mode_'+gid,'full');
+    localStorage.setItem('sv_supervisor_mode_active','full');
+  }catch(_){}
+})();
+</script>
 </body>
 </html>

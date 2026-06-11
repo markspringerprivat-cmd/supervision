@@ -5487,3 +5487,13 @@ body[data-mode="rolecard"] .role-card-case .notice{font-weight:800}
   .protocol-task-grid,
   .supervisor-protocol-grid{grid-template-columns:1fr!important}
 }
+
+
+/* v108: Gespräch-starten-Popuptext sichtbar */
+.sv-flow-card p{
+  display:block!important;
+  visibility:visible!important;
+  color:#142a44!important;
+  line-height:1.45!important;
+  margin:10px 0 18px!important;
+}

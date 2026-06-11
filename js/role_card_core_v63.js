@@ -163,6 +163,21 @@
     const gid = groupId();
     return gid ? ('groupId=' + encodeURIComponent(gid)) : '';
   }
+  function supervisorModeSuffixV108(file){
+    if(role() !== 'supervisor') return '';
+    if(file === 'ablauf-supervisor-moderation.html') return '&supervisorMode=moderation&members=5';
+    if(file === 'ablauf-supervisor.html') return '&supervisorMode=full&members=4';
+    return '';
+  }
+  function rememberSupervisorModeV108(file){
+    try{
+      if(role() !== 'supervisor') return;
+      const gid = groupId() || 'default';
+      const mode = file === 'ablauf-supervisor-moderation.html' ? 'moderation' : 'full';
+      localStorage.setItem('sv_supervisor_mode_' + gid, mode);
+      localStorage.setItem('sv_supervisor_mode_active', mode);
+    }catch(_){}
+  }
   function hasProtocolCachedV105(){
     try{
       const p=new URLSearchParams(location.search);
@@ -223,7 +238,7 @@
     if (next) {
       const file = FLOW_FILES[roleKey] || 'ablauf-supervisor.html';
       const suffix = querySuffix();
-      next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '');
+      rememberSupervisorModeV108(file); next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '') + supervisorModeSuffixV108(file);
       next.classList.remove('is-busy');
     }
 

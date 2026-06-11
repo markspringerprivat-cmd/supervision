@@ -1,3 +1,28 @@
+
+/* v108: Supervisor-Modus für 4er/5er stabil halten */
+window.__svSupervisorModeV108 = window.__svSupervisorModeV108 || function(){
+  try{
+    const p=new URLSearchParams(location.search);
+    const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'default';
+    if(p.get('supervisorMode')) return p.get('supervisorMode');
+    if(p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5'||p.get('mode')==='moderation') return 'moderation';
+    return localStorage.getItem('sv_supervisor_mode_'+gid)||localStorage.getItem('sv_supervisor_mode_active')||'';
+  }catch(_){return '';}
+};
+window.__svSupervisorHasProtocolV108 = window.__svSupervisorHasProtocolV108 || function(){
+  try{
+    const mode=window.__svSupervisorModeV108();
+    if(mode==='moderation') return true;
+    if(mode==='full') return false;
+    const p=new URLSearchParams(location.search);
+    const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+    const a=(typeof loadObj==='function')?loadObj('assignments',{}):{};
+    if(a&&a.protokoll) return true;
+    const m=JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+    return Array.isArray(m)&&m.some(x=>x&&x.role==='protokoll');
+  }catch(_){return false;}
+};
+
 /* Rollen-/Ablauf-Patch v12: saubere Namensliste, Rollenkarten, rollenabhängige Ablaufseiten. */
 (function(){
   const ROLE_LABELS = {
@@ -807,13 +832,28 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     const next=document.getElementById('nextPhase');
     if(next){
       if(phase < 6){
-        next.href = (typeof linkWithState === 'function') ? linkWithState(`phase${phase+1}-${role}.html`) : `phase${phase+1}-${role}.html`;
+        {
+        let targetFile = `phase${phase+1}-${role}.html`;
+        let url = (typeof linkWithState === 'function') ? linkWithState(targetFile) : targetFile;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = `Bereit für Phase ${phase+1}`;
       } else {
         let target='abschluss.html';
         if(role==='protokoll') target='zusammenfassung-protokoll.html';
         else if(role==='supervisor' && !hasObserver()) target='zusammenfassung.html';
-        next.href = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        {
+        let url = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = (target.indexOf('zusammenfassung')>=0) ? 'Ergebnisse zusammenfassen' : 'Abschluss';
       }
     }
@@ -1293,13 +1333,28 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     const next=document.getElementById('nextPhase');
     if(next){
       if(phase < 6){
-        next.href = (typeof linkWithState === 'function') ? linkWithState(`phase${phase+1}-${role}.html`) : `phase${phase+1}-${role}.html`;
+        {
+        let targetFile = `phase${phase+1}-${role}.html`;
+        let url = (typeof linkWithState === 'function') ? linkWithState(targetFile) : targetFile;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = `Bereit für Phase ${phase+1}`;
       } else {
         let target='abschluss.html';
         if(role==='protokoll') target='zusammenfassung-protokoll.html';
         else if(role==='supervisor' && !hasProtokoll()) target='zusammenfassung.html';
-        next.href = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        {
+        let url = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = (target.indexOf('zusammenfassung')>=0) ? 'Ergebnisse zusammenfassen' : 'Abschluss';
       }
     }
@@ -1609,13 +1664,28 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     const next = document.getElementById('nextPhase');
     if(next){
       if(phase < 6){
-        next.href = (typeof linkWithState === 'function') ? linkWithState(`phase${phase+1}-${role}.html`) : `phase${phase+1}-${role}.html`;
+        {
+        let targetFile = `phase${phase+1}-${role}.html`;
+        let url = (typeof linkWithState === 'function') ? linkWithState(targetFile) : targetFile;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = `Bereit für Phase ${phase+1}`;
       } else {
         let target = 'abschluss.html';
         if(role === 'protokoll') target = 'zusammenfassung-protokoll.html';
         else if(role === 'supervisor' && !hasProtocol()) target = 'zusammenfassung.html';
-        next.href = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        {
+        let url = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = target.indexOf('zusammenfassung') >= 0 ? 'Ergebnisse zusammenfassen' : 'Abschluss';
       }
     }
@@ -1848,13 +1918,28 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     const next = document.getElementById('nextPhase');
     if(next){
       if(phase < 6){
-        next.href = (typeof linkWithState === 'function') ? linkWithState(`phase${phase+1}-${role}.html`) : `phase${phase+1}-${role}.html`;
+        {
+        let targetFile = `phase${phase+1}-${role}.html`;
+        let url = (typeof linkWithState === 'function') ? linkWithState(targetFile) : targetFile;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = `Bereit für Phase ${phase+1}`;
       } else {
         let target = 'abschluss.html';
         if(role === 'protokoll') target = 'zusammenfassung-protokoll.html';
         else if(role === 'supervisor' && !hasProtocol()) target = 'zusammenfassung.html';
-        next.href = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        {
+        let url = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = target.indexOf('zusammenfassung') >= 0 ? 'Ergebnisse zusammenfassen' : 'Abschluss';
       }
     }
@@ -2064,22 +2149,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
       return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid) || localStorage.getItem('sv_cached_group_members_active') || '[]') || [];
     }catch(_){ return []; }
   }
-  function hasProtocol(){
-    const a = getAssignments();
-    if(a && a.protokoll) return true;
-    try{
-      const names = JSON.parse(localStorage.getItem('sv_role_names_v58') || '{}') || {};
-      if(names && names.protokoll) return true;
-    }catch(_){}
-    const members = cachedMembersV105();
-    if(Array.isArray(members) && members.some(m => m && m.role === 'protokoll')) return true;
-    try{
-      const p = new URLSearchParams(location.search);
-      if(p.get('members') === '5' || p.get('size') === '5' || p.get('groupSize') === '5') return true;
-      if(p.get('mode') === 'moderation' || p.get('supervisorMode') === 'moderation') return true;
-    }catch(_){}
-    return false;
-  }
+  function hasProtocol(){ if(typeof window.__svSupervisorHasProtocolV108==='function') return window.__svSupervisorHasProtocolV108(); const a=getAssignments(); return !!(a&&a.protokoll); }
   function loadSafe(k){ try { return (typeof loadText === 'function') ? loadText(k) : ''; } catch(_) { return ''; } }
   function reqNote(label, saveKey, hint){
     return `<div class="required-field-box"><div class="required-label">Pflichtfeld!</div><label>${esc(label)}</label>${hint?`<p class="small">${esc(hint)}</p>`:''}<textarea data-save="${esc(saveKey)}"></textarea></div>`;
@@ -2348,13 +2418,28 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     const next = document.getElementById('nextPhase');
     if(next){
       if(phase < 6){
-        next.href = (typeof linkWithState === 'function') ? linkWithState(`phase${phase+1}-${role}.html`) : `phase${phase+1}-${role}.html`;
+        {
+        let targetFile = `phase${phase+1}-${role}.html`;
+        let url = (typeof linkWithState === 'function') ? linkWithState(targetFile) : targetFile;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = `Bereit für Phase ${phase+1}`;
       } else {
         let target = 'abschluss.html';
         if(role === 'protokoll') target = 'zusammenfassung-protokoll.html';
         else if(role === 'supervisor' && !hasProtocol()) target = 'zusammenfassung.html';
-        next.href = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        {
+        let url = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        if(role === 'supervisor'){
+          const mode = (typeof window.__svSupervisorHasProtocolV108 === 'function' && window.__svSupervisorHasProtocolV108()) ? 'moderation' : 'full';
+          url += (url.indexOf('?')>=0?'&':'?') + 'supervisorMode=' + encodeURIComponent(mode) + '&members=' + (mode==='moderation'?'5':'4');
+        }
+        next.href = url;
+      }
         next.textContent = target.indexOf('zusammenfassung') >= 0 ? 'Ergebnisse zusammenfassen' : 'Abschluss';
       }
     }
@@ -2377,19 +2462,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
       return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid) || localStorage.getItem('sv_cached_group_members_active') || '[]') || [];
     }catch(_){return [];}
   }
-  function hasProtocol(){
-    try{
-      const a = (typeof loadObj === 'function') ? loadObj('assignments', {}) : {};
-      if(a && a.protokoll) return true;
-    }catch(_){}
-    
-    const m=cachedMembers();
-    if(Array.isArray(m) && m.some(x=>x&&x.role==='protokoll')) return true;
-    try{
-      const p=new URLSearchParams(location.search);
-      return p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5'||p.get('mode')==='moderation'||p.get('supervisorMode')==='moderation';
-    }catch(_){return false;}
-  }
+  function hasProtocol(){ if(typeof window.__svSupervisorHasProtocolV108==='function') return window.__svSupervisorHasProtocolV108(); return false; }
   function link(file){
     const gid=groupId();
     return file+(gid?'?g='+encodeURIComponent(gid):'');
@@ -2399,7 +2472,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     if(!next) return;
     const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
     const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
-    if(role==='supervisor' && hasProtocol()){
+    if(role==='supervisor' && ((typeof window.__svSupervisorHasProtocolV108==='function' && window.__svSupervisorHasProtocolV108()) || hasProtocol())){
       ev.preventDefault();
       ev.stopPropagation();
       ev.stopImmediatePropagation();

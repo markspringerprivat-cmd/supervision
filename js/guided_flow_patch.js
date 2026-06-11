@@ -1,4 +1,44 @@
 
+/* v108: sichtbarer Gespräch-starten-Text und stabile 5er-Supervisor-Erkennung */
+window.__svSupervisorHasProtocolV108 = window.__svSupervisorHasProtocolV108 || function(){
+  try{
+    const p=new URLSearchParams(location.search);
+    const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'default';
+    if(p.get('supervisorMode')==='moderation'||p.get('mode')==='moderation'||p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
+    if(localStorage.getItem('sv_supervisor_mode_'+gid)==='moderation'||localStorage.getItem('sv_supervisor_mode_active')==='moderation') return true;
+    const a=(typeof loadObj==='function')?loadObj('assignments',{}):{};
+    if(a&&a.protokoll) return true;
+    const m=JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+    return Array.isArray(m)&&m.some(x=>x&&x.role==='protokoll');
+  }catch(_){return false;}
+};
+window.__svSupervisorHasProtocolV107 = window.__svSupervisorHasProtocolV107 || window.__svSupervisorHasProtocolV108;
+window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || window.__svSupervisorHasProtocolV108;
+(function(){
+  const popupText='Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.';
+  function fixDialog(){
+    document.querySelectorAll('.sv-flow-card').forEach(function(card){
+      const h=card.querySelector('h2');
+      if(!h||!/Gespräch starten/i.test(h.textContent||'')) return;
+      let p=card.querySelector('p');
+      if(!p){
+        p=document.createElement('p');
+        const actions=card.querySelector('.sv-flow-actions');
+        card.insertBefore(p, actions||null);
+      }
+      if(!p.textContent.trim()) p.textContent=popupText;
+      p.style.display='block';
+      p.style.visibility='visible';
+      p.style.color='#142a44';
+      p.style.margin='10px 0 18px';
+      p.style.lineHeight='1.45';
+    });
+  }
+  document.addEventListener('click',function(ev){ if(ev.target&&ev.target.closest&&ev.target.closest('#startPhase1')) setTimeout(fixDialog,0); },true);
+  new MutationObserver(fixDialog).observe(document.documentElement,{childList:true,subtree:true});
+})();
+
+
 /* v107 helper: Supervisor*in mit Protokollrolle wird nicht gegen Protokoll-Pflichtfelder geprüft */
 window.__svSupervisorHasProtocolV107 = window.__svSupervisorHasProtocolV107 || function(){
   try{
@@ -125,7 +165,7 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
       if(!next) return;
       const phase=phaseFromPage();
       const isSummaryButton = phase===6 && /zusammenfassen/i.test(next.textContent || '');
-      if(document.body.dataset.role==='supervisor' && ((typeof window.__svSupervisorHasProtocolV107==='function' && window.__svSupervisorHasProtocolV107()) || (typeof window.__svSupervisorHasProtocolV105==='function' && window.__svSupervisorHasProtocolV105()))) return;
+      if(document.body.dataset.role==='supervisor' && ((typeof window.__svSupervisorHasProtocolV108==='function' && window.__svSupervisorHasProtocolV108()) || (typeof window.__svSupervisorHasProtocolV107==='function' && window.__svSupervisorHasProtocolV107()) || (typeof window.__svSupervisorHasProtocolV105==='function' && window.__svSupervisorHasProtocolV105()))) return;
       if(!isRecorderRole() && !isSummaryButton) return;
       const missing = missingForRange(1, phase, true);
       if(missing.length){

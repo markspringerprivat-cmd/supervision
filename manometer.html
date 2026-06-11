@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-game-tuning-v89">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-sprint-highscore-v91">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -2091,8 +2091,8 @@
       <div id="mobileStepCounter" class="mobile-step-counter">Kachel 1 / 1</div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-game-tuning-v89"></script>
-  <script src="js/app.js?v=manometer-game-tuning-v89"></script>
+  <script src="js/config.js?v=manometer-sprint-highscore-v91"></script>
+  <script src="js/app.js?v=manometer-sprint-highscore-v91"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -2256,7 +2256,7 @@
       game={
         canvas,ctx,running:false,last:0,ground:208,x:86,y:158,width:36,height:48,vy:0,gravity:.68,jump:-12.8,
         score:0,highscore:high,lives:2,invuln:0,speed:6.1,obstacles:[],clouds:[{x:540,y:60,w:42},{x:780,y:74,w:56}],
-        spawnAt:48,message:'Drücke „Spiel starten“.',bonusTexts:[],solved:0,nextLifeAt:10
+        spawnAt:48,message:'Drücke „Spiel starten“.',bonusTexts:[],solved:0,nextLifeAt:10,sprintSubmitted:false
       };
       const loop=(ts)=>{if(!game)return; if(!game.last)game.last=ts; const dt=Math.min(32,ts-game.last); game.last=ts; if(game.running)updateGame(dt); drawGame(); requestAnimationFrame(loop)};
       requestAnimationFrame(loop);
@@ -2270,7 +2270,7 @@
       if(!game) initGame();
       const sb=document.getElementById('startGameBtn'); if(sb) sb.textContent='Neustart';
       game.running=true; game.last=0; game.score=0; game.lives=2; game.invuln=0; game.speed=6.1; game.obstacles=[]; game.clouds=[{x:540,y:60,w:42},{x:780,y:74,w:56}]; game.bonusTexts=[];
-      game.solved=0; game.nextLifeAt=10;
+      game.solved=0; game.nextLifeAt=10; game.sprintSubmitted=false;
       game.message='Löse Konflikte und weiche Hindernissen aus.'; game.spawnAt=42; game.y=158; game.vy=0;
       refreshGameHud(); document.getElementById('gameMessage').textContent=game.message;
     }
@@ -2289,6 +2289,25 @@
     }
     function intersects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
     function addBonusText(x,y,text){game.bonusTexts.push({x:x,y:y,text:text,life:750,max:750});}
+    function submitSprintHighscore(){
+      if(!game||game.sprintSubmitted)return;
+      game.sprintSubmitted=true;
+      const url=getAppsUrl();
+      const gid=getGroupId();
+      const did=getDeviceId();
+      if(!url||!gid||!did)return;
+      try{
+        jsonp(url,{
+          action:'saveSprintHighscore',
+          groupId:gid,
+          deviceId:did,
+          score:Math.floor(game.score||0),
+          solved:Math.floor(game.solved||0),
+          clientTime:new Date().toISOString(),
+          userAgent:navigator.userAgent||''
+        }).catch(function(){});
+      }catch(_){}
+    }
     function loseLife(){
       if(game.invuln>0)return;
       if(game.lives>1){
@@ -2379,7 +2398,7 @@
     document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); const mobilePrevBtn=document.getElementById('mobilePrevBtn'); const mobileNextBtn=document.getElementById('mobileNextBtn'); if(mobilePrevBtn) mobilePrevBtn.addEventListener('click',goPrev); if(mobileNextBtn) mobileNextBtn.addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
-<script src="js/role_personalizer_v62.js?v=manometer-game-tuning-v89"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-sprint-highscore-v91"></script>
 
 <script id="manometer_no_busy_v81">
 (function(){

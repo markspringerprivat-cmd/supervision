@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-game-tuning-v89">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-sprint-highscore-v91">
   <style>
     :root{
       --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
@@ -169,6 +169,15 @@
     <p id="resetManometerDevicesStatus" class="small-status" aria-live="polite"></p>
     <p id="deleteManometerFeedbackStatus" class="small-status" aria-live="polite"></p>
   </div>
+
+  <div class="admin-mini-card mano" data-admin-required="true">
+    <strong>Supervisionssprint</strong>
+    <small>Highscores aus dem Spiel verwalten.</small>
+    <div class="admin-actions">
+      <button id="deleteSprintHighscoresBtn" type="button" class="secondary danger-soft">Alle Einträge löschen</button>
+    </div>
+    <p id="deleteSprintHighscoresStatus" class="small-status" aria-live="polite"></p>
+  </div>
   <div class="admin-actions admin-reset-all">
     <button id="resetEverythingBtn" type="button" class="secondary danger-soft">Seite zurücksetzen</button>
     <p id="resetEverythingStatus" class="small-status" aria-live="polite"></p>
@@ -204,11 +213,11 @@
 
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
 
-<script src="js/config.js?v=manometer-game-tuning-v89"></script>
-<script src="js/app.js?v=manometer-game-tuning-v89"></script>
-<script src="js/roles_flow_patch.js?v=manometer-game-tuning-v89"></script>
+<script src="js/config.js?v=manometer-sprint-highscore-v91"></script>
+<script src="js/app.js?v=manometer-sprint-highscore-v91"></script>
+<script src="js/roles_flow_patch.js?v=manometer-sprint-highscore-v91"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=manometer-game-tuning-v89"></script>
+<script src="js/guided_flow_patch.js?v=manometer-sprint-highscore-v91"></script>
 
 <script>
 (function(){
@@ -332,6 +341,7 @@
       if(action==='resetManometerDeviceIds' && res.type!=='resetManometerDeviceIds') throw new Error('Falscher Apps-Script-Endpunkt.');
       if(action==='deleteMainResultsAll' && res.type!=='deleteMainResultsAll') throw new Error('Falscher Apps-Script-Endpunkt.');
       if(action==='deleteGroupsAll' && res.type!=='deleteGroupsAll') throw new Error('Falscher Apps-Script-Endpunkt.');
+      if(action==='deleteSprintHighscoresAll' && res.type!=='deleteSprintHighscoresAll') throw new Error('Falscher Apps-Script-Endpunkt.');
       status.textContent=okText+' '+(res.deletedRows!==undefined?('Gelöschte Zeilen: '+res.deletedRows+'.'):(res.clearedRows!==undefined?('Freigegebene IDs: '+res.clearedRows+'.'):''));
       try{ if(action==='resetManometerDeviceIds'||action==='deleteManometerFeedbackAll') localStorage.removeItem('manometer_voted_global_v2'); }catch(_){}
     }catch(err){status.textContent='Fehler: '+err.message;}
@@ -341,6 +351,8 @@
     updateRoleSessionFromDevice();
     var del=document.getElementById('deleteManometerFeedbackBtn');
     if(del) del.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteManometerFeedbackAll','deleteManometerFeedbackStatus','Alle Manometer-Feedbackeinträge wurden gelöscht.');});
+    var delSprint=document.getElementById('deleteSprintHighscoresBtn');
+    if(delSprint) delSprint.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteSprintHighscoresAll','deleteSprintHighscoresStatus','Alle Supervisionssprint-Highscores wurden gelöscht.');});
     var reset=document.getElementById('resetManometerDevicesBtn');
     if(reset) reset.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('resetManometerDeviceIds','resetManometerDevicesStatus','Hardware-IDs wurden freigegeben.');});
     var delResults=document.getElementById('deleteMainResultsBtn');
@@ -356,6 +368,7 @@
         await callManometerAdmin('deleteMainResultsAll','resetEverythingStatus','Normale Ergebnis-Einträge gelöscht.');
         await callManometerAdmin('deleteGroupsAll','resetEverythingStatus','Gruppen gelöscht.');
         await callManometerAdmin('deleteManometerFeedbackAll','resetEverythingStatus','Manometer-Einträge gelöscht.');
+        await callManometerAdmin('deleteSprintHighscoresAll','resetEverythingStatus','Supervisionssprint-Highscores gelöscht.');
         status.textContent='Alle serverseitigen Einträge wurden zurückgesetzt.';
       }catch(err){status.textContent='Fehler: '+err.message;}
     });
@@ -367,6 +380,6 @@
   });
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-game-tuning-v89"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-sprint-highscore-v91"></script>
 </body>
 </html>

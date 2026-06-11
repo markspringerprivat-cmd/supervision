@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-game-tuning-v89">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-sprint-highscore-v91">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -154,8 +154,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=manometer-game-tuning-v89"></script>
-<script src="js/app.js?v=manometer-game-tuning-v89"></script>
+<script src="js/config.js?v=manometer-sprint-highscore-v91"></script>
+<script src="js/app.js?v=manometer-sprint-highscore-v91"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -218,11 +218,28 @@
     return stops[stops.length-1][1];
   }
   function renderCover(){return '<article class="slide cover-slide"><div class="slide-inner"><div class="cover-mark">Manometer</div><h2 class="cover-title">Auswertung</h2><p class="cover-subtitle">Präsentationsdeck für die gemeinsame Reflexion im Plenum</p></div></article>'}
-  function renderOverview(entries){
-    var per=QUESTIONS.map(function(q){return{question:q,stat:statsForQuestion(q,entries)}}),all=[];per.forEach(function(x){all=all.concat(x.stat.vals)});var overall=avg(all),strong=per.slice().sort(function(a,b){return(b.stat.avg||0)-(a.stat.avg||0)})[0],feedback=per.slice().sort(function(a,b){return(b.stat.improvements.length||0)-(a.stat.improvements.length||0)})[0],motivationYes=entries.filter(function(e){return String(e.presentationMotivation||'').toLowerCase()==='ja'}).length,avoidYes=entries.filter(function(e){return String(e.avoidCriticism||'').toLowerCase()==='ja'}).length,llmYes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,openNotes=entries.reduce(function(sum,e){return sum+(e.generalPraise?1:0)+(e.generalCriticism?1:0)+(e.generalSuggestions?1:0)},0)+per.reduce(function(sum,x){return sum+x.stat.improvements.length},0);
-    return '<article class="slide"><div class="slide-inner"><div class="hero-grid"><section class="hero-panel"><span class="slide-label">Gesamtbild</span><h2 class="hero-title">Manometer – Gesamtbild</h2><p class="hero-lead">Zum Abschluss werden die zentralen Kennzahlen und Auffälligkeiten der Rückmeldungen gebündelt.</p><div class="summary-grid"><div class="summary-card"><strong data-countto="'+(entries.length||0)+'">0</strong><span>'+plural(entries.length,'Rückmeldung','Rückmeldungen')+'</span></div><div class="summary-card"><strong data-countto="'+((overall||0).toFixed(1))+'">0.0</strong><span>Ø Gesamtbewertung</span></div><div class="summary-card"><strong data-countto="'+(motivationYes||0)+'">0</strong><span>Zufallspräsentation motivierte</span></div><div class="summary-card"><strong data-countto="'+(openNotes||0)+'">0</strong><span>Textbeiträge</span></div></div></section><aside class="hero-side"><div class="summary-list"><div class="summary-note"><h3>Stärkster Bereich</h3><p><strong>'+escapeHtml((strong&&strong.question.label)||'–')+'</strong>'+(strong&&strong.stat.avg!=null?'<br>Durchschnitt: '+strong.stat.avg.toFixed(1)+' / 10':'')+'</p></div><div class="summary-note"><h3>Meiste Verbesserungshinweise</h3><p><strong>'+escapeHtml((feedback&&feedback.question.label)||'–')+'</strong>'+(feedback?'<br>'+feedback.stat.improvements.length+' Hinweise':'')+'</p></div><div class="summary-note"><h3>Zusatzfragen</h3><p>Zufallspräsentation motivierte: <strong>'+motivationYes+'</strong><br>Pflichtkritik vermieden: <strong>'+avoidYes+'</strong><br>LLM-Nutzung mit „Ja“: <strong>'+llmYes+'</strong></p></div></div></aside></div></div></article>'
+  function renderOverview(data){
+    var entries=(data&&data.entries)||[];
+    var sprint=(data&&Array.isArray(data.sprintHighscores))?data.sprintHighscores:[];
+    var per=QUESTIONS.map(function(q){return{question:q,stat:statsForQuestion(q,entries)}}),all=[];
+    per.forEach(function(x){all=all.concat(x.stat.vals)});
+    var overall=avg(all);
+    var valid=per.filter(function(x){return x.stat.avg!==null&&x.stat.avg!==undefined&&!isNaN(x.stat.avg)});
+    var strong=valid.slice().sort(function(a,b){return(b.stat.avg||0)-(a.stat.avg||0)})[0];
+    var weak=valid.slice().sort(function(a,b){return(a.stat.avg||0)-(b.stat.avg||0)})[0];
+    var feedback=per.slice().sort(function(a,b){return(b.stat.improvements.length||0)-(a.stat.improvements.length||0)})[0];
+    var motivationYes=entries.filter(function(e){return String(e.presentationMotivation||'').toLowerCase()==='ja'}).length;
+    var avoidYes=entries.filter(function(e){return String(e.avoidCriticism||'').toLowerCase()==='ja'}).length;
+    var llmYes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length;
+    var openNotes=entries.reduce(function(sum,e){return sum+(e.generalPraise?1:0)+(e.generalCriticism?1:0)+(e.generalSuggestions?1:0)},0)+per.reduce(function(sum,x){return sum+x.stat.improvements.length},0);
+    var sprintHtml='';
+    if(sprint.length){
+      var shown=sprint.length>=4?sprint.slice(0,3):sprint.slice(0,1);
+      sprintHtml='<div class="summary-note"><h3>Höchster Highscore Supervisionssprint</h3><p>'+shown.map(function(s,i){return '<strong>Platz '+(i+1)+': '+escapeHtml(s.name||'Unbekannt')+'</strong><br>'+Number(s.score||0)+' Punkte'+(s.solved!=null?' · '+Number(s.solved||0)+' gelöste Probleme':'')}).join('<br><br>')+'</p></div>';
+    }
+    return '<article class="slide"><div class="slide-inner"><div class="hero-grid"><section class="hero-panel"><span class="slide-label">Gesamtbild</span><h2 class="hero-title">Manometer – Gesamtbild</h2><p class="hero-lead">Zum Abschluss werden die zentralen Kennzahlen und Auffälligkeiten der Rückmeldungen gebündelt.</p><div class="summary-grid"><div class="summary-card"><strong data-countto="'+(entries.length||0)+'">0</strong><span>'+plural(entries.length,'Rückmeldung','Rückmeldungen')+'</span></div><div class="summary-card"><strong data-countto="'+((overall||0).toFixed(1))+'">0.0</strong><span>Ø Gesamtbewertung</span></div><div class="summary-card"><strong data-countto="'+(motivationYes||0)+'">0</strong><span>Zufallspräsentation motivierte</span></div><div class="summary-card"><strong data-countto="'+(openNotes||0)+'">0</strong><span>Textbeiträge</span></div></div></section><aside class="hero-side"><div class="summary-list"><div class="summary-note"><h3>Stärkster Bereich</h3><p><strong>'+escapeHtml((strong&&strong.question.label)||'–')+'</strong>'+(strong&&strong.stat.avg!=null?'<br>Durchschnitt: '+strong.stat.avg.toFixed(1)+' / 10':'')+'</p></div><div class="summary-note"><h3>Schwächster Bereich</h3><p><strong>'+escapeHtml((weak&&weak.question.label)||'–')+'</strong>'+(weak&&weak.stat.avg!=null?'<br>Durchschnitt: '+weak.stat.avg.toFixed(1)+' / 10':'')+'</p></div><div class="summary-note"><h3>Meiste Hinweise</h3><p><strong>'+escapeHtml((feedback&&feedback.question.label)||'–')+'</strong>'+(feedback?'<br>'+feedback.stat.improvements.length+' Hinweise':'')+'</p></div>'+sprintHtml+'<div class="summary-note"><h3>Zusatzfragen</h3><p>Zufallspräsentation motivierte: <strong>'+motivationYes+'</strong><br>Pflichtkritik vermieden: <strong>'+avoidYes+'</strong><br>LLM-Nutzung mit „Ja“: <strong>'+llmYes+'</strong></p></div></div></aside></div></div></article>'
   }
-  function renderScale(q,entries,idx){
+    function renderScale(q,entries,idx){
     var vals=entries.map(function(e){return Number(e.scores&&e.scores[q.key])}).filter(function(n){return !isNaN(n)&&n>=1&&n<=10}),counts={};
     for(var i=1;i<=10;i++)counts[i]=0;
     vals.forEach(function(v){counts[v]=(counts[v]||0)+1});
@@ -252,7 +269,7 @@
   function renderChoiceCard(title,kicker,entries,key){var yes=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='nein'}).length,total=Math.max(yes+no,1),yesPct=Math.round((yes/total)*100),noPct=Math.round((no/total)*100);return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">'+(yes+no)+' Antworten</div></div><div class="choice-grid"><div class="choice-total">Gesamt: '+(yes+no)+'</div><section class="choice-bar-card yes"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+yesPct+'%"></div></div></div><div class="choice-axis"><span>Ja: '+yes+'</span><span class="pct">'+yesPct+'%</span></div></section><section class="choice-bar-card no"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+noPct+'%"></div></div></div><div class="choice-axis"><span>Nein: '+no+'</span><span class="pct">'+noPct+'%</span></div></section></div></div></article>'}
   function renderLlmCard(entries){var yes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='nein'}).length,total=Math.max(yes+no,1),yesPct=Math.round((yes/total)*100),noPct=Math.round((no/total)*100);return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">KI / LLM</span><h2>Wurde ChatGPT oder ein anderes LLM verwendet?</h2></div><div class="slide-counter">'+(yes+no)+' Antworten</div></div><div class="choice-grid"><div class="choice-total">Gesamt: '+(yes+no)+'</div><section class="choice-bar-card yes"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+yesPct+'%"></div></div></div><div class="choice-axis"><span>Ja: '+yes+'</span><span class="pct">'+yesPct+'%</span></div></section><section class="choice-bar-card no"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+noPct+'%"></div></div></div><div class="choice-axis"><span>Nein: '+no+'</span><span class="pct">'+noPct+'%</span></div></section></div></div></article>'}
   function renderThanksCard(){var colors=['#5c95d1','#00c853','#ffd600','#ff6d00','#ff1744','#7048e8'],pieces='';for(var i=0;i<52;i++){pieces+='<span class="confetti-piece" style="left:'+(Math.random()*100).toFixed(2)+'%;background:'+colors[i%colors.length]+';animation-delay:'+(Math.random()*2.4).toFixed(2)+'s;animation-duration:'+(3.2+Math.random()*2.2).toFixed(2)+'s;--drift:'+((-60+Math.random()*120).toFixed(1))+'px"></span>'}return '<article class="slide thanks-slide"><div class="slide-inner"><div class="confetti-layer">'+pieces+'</div><span class="slide-label">Abschluss</span><h2>Vielen Dank für eure Teilnahme.</h2><p>Die anonyme Manometer-Auswertung ist abgeschlossen. Ihr könnt die Präsentation jetzt beenden oder zur Startseite zurückkehren.</p></div></article>'}
-  function render(data){var entries=(data&&data.entries)||[];document.getElementById('responseCount').textContent=entries.length;var html=renderCover();QUESTIONS.forEach(function(q,i){html+=renderScale(q,entries,i)});html+=renderGeneralFeedbackCard(entries);html+=renderChoiceCard('Die Aussicht auf eine verbindliche Präsentation nach dem Zufallsprinzip hat meine extrinsische Motivation zur Bearbeitung der Aufgaben gesteigert.','Zufallspräsentation',entries,'presentationMotivation');html+=renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage',entries,'avoidCriticism');html+=renderLlmCard(entries);html+=renderOverview(entries);html+=renderThanksCard();deck.innerHTML=html;cards=Array.prototype.slice.call(deck.querySelectorAll('.slide'));cards.forEach(function(card){card.getBoundingClientRect()});setActive(0);statusEl.textContent='Auswertung geladen.'}
+  function render(data){var entries=(data&&data.entries)||[];document.getElementById('responseCount').textContent=entries.length;var html=renderCover();QUESTIONS.forEach(function(q,i){html+=renderScale(q,entries,i)});html+=renderGeneralFeedbackCard(entries);html+=renderChoiceCard('Die Aussicht auf eine verbindliche Präsentation nach dem Zufallsprinzip hat meine extrinsische Motivation zur Bearbeitung der Aufgaben gesteigert.','Zufallspräsentation',entries,'presentationMotivation');html+=renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage',entries,'avoidCriticism');html+=renderLlmCard(entries);html+=renderOverview(data);html+=renderThanksCard();deck.innerHTML=html;cards=Array.prototype.slice.call(deck.querySelectorAll('.slide'));cards.forEach(function(card){card.getBoundingClientRect()});setActive(0);statusEl.textContent='Auswertung geladen.'}
   function updateProgress(){if(!cards.length)return;progressBar.style.width=(((current+1)/cards.length)*100)+'%';slideCounter.textContent='Kachel '+(current+1)+' / '+cards.length}
   function animateCount(el){
     if(!el||el.dataset.countAnimated==='1')return;
@@ -354,6 +371,6 @@
   document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-game-tuning-v89"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-sprint-highscore-v91"></script>
 </body>
 </html>

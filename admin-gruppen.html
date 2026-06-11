@@ -33,6 +33,11 @@
     .row-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
     .row-actions .button,.row-actions a.button{padding:9px 11px;font-size:.92rem}
     .disabled-link{pointer-events:none;opacity:.45}
+
+    .group-row{position:relative}
+    .delete-group-btn{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:999px;border:1px solid #efc5c5;background:#fff2f2;color:#8a1f1f;font-weight:900;display:grid;place-items:center;cursor:pointer}
+    .delete-group-btn:hover{background:#ffdede}
+
     @media(max-width:1050px){.group-row{grid-template-columns:1fr}.row-actions{align-items:flex-start}}
   </style>
 </head>
@@ -91,6 +96,19 @@
     var done=1+(g.hasResult?1:0)+(g.hasPresentation?1:0)+(Number(g.feedbackCount||0)>0?1:0);
     return Math.round(done/4*100);
   }
+  
+  function adminPasswordLocal(){try{return localStorage.getItem('sv_admin_password') || localStorage.getItem('adminPassword') || '';}catch(_){return '';}}
+  async function adminAction(action, params){
+    var url=appUrl();
+    var password=adminPasswordLocal();
+    if(!password){password=prompt('Admin-Passwort eingeben:')||'';}
+    if(!password)throw new Error('Vorgang abgebrochen.');
+    var payload=Object.assign({},params||{},{action:action,adminPassword:password});
+    var res=await jsonp(url,payload);
+    if(!res||res.ok===false)throw new Error(res&&res.error||'Aktion fehlgeschlagen.');
+    return res;
+  }
+
   function render(groups){
     var list=document.getElementById('groupList');
     if(!groups.length){list.innerHTML='<p>Es wurden noch keine Gruppen registriert.</p>';return;}
@@ -103,7 +121,7 @@
       var resultHref='gruppe-fortschritt.html?g='+encodeURIComponent(id);
       var presentationHref=row?'presentation.html?row='+encodeURIComponent(row):'#';
       var groupResultHref='gruppe-ergebnis.html?g='+encodeURIComponent(id);
-      return '<article class="group-row">'+
+      return '<article class="group-row" data-group-id="'+esc(id)+'"><button type="button" class="delete-group-btn" data-delete-group="'+esc(id)+'" title="Gruppe löschen">×</button>'+
         '<div class="group-main"><strong>'+esc(label)+'</strong><span>Gruppen-ID: '+esc(id)+'</span><span>Aktueller Punkt: '+esc(g.progressLabel||'Registriert')+'</span><div class="name-pills">'+(names.length?names.map(function(n){return '<span class="name-pill">'+esc(n)+'</span>';}).join(''):'<span class="name-pill">Keine Namen gespeichert</span>')+'</div></div>'+
         '<div class="progress-stack"><div class="progress-head"><strong>Fortschritt</strong><span>'+progress+'%</span></div><div class="bar"><div class="bar-fill" style="width:'+progress+'%"></div></div><div class="step-pills">'+renderSteps(g)+'</div><div class="row-actions"><a class="button" href="'+resultHref+'">Übersicht öffnen</a><a class="button secondary '+(g.hasResult?'':'disabled-link')+'" href="'+groupResultHref+'">Ergebnis ansehen</a><a class="button secondary '+(g.hasPresentation&&row?'':'disabled-link')+'" href="'+presentationHref+'">Präsentation öffnen</a></div></div>'+
         '<div class="feedback-box"><div class="feedback-count">'+esc(g.feedbackCount||0)+' / '+esc(g.groupSize||5)+' Feedbacks</div><div class="feedback-users">'+renderDots(g.feedbackCount,g.groupSize||5)+'</div><span style="color:#607187;font-size:.9rem">Bereitgestellt: '+esc(g.availableText||'Gruppenzuweisung')+'</span></div>'+
@@ -122,6 +140,19 @@
     }catch(err){status.textContent='Fehler: '+err.message;}
   }
   document.getElementById('reloadBtn').onclick=load;
+  document.getElementById('groupList').addEventListener('click',async function(ev){
+    var btn=ev.target.closest('[data-delete-group]');
+    if(!btn)return;
+    ev.preventDefault();ev.stopPropagation();
+    var gid=btn.getAttribute('data-delete-group');
+    var status=document.getElementById('status');
+    status.textContent='Gruppe wird gelöscht …';
+    try{
+      var res=await adminAction('deleteGroup',{groupId:gid});
+      status.textContent='Gruppe gelöscht. Entfernte Gruppen: '+(res.deletedGroups||0)+', Gerätezuordnungen: '+(res.deletedDevices||0)+', Feedbacks: '+(res.deletedFeedback||0)+'.';
+      load();
+    }catch(err){status.textContent='Fehler: '+err.message;}
+  });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
 })();
 </script>

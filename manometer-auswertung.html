@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-questions-schema-v72">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-order-mobile-v73">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -154,8 +154,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=manometer-questions-schema-v72"></script>
-<script src="js/app.js?v=manometer-questions-schema-v72"></script>
+<script src="js/config.js?v=manometer-order-mobile-v73"></script>
+<script src="js/app.js?v=manometer-order-mobile-v73"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -232,7 +232,7 @@
   function renderChoiceCard(title,kicker,entries,key){var yes=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='nein'}).length,total=Math.max(yes+no,1),yesPct=Math.round((yes/total)*100),noPct=Math.round((no/total)*100);return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">'+(yes+no)+' Antworten</div></div><div class="choice-grid"><div class="choice-total">Gesamt: '+(yes+no)+'</div><section class="choice-bar-card yes"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+yesPct+'%"></div></div></div><div class="choice-axis"><span>Ja: '+yes+'</span><span class="pct">'+yesPct+'%</span></div></section><section class="choice-bar-card no"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+noPct+'%"></div></div></div><div class="choice-axis"><span>Nein: '+no+'</span><span class="pct">'+noPct+'%</span></div></section></div></div></article>'}
   function renderLlmCard(entries){var yes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='nein'}).length,total=Math.max(yes+no,1),yesPct=Math.round((yes/total)*100),noPct=Math.round((no/total)*100);return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">KI / LLM</span><h2>Wurde ChatGPT oder ein anderes LLM verwendet?</h2></div><div class="slide-counter">'+(yes+no)+' Antworten</div></div><div class="choice-grid"><div class="choice-total">Gesamt: '+(yes+no)+'</div><section class="choice-bar-card yes"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+yesPct+'%"></div></div></div><div class="choice-axis"><span>Ja: '+yes+'</span><span class="pct">'+yesPct+'%</span></div></section><section class="choice-bar-card no"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+noPct+'%"></div></div></div><div class="choice-axis"><span>Nein: '+no+'</span><span class="pct">'+noPct+'%</span></div></section></div></div></article>'}
   function renderThanksCard(){var colors=['#5c95d1','#00c853','#ffd600','#ff6d00','#ff1744','#7048e8'],pieces='';for(var i=0;i<52;i++){pieces+='<span class="confetti-piece" style="left:'+(Math.random()*100).toFixed(2)+'%;background:'+colors[i%colors.length]+';animation-delay:'+(Math.random()*2.4).toFixed(2)+'s;animation-duration:'+(3.2+Math.random()*2.2).toFixed(2)+'s;--drift:'+((-60+Math.random()*120).toFixed(1))+'px"></span>'}return '<article class="slide thanks-slide"><div class="slide-inner"><div class="confetti-layer">'+pieces+'</div><span class="slide-label">Abschluss</span><h2>Vielen Dank für eure Teilnahme.</h2><p>Die anonyme Manometer-Auswertung ist abgeschlossen. Ihr könnt die Präsentation jetzt beenden oder zur Startseite zurückkehren.</p></div></article>'}
-  function render(data){var entries=(data&&data.entries)||[];document.getElementById('responseCount').textContent=entries.length;var html=renderCover();QUESTIONS.forEach(function(q,i){html+=renderScale(q,entries,i)});html+=renderGeneralFeedbackCard(entries);html+=renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage',entries,'avoidCriticism');html+=renderLlmCard(entries);html+=renderOverview(entries);html+=renderThanksCard();deck.innerHTML=html;cards=Array.prototype.slice.call(deck.querySelectorAll('.slide'));cards.forEach(function(card){card.getBoundingClientRect()});setActive(0);statusEl.textContent='Auswertung geladen.'}
+  function render(data){var entries=(data&&data.entries)||[];document.getElementById('responseCount').textContent=entries.length;var html=renderCover();QUESTIONS.forEach(function(q,i){html+=renderScale(q,entries,i)});html+=renderGeneralFeedbackCard(entries);html+=renderChoiceCard('Die Aussicht auf eine verbindliche Präsentation nach dem Zufallsprinzip hat meine Motivation zur Bearbeitung der Aufgaben gesteigert.','Zufallspräsentation',entries,'presentationMotivation');html+=renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage',entries,'avoidCriticism');html+=renderLlmCard(entries);html+=renderOverview(entries);html+=renderThanksCard();deck.innerHTML=html;cards=Array.prototype.slice.call(deck.querySelectorAll('.slide'));cards.forEach(function(card){card.getBoundingClientRect()});setActive(0);statusEl.textContent='Auswertung geladen.'}
   function updateProgress(){if(!cards.length)return;progressBar.style.width=(((current+1)/cards.length)*100)+'%';slideCounter.textContent='Kachel '+(current+1)+' / '+cards.length}
   function animateCount(el){
     if(!el||el.dataset.countAnimated==='1')return;
@@ -334,6 +334,6 @@
   document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-questions-schema-v72"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-order-mobile-v73"></script>
 </body>
 </html>

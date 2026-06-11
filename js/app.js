@@ -9514,6 +9514,7 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
 (function(){
   const WAIT_TEXT=/weiter|start|öffnen|speichern|übermitteln|verteilen|gruppe|feedback|beitritt|scannen|löschen|aktualisieren|laden/i;
   function busy(el){
+    if(document.body && document.body.dataset && document.body.dataset.mode === 'manometer') return;
     if(!el || el.classList.contains('no-busy-spinner')) return;
     const text=(el.textContent||'')+' '+(el.getAttribute('aria-label')||'');
     if(!WAIT_TEXT.test(text)) return;

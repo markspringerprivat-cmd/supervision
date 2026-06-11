@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-sprint-highscore-v91">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-highscore-status-v94">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -154,8 +154,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=manometer-sprint-highscore-v91"></script>
-<script src="js/app.js?v=manometer-sprint-highscore-v91"></script>
+<script src="js/config.js?v=manometer-highscore-status-v94"></script>
+<script src="js/app.js?v=manometer-highscore-status-v94"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -245,12 +245,15 @@
     vals.forEach(function(v){counts[v]=(counts[v]||0)+1});
     var av=avg(vals),improvements=[];
     entries.forEach(function(e){improvements=improvements.concat(asList(e.improvements&&e.improvements[q.key]));});
-    var totalVotes=Math.max(1,vals.length);
+    var maxBucketCount=1;
+    for(var m=1;m<=10;m++){
+      if((counts[m]||0)>maxBucketCount) maxBucketCount=counts[m]||0;
+    }
     var totalStripes=20;
     var cols='',stripeCounter=0;
     for(var d=1;d<=10;d++){
       var n=counts[d]||0;
-      var scaled=Math.round((n/totalVotes)*totalStripes);
+      var scaled=Math.round((n/maxBucketCount)*totalStripes);
       if(n>0&&scaled<1)scaled=1;
       if(scaled>totalStripes)scaled=totalStripes;
       cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack">';
@@ -371,6 +374,6 @@
   document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-sprint-highscore-v91"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-highscore-status-v94"></script>
 </body>
 </html>

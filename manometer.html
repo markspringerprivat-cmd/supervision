@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-sprint-highscore-v91">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-highscore-status-v94">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -2091,8 +2091,8 @@
       <div id="mobileStepCounter" class="mobile-step-counter">Kachel 1 / 1</div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-sprint-highscore-v91"></script>
-  <script src="js/app.js?v=manometer-sprint-highscore-v91"></script>
+  <script src="js/config.js?v=manometer-highscore-status-v94"></script>
+  <script src="js/app.js?v=manometer-highscore-status-v94"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -2255,7 +2255,7 @@
       const high=Number(localStorage.getItem('manometer_runner_highscore')||0);
       game={
         canvas,ctx,running:false,last:0,ground:208,x:86,y:158,width:36,height:48,vy:0,gravity:.68,jump:-12.8,
-        score:0,highscore:high,lives:2,invuln:0,speed:6.1,obstacles:[],clouds:[{x:540,y:60,w:42},{x:780,y:74,w:56}],
+        score:0,highscore:high,lives:2,invuln:0,speed:6.8,baseSpeed:6.8,speedLevel:0,obstacles:[],clouds:[{x:540,y:60,w:42},{x:780,y:74,w:56}],
         spawnAt:48,message:'Drücke „Spiel starten“.',bonusTexts:[],solved:0,nextLifeAt:10,sprintSubmitted:false
       };
       const loop=(ts)=>{if(!game)return; if(!game.last)game.last=ts; const dt=Math.min(32,ts-game.last); game.last=ts; if(game.running)updateGame(dt); drawGame(); requestAnimationFrame(loop)};
@@ -2269,22 +2269,22 @@
     function startGame(){
       if(!game) initGame();
       const sb=document.getElementById('startGameBtn'); if(sb) sb.textContent='Neustart';
-      game.running=true; game.last=0; game.score=0; game.lives=2; game.invuln=0; game.speed=6.1; game.obstacles=[]; game.clouds=[{x:540,y:60,w:42},{x:780,y:74,w:56}]; game.bonusTexts=[];
+      game.running=true; game.last=0; game.score=0; game.lives=2; game.invuln=0; game.speed=6.8; game.baseSpeed=6.8; game.speedLevel=0; game.obstacles=[]; game.clouds=[{x:540,y:60,w:42},{x:780,y:74,w:56}]; game.bonusTexts=[];
       game.solved=0; game.nextLifeAt=10; game.sprintSubmitted=false;
       game.message='Löse Konflikte und weiche Hindernissen aus.'; game.spawnAt=42; game.y=158; game.vy=0;
       refreshGameHud(); document.getElementById('gameMessage').textContent=game.message;
     }
     function spawnObstacle(){
       var roll=Math.random();
-      if(roll<.24){game.obstacles.push({x:game.canvas.width+30,y:72+Math.random()*34,w:26,h:26,type:'paper'}); return}
-      if(roll<.54){
+      if(roll<.34){game.obstacles.push({x:game.canvas.width+30,y:72+Math.random()*34,w:26,h:26,type:'paper'}); return}
+      if(roll<.80){
         var level=Math.random();
         var h=level<.45?20:(level<.78?30:40);
         var w=32+Math.random()*18;
         game.obstacles.push({x:game.canvas.width+30,y:game.ground-h,w:w,h:h,type:'book',bookH:h});
         return
       }
-      if(roll<.84){game.obstacles.push({x:game.canvas.width+30,y:game.ground-66,w:60,h:66,type:'conflict',resolved:0,bonusShown:false}); return}
+      if(roll<.94){game.obstacles.push({x:game.canvas.width+30,y:game.ground-66,w:60,h:66,type:'conflict',resolved:0,bonusShown:false}); return}
       game.obstacles.push({x:game.canvas.width+30,y:50+Math.random()*18,w:58,h:56,type:'airConflict',resolved:0,bonusShown:false});
     }
     function intersects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
@@ -2295,7 +2295,10 @@
       const url=getAppsUrl();
       const gid=getGroupId();
       const did=getDeviceId();
-      if(!url||!gid||!did)return;
+      const baseMsg='Du konntest viele Probleme lösen. Bleib am Ball, übe weiter und du wirst ein toller Supervisor.';
+      function setMsg(msg){game.message=baseMsg+' '+msg; const el=document.getElementById('gameMessage'); if(el)el.textContent=game.message;}
+      if(!url||!gid||!did){setMsg('Highscore konnte nicht übertragen werden: Apps-Script-URL, Gruppen-ID oder Geräte-ID fehlt.'); return;}
+      setMsg('Highscore wird übertragen …');
       try{
         jsonp(url,{
           action:'saveSprintHighscore',
@@ -2305,8 +2308,13 @@
           solved:Math.floor(game.solved||0),
           clientTime:new Date().toISOString(),
           userAgent:navigator.userAgent||''
-        }).catch(function(){});
-      }catch(_){}
+        }).then(function(res){
+          if(res&&res.ok!==false){setMsg('Highscore wurde übertragen.');}
+          else{setMsg('Highscore konnte nicht übertragen werden: '+((res&&res.error)||'unbekannter Fehler'));}
+        }).catch(function(err){
+          setMsg('Highscore konnte nicht übertragen werden: '+((err&&err.message)||'Verbindungsfehler'));
+        });
+      }catch(err){setMsg('Highscore konnte nicht übertragen werden: '+((err&&err.message)||'unbekannter Fehler'));}
     }
     function loseLife(){
       if(game.invuln>0)return;
@@ -2318,6 +2326,7 @@
         game.highscore=Math.max(game.highscore,Math.floor(game.score));
         localStorage.setItem('manometer_runner_highscore',String(game.highscore));
         game.message='Du konntest viele Probleme lösen. Bleib am Ball, übe weiter und du wirst ein toller Supervisor.';
+        submitSprintHighscore();
         const sb=document.getElementById('startGameBtn'); if(sb)sb.textContent='Neustart';
       }
       refreshGameHud(); document.getElementById('gameMessage').textContent=game.message;
@@ -2342,9 +2351,9 @@
     function updateGame(dt){
       const f=dt/16.6667;
       game.score+=0.08*dt;
-      game.speed=Math.min(10.2,game.speed+0.00105*dt);
+      var targetLevel=Math.floor(game.score/1000); if(targetLevel!==game.speedLevel){game.speedLevel=targetLevel;} game.speed=Math.min(16.0, game.baseSpeed*Math.pow(1.15, game.speedLevel));
       game.spawnAt-=f;
-      if(game.spawnAt<=0){spawnObstacle(); game.spawnAt=46+Math.random()*34-Math.min(20,game.speed*1.35)}
+      if(game.spawnAt<=0){spawnObstacle(); game.spawnAt=42+Math.random()*30-Math.min(18,game.speed*1.15)}
       if(game.invuln>0)game.invuln-=dt;
       game.vy+=game.gravity*f; game.y+=game.vy*f; if(game.y>158){game.y=158; game.vy=0}
       game.obstacles.forEach(o=>{o.x-=game.speed*f; if(o.resolved>0)o.resolved-=dt});
@@ -2398,7 +2407,7 @@
     document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); const mobilePrevBtn=document.getElementById('mobilePrevBtn'); const mobileNextBtn=document.getElementById('mobileNextBtn'); if(mobilePrevBtn) mobilePrevBtn.addEventListener('click',goPrev); if(mobileNextBtn) mobileNextBtn.addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
-<script src="js/role_personalizer_v62.js?v=manometer-sprint-highscore-v91"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-highscore-status-v94"></script>
 
 <script id="manometer_no_busy_v81">
 (function(){

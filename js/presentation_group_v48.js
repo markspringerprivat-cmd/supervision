@@ -16,7 +16,7 @@
 
   function groupReturnUrl(){
     const q = new URLSearchParams(location.search);
-    const gid = q.get('g') || q.get('groupId') || q.get('token') || '';
+    const gid = q.get('g') || q.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || q.get('token') || '';
     return 'gruppe-fortschritt.html' + (gid ? ('?g=' + encodeURIComponent(gid)) : '');
   }
 

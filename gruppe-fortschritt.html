@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=group-presentation-commit-order-v123">
+  <link rel="stylesheet" href="css/styles.css?v=group-progress-presentation-view-v124">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -62,15 +62,15 @@
       <h2>Präsentation</h2>
       <p id="presentationInfo">Noch keine Präsentationsdaten geladen.</p>
       <div class="presentation-actions">
-        <a id="presentationFinalLink" class="button presentation-open" href="presentation.html">Finale Präsentation ansehen</a>
+        <a id="presentationFinalLink" class="button presentation-open" href="gruppe-praesentation-fortschritt.html">Finale Präsentation ansehen</a>
         <a id="presentationEditLink" class="button secondary presentation-open" href="#" data-group-editor-link="1" style="pointer-events:none;opacity:.55">Gruppenpräsentation direkt bearbeiten</a>
         <a class="button secondary" href="index.html">Zurück zur Startseite</a>
       </div>
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=group-presentation-commit-order-v123"></script>
-<script src="js/app.js?v=group-presentation-commit-order-v123"></script>
+<script src="js/config.js?v=group-progress-presentation-view-v124"></script>
+<script src="js/app.js?v=group-progress-presentation-view-v124"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -206,7 +206,7 @@ function render(data){
     var editLink=document.getElementById('presentationEditLink');
     if(data.hasPresentation && rowNumber){
       document.getElementById('presentationInfo').textContent='Die fertig übermittelte Präsentation der Gruppe wurde gefunden.';
-      finalLink.href='gruppe-praesentation.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber);
+      finalLink.href='gruppe-praesentation-fortschritt.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber)+'&from=group-progress';
       finalLink.textContent='Finale Präsentation ansehen';
       finalLink.style.pointerEvents='';
       finalLink.style.opacity='1';
@@ -264,6 +264,6 @@ function render(data){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=group-presentation-commit-order-v123"></script>
+<script src="js/role_personalizer_v62.js?v=group-progress-presentation-view-v124"></script>
 </body>
 </html>

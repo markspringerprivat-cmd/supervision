@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gruppenpräsentation ansehen</title>
+  <title>Gruppenpräsentation aus Gruppenfortschritt ansehen</title>
   <style>
     html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#071323;color:#0f172a;}
     body{position:relative;}
@@ -90,9 +90,9 @@
 
   </style>
 </head>
-<body>
+<body data-mode="group-progress-presentation">
   <div class="pres-toolbar">
-    <button id="exitBtn" class="light" type="button">Zurück zum Gruppenfortschritt</button>
+    <button id="exitBtn" class="light" type="button">Präsentation abbrechen</button>
     <button id="fullBtn" class="blue" type="button">Vollbildmodus</button>
     <span id="count" class="pres-count">1 / 6</span>
   </div>
@@ -101,7 +101,31 @@
   <div class="nav"><button id="prevBtn" class="light" type="button">←</button><button id="nextBtn" type="button">→</button></div>
   <script src="js/config.js?v=group-progress-presentation-view-v124"></script>
   <script src="js/presentation_group_v48.js?v=group-progress-presentation-view-v124"></script>
-<script src="js/guided_flow_patch.js?v=group-progress-presentation-view-v124"></script>
-<script src="js/role_personalizer_v62.js?v=group-progress-presentation-view-v124"></script>
+
+<script id="group_progress_presentation_exit_v124">
+(function(){
+  function gid(){
+    var p=new URLSearchParams(location.search);
+    return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
+  }
+  function target(){
+    var g=gid();
+    return 'gruppe-fortschritt.html' + (g ? '?g=' + encodeURIComponent(g) : '');
+  }
+  function wire(){
+    var btn=document.getElementById('exitBtn');
+    if(btn){
+      btn.onclick=function(ev){ev.preventDefault();ev.stopPropagation();location.href=target();};
+      btn.textContent='Präsentation abbrechen';
+    }
+    document.addEventListener('keydown',function(ev){
+      if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();location.href=target();}
+    },true);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire);
+  else wire();
+})();
+</script>
+
 </body>
 </html>

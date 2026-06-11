@@ -2482,3 +2482,87 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
   }, true);
 })();
 
+
+
+/* v109: Supervisor-4er/5er-Modus über alle Phasen bis Abschluss erhalten */
+(function(){
+  function gidV109(){
+    try{
+      const p=new URLSearchParams(location.search);
+      return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
+    }catch(_){return localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';}
+  }
+  function modeV109(){
+    try{
+      const p=new URLSearchParams(location.search);
+      const gid=gidV109() || 'default';
+      if(p.get('supervisorMode')) return p.get('supervisorMode');
+      if(p.get('mode')==='moderation' || p.get('members')==='5' || p.get('size')==='5' || p.get('groupSize')==='5') return 'moderation';
+      if(p.get('members')==='4' || p.get('size')==='4' || p.get('groupSize')==='4') return 'full';
+      return localStorage.getItem('sv_supervisor_mode_'+gid) || localStorage.getItem('sv_supervisor_mode_active') || '';
+    }catch(_){return '';}
+  }
+  function rememberModeV109(mode){
+    try{
+      const gid=gidV109() || 'default';
+      if(mode){
+        localStorage.setItem('sv_supervisor_mode_'+gid, mode);
+        localStorage.setItem('sv_supervisor_mode_active', mode);
+      }
+    }catch(_){}
+  }
+  function urlV109(file, mode){
+    const gid=gidV109();
+    const params=new URLSearchParams();
+    if(gid) params.set('g', gid);
+    if(mode){
+      params.set('supervisorMode', mode);
+      params.set('members', mode==='moderation' ? '5' : '4');
+    }
+    const qs=params.toString();
+    return file + (qs ? '?' + qs : '');
+  }
+  function applySupervisorNextV109(){
+    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
+    if(role!=='supervisor') return;
+    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
+    let mode=modeV109();
+    if(!mode && typeof window.__svSupervisorHasProtocolV108==='function') mode=window.__svSupervisorHasProtocolV108()?'moderation':'full';
+    if(!mode) return;
+    rememberModeV109(mode);
+    const next=document.getElementById('nextPhase');
+    if(!next || !phase) return;
+    let target='';
+    if(phase<6) target='phase'+(phase+1)+'-supervisor.html';
+    else target=(mode==='moderation')?'abschluss.html':'zusammenfassung.html';
+    next.href=urlV109(target, mode);
+    next.classList.remove('disabled','is-busy');
+    next.removeAttribute('aria-disabled');
+    next.style.pointerEvents='auto';
+    if(phase<6) next.textContent='Bereit für Phase '+(phase+1);
+    else next.textContent=(mode==='moderation')?'Abschluss':'Ergebnisse zusammenfassen';
+  }
+  document.addEventListener('click', function(ev){
+    const a=ev.target && ev.target.closest && ev.target.closest('#nextPhase');
+    if(!a) return;
+    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
+    if(role!=='supervisor') return;
+    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
+    let mode=modeV109();
+    if(!mode && typeof window.__svSupervisorHasProtocolV108==='function') mode=window.__svSupervisorHasProtocolV108()?'moderation':'full';
+    if(!phase || !mode) return;
+    rememberModeV109(mode);
+    const target = phase<6 ? 'phase'+(phase+1)+'-supervisor.html' : (mode==='moderation' ? 'abschluss.html' : 'zusammenfassung.html');
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    location.href=urlV109(target, mode);
+  }, true);
+  window.__svApplySupervisorNextV109=applySupervisorNextV109;
+  window.__svSupervisorModeV109=modeV109;
+  window.addEventListener('DOMContentLoaded', function(){
+    applySupervisorNextV109();
+    setTimeout(applySupervisorNextV109,80);
+    setTimeout(applySupervisorNextV109,350);
+  });
+})();

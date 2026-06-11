@@ -165,7 +165,7 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
       if(!next) return;
       const phase=phaseFromPage();
       const isSummaryButton = phase===6 && /zusammenfassen/i.test(next.textContent || '');
-      if(document.body.dataset.role==='supervisor' && ((typeof window.__svSupervisorHasProtocolV108==='function' && window.__svSupervisorHasProtocolV108()) || (typeof window.__svSupervisorHasProtocolV107==='function' && window.__svSupervisorHasProtocolV107()) || (typeof window.__svSupervisorHasProtocolV105==='function' && window.__svSupervisorHasProtocolV105()))) return;
+      if(document.body.dataset.role==='supervisor' && ((typeof window.__svSupervisorModeV109==='function' && window.__svSupervisorModeV109()==='moderation') || (typeof window.__svSupervisorHasProtocolV108==='function' && window.__svSupervisorHasProtocolV108()) || (typeof window.__svSupervisorHasProtocolV107==='function' && window.__svSupervisorHasProtocolV107()) || (typeof window.__svSupervisorHasProtocolV105==='function' && window.__svSupervisorHasProtocolV105()))) return;
       if(!isRecorderRole() && !isSummaryButton) return;
       const missing = missingForRange(1, phase, true);
       if(missing.length){

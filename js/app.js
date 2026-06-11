@@ -1860,25 +1860,15 @@ function installLocalResetControls() {
   bar.className = "local-reset-bar";
   bar.innerHTML = `
     <div class="wrap local-reset-inner">
-      <span class="local-reset-label">Lokale Arbeitsdaten</span>
-      <button type="button" class="secondary small-reset" id="clearPageBtn">Lokale Daten löschen</button>
       <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
       <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
     </div>`;
   header.insertAdjacentElement("afterend", bar);
 
-  const clearPageBtn = document.getElementById("clearPageBtn");
   const clearAllBtn = document.getElementById("clearAllLocalBtn");
-
-  if (clearPageBtn) {
-    clearPageBtn.addEventListener("click", () => {
-      if (confirm("Lokale Eingaben auf der aktuellen Seite leeren?")) clearCurrentPageInputs();
-    });
-  }
-
   if (clearAllBtn) {
     clearAllBtn.addEventListener("click", () => {
-      if (!confirm("Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.")) return;
+      if (!confirm("Warnung: Dadurch werden alle lokal im Browser gespeicherten Daten innerhalb dieser Webseite gelöscht. Diese lokalen Daten können nicht wiederhergestellt werden. Nicht betroffen sind bereits übermittelte Ergebnisse, Feedbacks und Gruppenzuweisungen im Google Sheet.")) return;
       clearAllLocalSupervisionData({ silent: true });
       window.location.href = "index.html";
     });
@@ -6130,17 +6120,14 @@ try {
       <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
       <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
       <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
-      <button type="button" class="secondary small-reset" id="clearPageBtn">Lokale Daten löschen</button>
       <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
       <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
     </div>`;
     const back=document.getElementById('localBackBtn');
     const statusBtn=document.getElementById('globalAdminStatusBtn');
-    const clearPageBtn=document.getElementById('clearPageBtn');
     const clearAllBtn=document.getElementById('clearAllLocalBtn');
     if(back) back.onclick=()=>{ if(history.length>1) history.back(); else location.href='index.html'; };
     if(statusBtn) statusBtn.onclick=typeof handleGlobalAdminClick==='function'?handleGlobalAdminClick:undefined;
-    if(clearPageBtn) clearPageBtn.onclick=async()=>{ if(await window.supervisionConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Lokale Daten löschen')) clearCurrentPageInputs(); };
     if(clearAllBtn) clearAllBtn.onclick=async()=>{ if(!(await window.supervisionConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Lokale Daten löschen', true))) return; clearAllLocalSupervisionData({silent:true}); location.href='index.html'; };
     if(typeof updateGlobalAdminUi==='function') updateGlobalAdminUi();
   };
@@ -6899,7 +6886,6 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
 
     if (back) back.onclick = () => { if (history.length > 1) history.back(); else location.href = 'index.html'; };
     if (statusBtn) statusBtn.onclick = typeof handleGlobalAdminClick === 'function' ? handleGlobalAdminClick : undefined;
-    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Lokale Daten löschen')) clearCurrentPageInputs(); };
     if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Lokale Daten löschen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
     if (toggle) toggle.onclick = () => setTopbarCollapsed(!bar.classList.contains('is-collapsed'));
     if (typeof updateGlobalAdminUi === 'function') updateGlobalAdminUi();
@@ -7210,7 +7196,6 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     const clearAllBtn = document.getElementById('clearAllLocalBtn');
     if (back) back.onclick = () => { if (history.length > 1) history.back(); else location.href = 'index.html'; };
     if (statusBtn) statusBtn.onclick = typeof handleGlobalAdminClick === 'function' ? handleGlobalAdminClick : undefined;
-    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirmPatch('Lokale Eingaben auf der aktuellen Seite leeren?', 'Lokale Daten löschen')) clearCurrentPageInputs(); };
     if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirmPatch('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Lokale Daten löschen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
     bar.querySelectorAll('[data-topbar-collapse-toggle]').forEach(btn => {
       btn.onclick = () => setCollapseUi(bar, !bar.classList.contains('is-collapsed'));

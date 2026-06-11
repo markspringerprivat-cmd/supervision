@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rollenkarte – Protokoll</title>
-  <link rel="stylesheet" href="css/styles.css?v=handoff-design-v1">
+  <link rel="stylesheet" href="css/styles.css?v=rolecard-repair-v39">
 </head>
 <body data-mode="rolecard" data-role="protokoll">
 <header><div class="wrap"><h1>Rollenkarte</h1><p>Protokoll</p></div></header>
@@ -13,11 +13,38 @@
   <div class="nav-row"><a id="nextPrep" class="button" href="#">Weiter: Ablauf ansehen</a><a class="button secondary" data-keep-state href="rollen.html">Zur Rollenverteilung</a></div>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
-<script src="js/config.js?v=manometer-urlfix-v2"></script><script src="js/app.js?v=manometer-urlfix-v2"></script>
-<script src="js/roles_flow_patch.js?v=handoff-design-v1"></script>
+<script src="js/config.js?v=rolecard-repair-v39"></script><script src="js/app.js?v=rolecard-repair-v39"></script>
+<script src="js/roles_flow_patch.js?v=rolecard-repair-v39"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=manometer-urlfix-v2"></script>
+<script src="js/guided_flow_patch.js?v=rolecard-repair-v39"></script>
 <script src="js/group_registry_patch.js?v=group-registry-v22"></script>
-<script src="js/group_session_v33.js?v=group-session-v37"></script>
+<script src="js/group_session_v33.js?v=group-session-v39"></script>
+
+<script id="rolecard_repair_v39">
+(function(){
+  function groupId(){
+    try{
+      var p=new URLSearchParams(location.search);
+      return p.get('groupId')||p.get('g')||localStorage.getItem('sv_current_group')||'';
+    }catch(_){return '';}
+  }
+  function repairLinks(){
+    var gid=groupId();
+    var back=document.getElementById('backToRolesOverview');
+    if(back && gid) back.href='rollen.html?groupId='+encodeURIComponent(gid);
+  }
+  function repairRoleContent(){
+    var target=document.getElementById('roleCard');
+    if(target && !target.innerHTML.trim()){
+      try{ if(typeof window.initRoleCard==='function') window.initRoleCard(); }catch(_){}
+      try{ if(!target.innerHTML.trim() && typeof initRoleCard==='function') initRoleCard(); }catch(_){}
+    }
+  }
+  repairLinks();
+  setTimeout(repairLinks,100);
+  setTimeout(repairRoleContent,100);
+  setTimeout(repairRoleContent,500);
+})();
+</script>
 </body>
 </html>

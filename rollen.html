@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rollenverteilung</title>
-  <link rel="stylesheet" href="css/styles.css?v=group-session-v37">
+  <link rel="stylesheet" href="css/styles.css?v=group-session-v39">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .session-shell{width:min(1100px,calc(100vw - 36px));margin:0 auto;padding:28px 0 42px;display:grid;gap:18px}
@@ -26,15 +26,15 @@
     .member-line strong{color:#10223a}.member-line span{color:#607187;font-size:.9rem}
     .join-box{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
     .join-box img{width:190px;height:190px;border:1px solid #d9e5f2;border-radius:18px;background:#fff;padding:8px}
-    .role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:16px}
-    .role-tile{border:1px solid #d9e5f2;border-radius:20px;background:#f8fbff;padding:16px;display:grid;gap:10px}
+    .role-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:14px;margin-top:16px}.loading-card{text-align:center}.loading-card .spinner{width:42px;height:42px;border-radius:50%;border:4px solid #d9e5f2;border-top-color:#2f5f97;margin:10px auto 14px;animation:spin .9s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .role-tile{border:3px solid #d9e5f2;border-radius:20px;background:#f8fbff;padding:16px;display:grid;gap:10px;text-align:center;align-content:start}.role-tile.role-supervisor{border-color:#2f6fb0;background:linear-gradient(180deg,#eef6ff,#fff)}.role-tile.role-schulleitung{border-color:#2f9e44;background:linear-gradient(180deg,#eefaf2,#fff)}.role-tile.role-lehrkraft-a,.role-tile.role-lehrkraft-b{border-color:#d62828;background:linear-gradient(180deg,#fff1f1,#fff)}.role-tile.role-protokoll{border-color:#f2a51a;background:linear-gradient(180deg,#fff8e8,#fff)}
     .role-tile strong{color:#10223a}.role-tile .name{font-weight:800;color:#2f5f97}
     .role-tile img{width:150px;height:150px;justify-self:center;border-radius:14px;background:#fff;border:1px solid #d9e5f2;padding:6px}
     .status{padding:12px 14px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972;margin-top:19px}
     .status.status-transient{margin-top:19px}
     .warning{background:#fff2f2;border-color:#efc5c5;color:#8a1f1f}
     .ok{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
-    @media(max-width:760px){.top-input-row,.join-box{grid-template-columns:1fr}.join-box img{justify-self:center}.admin-test-row{justify-content:flex-start}}
+    @media(max-width:1050px){.role-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}@media(max-width:760px){.top-input-row,.join-box{grid-template-columns:1fr}.join-box img{justify-self:center}.admin-test-row{justify-content:flex-start}}
   </style>
 </head>
 <body data-mode="roles-session">
@@ -44,7 +44,13 @@
     <button id="simulateMemberBtn" type="button" class="secondary">Eintrag simulieren</button>
   </div>
 
-  <section class="session-card is-active" id="creatorCard">
+  <section class="session-card is-active loading-card" id="loadingCard">
+    <h2>Rollenverteilung wird geprüft</h2>
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Bitte kurz warten. Es wird geprüft, ob dieses Gerät bereits einer Gruppe zugeordnet ist.</p>
+  </section>
+
+  <section class="session-card is-hidden-step" id="creatorCard" hidden>
     <h2>1. Gruppe starten</h2>
     <p>Trage zuerst deinen Namen und den Gerätetyp dieses Hauptgeräts ein. Danach wird eine vorläufige Gruppe erstellt.</p>
     <div class="top-input-row">
@@ -96,8 +102,8 @@
   </section>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span id="sessionGroupId">noch nicht erstellt</span></div></footer>
-<script src="js/config.js?v=group-session-v37"></script>
-<script src="js/app.js?v=group-session-v37"></script>
-<script src="js/group_session_v33.js?v=group-session-v37"></script>
+<script src="js/config.js?v=group-session-v39"></script>
+<script src="js/app.js?v=group-session-v39"></script>
+<script src="js/group_session_v33.js?v=group-session-v39"></script>
 </body>
 </html>

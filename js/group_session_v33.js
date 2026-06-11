@@ -1,4 +1,4 @@
-/* Group session rebuild v37 reopen assigned roles */
+/* Group session rebuild v39 rolecard repair */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -65,10 +65,12 @@
   }
 
   function showStep(step){
+    const loading=document.getElementById('loadingCard');
     const creator=document.getElementById('creatorCard');
     const join=document.getElementById('joinCard');
     const assign=document.getElementById('assignCard');
     [
+      [loading, step==='loading'],
       [creator, step==='creator'],
       [join, step==='join'],
       [assign, step==='assign']
@@ -187,6 +189,7 @@
     if(!currentGroupId){status('assignSessionStatus','Keine Gruppe gefunden.','warning');return;}
     if(rolesAlreadyAssigned(latestMembers)){showAssignedOverview(latestMembers);return;}
     if((latestMembers||[]).length<4){status('assignSessionStatus','Bitte mindestens 4 Gruppenmitglieder registrieren.','warning');return;}
+    if((latestMembers||[]).length>5){status('assignSessionStatus','Es dürfen maximal 5 Gruppenmitglieder teilnehmen. Bitte Gruppe prüfen.','warning');return;}
     status('assignSessionStatus','Rollen werden verteilt …');
     const res=await jsonp({action:'assignRolesToMembers',groupId:currentGroupId});
     if(!res||res.ok===false)throw new Error(res&&res.error||'Rollen konnten nicht verteilt werden.');
@@ -203,7 +206,7 @@
     box.innerHTML = ROLES.map(role=>{
       const m=byRole[role]||{};
       const url=roleUrl(role,currentGroupId);
-      return `<div class="role-tile">
+      return `<div class="role-tile role-${esc(role)}">
         <strong>${esc(ROLE_LABELS[role])}</strong>
         <span class="name">${esc(m.name||'nicht zugewiesen')}</span>
         <a class="button" href="${esc(url)}">Rollenkarte öffnen</a>
@@ -230,6 +233,13 @@
     const groupId=groupIdFromUrl();
     if(!groupId){status('joinStatus','Kein Gruppenlink gefunden. Bitte den QR-Code erneut scannen.','warning');return;}
     if(!name){status('joinStatus','Bitte deinen Namen eintragen.','warning');return;}
+    try{
+      const current=await jsonp({action:'listGroupMembers',groupId});
+      if(current&&current.ok&&(current.members||[]).length>=5){
+        status('joinStatus','Diese Gruppe ist bereits voll. Maximal 5 Mitglieder sind möglich.','warning');
+        return;
+      }
+    }catch(_){}
     status('joinStatus','Beitritt wird gespeichert …');
     const res=await jsonp({action:'joinGroupSession',groupId,deviceId:deviceId(),name,deviceType});
     if(!res||res.ok===false)throw new Error(res&&res.error||'Beitritt fehlgeschlagen.');
@@ -250,11 +260,25 @@
         if(main){main.style.visibility='visible';main.innerHTML=`<section class="card"><h2>Gerät nicht zugeordnet</h2><p>Dieses Gerät ist dieser Gruppe noch nicht zugeordnet. Bitte tritt zuerst über den Gruppen-QR-Code bei.</p><a class="button secondary" href="rollen.html">Zur Rollenverteilung</a></section>`;}
         return;
       }
-      if(res.role!==role){
-        if(main){main.style.visibility='visible';main.innerHTML=`<section class="card"><h2>Falsche Rollenkarte</h2><p>Du bist <strong>${esc(ROLE_LABELS[res.role]||res.role)}</strong>. Bitte scanne den QR-Code für deine zugeteilte Rolle.</p><a class="button" href="${esc(roleUrl(res.role,gid))}">Richtige Rollenkarte öffnen</a><p class="small">Wenn du erneut scannen möchtest, öffne die Kamera-App deines Geräts und scanne den passenden QR-Code.</p></section>`;}
+      if(!res.role){
+        if(main){main.style.visibility='visible';main.innerHTML=`<section class="card"><h2>Rolle noch nicht verteilt</h2><p>Dieses Gerät ist der Gruppe zugeordnet, aber die Rollen wurden noch nicht verteilt.</p><a class="button" href="${esc('rollen.html?groupId='+encodeURIComponent(gid))}">Zur Rollenübersicht</a></section>`;}
         return;
       }
-      if(main){main.style.visibility='visible';main.innerHTML=original;}
+      if(res.role!==role){
+        if(main){main.style.visibility='visible';main.innerHTML=`<section class="card"><h2>Falsche Rollenkarte</h2><p>Du bist <strong>${esc(ROLE_LABELS[res.role]||res.role)}</strong>. Bitte öffne die Übersicht und nutze deine zugeteilte Rollenkarte.</p><a class="button" href="${esc('rollen.html?groupId='+encodeURIComponent(gid))}">Zur Rollenübersicht</a><p class="small">Dort findest du alle Rollenkarten und QR-Codes der fertigen Rollenverteilung.</p></section>`;}
+        return;
+      }
+      if(main){main.style.visibility='visible';}
+      try{
+        if(typeof window.initRoleCard === 'function') window.initRoleCard();
+        else if(typeof initRoleCard === 'function') initRoleCard();
+      }catch(_){}
+      setTimeout(function(){
+        try{
+          const target=document.getElementById('roleCard');
+          if(target && !target.innerHTML.trim() && typeof window.initRoleCard === 'function') window.initRoleCard();
+        }catch(_){}
+      },150);
     }catch(err){
       if(main){main.style.visibility='visible';main.innerHTML=`<section class="card warning"><h2>Prüfung nicht möglich</h2><p>${esc(err.message)}</p></section>`;}
     }
@@ -266,6 +290,7 @@
   async function simulateMember(){
     if(!currentGroupId) currentGroupId=groupIdFromUrl();
     if(!currentGroupId){status('sessionStatus','Bitte zuerst eine Gruppe erstellen.','warning');return;}
+    if((latestMembers||[]).length>=5){status('sessionStatus','Die Gruppe ist bereits voll. Maximal 5 Mitglieder sind möglich.','warning');return;}
     const name = SIM_NAMES[Math.floor(Math.random()*SIM_NAMES.length)] + ' ' + Math.floor(10+Math.random()*90);
     const deviceType = SIM_DEVICES[Math.floor(Math.random()*SIM_DEVICES.length)];
     const fakeDeviceId = 'sim_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9);
@@ -281,7 +306,7 @@
   async function initRolesSession(){
     const select=document.getElementById('creatorDevice');
     if(select)select.value=detectDeviceType();
-    showStep('creator');
+    showStep('loading');
     document.getElementById('createGroupSessionBtn')?.addEventListener('click',()=>createGroup().catch(e=>status('sessionStatus',e.message,'warning')));
     document.getElementById('refreshMembersBtn')?.addEventListener('click',()=>refreshMembers().catch(e=>status('sessionStatus',e.message,'warning')));
     document.getElementById('groupCompleteBtn')?.addEventListener('click',()=>showStep('assign'));
@@ -310,10 +335,12 @@
           if(rolesAlreadyAssigned(latestMembers)) showAssignedOverview(latestMembers);
           else showStep('join');
         }else{
-          showStep('join');
+          showStep('creator');
         }
-      }catch(_){showStep('join');}
+      }catch(_){showStep('creator');}
       startPolling();
+    }else{
+      setTimeout(()=>showStep('creator'),500);
     }
   }
   async function initJoinSession(){

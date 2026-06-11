@@ -57,6 +57,32 @@
   function postNoCors(payload){
     return fetch(appUrl(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
   }
+  function postViaForm(payload){
+    const form=document.createElement('form');
+    form.method='POST';
+    form.action=appUrl();
+    form.target='groupPresentationSaveFrameV122';
+    form.style.display='none';
+    const frame=document.createElement('iframe');
+    frame.name='groupPresentationSaveFrameV122';
+    frame.style.display='none';
+    const input=document.createElement('textarea');
+    input.name='payload';
+    input.value=JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(frame);
+    document.body.appendChild(form);
+    return new Promise(resolve=>{
+      let done=false;
+      frame.onload=function(){if(done)return;done=true;setTimeout(()=>{try{form.remove();frame.remove();}catch(_){} resolve();},120);};
+      form.submit();
+      setTimeout(()=>{if(!done){done=true;try{form.remove();frame.remove();}catch(_){} resolve();}},1800);
+    });
+  }
+  async function postPayload(payload){
+    try{ await postNoCors(payload); }
+    catch(_){ await postViaForm(payload); }
+  }
   function normalizeRow(row){
     const d=(row&&row.data)||{};
     const raw=d.raw||row.raw||{};
@@ -136,9 +162,46 @@
     }
     return state;
   }
-  function currentState(){
+  function collectEditorStateV122(){
     const groupId=loadedGroupId||gid();
-    return getObj(storageKey(groupId,STATE_KEY_BASE),null);
+    let state=getObj(storageKey(groupId,STATE_KEY_BASE),null)||{};
+    const modal=document.getElementById('presentationPrepModalV6');
+    if(modal){
+      state.values=state.values||{};
+      state.text=state.text||{};
+      state.textboxes=Array.isArray(state.textboxes)?state.textboxes:[];
+      modal.querySelectorAll('[data-v6-field]').forEach(td=>{
+        state.values[td.dataset.v6Field]=td.innerText.trim();
+      });
+      modal.querySelectorAll('[data-v6-text]').forEach(el=>{
+        state.text[(el.dataset.v6Text||'')+'__text']=el.innerText.trim();
+      });
+      modal.querySelectorAll('[data-v6-textbox]').forEach(el=>{
+        const id=el.dataset.v6Textbox;
+        let tb=state.textboxes.find(x=>x&&x.id===id);
+        if(!tb){tb={id:id,x:12,y:72,w:32,h:12,rot:0,z:80,fontSize:18,text:''};state.textboxes.push(tb);}
+        tb.text=el.innerText;
+      });
+      // Copy current inline layout positions from visible editor elements.
+      state.layout=state.layout||{};
+      modal.querySelectorAll('[data-v6-id]').forEach(el=>{
+        const id=el.dataset.v6Id;
+        if(!id) return;
+        const l=state.layout[id]||{};
+        ['x','y','w','h','rot','z','fontSize'].forEach(k=>{
+          const attr=el.getAttribute('data-'+k);
+          if(attr!==null && attr!=='') l[k]=Number(attr);
+        });
+        state.layout[id]=l;
+      });
+    }
+    state.groupId=groupId;
+    state.savedAt=new Date().toISOString();
+    setObj(storageKey(groupId,STATE_KEY_BASE),state);
+    return state;
+  }
+  function currentState(){
+    return collectEditorStateV122();
   }
   function payloadForSave(row,state){
     const groupId=loadedGroupId||gid()||row.groupId||'';
@@ -163,14 +226,22 @@
     const state=currentState();
     if(!state) throw new Error('Kein Präsentationsstand im Gruppeneditor gefunden.');
     const payload=payloadForSave(loadedRow,state);
-    await postNoCors(payload);
-    await new Promise(resolve=>setTimeout(resolve,1100));
+    await postPayload(payload);
+    await new Promise(resolve=>setTimeout(resolve,1700));
     try{
       const check=await jsonp({action:'groupProgress',groupId:payload.groupId,groupSize:5});
-      const saved=check&&check.latestResult&&check.latestResult.data&&check.latestResult.data.presentationV6;
-      if(saved && saved.editorSaveId && saved.editorSaveId!==payload.editorSaveId){
-        status('Speichern wurde gesendet, aber die Serverprüfung zeigt noch einen älteren Stand. Bitte kurz warten und erneut öffnen.','warning');
-        return;
+      const latest=check&&check.latestResult;
+      const data=(latest&&latest.data)||{};
+      const saved=data.presentationV6 || (data.raw&&data.raw.presentationV6);
+      if(!saved || saved.editorSaveId!==payload.editorSaveId){
+        status('Speichern wurde gesendet, aber die Serverprüfung zeigt noch nicht den aktualisierten Stand. Bitte nicht schließen, ich prüfe erneut …','warning');
+        await new Promise(resolve=>setTimeout(resolve,1700));
+        const check2=await jsonp({action:'groupProgress',groupId:payload.groupId,groupSize:5});
+        const data2=(check2&&check2.latestResult&&check2.latestResult.data)||{};
+        const saved2=data2.presentationV6 || (data2.raw&&data2.raw.presentationV6);
+        if(!saved2 || saved2.editorSaveId!==payload.editorSaveId){
+          throw new Error('Der Server hat die bearbeitete Gruppenpräsentation nicht bestätigt. Bitte Apps Script neu bereitstellen und erneut speichern.');
+        }
       }
     }catch(_){}
     status('Gespeichert. Die finale Gruppenpräsentation wurde aktualisiert.','ok');
@@ -199,8 +270,10 @@
     if(!saveBtn.dataset.groupEditorV85){
       saveBtn.dataset.groupEditorV85='1';
       saveBtn.addEventListener('click',ev=>{
-        ev.preventDefault();ev.stopPropagation();
-        setTimeout(()=>saveToSheet().catch(err=>status(err.message||String(err),'warning')),180);
+        ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
+        saveToSheet().catch(err=>status(err.message||String(err),'warning'));
       },true);
     }
     const closeBtn=modal.querySelector('#v6Close');

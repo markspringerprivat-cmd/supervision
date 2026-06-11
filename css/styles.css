@@ -5590,3 +5590,19 @@ body[data-mode="rolecard"] .role-card-case .notice{font-weight:800}
 .role-tile strong,.role-tile .name{color:#10223a!important}
 .role-card-main .role-pill,
 .card.muted .role-pill{background:#eef4fb;color:#183a61;border-color:#d8e5f2}
+
+
+/* v121: Gruppenname bei Übermittlung nur anzeigen */
+.readonly-group-name,
+input.readonly-group-name,
+input[readonly].readonly-group-name{
+  background:#eef3f8!important;
+  color:#52687f!important;
+  border-color:#d7e3ef!important;
+  cursor:not-allowed!important;
+  box-shadow:none!important;
+}
+.readonly-group-name:focus{
+  outline:none!important;
+  border-color:#d7e3ef!important;
+}

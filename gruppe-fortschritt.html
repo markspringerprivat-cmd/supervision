@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=group-edit-direct-v50">
+  <link rel="stylesheet" href="css/styles.css?v=feedback-qr-layout-v52">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -17,11 +17,11 @@
     .activity-list{display:grid;gap:10px}
     .activity{border:1px solid #dce8f4;border-radius:16px;background:#f8fbff;padding:13px 14px;display:flex;justify-content:space-between;gap:12px}
     .activity.done{background:#e9f8ef;border-color:#abe1bd}.activity.warn{background:#fff7e8;border-color:#ffd99e}
-    .feedback-users{display:grid;gap:9px}.feedback-user{position:relative;border-radius:14px;border:1px solid #d7e5f2;background:#eef4fa;min-height:38px;overflow:hidden;color:#506780;font-weight:800;display:flex;align-items:center;justify-content:space-between;padding:0 12px}.feedback-user::before{content:"";position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,#b7e4c7,#2f9e44);transition:width .45s ease;z-index:0}.feedback-user.done::before{width:100%}.feedback-user span{position:relative;z-index:1}.feedback-user.done{border-color:#abe1bd;color:#0f5f2c}.feedback-user.open{background:#f7fafc}
-    .raw-block{background:#f8fbff;border:1px solid #dce8f4;border-radius:16px;padding:14px;color:#334b64;max-height:none;overflow:visible}.embedded-result{display:grid;gap:10px}.embedded-result details{border:1px solid #dce8f4;border-radius:14px;overflow:hidden;background:#f8fbff}.embedded-result summary{cursor:pointer;font-weight:800;color:#102a46;padding:12px 14px;background:#edf3fa}.embedded-result table{width:100%;border-collapse:collapse;background:#fff}.embedded-result th,.embedded-result td{border:1px solid #e3ebf3;padding:10px 12px;text-align:left;vertical-align:top}.embedded-result th{background:#eaf2fb;color:#11243a}.presentation-actions{display:grid;gap:12px;margin-top:12px}.presentation-open{font-size:1.05rem;padding:14px 18px}.feedback-qr-box{margin-top:16px;display:grid;place-items:center;text-align:center;gap:10px}.feedback-qr-box img{width:170px;height:170px;border:1px solid #d9e5f2;border-radius:18px;background:#fff;padding:8px}.feedback-qr-box p{margin:0;color:#607187}
+    .feedback-layout{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:start}.feedback-users{display:grid;gap:7px}.feedback-user{position:relative;border-radius:12px;border:1px solid #d7e5f2;background:#eef4fa;min-height:32px;overflow:hidden;color:#506780;font-weight:800;display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:0 10px}.feedback-user::before{content:"";position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,#b7e4c7,#2f9e44);transition:width .45s ease;z-index:0}.feedback-user.done::before{width:100%}.feedback-user span{position:relative;z-index:1}.feedback-user span:last-child{margin-left:auto;font-size:.92em}.feedback-user.done{border-color:#abe1bd;color:#0f5f2c}.feedback-user.open{background:#f7fafc}
+    .raw-block{background:#f8fbff;border:1px solid #dce8f4;border-radius:16px;padding:14px;color:#334b64;max-height:none;overflow:visible}.embedded-result{display:grid;gap:10px}.embedded-result details{border:1px solid #dce8f4;border-radius:14px;overflow:hidden;background:#f8fbff}.embedded-result summary{cursor:pointer;font-weight:800;color:#102a46;padding:12px 14px;background:#edf3fa}.embedded-result table{width:100%;border-collapse:collapse;background:#fff}.embedded-result th,.embedded-result td{border:1px solid #e3ebf3;padding:10px 12px;text-align:left;vertical-align:top}.embedded-result th{background:#eaf2fb;color:#11243a}.presentation-actions{display:grid;gap:12px;margin-top:12px}.presentation-open{font-size:1.05rem;padding:14px 18px}.feedback-qr-box{display:grid;place-items:center;text-align:center;gap:9px}.feedback-qr-card{width:100%;min-height:190px;border:1px solid #d9e5f2;border-radius:18px;background:#f8fbff;display:grid;place-items:center;padding:10px;color:#607187;font-weight:800;line-height:1.35}.feedback-qr-card img{width:160px;height:160px;border:0;background:#fff;padding:6px;border-radius:14px}.feedback-qr-box p{margin:0;color:#607187;font-size:.92rem}.feedback-qr-placeholder{font-size:.88rem}
     .status{padding:13px 15px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972}
     .button-row{display:flex;gap:10px;flex-wrap:wrap}.member-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.member-pill{border-radius:999px;background:#eaf2fb;border:1px solid #d7e5f2;color:#1d416a;padding:8px 11px;font-weight:800}
-    @media(max-width:900px){.progress-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.progress-grid{grid-template-columns:1fr}.feedback-layout{grid-template-columns:1fr}.feedback-qr-card{min-height:150px}}
   </style>
 </head>
 <body>
@@ -40,7 +40,7 @@
     <aside class="panel">
       <h2>Feedbackabgabe</h2>
       <p style="color:#607187;margin-top:0">Grün bedeutet: Für diese Gruppe wurde bereits eine anonyme Rückmeldung abgegeben.</p>
-      <div id="feedbackUsers" class="feedback-users"></div><div class="feedback-qr-box"><p>Feedback nachträglich abgeben oder erneut aufrufen:</p><img id="feedbackQr" alt="QR-Code zum Manometer-Feedback"><a id="feedbackLink" class="button secondary" href="manometer.html">Feedback öffnen</a></div>
+      <div class="feedback-layout"><div id="feedbackUsers" class="feedback-users"></div><div class="feedback-qr-box"><p>Feedback nachträglich abgeben:</p><div id="feedbackQrCard" class="feedback-qr-card"><span class="feedback-qr-placeholder">Feedback-QR-Code wird nach Übermittlung der Gruppenergebnisse freigeschaltet.</span></div><a id="feedbackLink" class="button secondary" href="#" style="pointer-events:none;opacity:.55">Feedback öffnen</a></div></div>
     </aside>
     <article class="panel">
       <h2>Gruppenergebnisse</h2>
@@ -57,8 +57,8 @@
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=group-edit-direct-v50"></script>
-<script src="js/app.js?v=group-edit-direct-v50"></script>
+<script src="js/config.js?v=feedback-qr-layout-v52"></script>
+<script src="js/app.js?v=feedback-qr-layout-v52"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -154,10 +154,21 @@ function render(data){
     renderUsers(data.groupSize||Math.max(5,names.length||0),data.feedbackCount||0);
     var feedbackUrl=new URL('manometer.html', location.href);
     if(data.groupId) feedbackUrl.searchParams.set('g', data.groupId);
-    var feedbackQr=document.getElementById('feedbackQr');
+    var feedbackQrCard=document.getElementById('feedbackQrCard');
     var feedbackLink=document.getElementById('feedbackLink');
-    if(feedbackQr) feedbackQr.src=qrUrl(feedbackUrl.toString());
-    if(feedbackLink) feedbackLink.href=feedbackUrl.toString();
+    var feedbackReady=!!(data.hasResult || data.hasPresentation || data.latestResult);
+    if(feedbackQrCard){
+      if(feedbackReady){
+        feedbackQrCard.innerHTML='<img id="feedbackQr" alt="QR-Code zum Manometer-Feedback" src="'+qrUrl(feedbackUrl.toString())+'">';
+      }else{
+        feedbackQrCard.innerHTML='<span class="feedback-qr-placeholder">Feedback-QR-Code wird nach Übermittlung der Gruppenergebnisse freigeschaltet.</span>';
+      }
+    }
+    if(feedbackLink){
+      feedbackLink.href=feedbackReady?feedbackUrl.toString():'#';
+      feedbackLink.style.pointerEvents=feedbackReady?'':'none';
+      feedbackLink.style.opacity=feedbackReady?'1':'.55';
+    }
 
     var resultRow=data.latestResult||null;
     document.getElementById('resultsBox').innerHTML=renderGroupResultHtml(resultRow,data.groupRegistry||null);

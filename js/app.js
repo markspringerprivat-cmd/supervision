@@ -6650,44 +6650,7 @@ try {
     load();
   };
 
-  function ensureShareBox(){
-    if (document.body.dataset.mode !== 'summary') return null;
-    const section = document.querySelector('section.card.highlight');
-    if (!section) return null;
-    let box = document.getElementById('groupShareBox');
-    if (!box) {
-      box = document.createElement('div');
-      box.id = 'groupShareBox';
-      box.className = 'group-share-box';
-      box.hidden = true;
-      box.innerHTML = `
-        <h3>Ergebnis mit Gruppe teilen</h3>
-        <p class="small">Dieser Link zeigt nur das Ergebnis dieser Gruppe an. Wenn noch nichts gespeichert wurde, erscheint dort ein Hinweis mit Aktualisieren-Button.</p>
-        <div class="share-grid">
-          <div>
-            <a id="groupShareLink" class="button secondary" href="#" target="_blank" rel="noopener">Gruppenergebnis öffnen</a>
-            <button id="copyGroupShareLink" class="secondary" type="button">Link kopieren</button>
-          </div>
-          <img id="groupShareQr" class="qr share-qr" alt="QR-Code zum Gruppenergebnis">
-        </div>`;
-      section.appendChild(box);
-    }
-    const groupId = groupIdNow();
-    const link = groupShareUrl(groupId);
-    const a = box.querySelector('#groupShareLink');
-    const qr = box.querySelector('#groupShareQr');
-    const copy = box.querySelector('#copyGroupShareLink');
-    if (a) a.href = link;
-    if (qr) qr.src = qrUrl(link);
-    if (copy && copy.dataset.bound !== '1') {
-      copy.dataset.bound = '1';
-      copy.addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(groupShareUrl(groupIdNow())); copy.textContent = 'Kopiert'; setTimeout(()=>copy.textContent='Link kopieren', 1200); }
-        catch(_) { window.prompt('Link kopieren:', groupShareUrl(groupIdNow())); }
-      });
-    }
-    return box;
-  }
+  function ensureShareBox(){ return null; }
 
   const oldSubmit = typeof submitResults === 'function' ? submitResults : null;
   if (oldSubmit) {

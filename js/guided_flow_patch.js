@@ -181,41 +181,20 @@
     main.innerHTML=`
       <section class="sv-guidance-stage sv-transmission-stage">
         <article class="sv-guidance-card is-active" data-tx="0">
-          <h2>Ergebnis mit der Gruppe teilen</h2>
-          <p>Scannt den QR-Code, damit eure Gruppe die eigenen Ergebnisse später als Notizen nutzen kann. Das hilft, falls eure Gruppe im Plenum präsentiert.</p>
-          <div class="share-grid compact"><img id="groupShareQr" class="qr share-qr" alt="QR-Code zum Gruppenergebnis"><div><a id="groupShareLink" class="button secondary" href="#" target="_blank" rel="noopener">Gruppenergebnis öffnen</a><button id="copyGroupShareLink" class="secondary" type="button">Link kopieren</button></div></div>
-          <div class="nav-row"><button type="button" class="secondary" data-tx-prev disabled>Zurück</button><button type="button" data-tx-next>Weiter</button></div>
-        </article>
-        <article class="sv-guidance-card" data-tx="1" hidden>
           <h2>Ergebnis übermitteln</h2>
-          <p>Jetzt werden die wichtigsten Ergebnisse und die gespeicherte Präsentation an die zentrale Ergebnisübersicht gesendet. Im Anschluss an die Gruppenphase wird per Zufall eine Gruppe ausgewählt, die ihre Ergebnisse im Plenum vorstellt.</p>
+          <p>Sende jetzt das Gruppenergebnis mit der gespeicherten Präsentationsgestaltung ab. Danach startet die Manometer-Feedbackphase.</p>
           <label for="groupName">Gruppenname</label><input id="groupName" type="text">
-          <div class="nav-row"><button type="button" class="secondary" data-tx-prev>Zurück</button><button id="submitResults" type="button">Ergebnis übermitteln</button></div>
+          <div class="nav-row"><button id="submitResults" type="button">Ergebnis übermitteln</button></div>
           <p id="submitStatus" class="small"></p>
         </article>
-        <article class="sv-guidance-card sv-manometer-card" data-tx="2" hidden>
+        <article class="sv-guidance-card sv-manometer-card" data-tx="1" hidden>
           <h2>Manometer – Feedback</h2>
-          <p><strong>Bitte wartet kurz:</strong> Alle Gruppenmitglieder sollen den QR-Code scannen und anschließend die Reflexionsfragen beantworten. Der Startbutton wird nach fünf Sekunden freigeschaltet.</p>
-          <div class="share-grid compact">
+          <p><strong>Bitte alle scannen:</strong> Alle Gruppenmitglieder sollen den QR-Code mit dem eigenen Gerät scannen und individuelles Feedback abgeben.</p>
+          <div class="share-grid compact" style="justify-items:center;text-align:center">
             <img id="manometerQr" class="qr share-qr" alt="QR-Code zum Manometer-Feedback">
-            <div>
-              <a id="manometerFeedbackLink" class="button" href="manometer.html" aria-disabled="true">Feedback starten in 5</a>
-              <a id="manometerResultsLink" class="button secondary" href="manometer-auswertung.html" target="_blank" rel="noopener">Manometer-Auswertung anzeigen</a>
-            </div>
+            <div><a id="manometerFeedbackLink" class="button" href="manometer.html" aria-disabled="true">Feedback starten in 5</a></div>
           </div>
           <p id="manometerReadHint" class="small">Der Button wird gleich aktiviert. Nutzt die Zeit, damit jede Person aus der Gruppe den QR-Code scannen kann.</p>
-          <div class="nav-row"><button type="button" class="secondary" data-tx-next>Weiter zur Abschlusskarte</button></div>
-        </article>
-        <article class="sv-guidance-card sv-thank-you-card" data-tx="3" hidden>
-          <h2>Vielen Dank für deine Teilnahme.</h2>
-          <p>Du kannst zur Startseite zurückkehren.</p>
-          <div class="nav-row">
-            <a id="finalPresentationLink" class="button" href="presentation.html" target="_blank" rel="noopener">Fertige Präsentation anzeigen</a>
-            <button type="button" class="secondary" data-show-final-summary>Ergebnisse als Tabelle anzeigen</button>
-            <a id="finalManometerResultsLink" class="button secondary" href="manometer-auswertung.html" target="_blank" rel="noopener">Manometer-Auswertung</a>
-            <a class="button secondary" href="index.html">Zurück zur Startseite</a>
-          </div>
-          <div id="summaryContent" class="summary-panel sv-final-summary" hidden></div>
         </article>
       </section>`;
     if(typeof renderSummary==='function' && typeof collectSupervisorData==='function') { try{ renderSummary(collectSupervisorData()); }catch(_){} }
@@ -224,10 +203,14 @@
       try{ const d=typeof collectSupervisorData==='function'?collectSupervisorData():{}; input.value=ltxt('summary_group_name') || d.groupName || gid(); }catch(_){ input.value=ltxt('summary_group_name') || gid(); }
       input.addEventListener('input',()=>{try{ if(typeof saveText==='function') saveText('summary_group_name', input.value); }catch(_){}});
     }
-    function shareUrl(){ const u=new URL('gruppe-ergebnis.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
-    function presentationUrl(){ const u=new URL('presentation.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
     function manometerUrl(page){ const u=new URL(page || 'manometer.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
-    function refreshLinks(){ const link=shareUrl(); const a=document.getElementById('groupShareLink'); const qr=document.getElementById('groupShareQr'); const p=document.getElementById('finalPresentationLink'); const mf=document.getElementById('manometerFeedbackLink'); const mr=document.getElementById('manometerResultsLink'); const fmr=document.getElementById('finalManometerResultsLink'); const mqr=document.getElementById('manometerQr'); const feedback=manometerUrl('manometer.html'); const results=manometerUrl('manometer-auswertung.html'); if(a)a.href=link; if(qr)qr.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link); if(p)p.href=presentationUrl(); if(mf)mf.href=feedback; if(mr)mr.href=results; if(fmr)fmr.href=results; if(mqr)mqr.src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(feedback); }
+    function refreshLinks(){
+      const mf=document.getElementById('manometerFeedbackLink');
+      const mqr=document.getElementById('manometerQr');
+      const feedback=manometerUrl('manometer.html');
+      if(mf)mf.href=feedback;
+      if(mqr)mqr.src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(feedback);
+    }
     refreshLinks();
     let tx=0; const cards=Array.from(main.querySelectorAll('[data-tx]'));
     function show(n){ tx=Math.max(0,Math.min(cards.length-1,n)); cards.forEach((c,i)=>{c.hidden=i!==tx;c.classList.toggle('is-active',i===tx);}); refreshLinks(); if(cards[tx] && cards[tx].classList.contains('sv-manometer-card')) startManometerCountdown(); }
@@ -245,10 +228,9 @@
         if(typeof window.submitResults==='function') await window.submitResults();
         const failed = st && /warning|danger|error/i.test(st.className||'') && /keine|fehl|nicht|error|fehlgeschlagen/i.test(st.textContent||'');
         if(!failed){
-          if(st){ st.className='notice'; st.textContent='Bitte warten. Die Übermittlung wird abgeschlossen. Manometer startet in fünf Sekunden …'; }
-          await new Promise(resolve=>setTimeout(resolve,5000));
-          if(typeof renderSummary==='function' && typeof collectSupervisorData==='function') { try{ renderSummary(collectSupervisorData()); }catch(_){} }
-          show(2);
+          if(st){ st.className='notice'; st.textContent='Übermittlung abgeschlossen. Manometer startet …'; }
+          await new Promise(resolve=>setTimeout(resolve,900));
+          show(1);
         }
       }catch(err){
         if(st){ st.className='warning'; st.textContent='Senden fehlgeschlagen: '+(err && err.message ? err.message : err); }
@@ -258,9 +240,6 @@
         delete submit.dataset.busy;
       }
     }
-    // Wichtig: app.js bindet den Absende-Button an mehreren Stellen selbst und nutzt dort teils
-    // stopPropagation/Clones. Deshalb wird der Manometer-Übergang hier in der Capture-Phase
-    // auf document abgefangen, bevor ältere Button-Handler den Klick schlucken können.
     document.addEventListener('click', function(e){
       const submit=e.target.closest && e.target.closest('#submitResults');
       if(!submit || !main.contains(submit)) return;
@@ -269,15 +248,6 @@
       if(e.stopImmediatePropagation) e.stopImmediatePropagation();
       runTransmitAndShowManometer(submit);
     }, true);
-    main.addEventListener('click', async e=>{
-      if(e.target.closest('[data-tx-next]')) show(tx+1);
-      if(e.target.closest('[data-tx-prev]')) show(tx-1);
-      if(e.target.closest('#copyGroupShareLink')){ try{ await navigator.clipboard.writeText(shareUrl()); e.target.textContent='Kopiert'; setTimeout(()=>e.target.textContent='Link kopieren',1200);}catch(_){prompt('Link kopieren:', shareUrl());} }
-      if(e.target.closest('[data-show-final-summary]')){
-        const panel=document.getElementById('summaryContent');
-        if(panel){ panel.hidden=!panel.hidden; e.target.textContent=panel.hidden?'Ergebnisse als Tabelle anzeigen':'Tabellen ausblenden'; }
-      }
-    });
   }
 
   function installSaveChoice(){

@@ -62,20 +62,31 @@
     @media (max-width:700px) and (orientation:portrait){
       .pres-toolbar,.nav{display:none}.stage{inset:0}.deck{opacity:.18}.status{display:block!important;top:50%;text-align:center}.status::before{content:'Bitte das Smartphone quer halten';display:block;font-size:20px;margin-bottom:10px;color:#0f172a}.status{color:#475569}
     }
-  
-    /* v66 Präsentation: sauberer Default-Zustand */
-    .deck{background:radial-gradient(circle at 85% 12%, rgba(47,111,176,.10), transparent 26%),radial-gradient(circle at 8% 88%, rgba(54,148,115,.10), transparent 24%),#fbfdff!important;}
-    .v6-type-title,.v6-type-groupName,.v6-type-kicker,.v6-type-subtitle,.v6-type-note{text-align:center!important;}
+
+    /* v67 Präsentation: Farbe/Muster dynamisch, Tabellen poliert */
+    .deck{border-radius:28px!important;}
+    .v6-type-title,.v6-type-groupName,.v6-type-kicker,.v6-type-subtitle,.v6-type-note{text-align:center;}
     .v6-type-title{font-weight:950!important;letter-spacing:-.035em!important;line-height:1.05!important;}
-    .v6-type-subtitle{font-weight:650!important;line-height:1.35!important;color:#405a76!important;}
+    .v6-type-subtitle{font-weight:650!important;line-height:1.35!important;color:#405a76;}
     .v6-type-kicker{display:flex;align-items:center;justify-content:center;}
     .v6-type-kicker .v6-editable-text,.kicker{display:inline-flex;align-items:center;justify-content:center;background:#e9f1fb;color:#17385f;border-radius:999px;padding:.35em .85em;}
-    .v6-type-note{color:#607187!important;font-weight:700!important;}
+    .v6-type-note{color:#607187;font-weight:700!important;}
     .v6-table{border-radius:18px!important;border:1px solid #d8e6f4!important;box-shadow:0 14px 34px rgba(30,58,95,.08)!important;line-height:1.28!important;}
-    .v6-table th{background:linear-gradient(180deg,#eaf3ff,#dcecff)!important;color:#17385f!important;font-weight:900!important;}
-    .v6-table td{background:rgba(255,255,255,.92)!important;}
-    .v6-table tbody tr:nth-child(even) td{background:#f7fbff!important;}
     .v6-table th,.v6-table td{padding:.62em .78em!important;}
+    .v6-table.v6-table-soft th{background:linear-gradient(180deg,#eaf4ff,#dceeff)!important;color:#17385f!important;font-weight:900!important;}
+    .v6-table.v6-table-soft td{background:rgba(255,255,255,.94)!important;}
+    .v6-table.v6-table-soft tbody tr:nth-child(even) td{background:#f6fbff!important;}
+    .v6-table.v6-table-clean th{background:#fff!important;color:#17385f!important;border-bottom:3px solid #2f6fb0!important;}
+    .v6-table.v6-table-clean td{background:#fff!important;}
+    .v6-table.v6-table-modern{background:#f8fbff!important;border-color:#9fc5ef!important;box-shadow:0 16px 38px rgba(47,111,176,.13)!important;}
+    .v6-table.v6-table-modern th{background:linear-gradient(135deg,#17385f,#2f6fb0)!important;color:#fff!important;font-weight:900!important;}
+    .v6-table.v6-table-modern td{background:rgba(255,255,255,.96)!important;border-color:#d7e8fa!important;}
+    .v6-table.v6-table-striped th{background:#17385f!important;color:#fff!important;}
+    .v6-table.v6-table-striped tbody tr:nth-child(even) td{background:#f1f6fc!important;}
+    .v6-table.v6-table-striped tbody tr:nth-child(odd) td{background:#fff!important;}
+    .v6-table.v6-table-dark{background:#0f172a!important;border-color:#334155!important;box-shadow:0 16px 38px rgba(15,23,42,.22)!important;color:#f8fafc!important;}
+    .v6-table.v6-table-dark th{background:#1e3a5f!important;color:#fff!important;}
+    .v6-table.v6-table-dark td{background:#111c30!important;border-color:#334155!important;}
 
   </style>
 </head>
@@ -88,9 +99,9 @@
   <div class="stage"><section id="deck" class="deck" aria-live="polite"><div id="slideLayer" class="slide-layer"></div></section></div>
   <div id="status" class="status">Präsentation wird geladen …</div>
   <div class="nav"><button id="prevBtn" class="light" type="button">←</button><button id="nextBtn" type="button">→</button></div>
-  <script src="js/config.js?v=presentation-default-design-v66"></script>
+  <script src="js/config.js?v=presentation-editor-designfix-v67"></script>
   <script src="js/presentation_final_v6.js?v=final-v6-state-2"></script>
-<script src="js/guided_flow_patch.js?v=presentation-default-design-v66"></script>
-<script src="js/role_personalizer_v62.js?v=presentation-default-design-v66"></script>
+<script src="js/guided_flow_patch.js?v=presentation-editor-designfix-v67"></script>
+<script src="js/role_personalizer_v62.js?v=presentation-editor-designfix-v67"></script>
 </body>
 </html>

@@ -208,7 +208,7 @@
       return `<td data-v6-field="${esc(cell)}" contenteditable="${editable ? 'true':'false'}">${esc(txt)}</td>`;
     }).join('')}</tr>`).join('');
     const tableStyle = (draft && draft.settings && draft.settings.tableStyle) || 'classic';
-    return `<table class="v6-table v6-table-${esc(tableStyle)}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    const roleClass = (def.headers && def.headers[0] === 'Rolle' && def.headers[1] === 'Name') ? ' v6-role-table-plain' : ''; return `<table class="v6-table v6-table-${esc(tableStyle)}${roleClass}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
   }
   function getLayout(id, type){
     const l = draft.layout[id] || defaultLayout(type, slideIndex);
@@ -231,6 +231,55 @@
   }
   function textFitStyleV106(text, layout){
     return '--v6-fit-font-size:' + textFitFontSizeV106(text, layout) + 'px;';
+  }
+
+
+  function textForElementV126(el){
+    try{
+      const id=el.dataset.v6Id||'';
+      if(id.startsWith('tb_')){
+        const tb=(draft.textboxes||[]).find(x=>x.id===id);
+        return tb ? (tb.text||'') : (el.innerText||'');
+      }
+      const txtEl=el.querySelector('[data-v6-text],[data-v6-textbox]');
+      return txtEl ? (txtEl.innerText||txtEl.textContent||'') : (el.innerText||el.textContent||'');
+    }catch(_){return '';}
+  }
+  function fittedTextLayoutV126(layout,text,fontSize){
+    const l=Object.assign({},layout||{});
+    const fs=clamp(Number(fontSize||l.fontSize||18)||18,8,96);
+    let w=clamp(Number(l.w||l.width||20)||20,4,96);
+    let h=clamp(Number(l.h||l.height||10)||10,3,96);
+    const x=Number(l.x||0)||0, y=Number(l.y||0)||0;
+    const s=String(text||'');
+    const clean=s.replace(/\s+/g,' ').trim();
+    const chars=Math.max(1,clean.length);
+    const longest=Math.max(1,...s.split(/\s+/).map(x=>x.length));
+    const slideW=1600, slideH=900;
+    const pxW=w/100*slideW;
+    const charsPerLine=Math.max(1,Math.floor(pxW/(fs*.56)));
+    const explicitLines=Math.max(1,s.split(/\n/).length);
+    const estimatedLines=Math.max(explicitLines,Math.ceil(chars/charsPerLine));
+    const reqH=((estimatedLines*fs*1.18)+18)/slideH*100;
+    const reqW=((Math.min(chars,longest)*fs*.62)+24)/slideW*100;
+    if(reqH>h) h=Math.min(Math.max(h,reqH),Math.max(6,96-y));
+    if(reqW>w && estimatedLines<=2) w=Math.min(Math.max(w,reqW),Math.max(8,98-x));
+    l.w=w; l.h=h; l.fontSize=fs;
+    return l;
+  }
+  function fitElementToTextV126(el, forcedFontSize){
+    if(!el || !draft) return;
+    const type=getElType(el);
+    if(type==='sticker' || type==='table') return;
+    const id=el.dataset.v6Id||'';
+    const current=getElLayout(el);
+    const text=textForElementV126(el);
+    const fitted=fittedTextLayoutV126(current,text,forcedFontSize||current.fontSize);
+    if(Math.abs(Number(fitted.h)-Number(current.h||0))>.05 || Math.abs(Number(fitted.w)-Number(current.w||0))>.05 || Number(fitted.fontSize)!==Number(current.fontSize||0)){
+      if(id.startsWith('tb_')){ const obj=(draft.textboxes||[]).find(x=>x.id===id); if(obj) Object.assign(obj,fitted); }
+      else setLayout(id,type,fitted);
+      el.setAttribute('style',styleFor(Object.assign({},current,fitted)));
+    }
   }
 
   function styleFor(layout){
@@ -385,7 +434,13 @@
     $('#v6PatternColor').addEventListener('input', () => { if(!editMode) return; pushUndoOnce('patternColor_'+$('#v6PatternTarget').value); setPatternFromControls(); });
     const tableStyleEl = $('#v6TableStyle');
     if(tableStyleEl) tableStyleEl.addEventListener('change', () => { if(!editMode) return; pushUndoOnce('tableStyle'); draft.settings.tableStyle = tableStyleEl.value || 'classic'; dirty = true; renderSlide(); });
-    $('#v6FontSize').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('fontsize_'+selectedId); setSelectedStyle({fontSize: clamp(num($('#v6FontSize').value,22),8,140)}); });
+    $('#v6FontSize').addEventListener('input', () => {
+      if(!selectedId || !editMode) return;
+      const fs=clamp(num($('#v6FontSize').value,22),8,96);
+      pushUndoOnce('fontsize_'+selectedId);
+      const el=getElement(selectedId);
+      if(el){ fitElementToTextV126(el,fs); setSelectedStyle({fontSize:fs}); fitElementToTextV126(el,fs); }
+    });
     $('#v6TextColor').addEventListener('input', () => { if(!selectedId || !editMode) return; pushUndoOnce('color_'+selectedId); setSelectedStyle({color: $('#v6TextColor').value}); });
     $('#v6Front').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(1); });
     $('#v6Back').addEventListener('click', () => { if(!selectedId || !editMode) return; pushUndo(); moveLayer(-1); });
@@ -503,7 +558,7 @@
     slide.querySelectorAll('[data-v6-id]').forEach(el => {
       el.addEventListener('pointerdown', (e) => { if(!editMode) return; if(e.target.closest('.v6-handle')) return; select(el.dataset.v6Id); });
       el.querySelectorAll('[contenteditable="true"]').forEach(ed => {
-        ed.addEventListener('input', () => { pushUndoOnce('input_'+(el.dataset.v6Id||'')); persistDomEdits(); markDirty(); });
+        ed.addEventListener('input', () => { pushUndoOnce('input_'+(el.dataset.v6Id||'')); persistDomEdits(); fitElementToTextV126(el); markDirty(); });
         ed.addEventListener('focus', () => select(el.dataset.v6Id));
       });
       const move = el.querySelector('.v6-move'); if(move) move.addEventListener('pointerdown', e => startTransform(e, el, 'move'));
@@ -516,7 +571,11 @@
     if(id) activePanel = 'context';
     else if(activePanel === 'context') activePanel = null;
     if(modal) {
-      modal.querySelectorAll('.v6-el').forEach(el => el.classList.toggle('is-selected', el.dataset.v6Id === id));
+      modal.querySelectorAll('.v6-el').forEach(el => {
+        const on=el.dataset.v6Id === id;
+        el.classList.toggle('is-selected', on);
+        if(on) el.setAttribute('data-v6-selected-front','1'); else el.removeAttribute('data-v6-selected-front');
+      });
     }
     updateToolbar();
   }
@@ -533,7 +592,7 @@
     if(id.startsWith('tb_')) { const obj=draft.textboxes.find(x=>x.id===id); if(obj) Object.assign(obj, changes); }
     else if(id.startsWith('st_')) { const obj=draft.stickers.find(x=>x.id===id); if(obj) Object.assign(obj, changes); }
     else setLayout(id,type,changes);
-    const l=getElLayout(el); el.setAttribute('style', styleFor(l)); el.classList.add('is-selected');
+    const l=getElLayout(el); el.setAttribute('style', styleFor(l)); el.classList.add('is-selected'); el.setAttribute('data-v6-selected-front','1');
   }
   function startTransform(e, el, mode){
     e.preventDefault(); e.stopPropagation();
@@ -551,7 +610,7 @@
     const dx = (e.clientX - drag.startX) / drag.sr.width * 100;
     const dy = (e.clientY - drag.startY) / drag.sr.height * 100;
     let changes = {};
-    if(drag.mode === 'move') changes = {x: clamp(drag.x + dx, -30, 130), y: clamp(drag.y + dy, -30, 130)};
+    if(drag.mode === 'move') changes = {x: clamp(drag.x + dx, -5, 98), y: clamp(drag.y + dy, -5, 98)};
     if(drag.mode === 'resize') changes = {w: clamp(drag.w + dx, 4, 160), h: clamp(drag.h + dy, 3, 120)};
     if(drag.mode === 'rotate') { const a = Math.atan2(e.clientY-drag.center.y, e.clientX-drag.center.x)*180/Math.PI; changes = {rot: drag.rot + (a - drag.startAngle)}; }
     setElLayout(drag.el, changes); dirty = true;
@@ -759,7 +818,7 @@
     const headers = def.headers.map(h => `<th>${esc(h)}</th>`).join('');
     const rows = def.rows.map(row => `<tr>${row.map((cell,i)=>`<td>${esc(i===0 ? cell : valueText(values[cell]))}</td>`).join('')}</tr>`).join('');
     const tableStyle = (state && state.settings && state.settings.tableStyle) || 'classic';
-    return `<table class="v6-table v6-table-${esc(tableStyle)}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    const roleClass = (def.headers && def.headers[0] === 'Rolle' && def.headers[1] === 'Name') ? ' v6-role-table-plain' : ''; return `<table class="v6-table v6-table-${esc(tableStyle)}${roleClass}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   const oldBuildPayload = (typeof buildPayload === 'function') ? buildPayload : (window.buildPayload || null);

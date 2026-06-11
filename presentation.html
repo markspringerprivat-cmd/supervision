@@ -88,7 +88,24 @@
     .v6-table.v6-table-dark th{background:#1e3a5f!important;color:#fff!important;}
     .v6-table.v6-table-dark td{background:#111c30!important;border-color:#334155!important;}
 
-  </style>
+  
+/* v125: Rollenzuordnung in Präsentationen schlicht halten */
+.v6-table td:first-child,
+.v6-table td:first-child *,
+.v6-table th:first-child,
+.v6-table th:first-child *{
+  color:inherit!important;
+  font-weight:inherit!important;
+}
+.v6-table .role-text,
+.v6-table [class*="role-text-"],
+.v6-table [class*="role-"]{
+  color:inherit!important;
+  font-weight:inherit!important;
+  background:transparent!important;
+}
+
+</style>
 </head>
 <body>
   <div class="pres-toolbar">
@@ -99,10 +116,9 @@
   <div class="stage"><section id="deck" class="deck" aria-live="polite"><div id="slideLayer" class="slide-layer"></div></section></div>
   <div id="status" class="status">Präsentation wird geladen …</div>
   <div class="nav"><button id="prevBtn" class="light" type="button">←</button><button id="nextBtn" type="button">→</button></div>
-  <script src="js/config.js?v=group-progress-presentation-view-v124"></script>
+  <script src="js/config.js?v=presentation-editor-handles-textfit-v126"></script>
   <script src="js/presentation_final_v6.js?v=final-v6-state-2"></script>
-<script src="js/guided_flow_patch.js?v=group-progress-presentation-view-v124"></script>
-<script src="js/role_personalizer_v62.js?v=group-progress-presentation-view-v124"></script>
+<script src="js/guided_flow_patch.js?v=presentation-editor-handles-textfit-v126"></script>
 
 <script id="presentation_group_progress_return_v124">
 (function(){

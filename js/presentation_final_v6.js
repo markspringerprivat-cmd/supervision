@@ -232,7 +232,7 @@
     const headers = def.headers.map(h => `<th>${esc(h)}</th>`).join('');
     const rows = def.rows.map(row => `<tr>${row.map((cell,i)=> i===0 ? `<td>${esc(cell)}</td>` : `<td>${esc(valueText(values[cell]))}</td>`).join('')}</tr>`).join('');
     const tableStyle = (state && state.settings && state.settings.tableStyle) || 'classic';
-    return `<table class="v6-table v6-table-${esc(tableStyle)}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    const roleClass = (def.headers && def.headers[0] === 'Rolle' && def.headers[1] === 'Name') ? ' v6-role-table-plain' : ''; return `<table class="v6-table v6-table-${esc(tableStyle)}${roleClass}"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
   }
   function renderElement(e){
     const l = layoutFor(e.id, e.type);

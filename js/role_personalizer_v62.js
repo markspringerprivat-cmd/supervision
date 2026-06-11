@@ -101,12 +101,20 @@
     parent.replaceChild(span,node);
   }
   function personalizeStaticText(map){
+    /* v125: Präsentationstabellen nicht personalisieren.
+       In der Rollenzuordnungstabelle soll links nur die Rolle stehen,
+       rechts nur der Name. Keine Farbe, keine Ergänzung mit Name/Rolle. */
+    if(document.body && (
+      document.body.dataset.mode === 'presentation' ||
+      document.body.dataset.mode === 'group-progress-presentation' ||
+      document.querySelector('.deck,.slide-layer,#presentationSlide,#slideLayer')
+    )) return;
     const seen={};
     const root=document.querySelector('main')||document.body; if(!root)return; const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
       acceptNode(n){
         if(!n.nodeValue || !/Supervisor|Schulleitung|Lehrkraft A|Lehrkraft B|Protokoll/.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
         const p=n.parentNode;
-        if(!p || p.closest && p.closest('.no-role-personalize,.qr,.role-card-qr')) return NodeFilter.FILTER_REJECT;
+        if(!p || p.closest && p.closest('.no-role-personalize,.qr,.role-card-qr,.v6-table,.v6-table *,.deck,.slide-layer')) return NodeFilter.FILTER_REJECT;
         if(['SCRIPT','STYLE','TEXTAREA','INPUT','SELECT','OPTION'].includes(p.nodeName)) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }

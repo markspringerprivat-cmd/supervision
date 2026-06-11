@@ -1474,7 +1474,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
         ['Beobachtung', 'prep_schulleitung_beobachtung'],
         ['Gefühle', 'prep_schulleitung_gefuehle'],
         ['Wünsche', 'prep_schulleitung_wuensche'],
-        ['Lösungsideen / Unterstützung', 'prep_schulleitung_loesung']
+        ['Ziel der Supervision', 'prep_schulleitung_ziel']
       ],
       'lehrkraft-a': [
         ['Perspektive', 'prep_lehrkraft-a_perspektive'],
@@ -1803,7 +1803,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
         ['Beobachtung', 'prep_schulleitung_beobachtung'],
         ['Gefühle', 'prep_schulleitung_gefuehle'],
         ['Wünsche', 'prep_schulleitung_wuensche'],
-        ['Lösungsideen / Unterstützung', 'prep_schulleitung_loesung']
+        ['Ziel der Supervision', 'prep_schulleitung_ziel']
       ],
       'lehrkraft-a': [
         ['Perspektive', 'prep_lehrkraft-a_perspektive'],
@@ -1900,7 +1900,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
         ['Beobachtung', 'prep_schulleitung_beobachtung'],
         ['Gefühle', 'prep_schulleitung_gefuehle'],
         ['Wünsche', 'prep_schulleitung_wuensche'],
-        ['Lösungsideen / Unterstützung', 'prep_schulleitung_loesung']
+        ['Ziel der Supervision', 'prep_schulleitung_ziel']
       ],
       'lehrkraft-a':[
         ['Beobachtung / Perspektive', 'prep_lehrkraft-a_perspektive'],
@@ -1923,10 +1923,10 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     let filtered=[];
     let title='Deine Notizen';
     if(phase===2){ filtered=items.slice(0,3); title='Notizen für Beobachtung, Gefühle und Wünsche'; }
-    else if(phase===3){ filtered=items.slice(3); title='Deine Lösungsideen / Zielgedanken'; }
+    else if(phase===3){ filtered=items.slice(3); title=(role==='schulleitung'?'Gedanken zum Ziel der Supervision':'Deine Zielgedanken'); }
     else if(phase===4){ return ''; }
     else if(phase===5){ filtered=items; title='Alle Notizen zum Abgleichen'; }
-    else if(phase===6){ return ''; }
+    else if(phase===6){ filtered=(role==='schulleitung'?items.slice(3):items.slice(3)); title='Ziel als Orientierung'; }
     else { return ''; }
     return `<section class="card prep-reference-card"><h2>${escV83(title)}</h2>${filtered.map(([label,k])=>readonlyV83(label,loadV83(k))).join('')}</section>`;
   }
@@ -1935,11 +1935,11 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     const pill=`<p class="role-pill ${roleClassV83(role)}">${escV83(label)}</p>`;
     if(phase===1) return `<section class="card highlight">${pill}<h2>Gesprächsstart</h2><p>Höre der Supervisor*in zu. Achte auf Gesprächsrahmen, Regeln und darauf, ob du bereit bist, deine Perspektive später einzubringen.</p></section>`;
     if(phase===2) return `<section class="card highlight">${pill}<h2>Problembeschreibung</h2><p>Wenn du das Wort bekommst, sprich zu Beobachtung oder Problem, Gefühlen und Wünschen. Bleibe konkret und vermeide Vorwürfe.</p></section>${prepCardV83(role,2)}`;
-    if(phase===3) return `<section class="card highlight">${pill}<h2>Zielformulierung</h2><p>Nutze deine vorbereiteten Lösungsideen oder Zielgedanken. Arbeite mit der Gruppe an einer gemeinsamen Zielvereinbarung.</p><p class="notice">Du musst hier keine neue individuelle Zielformulierung eintragen.</p></section>${prepCardV83(role,3)}`;
+    if(phase===3) return `<section class="card highlight">${pill}<h2>Zielformulierung</h2><p>Nutze deine vorbereiteten Zielgedanken. Arbeite mit der Gruppe an einer gemeinsamen Zielvereinbarung.</p><p class="notice">Du musst hier keine neue individuelle Zielformulierung eintragen.</p></section>${prepCardV83(role,3)}`;
     if(phase===4) return `<section class="card highlight">${pill}<h2>Vertiefte Problembearbeitung</h2><p>Beteilige dich am Gespräch über hilfreiche Kritik und konkrete Absprachen. Für deine Rolle werden in dieser Phase keine vorbereiteten Notizen angezeigt.</p></section>`;
-    if(phase===5) return `<section class="card highlight">${pill}<h2>Ergebnissicherung</h2><p>Prüfe, ob Beobachtungen, Gefühle, Wünsche und Lösungsideen korrekt aufgenommen wurden. Sage klar, ob du die Vereinbarung mittragen kannst.</p></section>${prepCardV83(role,5)}`;
-    if(phase===6 && role==='schulleitung') return `<section class="card highlight">${pill}<h2>Praxistauglichkeit prüfen</h2><p>Prüfe, ob die Vereinbarung im Schulalltag realistisch ist. Benenne Unterstützungsmöglichkeiten und erste konkrete Umsetzungsschritte.</p></section>`;
-    if(phase===6) return `<section class="card highlight">${pill}<h2>Abschluss</h2><p>Die Praxistauglichkeit wird vor allem mit der Schulleitung geprüft. Höre zu und überlege, welchen ersten Schritt du selbst nach der Supervision gehen kannst.</p></section>`;
+    if(phase===5) return `<section class="card highlight">${pill}<h2>Ergebnissicherung</h2><p>Prüfe, ob Beobachtungen, Gefühle, Wünsche und Ziele korrekt aufgenommen wurden. Sage klar, ob du die Vereinbarung mittragen kannst.</p></section>${prepCardV83(role,5)}`;
+    if(phase===6 && role==='schulleitung') return `<section class="card highlight">${pill}<h2>Praxistauglichkeit prüfen</h2><p>Prüfe, ob die Vereinbarung im Schulalltag realistisch ist. Benenne Unterstützungsmöglichkeiten und erste konkrete Umsetzungsschritte.</p></section>${prepCardV83(role,6)}`;
+    if(phase===6) return `<section class="card highlight">${pill}<h2>Abschluss</h2><p>Die Praxistauglichkeit wird vor allem mit der Schulleitung geprüft. Höre zu und überlege, welchen ersten Schritt du selbst nach der Supervision gehen kannst.</p></section>${prepCardV83(role,6)}`;
     return '';
   }
   function reqNoteV83(label, saveKey, hint){ return reqV83(label,saveKey,hint); }

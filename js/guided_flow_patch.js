@@ -274,3 +274,32 @@
     installSaveChoice();
   });
 })();
+
+
+/* v99: Gespräch starten nur über Popup, keine automatische Vorabweiterleitung */
+(function(){
+  function roleFromBodyV99(){return (document.body&&document.body.dataset&&document.body.dataset.role)||'';}
+  function withGroupV99(file){
+    try{
+      var p=new URLSearchParams(location.search);
+      var gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+      return gid?file+'?g='+encodeURIComponent(gid):file;
+    }catch(_){return file;}
+  }
+  document.addEventListener('click',function(e){
+    var btn=e.target&&e.target.closest&&e.target.closest('#startPhase1');
+    if(!btn || btn.dataset.v99PopupHandled==='1') return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    btn.dataset.v99PopupHandled='1';
+    var role=roleFromBodyV99();
+    var target=(btn.getAttribute('href')||('phase1-'+role+'.html')).split('?')[0];
+    var dialog=window.supervisionNiceDialog;
+    var go=function(){location.href=withGroupV99(target);};
+    if(typeof dialog==='function'){
+      dialog({title:'Gespräch starten',text:'Warte, bis alle Gruppenmitglieder ihre Notizen abgeschlossen haben. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.',actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]}).then(function(ok){ if(ok) go(); else delete btn.dataset.v99PopupHandled; });
+    }else{
+      if(confirm('Gespräch starten?')) go(); else delete btn.dataset.v99PopupHandled;
+    }
+  },true);
+})();

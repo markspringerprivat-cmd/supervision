@@ -328,7 +328,7 @@ function prepFields(role) {
     {id:"beobachtung", label:"Fasse deine Beobachtung kurz zusammen.", hint:"Was hast du im Teamteaching und im Umgang mit der Klasse wahrgenommen?"},
     {id:"gefuehle", label:"Welche Gefühle hast du in der Situation?", hint:"Zum Beispiel Sorge, Ärger, Enttäuschung, Druck."},
     {id:"wuensche", label:"Welche Wünsche hast du an das Teamteaching?", hint:"Was sollen die Lehrkräfte klären oder verändern?"},
-    {id:"loesung", label:"Erste Gedanken zu einem Lösungsvorschlag", hint:"Noch keine fertige Lösung. Nur erste Ideen."}
+    {id:"ziel", label:"Gedanken zum Ziel der Supervision", hint:"Was soll durch die Supervision für Teamteaching, ESE-Förderung und Konfliktklärung erreicht werden?"}
   ];
   if (role === "lehrkraft-a" || role === "lehrkraft-b") return [
     {id:"perspektive", label:"Fasse deine Perspektive kurz zusammen.", hint:"Was ist aus deiner Rolle das zentrale Problem?"},
@@ -9671,29 +9671,12 @@ window.addEventListener('DOMContentLoaded',()=>{
       setTimeout(function(){if(!done){cleanup();resolve(false);}},1500);
     });
   }
-  function installRolePreloadClicksV97(){
-    var pattern=/(rolle-|phase\d-|gedanken-|ablauf-).*\.html/i;
-    document.addEventListener('click',function(ev){
-      var a=ev.target&&ev.target.closest&&ev.target.closest('a[href],button[data-card-href]');
-      if(!a) return;
-      var href=a.getAttribute('href')||a.getAttribute('data-card-href')||'';
-      if(!pattern.test(href)) return;
-      if(a.dataset.preloadedV97==='1') return;
-      ev.preventDefault();
-      a.dataset.preloadedV97='1';
-      var old=a.textContent;
-      a.classList.add('is-busy');
-      a.textContent='Lädt …';
-      var go=function(){ location.href=href; };
-      Promise.race([preloadRoleContextV97(), new Promise(r=>setTimeout(r,1600))]).then(go).catch(go);
-      setTimeout(function(){try{a.textContent=old;a.classList.remove('is-busy')}catch(_){}},1900);
-    },true);
-  }
+  function installRolePreloadClicksV97(){ return; }
   function installGlobalStylesV97(){
     if(document.getElementById('globalStylesV97')) return;
     var st=document.createElement('style');
     st.id='globalStylesV97';
-    st.textContent='.global-utility-dock{display:flex!important;visibility:visible!important}.global-utility-dock .utility-actions{display:flex!important}.global-utility-dock.collapsed .utility-actions{display:none!important}.global-utility-dock a,.global-utility-dock button{visibility:visible!important}.global-utility-dock .utility-home{display:inline-flex!important}.admin-autofill-v96,[data-admin-autofill]{display:none!important}body.is-global-admin .admin-autofill-v96,body.is-global-admin [data-admin-autofill]{display:inline-flex!important}.small-reset,#clearAllLocalBtn{display:none!important}body.is-global-admin .small-reset,body.is-global-admin #clearAllLocalBtn{display:inline-flex!important}';
+    st.textContent='.global-utility-dock{display:flex!important;visibility:visible!important}.global-utility-dock .utility-actions{display:flex!important}.global-utility-dock.collapsed .utility-actions{display:none!important}.global-utility-dock a,.global-utility-dock button{visibility:visible!important}.global-utility-dock .utility-home{display:inline-flex!important}.admin-autofill-v96,[data-admin-autofill]{display:none!important}body.is-global-admin .admin-autofill-v96,body.is-global-admin [data-admin-autofill]{display:inline-flex!important}#clearAllLocalBtn{display:none!important}body.is-global-admin #clearAllLocalBtn{display:inline-flex!important}';
     document.head.appendChild(st);
   }
   var oldUpdate=window.updateGlobalAdminUi;
@@ -9708,5 +9691,63 @@ window.addEventListener('DOMContentLoaded',()=>{
     ensureUtilityDockV97();
     installRolePreloadClicksV97();
     if(typeof updateGlobalAdminUi==='function') updateGlobalAdminUi();
+  });
+})();
+
+
+/* ============================================================
+   v98: Navigationsbuttons dauerhaft sichtbar, lokale Löschbuttons nur Admin
+   ============================================================ */
+(function(){
+  function applyTopbarVisibilityV98(){
+    var active=false;
+    try{active=typeof isGlobalAdminActive==='function' && isGlobalAdminActive();}catch(_){}
+    document.querySelectorAll('a[href*="index.html"], a[href="index.html"], a[href="#"], .utility-home').forEach(function(el){
+      if(/lokale daten löschen/i.test(el.textContent||'')) return;
+      el.hidden=false;
+      el.style.display='';
+      el.style.visibility='visible';
+    });
+    document.querySelectorAll('button,a').forEach(function(el){
+      var txt=(el.textContent||'').trim().toLowerCase();
+      if(txt==='zurück' || txt==='zurück zum start' || txt==='zur startseite' || txt==='startseite' || txt.indexOf('zurück zum start')===0){
+        el.hidden=false;
+        el.style.display=el.tagName==='A'?'inline-flex':'inline-flex';
+        el.style.visibility='visible';
+      }
+      if(txt==='lokale daten löschen'){
+        el.hidden=!active;
+        el.style.display=active?'inline-flex':'none';
+        el.style.visibility=active?'visible':'hidden';
+      }
+    });
+  }
+  var previousUpdateV98=window.updateGlobalAdminUi;
+  window.updateGlobalAdminUi=function(){
+    if(typeof previousUpdateV98==='function') previousUpdateV98.apply(this,arguments);
+    applyTopbarVisibilityV98();
+  };
+  window.addEventListener('DOMContentLoaded',function(){
+    applyTopbarVisibilityV98();
+    setTimeout(applyTopbarVisibilityV98,80);
+    setTimeout(applyTopbarVisibilityV98,450);
+  });
+})();
+
+
+/* ============================================================
+   v99: keine Rollen-Vorladeweiterleitung, neutrale Rollen-/Namensdarstellung
+   ============================================================ */
+(function(){
+  function neutralRoleStylesV99(){
+    if(document.getElementById('neutralRoleStylesV99')) return;
+    var st=document.createElement('style');
+    st.id='neutralRoleStylesV99';
+    st.textContent='.role-text,.role-pill,[class*="role-"],.role-name-pill{color:inherit!important;background:#eef4fb!important;border-color:#d8e5f2!important}.role-pill{color:#183a61!important}.is-busy[data-preloaded-v99],a.is-busy[data-preloaded-v99],button.is-busy[data-preloaded-v99]{pointer-events:auto!important}';
+    document.head.appendChild(st);
+  }
+  window.addEventListener('DOMContentLoaded',function(){
+    neutralRoleStylesV99();
+    document.querySelectorAll('a[data-preloaded-v97],button[data-preloaded-v97]').forEach(function(el){delete el.dataset.preloadedV97;el.classList.remove('is-busy');});
   });
 })();

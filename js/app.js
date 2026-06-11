@@ -9502,7 +9502,13 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     const path=(location.pathname||'').toLowerCase();
     if(path.endsWith('/index.html')||path==='/'||path.endsWith('/')) return false;
     if(path.includes('admin-gruppen')||path.includes('gruppenzuweisung')||path.includes('ergebnisse.html')||path.includes('manometer-auswertung')) return false;
-    return !!(groupId()||deviceId()) && /(rolle|phase|gedanken|abschluss|zusammenfassung|gruppe-|manometer|presentation|uebermittlung)/.test(path);
+
+    // Wichtig: Die Löschprüfung darf erst nach echter Gruppenzuweisung laufen.
+    // Eine Geräte-ID allein reicht nicht aus, weil sie schon vor der Gruppenerstellung existieren kann.
+    const gid=groupId();
+    if(!gid) return false;
+
+    return /(rolle|phase|gedanken|abschluss|zusammenfassung|gruppe-|manometer|presentation|uebermittlung)/.test(path);
   }
   function jsonp(params,timeout){
     const url=appUrl();
@@ -9545,7 +9551,11 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   async function checkGroupExistsGuard(){
     if(!isGroupContext()) return true;
     const gid=groupId(), did=deviceId();
-    if(!gid && !did) return true;
+
+    // Ohne Gruppen-ID keine Serverprüfung und kein lokales Löschen.
+    // Erst nach Gruppenerstellung / Gruppenbeitritt gibt es eine Gruppen-ID.
+    if(!gid) return true;
+
     try{
       const res=await jsonp({action:'checkGroupExists',groupId:gid,deviceId:did},9000);
       if(res&&res.ok&&res.checked&&res.exists===false){

@@ -1,4 +1,4 @@
-/* Group session rebuild v33 */
+/* Group session rebuild v35 stepflow and simulation */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -63,6 +63,61 @@
     el.textContent=msg;
     el.className='status '+(cls||'');
   }
+
+  function showStep(step){
+    const creator=document.getElementById('creatorCard');
+    const join=document.getElementById('joinCard');
+    const assign=document.getElementById('assignCard');
+    [
+      [creator, step==='creator'],
+      [join, step==='join'],
+      [assign, step==='assign']
+    ].forEach(([el,active])=>{
+      if(!el)return;
+      el.hidden=!active;
+      el.classList.toggle('is-active',active);
+      el.classList.toggle('is-hidden-step',!active);
+    });
+  }
+  function transientStatus(id,msg,cls,next){
+    status(id,msg,cls);
+    setTimeout(()=>{ if(next) next(); },900);
+  }
+  function isAdminActive(){
+    return document.body.classList.contains('is-global-admin') || sessionStorage.getItem('sv_global_admin_active_final') === '1';
+  }
+
+
+  function groupOverviewUrl(groupId){
+    const u=new URL('gruppe-fortschritt.html', location.href);
+    u.searchParams.set('g', groupId);
+    return u.href;
+  }
+  function showAlreadyJoined(groupId, member){
+    const main=document.querySelector('main');
+    if(!main)return;
+    const name=member&&member.name?member.name:'dieses Gerät';
+    const role=member&&member.role?`<p>Deine Rolle: <strong>${esc(ROLE_LABELS[member.role]||member.role)}</strong></p>`:'<p>Die Rollen wurden noch nicht verteilt.</p>';
+    main.innerHTML=`<section class="join-shell"><div class="join-card">
+      <h1>Du bist bereits beigetreten</h1>
+      <p>Dieses Gerät ist bereits für <strong>${esc(name)}</strong> in dieser Gruppe registriert.</p>
+      ${role}
+      <a class="button" href="${esc(groupOverviewUrl(groupId))}">Zur Gruppenübersicht</a>
+    </div></section>`;
+  }
+  async function checkAlreadyJoinedOnJoinPage(){
+    const groupId=groupIdFromUrl();
+    if(!groupId)return false;
+    try{
+      const res=await jsonp({action:'resolveAssignedRoleForDevice',groupId,deviceId:deviceId()});
+      if(res&&res.ok&&res.found){
+        localStorage.setItem('sv_current_group',groupId);
+        showAlreadyJoined(groupId,res);
+        return true;
+      }
+    }catch(_){}
+    return false;
+  }
   function joinUrl(groupId){
     const u=new URL('gruppe-beitreten.html', location.href);
     u.searchParams.set('groupId',groupId);
@@ -95,7 +150,7 @@
     const url=joinUrl(currentGroupId);
     document.getElementById('joinQr').src=qrSrc(url,220);
     document.getElementById('joinLinkText').textContent=url;
-    status('sessionStatus','Gruppe erstellt. Mitglieder können jetzt beitreten.','ok');
+    transientStatus('sessionStatus','Gruppe wurde erstellt. Weiter zur Mitgliederaufnahme …','ok',()=>showStep('join'));
     await refreshMembers();
     startPolling();
   }
@@ -105,7 +160,7 @@
     if(!box)return;
     box.innerHTML = latestMembers.length ? latestMembers.map((m,i)=>`
       <div class="member-item">
-        <div><strong>${esc(m.name||('Mitglied '+(i+1)))}</strong><br><span>${esc(m.deviceType||'Gerät')} · ${esc(m.role ? ROLE_LABELS[m.role]||m.role : 'noch keine Rolle')}</span></div>
+        <div class="member-line"><strong>${esc(m.name||('Mitglied '+(i+1)))}</strong><span>${esc(m.deviceType||'Gerät')}</span><span>${esc(m.role ? ROLE_LABELS[m.role]||m.role : 'noch keine Rolle')}</span></div>
         <span>${m.isPrimary?'Primärgerät':'Mitglied'}</span>
       </div>`).join('') : '<p>Noch keine Mitglieder registriert.</p>';
   }
@@ -162,7 +217,7 @@
     const res=await jsonp({action:'joinGroupSession',groupId,deviceId:deviceId(),name,deviceType});
     if(!res||res.ok===false)throw new Error(res&&res.error||'Beitritt fehlgeschlagen.');
     localStorage.setItem('sv_current_group',groupId);
-    status('joinStatus','Du bist der Gruppe beigetreten. Warte jetzt auf die Rollenverteilung.','ok');
+    showAlreadyJoined(groupId,{name:name,deviceType:deviceType,role:(res.member&&res.member.role)||''});
   }
 
   async function guardRoleCard(){
@@ -188,27 +243,49 @@
     }
   }
 
+
+  const SIM_NAMES = ['Mara','Jonas','Lea','Emil','Nora','Ben','Lina','Tom','Sofia','Finn','Amira','Luis'];
+  const SIM_DEVICES = ['Laptop','Tablet','Smartphone'];
+  async function simulateMember(){
+    if(!currentGroupId) currentGroupId=groupIdFromUrl();
+    if(!currentGroupId){status('sessionStatus','Bitte zuerst eine Gruppe erstellen.','warning');return;}
+    const name = SIM_NAMES[Math.floor(Math.random()*SIM_NAMES.length)] + ' ' + Math.floor(10+Math.random()*90);
+    const deviceType = SIM_DEVICES[Math.floor(Math.random()*SIM_DEVICES.length)];
+    const fakeDeviceId = 'sim_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9);
+    try{
+      status('sessionStatus','Simulationseintrag wird erstellt …');
+      const res=await jsonp({action:'joinGroupSession',groupId:currentGroupId,deviceId:fakeDeviceId,name,deviceType});
+      if(!res||res.ok===false)throw new Error(res&&res.error||'Simulation fehlgeschlagen.');
+      status('sessionStatus','Simulationseintrag erstellt: '+name+' · '+deviceType,'ok');
+      await refreshMembers();
+    }catch(err){status('sessionStatus',err.message,'warning');}
+  }
+
   function initRolesSession(){
     const select=document.getElementById('creatorDevice');
     if(select)select.value=detectDeviceType();
+    showStep('creator');
     document.getElementById('createGroupSessionBtn')?.addEventListener('click',()=>createGroup().catch(e=>status('sessionStatus',e.message,'warning')));
     document.getElementById('refreshMembersBtn')?.addEventListener('click',()=>refreshMembers().catch(e=>status('sessionStatus',e.message,'warning')));
+    document.getElementById('groupCompleteBtn')?.addEventListener('click',()=>showStep('assign'));
     document.getElementById('assignRolesSessionBtn')?.addEventListener('click',()=>assignRoles().catch(e=>status('assignSessionStatus',e.message,'warning')));
+    document.getElementById('simulateMemberBtn')?.addEventListener('click',()=>simulateMember());
     currentGroupId=groupIdFromUrl();
     if(currentGroupId){
       document.getElementById('sessionGroupId').textContent=currentGroupId;
-      document.getElementById('joinCard').hidden=false;
-      document.getElementById('assignCard').hidden=false;
       const url=joinUrl(currentGroupId);
       document.getElementById('joinQr').src=qrSrc(url,220);
       document.getElementById('joinLinkText').textContent=url;
+      showStep('join');
       refreshMembers().catch(()=>{});
       startPolling();
     }
   }
-  function initJoinSession(){
+  async function initJoinSession(){
     const select=document.getElementById('joinDevice');
     if(select)select.value=detectDeviceType();
+    const already=await checkAlreadyJoinedOnJoinPage();
+    if(already)return;
     document.getElementById('joinGroupBtn')?.addEventListener('click',()=>joinGroup().catch(e=>status('joinStatus',e.message,'warning')));
   }
 

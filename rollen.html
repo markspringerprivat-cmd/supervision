@@ -4,66 +4,71 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rollenverteilung</title>
-  <link rel="stylesheet" href="css/styles.css?v=group-session-v33">
+  <link rel="stylesheet" href="css/styles.css?v=group-session-v35">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
-    .session-shell{width:min(1220px,calc(100vw - 36px));margin:0 auto;padding:28px 0 42px;display:grid;gap:18px}
-    .session-card{background:#fff;border:1px solid #d9e5f2;border-radius:28px;padding:24px;box-shadow:0 18px 42px rgba(15,31,53,.08)}
+    .session-shell{width:min(1100px,calc(100vw - 36px));margin:0 auto;padding:28px 0 42px;display:grid;gap:18px}
+    .session-card{background:#fff;border:1px solid #d9e5f2;border-radius:28px;padding:26px;box-shadow:0 18px 42px rgba(15,31,53,.08)}
     .session-card h2{margin:0 0 10px;color:#10223a}
     .session-card p{color:#607187;line-height:1.55}
-    .session-grid{display:grid;grid-template-columns:minmax(320px,.9fr) minmax(340px,1.1fr);gap:18px}
-    .form-row{display:grid;gap:8px;margin-bottom:14px}
+    .session-card.is-active{display:block}
+    .session-card.is-hidden-step{display:none}
+    .top-input-row{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:end;margin-top:18px}
+    .form-row{display:grid;gap:8px;margin-bottom:0}
     .form-row label{font-weight:800;color:#143a63}
     .form-row input,.form-row select{border:1px solid #cfe0f1;border-radius:14px;padding:12px 13px;font:inherit;background:#f8fbff}
-    .member-list{display:grid;gap:10px;margin-top:12px}
-    .member-item{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dce8f4;border-radius:16px;background:#f8fbff;padding:12px}
-    .member-item strong{color:#10223a}.member-item span{color:#607187;font-size:.9rem}
+    .button-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+    .admin-test-row{display:none;justify-content:flex-end;margin-bottom:10px}
+    body.is-global-admin .admin-test-row{display:flex}
+    .member-list{display:grid;gap:8px;margin-top:12px}
+    .member-item{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dce8f4;border-radius:14px;background:#f8fbff;padding:10px 12px}
+    .member-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .member-line strong{color:#10223a}.member-line span{color:#607187;font-size:.9rem}
     .join-box{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
     .join-box img{width:190px;height:190px;border:1px solid #d9e5f2;border-radius:18px;background:#fff;padding:8px}
-    .role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+    .role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:16px}
     .role-tile{border:1px solid #d9e5f2;border-radius:20px;background:#f8fbff;padding:16px;display:grid;gap:10px}
     .role-tile strong{color:#10223a}.role-tile .name{font-weight:800;color:#2f5f97}
     .role-tile img{width:150px;height:150px;justify-self:center;border-radius:14px;background:#fff;border:1px solid #d9e5f2;padding:6px}
     .status{padding:12px 14px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972}
+    .status.status-transient{margin-top:14px}
     .warning{background:#fff2f2;border-color:#efc5c5;color:#8a1f1f}
     .ok{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
-    .button-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    @media(max-width:900px){.session-grid,.join-box{grid-template-columns:1fr}.join-box img{justify-self:center}}
+    @media(max-width:760px){.top-input-row,.join-box{grid-template-columns:1fr}.join-box img{justify-self:center}.admin-test-row{justify-content:flex-start}}
   </style>
 </head>
 <body data-mode="roles-session">
 <header><div class="wrap"><h1>Rollenverteilung</h1><p>Gruppe erstellen, Mitglieder beitreten lassen und Rollen gerätegebunden verteilen</p></div></header>
 <main class="session-shell">
-  <section class="session-card" id="creatorCard">
-    <h2>1. Gruppe auf diesem Gerät starten</h2>
-    <p>Die Gruppe bekommt zuerst eine vorläufige technische ID. Alle Mitglieder treten über einen Gruppen-QR-Code bei. Danach werden die Rollen den registrierten Geräten zugeordnet.</p>
-    <div class="session-grid">
-      <div>
-        <div class="form-row">
-          <label for="creatorName">Dein Name</label>
-          <input id="creatorName" type="text" placeholder="Name der startenden Person">
-        </div>
-        <div class="form-row">
-          <label for="creatorDevice">Gerätetyp</label>
-          <select id="creatorDevice">
-            <option value="Laptop">Laptop</option>
-            <option value="Tablet">Tablet</option>
-            <option value="Smartphone">Smartphone</option>
-            <option value="Unbekannt">Unbekannt / anderes Gerät</option>
-          </select>
-        </div>
-        <div class="button-row">
-          <button id="createGroupSessionBtn" type="button">Gruppe erstellen</button>
-          <button id="refreshMembersBtn" type="button" class="secondary">Aktualisieren</button>
-        </div>
+  <div class="admin-test-row">
+    <button id="simulateMemberBtn" type="button" class="secondary">Eintrag simulieren</button>
+  </div>
+
+  <section class="session-card is-active" id="creatorCard">
+    <h2>1. Gruppe starten</h2>
+    <p>Trage zuerst deinen Namen und den Gerätetyp dieses Hauptgeräts ein. Danach wird eine vorläufige Gruppe erstellt.</p>
+    <div class="top-input-row">
+      <div class="form-row">
+        <label for="creatorName">Dein Name</label>
+        <input id="creatorName" type="text" placeholder="Name der startenden Person">
       </div>
-      <div>
-        <div id="sessionStatus" class="status">Noch keine Gruppe erstellt.</div>
+      <div class="form-row">
+        <label for="creatorDevice">Gerätetyp</label>
+        <select id="creatorDevice">
+          <option value="Laptop">Laptop</option>
+          <option value="Tablet">Tablet</option>
+          <option value="Smartphone">Smartphone</option>
+          <option value="Unbekannt">Unbekannt / anderes Gerät</option>
+        </select>
       </div>
     </div>
+    <div class="button-row">
+      <button id="createGroupSessionBtn" type="button">Gruppe erstellen</button>
+    </div>
+    <div id="sessionStatus" class="status status-transient">Noch keine Gruppe erstellt.</div>
   </section>
 
-  <section class="session-card" id="joinCard" hidden>
+  <section class="session-card is-hidden-step" id="joinCard" hidden>
     <h2>2. Gruppenmitglieder beitreten lassen</h2>
     <div class="join-box">
       <img id="joinQr" alt="QR-Code zum Gruppenbeitritt">
@@ -74,11 +79,15 @@
     </div>
     <h3>Registrierte Mitglieder</h3>
     <div id="membersList" class="member-list"></div>
+    <div class="button-row">
+      <button id="groupCompleteBtn" type="button">Gruppe vollständig</button>
+      <button id="refreshMembersBtn" type="button" class="secondary">Aktualisieren</button>
+    </div>
   </section>
 
-  <section class="session-card" id="assignCard" hidden>
+  <section class="session-card is-hidden-step" id="assignCard" hidden>
     <h2>3. Rollen verteilen</h2>
-    <p>Wenn alle Gruppenmitglieder registriert sind, werden die Rollen zufällig zugeteilt und gerätegebunden gespeichert. Danach funktionieren die Rollen-QR-Codes nur noch auf dem jeweils passenden Gerät.</p>
+    <p>Wenn alle Gruppenmitglieder registriert sind, werden die Rollen zufällig zugeteilt und gerätegebunden gespeichert.</p>
     <div class="button-row">
       <button id="assignRolesSessionBtn" type="button">Rollen verteilen</button>
     </div>
@@ -87,8 +96,8 @@
   </section>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span id="sessionGroupId">noch nicht erstellt</span></div></footer>
-<script src="js/config.js?v=group-session-v33"></script>
-<script src="js/app.js?v=group-session-v33"></script>
-<script src="js/group_session_v33.js?v=group-session-v33"></script>
+<script src="js/config.js?v=group-session-v35"></script>
+<script src="js/app.js?v=group-session-v35"></script>
+<script src="js/group_session_v33.js?v=group-session-v35"></script>
 </body>
 </html>

@@ -163,6 +163,20 @@
     const gid = groupId();
     return gid ? ('groupId=' + encodeURIComponent(gid)) : '';
   }
+  function supervisorFlowFileFromMap(map){
+    return (map && map.protokoll) ? 'ablauf-supervisor-moderation.html' : 'ablauf-supervisor.html';
+  }
+  function applySupervisorFlowLink(map){
+    const next = document.getElementById('nextPrep');
+    if (!next || role() !== 'supervisor') return;
+    const suffix = querySuffix();
+    const file = supervisorFlowFileFromMap(map || storedNames());
+    next.href = file + '?role=supervisor' + (suffix ? '&' + suffix : '');
+    next.classList.remove('is-busy','disabled');
+    next.removeAttribute('aria-disabled');
+    next.style.pointerEvents = 'auto';
+  }
+
   function color(roleKey){
     return ROLE_COLORS[roleKey] || '#24456b';
   }
@@ -212,7 +226,7 @@
     const next = document.getElementById('nextPrep');
     if (next) {
       const knownMap = storedNames();
-      const file = roleKey === 'supervisor' && knownMap.protokoll ? 'ablauf-supervisor-moderation.html' : (FLOW_FILES[roleKey] || 'ablauf-supervisor.html');
+      const file = roleKey === 'supervisor' ? supervisorFlowFileFromMap(knownMap) : (FLOW_FILES[roleKey] || 'ablauf-supervisor.html');
       const suffix = querySuffix();
       next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '');
       next.classList.remove('is-busy');
@@ -238,18 +252,12 @@
       const map = storedNames();
       res.members.forEach(m => { if (m && m.role && m.name) map[m.role] = m.name; });
       saveNames(map);
+      applySupervisorFlowLink(map);
       const el = document.getElementById('assignedPersonName');
       if (el) el.textContent = map[roleKey] || 'nicht gesetzt';
       const pill = document.querySelector('.role-pill');
       if (pill) pill.textContent = map[roleKey] ? ((ROLE_LABELS[roleKey]||roleKey) + ' (' + map[roleKey] + ')') : (ROLE_LABELS[roleKey]||roleKey);
-      if(roleKey === 'supervisor'){
-        const next = document.getElementById('nextPrep');
-        if(next){
-          const suffix = querySuffix();
-          const file = map.protokoll ? 'ablauf-supervisor-moderation.html' : 'ablauf-supervisor.html';
-          next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '');
-        }
-      }
+      if(roleKey === 'supervisor') applySupervisorFlowLink(map);
     } catch (err) {
       const el = document.getElementById('assignedPersonName');
       if (el && /wird geladen/.test(el.textContent || '')) el.textContent = 'nicht gesetzt';
@@ -257,6 +265,17 @@
   }
   function boot(){
     renderBase();
+    applySupervisorFlowLink(storedNames());
+    const next = document.getElementById('nextPrep');
+    if(next && role()==='supervisor'){
+      next.addEventListener('click', function(ev){
+        if(!next.getAttribute('href') || next.getAttribute('href')==='#') {
+          ev.preventDefault();
+          applySupervisorFlowLink(storedNames());
+          if(next.getAttribute('href') && next.getAttribute('href')!=='#') location.href=next.getAttribute('href');
+        }
+      });
+    }
     loadAssignedName();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

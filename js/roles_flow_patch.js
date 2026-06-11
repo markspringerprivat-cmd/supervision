@@ -233,6 +233,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     if(profile==='schulleitung') role='schulleitung';
     if(profile==='lehrkraft' && !role) role='lehrkraft-a';
     const steps=FLOW_TEXTS[profile] || FLOW_TEXTS.general;
+    const flowMode=document.body.dataset.supervisorMode||'';
     const box=document.getElementById('flowSteps');
     const next=document.getElementById('flowNext');
     if(next){
@@ -242,7 +243,7 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
       next.setAttribute('aria-disabled','true');
     }
     if(!box) return;
-    const storageKey=(typeof key==='function') ? key('flow_visible_' + (role||profile)) : 'flow_visible_' + (role||profile);
+    const storageKey=(typeof key==='function') ? key('flow_visible_' + (role||profile) + (flowMode?('_'+flowMode):'')) : 'flow_visible_' + (role||profile) + (flowMode?('_'+flowMode):'');
     let visible=Number(localStorage.getItem(storageKey) || '1');
     visible=Math.max(1, Math.min(steps.length, visible));
     function setNextState(){

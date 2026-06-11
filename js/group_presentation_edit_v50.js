@@ -25,6 +25,14 @@
     el.innerHTML=esc(msg);
   }
   function storageKey(groupId,base){return 'sv_'+String(groupId||'default')+'_'+base;}
+  function forceGroupContext(groupId){
+    loadedGroupId=groupId||loadedGroupId||gid();
+    try{
+      localStorage.setItem('sv_current_group',loadedGroupId);
+      localStorage.setItem('sv_group_id',loadedGroupId);
+      window.getGroupId=function(){return loadedGroupId;};
+    }catch(_){}
+  }
   function setObj(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(_){}}
   function getObj(key,fb){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fb;}catch(_){return fb;}}
   function remove(key){try{localStorage.removeItem(key);}catch(_){}}
@@ -109,9 +117,9 @@
     const groupId=loadedGroupId||gid()||row.groupId||'';
     const state=presentationFromRow(row);
     state.groupId=groupId;
+    state.settings=Object.assign({slidePattern:'none',backgroundPattern:'none',tableStyle:'soft'},state.settings||{});
     state.savedAt=state.savedAt||new Date().toISOString();
-    localStorage.setItem('sv_current_group',groupId);
-    localStorage.setItem('sv_group_id',groupId);
+    forceGroupContext(groupId);
 
     // Wichtig: Der Gruppeneditor lädt ausschließlich den Gruppenserver-Stand.
     // Alte lokale Entwürfe derselben Gruppe werden überschrieben, damit kein falscher Stand erscheint.
@@ -133,23 +141,22 @@
     return getObj(storageKey(groupId,STATE_KEY_BASE),null);
   }
   function payloadForSave(row,state){
-    const d=normalizeRow(row);
-    const payload=clone(d);
-    const groupId=loadedGroupId||gid()||payload.groupId||row.groupId||'';
-    payload.groupId=groupId;
-    payload.groupName=(state&&state.values&&state.values.groupName)||payload.groupName||row.groupName||groupId;
-    payload.timestampLocal=new Date().toLocaleString('de-DE');
-    payload.presentationV6=state;
-    payload.presentationConfig=state;
-    payload.presentationSettings=state?state.settings:{};
-    payload.presentationLayout=state?state.layout:{};
-    payload.presentationStableLayout=state?state.layout:{};
-    payload.presentationExtras=state&&Array.isArray(state.textboxes)?state.textboxes:[];
-    payload.presentationStickers=state&&Array.isArray(state.stickers)?state.stickers:[];
-    payload.presentationTextOverrides=state?state.text:{};
-    payload.presentationValues=state?state.values:{};
-    payload.action='saveEntry';
-    return payload;
+    const groupId=loadedGroupId||gid()||row.groupId||'';
+    const saveId='save_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+    state=clone(state||{});
+    state.groupId=groupId;
+    state.editorSaveId=saveId;
+    state.savedAt=new Date().toISOString();
+    state.settings=Object.assign({slidePattern:'none',backgroundPattern:'none',tableStyle:'soft'},state.settings||{});
+    setObj(storageKey(groupId,STATE_KEY_BASE),state);
+    return {
+      action:'saveGroupPresentation',
+      groupId:groupId,
+      rowNumber:row.rowNumber||row.id||rowId()||'',
+      editorSaveId:saveId,
+      savedAt:state.savedAt,
+      presentationV6:state
+    };
   }
   async function saveToSheet(){
     status('Aktuelle Gruppenpräsentation wird gespeichert …');
@@ -157,8 +164,17 @@
     if(!state) throw new Error('Kein Präsentationsstand im Gruppeneditor gefunden.');
     const payload=payloadForSave(loadedRow,state);
     await postNoCors(payload);
+    await new Promise(resolve=>setTimeout(resolve,1100));
+    try{
+      const check=await jsonp({action:'groupProgress',groupId:payload.groupId,groupSize:5});
+      const saved=check&&check.latestResult&&check.latestResult.data&&check.latestResult.data.presentationV6;
+      if(saved && saved.editorSaveId && saved.editorSaveId!==payload.editorSaveId){
+        status('Speichern wurde gesendet, aber die Serverprüfung zeigt noch einen älteren Stand. Bitte kurz warten und erneut öffnen.','warning');
+        return;
+      }
+    }catch(_){}
     status('Gespeichert. Die finale Gruppenpräsentation wurde aktualisiert.','ok');
-    setTimeout(()=>{location.href='gruppe-fortschritt.html?g='+encodeURIComponent(payload.groupId);},650);
+    setTimeout(()=>{location.href='gruppe-fortschritt.html?g='+encodeURIComponent(payload.groupId);},750);
   }
   function returnWithoutSaving(){
     const groupId=loadedGroupId||gid();
@@ -211,6 +227,7 @@
     try{
       status('Aktuelle Gruppenpräsentation wird vom Server geladen …');
       loadedRow=await loadExactGroupRow();
+      forceGroupContext(loadedGroupId||gid()||loadedRow.groupId||'');
       installStateForEditor(loadedRow);
       status('Aktuelle Gruppenpräsentation geladen. Editor wird geöffnet …','ok');
       setTimeout(openEditor,100);

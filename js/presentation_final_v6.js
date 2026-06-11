@@ -7,7 +7,7 @@
 
   const THEME_DEFAULT = {
     heading:'#17385f', text:'#132238', background:'#08192e', slide:'#fbfdff',
-    slidePattern:'dots', backgroundPattern:'waves',
+    slidePattern:'none', backgroundPattern:'none',
     slidePatternColor:'#d7e6f6', backgroundPatternColor:'#163a5c', tableStyle:'soft'
   };
   const SLIDE_COUNT = 6;
@@ -61,6 +61,19 @@
     if(!res || res.ok === false) throw new Error((res && res.error) || 'Apps Script hat keine gültigen Daten geliefert.');
     return Array.isArray(res.entries) ? res.entries : [];
   }
+  async function loadLatestGroupRowV86(){
+    const q = new URLSearchParams(location.search);
+    const gid = q.get('g') || q.get('groupId') || q.get('token');
+    if(!gid) return null;
+    const url = appsUrl();
+    if(!url) return null;
+    try{
+      const res = await jsonp(url, {action:'groupProgress', groupId:gid, groupSize:5});
+      if(res && res.ok !== false && res.latestResult) return res.latestResult;
+    }catch(_){}
+    return null;
+  }
+
   function selectRow(rows){
     const q = new URLSearchParams(location.search);
     const row = q.get('row') || q.get('id');
@@ -260,8 +273,11 @@
     const status = $('status');
     try{
       status.textContent = 'Präsentation wird geladen …';
-      const rows = await loadRows();
-      const row = selectRow(rows);
+      let row = await loadLatestGroupRowV86();
+      if(!row){
+        const rows = await loadRows();
+        row = selectRow(rows);
+      }
       if(!row) throw new Error('Kein Gruppenergebnis gefunden.');
       const data = Object.assign({}, row.data || {});
       data.raw = Object.assign({}, data.raw || row.raw || {});

@@ -14,7 +14,7 @@
   const STICKERS = [].concat(STICKER_CATEGORIES.Teamwork, STICKER_CATEGORIES.Dekor);
   const THEME_DEFAULT = {
     heading:'#17385f', text:'#132238', background:'#08192e', slide:'#fbfdff',
-    slidePattern:'dots', backgroundPattern:'waves',
+    slidePattern:'none', backgroundPattern:'none',
     slidePatternColor:'#d7e6f6', backgroundPatternColor:'#163a5c', backgroundImage:'', tableStyle:'soft'
   };
   const SLIDE_COUNT = 6;

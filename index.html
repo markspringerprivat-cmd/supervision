@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v32-admin-cleanup">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v37-reopen-assigned">
   <style>
     :root{
       --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
@@ -108,6 +108,7 @@
       font-weight:430;
       text-align:center;
     }
+    .role-session-members{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:12px}.role-session-members span{border:1px solid #d7e5f2;background:#f8fbff;border-radius:999px;padding:6px 9px;color:#49637d;font-weight:750;font-size:.86rem}
     .landing-card.main-action-card .button-row,
     .landing-card.main-action-card .progress-preview,
     .landing-card.main-action-card .disabled-pill,
@@ -181,7 +182,7 @@
       <p>Öffnet die PowerPoint direkt als scrollbare Folienansicht oder als Vollbild-Präsentation für das Plenum.</p>
     </a>
 
-    <a class="landing-card role-main-card main-action-card" href="rollen.html">
+    <a id="roleSessionCard" class="landing-card role-main-card main-action-card" href="rollen.html">
       <h2>Rollenverteilung starten</h2>
       <p>Namen eintragen, Rollen zufällig zuweisen und Rollenkarten per QR-Code öffnen.</p>
     </a>
@@ -203,11 +204,11 @@
 
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
 
-<script src="js/config.js?v=landing-v32-admin-cleanup"></script>
-<script src="js/app.js?v=landing-v32-admin-cleanup"></script>
-<script src="js/roles_flow_patch.js?v=landing-v32-admin-cleanup"></script>
+<script src="js/config.js?v=landing-v37-reopen-assigned"></script>
+<script src="js/app.js?v=landing-v37-reopen-assigned"></script>
+<script src="js/roles_flow_patch.js?v=landing-v37-reopen-assigned"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=landing-v32-admin-cleanup"></script>
+<script src="js/guided_flow_patch.js?v=landing-v37-reopen-assigned"></script>
 
 <script>
 (function(){
@@ -244,6 +245,39 @@
     card.classList.add('is-disabled');
     card.addEventListener('click',function(ev){ev.preventDefault();}, {once:false});
   }
+
+  function escInline(v){
+    return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function updateRoleSessionCard(groupId, members){
+    var card=document.getElementById('roleSessionCard');
+    if(!card || !groupId) return;
+    card.href='rollen.html?groupId='+encodeURIComponent(groupId);
+    var names=(members||[]).map(function(m){return m&&m.name?m.name:'';}).filter(Boolean).slice(0,5);
+    card.innerHTML='<h2>Rollenverteilung einsehen</h2><p>Die Gruppe ist diesem Gerät zugeordnet. Öffne die fertige Rollenübersicht mit QR-Codes.</p>'+(names.length?'<div class="role-session-members">'+names.map(function(n){return '<span>'+escInline(n)+'</span>';}).join('')+'</div>':'');
+  }
+  async function updateRoleSessionFromDevice(){
+    var url=getScriptUrlLocal();
+    var deviceId=getDeviceIdLocal();
+    if(!url || !deviceId) return;
+    var groupId=localGroupId();
+    try{
+      if(!groupId){
+        var resolved=await jsonpLocal(url,{action:'resolveDeviceGroup',deviceId:deviceId});
+        if(resolved&&resolved.ok&&resolved.found&&resolved.groupId){
+          groupId=resolved.groupId;
+          try{localStorage.setItem('sv_current_group',groupId);}catch(_){}
+        }
+      }
+      if(groupId){
+        var members=await jsonpLocal(url,{action:'listGroupMembers',groupId:groupId});
+        if(members&&members.ok&&members.members&&members.members.length){
+          updateRoleSessionCard(groupId,members.members);
+        }
+      }
+    }catch(_){}
+  }
+
   async function updateProgressCard(){
     var id=localGroupId();
     if(id){ enableProgressCard(id); return; }
@@ -304,6 +338,7 @@
   }
   document.addEventListener('DOMContentLoaded',function(){
     updateProgressCard();
+    updateRoleSessionFromDevice();
     var del=document.getElementById('deleteManometerFeedbackBtn');
     if(del) del.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteManometerFeedbackAll','deleteManometerFeedbackStatus','Alle Manometer-Feedbackeinträge wurden gelöscht.');});
     var reset=document.getElementById('resetManometerDevicesBtn');

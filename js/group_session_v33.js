@@ -1,4 +1,4 @@
-/* Group session rebuild v36 assign timeout fix */
+/* Group session rebuild v37 reopen assigned roles */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -170,8 +170,12 @@
     const res=await jsonp({action:'listGroupMembers',groupId:currentGroupId});
     if(res&&res.ok){
       renderMembers(res.members||[]);
+      latestMembers=res.members||[];
       const name = res.groupName || groupNameFromMembers(res.members||[]);
       if(name) status('sessionStatus','Gruppe aktiv: '+name+'. Mitglieder: '+(res.members||[]).length,'ok');
+      if(rolesAlreadyAssigned(latestMembers) && document.getElementById('assignCard') && !document.getElementById('assignCard').hidden){
+        showAssignedOverview(latestMembers);
+      }
     }
   }
   function startPolling(){
@@ -181,6 +185,7 @@
   async function assignRoles(){
     if(!currentGroupId) currentGroupId=groupIdFromUrl();
     if(!currentGroupId){status('assignSessionStatus','Keine Gruppe gefunden.','warning');return;}
+    if(rolesAlreadyAssigned(latestMembers)){showAssignedOverview(latestMembers);return;}
     if((latestMembers||[]).length<4){status('assignSessionStatus','Bitte mindestens 4 Gruppenmitglieder registrieren.','warning');return;}
     status('assignSessionStatus','Rollen werden verteilt …');
     const res=await jsonp({action:'assignRolesToMembers',groupId:currentGroupId});
@@ -188,7 +193,7 @@
     renderMembers(res.members||[]);
     renderRoleTiles(res.assignments||{},res.members||[]);
     localStorage.setItem('sv_current_group', currentGroupId);
-    status('assignSessionStatus','Rollen wurden verteilt und gerätegebunden gespeichert.','ok');
+    showAssignedOverview(res.members||[]);
   }
   function renderRoleTiles(assignments,members){
     const box=document.getElementById('roleTiles');
@@ -205,6 +210,18 @@
         <img src="${qrSrc(url,170)}" alt="QR-Code ${esc(ROLE_LABELS[role])}">
       </div>`;
     }).join('');
+  }
+
+  function rolesAlreadyAssigned(members){
+    return (members||[]).some(m=>m && m.role);
+  }
+  function showAssignedOverview(members){
+    showStep('assign');
+    renderMembers(members||latestMembers||[]);
+    renderRoleTiles({}, members||latestMembers||[]);
+    const btn=document.getElementById('assignRolesSessionBtn');
+    if(btn){btn.hidden=true;btn.disabled=true;}
+    status('assignSessionStatus','Rollen wurden bereits verteilt. Diese Übersicht zeigt die fertige Rollenverteilung mit QR-Codes.','ok');
   }
 
   async function joinGroup(){
@@ -261,7 +278,7 @@
     }catch(err){status('sessionStatus',err.message,'warning');}
   }
 
-  function initRolesSession(){
+  async function initRolesSession(){
     const select=document.getElementById('creatorDevice');
     if(select)select.value=detectDeviceType();
     showStep('creator');
@@ -271,13 +288,31 @@
     document.getElementById('assignRolesSessionBtn')?.addEventListener('click',()=>assignRoles().catch(e=>status('assignSessionStatus',e.message,'warning')));
     document.getElementById('simulateMemberBtn')?.addEventListener('click',()=>simulateMember());
     currentGroupId=groupIdFromUrl();
+    if(!currentGroupId){
+      try{
+        const resolved=await jsonp({action:'resolveDeviceGroup',deviceId:deviceId()});
+        if(resolved&&resolved.ok&&resolved.found&&resolved.groupId){
+          currentGroupId=resolved.groupId;
+          localStorage.setItem('sv_current_group', currentGroupId);
+        }
+      }catch(_){}
+    }
     if(currentGroupId){
       document.getElementById('sessionGroupId').textContent=currentGroupId;
       const url=joinUrl(currentGroupId);
       document.getElementById('joinQr').src=qrSrc(url,220);
       document.getElementById('joinLinkText').textContent=url;
-      showStep('join');
-      refreshMembers().catch(()=>{});
+      try{
+        const res=await jsonp({action:'listGroupMembers',groupId:currentGroupId});
+        if(res&&res.ok){
+          latestMembers=res.members||[];
+          renderMembers(latestMembers);
+          if(rolesAlreadyAssigned(latestMembers)) showAssignedOverview(latestMembers);
+          else showStep('join');
+        }else{
+          showStep('join');
+        }
+      }catch(_){showStep('join');}
       startPolling();
     }
   }

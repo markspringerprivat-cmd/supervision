@@ -5497,3 +5497,11 @@ body[data-mode="rolecard"] .role-card-case .notice{font-weight:800}
   line-height:1.45!important;
   margin:10px 0 18px!important;
 }
+
+
+/* v111: Farben der Scan-/Rollenkacheln wiederherstellen */
+.role-tile.role-supervisor{border-color:#2f6fb0!important;background:linear-gradient(180deg,#eef6ff,#fff)!important}
+.role-tile.role-schulleitung{border-color:#2f9e44!important;background:linear-gradient(180deg,#eefaf2,#fff)!important}
+.role-tile.role-lehrkraft-a,.role-tile.role-lehrkraft-b{border-color:#d62828!important;background:linear-gradient(180deg,#fff1f1,#fff)!important}
+.role-tile.role-protokoll{border-color:#f2a51a!important;background:linear-gradient(180deg,#fff8e8,#fff)!important}
+.role-tile strong,.role-tile .name{color:#10223a!important}

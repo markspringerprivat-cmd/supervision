@@ -110,10 +110,27 @@
 
 
 
-  function groupOverviewUrl(groupId){
-    const u=new URL('gruppe-fortschritt.html', location.href);
-    u.searchParams.set('g', groupId);
+
+  function publicBaseUrlV110(){
+    const cfg = (window.SUPERVISION_CONFIG && (window.SUPERVISION_CONFIG.PUBLIC_BASE_URL || window.SUPERVISION_CONFIG.GITHUB_PAGES_URL || window.SUPERVISION_CONFIG.BASE_URL)) || '';
+    if(cfg) return String(cfg).replace(/\/+$/,'') + '/';
+    if(location.protocol === 'http:' || location.protocol === 'https:'){
+      return new URL('./', location.href).href;
+    }
+    return '';
+  }
+  function publicPageUrlV110(file, params){
+    const base = publicBaseUrlV110();
+    if(!base) return '';
+    const u = new URL(file, base);
+    Object.keys(params || {}).forEach(k => {
+      if(params[k] !== undefined && params[k] !== null && String(params[k]) !== '') u.searchParams.set(k, params[k]);
+    });
     return u.href;
+  }
+
+  function groupOverviewUrl(groupId){
+    return publicPageUrlV110('gruppe-fortschritt.html', {g:groupId}) || '';
   }
   function showAlreadyJoined(groupId, member){
     renderPostJoinState(groupId, member, {already:true});
@@ -132,14 +149,10 @@
     return false;
   }
   function joinUrl(groupId){
-    const u=new URL('gruppe-beitreten.html', location.href);
-    u.searchParams.set('groupId',groupId);
-    return u.href;
+    return publicPageUrlV110('gruppe-beitreten.html', {groupId:groupId}) || '';
   }
   function roleUrl(role,groupId){
-    const u=new URL(ROLE_FILES[role], location.href);
-    u.searchParams.set('groupId',groupId);
-    return u.href;
+    return publicPageUrlV110(ROLE_FILES[role], {groupId:groupId}) || '';
   }
   function qrSrc(url,size=220){
     return 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&data='+encodeURIComponent(url);
@@ -324,14 +337,47 @@
     document.getElementById('joinCard').hidden=false;
     document.getElementById('assignCard').hidden=false;
     const url=joinUrl(currentGroupId);
-    document.getElementById('joinQr').src=qrSrc(url,220);
-    document.getElementById('joinLinkText').textContent=url;
+    const qr=document.getElementById('joinQr');
+    const linkText=document.getElementById('joinLinkText');
+    if(url){
+      qr.src=qrSrc(url,220);
+      qr.style.display='';
+      linkText.textContent=url;
+    }else{
+      qr.removeAttribute('src');
+      qr.style.display='none';
+      linkText.innerHTML='Kein öffentlicher Beitrittslink, weil diese Seite lokal per <code>file://</code> geöffnet wurde. Bitte die Website über GitHub Pages öffnen oder in <code>js/config.js</code> eine <code>PUBLIC_BASE_URL</code> setzen.';
+    }
     transientStatus('sessionStatus','Gruppe wurde erstellt. Weiter zur Mitgliederaufnahme …','ok',()=>showStep('join'));
     await refreshMembers();
     startPolling();
   }
+
+  function storeGroupRoleContextV111(groupId, members){
+    try{
+      const gid = groupId || currentGroupId || groupIdFromUrl() || '';
+      if(!gid || !Array.isArray(members)) return;
+      const assignmentNames = {};
+      members.forEach(m=>{
+        if(m && m.role){
+          assignmentNames[m.role] = m.name || m.deviceId || true;
+        }
+      });
+      localStorage.setItem('sv_cached_group_members_'+gid, JSON.stringify(members));
+      localStorage.setItem('sv_cached_group_members_active', JSON.stringify(members));
+      localStorage.setItem('sv_role_names_v58', JSON.stringify(assignmentNames));
+      localStorage.setItem('sv_'+gid+'_assignments', JSON.stringify(assignmentNames));
+      localStorage.setItem('sv_'+gid+'_group_assignments', JSON.stringify(assignmentNames));
+      localStorage.setItem('sv_current_group', gid);
+      const mode = (members.length >= 5 || !!assignmentNames.protokoll) ? 'moderation' : 'full';
+      localStorage.setItem('sv_supervisor_mode_'+gid, mode);
+      localStorage.setItem('sv_supervisor_mode_active', mode);
+    }catch(_){}
+  }
+
   function renderMembers(members){
     latestMembers=members||[];
+    storeGroupRoleContextV111(currentGroupId || groupIdFromUrl(), latestMembers);
     updateLeaderState(latestMembers);
     const box=document.getElementById('membersList');
     if(!box)return;
@@ -387,6 +433,7 @@
     showAssignedOverview(res.members||[]);
   }
   function renderRoleTiles(assignments,members){
+    storeGroupRoleContextV111(currentGroupId || groupIdFromUrl(), members||latestMembers||[]);
     const box=document.getElementById('roleTiles');
     if(!box)return;
     const byRole={};
@@ -398,8 +445,7 @@
       return `<div class="role-tile role-${esc(role)}">
         <strong>${esc(ROLE_LABELS[role])}</strong>
         <span class="name">${esc(m.name||'nicht zugewiesen')}</span>
-        <a class="button" href="${esc(url)}">Rollenkarte öffnen</a>
-        <img src="${qrSrc(url,170)}" alt="QR-Code ${esc(ROLE_LABELS[role])}">
+        ${url ? `<a class="button" href="${esc(url)}">Rollenkarte öffnen</a><img src="${qrSrc(url,170)}" alt="QR-Code ${esc(ROLE_LABELS[role])}">` : `<p class="warning">Keine öffentliche URL. Bitte über GitHub Pages öffnen.</p>`}
       </div>`;
     }).join('');
   }

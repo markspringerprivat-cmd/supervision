@@ -189,6 +189,54 @@
     return false;
   }
 
+
+  function groupMembersContextV111(){
+    try{
+      const gid=groupId() || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
+      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+    }catch(_){ return []; }
+  }
+  function assignmentsContextV111(){
+    const out={};
+    try{ Object.assign(out, JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{}); }catch(_){}
+    try{
+      const gid=groupId() || localStorage.getItem('sv_current_group') || '';
+      Object.assign(out, JSON.parse(localStorage.getItem('sv_'+gid+'_assignments')||'{}')||{});
+      Object.assign(out, JSON.parse(localStorage.getItem('sv_'+gid+'_group_assignments')||'{}')||{});
+    }catch(_){}
+    try{
+      const members=groupMembersContextV111();
+      members.forEach(m=>{ if(m&&m.role) out[m.role]=m.name||m.deviceId||true; });
+    }catch(_){}
+    return out;
+  }
+  function supervisorHasProtocolV111(){
+    try{
+      const p=new URLSearchParams(location.search);
+      if(p.get('supervisorMode')==='moderation'||p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
+      if(p.get('supervisorMode')==='full'||p.get('members')==='4'||p.get('size')==='4'||p.get('groupSize')==='4') return false;
+    }catch(_){}
+    const members=groupMembersContextV111();
+    if(Array.isArray(members) && (members.length>=5 || members.some(m=>m&&m.role==='protokoll'))) return true;
+    const map=assignmentsContextV111();
+    return !!(map && map.protokoll);
+  }
+  function supervisorFileV111(){
+    return supervisorHasProtocolV111() ? 'ablauf-supervisor-moderation.html' : 'ablauf-supervisor.html';
+  }
+  function supervisorModeParamsV111(){
+    const has=supervisorHasProtocolV111();
+    return '&supervisorMode='+(has?'moderation':'full')+'&members='+(has?'5':'4');
+  }
+  function rememberSupervisorModeV111(){
+    try{
+      const gid=groupId()||'default';
+      const has=supervisorHasProtocolV111();
+      localStorage.setItem('sv_supervisor_mode_'+gid, has?'moderation':'full');
+      localStorage.setItem('sv_supervisor_mode_active', has?'moderation':'full');
+    }catch(_){}
+  }
+
   function color(roleKey){
     return ROLE_COLORS[roleKey] || '#24456b';
   }
@@ -238,7 +286,7 @@
     if (next) {
       const file = FLOW_FILES[roleKey] || 'ablauf-supervisor.html';
       const suffix = querySuffix();
-      rememberSupervisorModeV108(file); next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '') + supervisorModeSuffixV108(file);
+      rememberSupervisorModeV108(file); if(roleKey==='supervisor') rememberSupervisorModeV111(); next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '') + (roleKey==='supervisor' ? supervisorModeParamsV111() : '');
       next.classList.remove('is-busy');
     }
 

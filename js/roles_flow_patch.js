@@ -2566,3 +2566,102 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     setTimeout(applySupervisorNextV109,350);
   });
 })();
+
+
+/* v111: zentrale, datenbasierte 4er-/5er-Logik für Supervisor*in */
+(function(){
+  function gid(){
+    try{
+      const p=new URLSearchParams(location.search);
+      return p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+    }catch(_){return '';}
+  }
+  function members(){
+    try{
+      const g=gid();
+      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+g)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+    }catch(_){return [];}
+  }
+  function assignmentMap(){
+    const out={};
+    try{ Object.assign(out, JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{}); }catch(_){}
+    try{
+      const g=gid();
+      Object.assign(out, JSON.parse(localStorage.getItem('sv_'+g+'_assignments')||'{}')||{});
+      Object.assign(out, JSON.parse(localStorage.getItem('sv_'+g+'_group_assignments')||'{}')||{});
+    }catch(_){}
+    try{ members().forEach(m=>{if(m&&m.role)out[m.role]=m.name||m.deviceId||true;}); }catch(_){}
+    return out;
+  }
+  function hasProtocol(){
+    try{
+      const p=new URLSearchParams(location.search);
+      if(p.get('supervisorMode')==='moderation'||p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
+      if(p.get('supervisorMode')==='full'||p.get('members')==='4'||p.get('size')==='4'||p.get('groupSize')==='4') return false;
+    }catch(_){}
+    const m=members();
+    if(Array.isArray(m) && (m.length>=5 || m.some(x=>x&&x.role==='protokoll'))) return true;
+    const a=assignmentMap();
+    return !!(a&&a.protokoll);
+  }
+  function remember(){
+    try{
+      const g=gid()||'default';
+      const mode=hasProtocol()?'moderation':'full';
+      localStorage.setItem('sv_supervisor_mode_'+g,mode);
+      localStorage.setItem('sv_supervisor_mode_active',mode);
+    }catch(_){}
+  }
+  function link(file){
+    const g=gid();
+    const mode=hasProtocol()?'moderation':'full';
+    const p=new URLSearchParams();
+    if(g)p.set('g',g);
+    p.set('supervisorMode',mode);
+    p.set('members',mode==='moderation'?'5':'4');
+    return file+'?'+p.toString();
+  }
+  window.__svSupervisorHasProtocolV111=hasProtocol;
+  window.__svSupervisorHasProtocolV108=hasProtocol;
+  window.__svSupervisorModeV109=function(){return hasProtocol()?'moderation':'full';};
+  function apply(){
+    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
+    if(role!=='supervisor')return;
+    remember();
+    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
+    const content=document.getElementById('phaseContent');
+    if(content && phase && typeof moderatorCard==='function' && typeof supervisorFullPhase==='function'){
+      // Use original v87 render functions, but choose by canonical group logic.
+      content.innerHTML = hasProtocol() ? moderatorCard(phase) : supervisorFullPhase(phase);
+      if(typeof setupSaving==='function') setupSaving();
+    }
+    const next=document.getElementById('nextPhase');
+    if(next && phase){
+      const target= phase<6 ? ('phase'+(phase+1)+'-supervisor.html') : (hasProtocol()?'abschluss.html':'zusammenfassung.html');
+      next.href=link(target);
+      next.classList.remove('disabled','is-busy');
+      next.removeAttribute('aria-disabled');
+      next.style.pointerEvents='auto';
+      next.textContent=phase<6 ? ('Bereit für Phase '+(phase+1)) : (hasProtocol()?'Abschluss':'Ergebnisse zusammenfassen');
+    }
+  }
+  document.addEventListener('click',function(ev){
+    const a=ev.target&&ev.target.closest&&ev.target.closest('#nextPhase');
+    if(!a)return;
+    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
+    if(role!=='supervisor')return;
+    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
+    if(!phase)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    remember();
+    const target= phase<6 ? ('phase'+(phase+1)+'-supervisor.html') : (hasProtocol()?'abschluss.html':'zusammenfassung.html');
+    location.href=link(target);
+  },true);
+  window.addEventListener('DOMContentLoaded',function(){
+    apply();
+    setTimeout(apply,80);
+    setTimeout(apply,350);
+  });
+})();

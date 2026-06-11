@@ -192,6 +192,22 @@ function shuffle(arr) {
   return arr.map(v => [Math.random(), v]).sort((a,b) => a[0]-b[0]).map(x => x[1]);
 }
 
+
+function publicBaseUrlLegacyV110(){
+  const cfg=(window.SUPERVISION_CONFIG&&(window.SUPERVISION_CONFIG.PUBLIC_BASE_URL||window.SUPERVISION_CONFIG.GITHUB_PAGES_URL||window.SUPERVISION_CONFIG.BASE_URL))||'';
+  if(cfg) return String(cfg).replace(/\/+$/,'') + '/';
+  if(location.protocol==='http:'||location.protocol==='https:') return new URL('./', location.href).href;
+  return '';
+}
+function publicLinkWithStateV110(file){
+  const base=publicBaseUrlLegacyV110();
+  if(!base) return '';
+  const u=new URL(file, base);
+  const params=new URLSearchParams(currentQueryString());
+  params.forEach((v,k)=>u.searchParams.set(k,v));
+  return u.href;
+}
+
 function initRoleAssignment() {
   initCommon();
   const namesInput = document.getElementById("namesInput");
@@ -217,7 +233,7 @@ function initRoleAssignment() {
     cardsBox.innerHTML = "";
     ["supervisor", "schulleitung", "lehrkraft-a", "lehrkraft-b"].forEach(role => {
       const file = ROLE_FILES[role];
-      const url = new URL(linkWithState(file), window.location.href).toString();
+      const url = publicLinkWithStateV110(file) || new URL(linkWithState(file), window.location.href).toString();
       const card = document.createElement("div");
       card.className = "card compact";
       card.innerHTML = `
@@ -9739,13 +9755,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    v99: keine Rollen-Vorladeweiterleitung, neutrale Rollen-/Namensdarstellung
    ============================================================ */
 (function(){
-  function neutralRoleStylesV99(){
-    if(document.getElementById('neutralRoleStylesV99')) return;
-    var st=document.createElement('style');
-    st.id='neutralRoleStylesV99';
-    st.textContent='.role-text,.role-pill,[class*="role-"],.role-name-pill{color:inherit!important;background:#eef4fb!important;border-color:#d8e5f2!important}.role-pill{color:#183a61!important}.is-busy[data-preloaded-v99],a.is-busy[data-preloaded-v99],button.is-busy[data-preloaded-v99]{pointer-events:auto!important}';
-    document.head.appendChild(st);
-  }
+  function neutralRoleStylesV99(){ return; }
   window.addEventListener('DOMContentLoaded',function(){
     neutralRoleStylesV99();
     document.querySelectorAll('a[data-preloaded-v97],button[data-preloaded-v97]').forEach(function(el){delete el.dataset.preloadedV97;el.classList.remove('is-busy');});

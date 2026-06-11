@@ -172,7 +172,7 @@
       {id:'deep', elements:[
         {id:'s3_title', type:'title', html:'Vertiefte Problembearbeitung'},
         {id:'s3_subtitle', type:'subtitle', html:'Die Gruppe hat Kriterien für hilfreiche Kritik, nachvollziehbare Perspektiven und konkrete Absprachen für die weitere Zusammenarbeit gesammelt.'},
-        {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positives zur Schulleitung','p4perspektiveSL'],['Positives zu Lehrkraft A','p4perspektiveA'],['Positives zu Lehrkraft B','p4perspektiveB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
+        {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positive Rückmeldung zur Schulleitung','p4posSL'],['Positive Rückmeldung zu Lehrkraft A','p4posA'],['Positive Rückmeldung zu Lehrkraft B','p4posB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
       ]},
       {id:'implementation', elements:[
         {id:'s4_title', type:'title', html:'Umsetzung'},

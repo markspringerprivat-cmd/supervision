@@ -40,7 +40,9 @@ const HEADERS = [
   'Gemeinsamkeiten',
   'Gemeinsame Zielvereinbarung',
   'Brainstorming / hilfreiche Kritik',
-  'Anerkennungsrunde / Perspektiven',
+  'Positive Rückmeldung zur Schulleitung',
+  'Positive Rückmeldung zu Lehrkraft A',
+  'Positive Rückmeldung zu Lehrkraft B',
   'Absprachen zum weiteren Vorgehen',
   'Zustimmung / Rückmeldung',
   'Praxistauglichkeit - Unterstützung durch Schulleitung',
@@ -53,11 +55,11 @@ const HEADERS = [
   'Präsentation aktualisiert'
 ];
 
-const COL_GROUP_ID = 28;
-const COL_RAW_JSON = 29;
-const COL_PRESENTATION_JSON = 30;
-const COL_PRESENTATION_VERSION = 31;
-const COL_PRESENTATION_UPDATED = 32;
+const COL_GROUP_ID = 30;
+const COL_RAW_JSON = 31;
+const COL_PRESENTATION_JSON = 32;
+const COL_PRESENTATION_VERSION = 33;
+const COL_PRESENTATION_UPDATED = 34;
 
 
 function getSpreadsheet_() {
@@ -201,7 +203,7 @@ function doGet(e) {
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v34-leader-fixed-role', spreadsheetName: spreadsheetName, deviceRegistrySheet: DEVICE_REGISTRY_SHEET_NAME });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v35-phase4-positive-columns', spreadsheetName: spreadsheetName, deviceRegistrySheet: DEVICE_REGISTRY_SHEET_NAME });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -259,7 +261,7 @@ function normalizePresentationState_(cfg, data) {
     p2aProblems: textValue_(p2.aProbleme), p2aFeelings: textValue_(p2.aGefuehle), p2aWishes: textValue_(p2.aWuensche),
     p2bProblems: textValue_(p2.bProbleme), p2bFeelings: textValue_(p2.bGefuehle), p2bWishes: textValue_(p2.bWuensche),
     p3zielSL: textValue_(p3.zielSL), p3zielA: textValue_(p3.zielA), p3zielB: textValue_(p3.zielB), p3gemeinsam: textValue_(p3.gemeinsamkeiten), p3ziel: textValue_(p3.gemeinsamesZiel),
-    p4kritik: textValue_(p4.kritik), p4absprachen: textValue_(p4.absprachen),
+    p4kritik: textValue_(p4.kritik), p4posSL: textValue_(p4.positivSL || p4.perspektiveSL || p4.posSL), p4posA: textValue_(p4.positivA || p4.perspektiveA || p4.posA), p4posB: textValue_(p4.positivB || p4.perspektiveB || p4.posB), p4absprachen: textValue_(p4.absprachen),
     p5zustimmung: textValue_(p5.zustimmung), p6prax: textValue_(p6.praxistauglichkeit), p6support: textValue_(p6.unterstuetzung), p6steps: textValue_(p6.umsetzung)
   }, isObject_(cfg.values) ? cfg.values : {});
   Object.keys(values).forEach(function(k){ values[k] = textValue_(values[k]); });
@@ -409,7 +411,9 @@ function buildRow_(data) {
     pick_([path_(data, 'p3.gemeinsamkeiten')]),
     pick_([path_(data, 'p3.gemeinsamesZiel'), path_(data, 'p3.gemeinsameZielformulierung'), path_(data, 'zielvereinbarung')]),
     pick_([path_(data, 'p4.kritik')]),
-    pick_([path_(data, 'p4.anerkennung')]),
+    pick_([path_(data, 'p4.positivSL'), path_(data, 'p4.perspektiveSL'), path_(data, 'p4.posSL')]),
+    pick_([path_(data, 'p4.positivA'), path_(data, 'p4.perspektiveA'), path_(data, 'p4.posA')]),
+    pick_([path_(data, 'p4.positivB'), path_(data, 'p4.perspektiveB'), path_(data, 'p4.posB')]),
     pick_([path_(data, 'p4.absprachen'), path_(data, 'p4.weiteresVorgehen')]),
     pick_([path_(data, 'p5.zustimmung'), path_(data, 'zustimmung')]),
     pick_([path_(data, 'p6.unterstuetzung'), path_(data, 'p6.unterstützung')]),
@@ -453,12 +457,14 @@ function rowToEntry_(row, rowNumber) {
   let raw = {};
   let presentation = {};
   const rawCandidateNew = row[COL_RAW_JSON - 1];
-  const rawCandidateOld = row[COL_GROUP_ID - 1];
+  const rawCandidateLegacy = row[28]; // alte Struktur: Rohdaten JSON in Spalte 29
+  const rawCandidateWrongLegacy = row[COL_GROUP_ID - 1];
   const presentationCandidate = row[COL_PRESENTATION_JSON - 1];
-  try { raw = JSON.parse(rawCandidateNew || rawCandidateOld || '{}'); } catch (err) { raw = {}; }
-  try { presentation = JSON.parse(presentationCandidate || '{}'); } catch (err) { presentation = {}; }
+  const presentationCandidateLegacy = row[29]; // alte Struktur: Präsentation JSON in Spalte 30
+  try { raw = JSON.parse(rawCandidateNew || rawCandidateLegacy || rawCandidateWrongLegacy || '{}'); } catch (err) { raw = {}; }
+  try { presentation = JSON.parse(presentationCandidate || presentationCandidateLegacy || '{}'); } catch (err) { presentation = {}; }
   if (!isObject_(presentation) || Object.keys(presentation).length === 0) presentation = extractPresentationConfig_(raw);
-  const groupId = pick_([row[COL_GROUP_ID - 1], raw.groupId, raw.g, raw.groupToken, raw.token]);
+  const groupId = pick_([row[COL_GROUP_ID - 1], row[27], raw.groupId, raw.g, raw.groupToken, raw.token]);
   const reconstructed = {
     groupId: groupId,
     groupName: row[1] || raw.groupName || '',
@@ -478,9 +484,9 @@ function rowToEntry_(row, rowNumber) {
       zielSL: row[15] || '', zielA: row[16] || '', zielB: row[17] || '',
       gemeinsamkeiten: row[18] || '', gemeinsamesZiel: row[19] || ''
     },
-    p4: { kritik: row[20] || '', anerkennung: row[21] || '', absprachen: row[22] || '' },
-    p5: { zustimmung: row[23] || '' },
-    p6: { unterstuetzung: row[24] || '', umsetzung: row[25] || '', praxistauglichkeit: row[26] || '' },
+    p4: { kritik: row[20] || '', positivSL: row[21] || '', positivA: row[22] || '', positivB: row[23] || '', perspektiveSL: row[21] || '', perspektiveA: row[22] || '', perspektiveB: row[23] || '', absprachen: row[24] || '' },
+    p5: { zustimmung: row[25] || '' },
+    p6: { unterstuetzung: row[26] || '', umsetzung: row[27] || '', praxistauglichkeit: row[28] || '' },
     raw: raw,
     presentationJson: presentation,
     presentationConfig: presentation,
@@ -683,10 +689,10 @@ function manometerFeedbackStatus_(p) {
   const groupId = textValue_(p.groupId || p.g || p.groupToken || p.token);
 
   if (!groupId) {
-    return { ok:true, type:'manometerFeedbackStatus', feature:'manometer-v34-leader-fixed-role', checked:false, alreadyVoted:false, needsGroupId:true };
+    return { ok:true, type:'manometerFeedbackStatus', feature:'manometer-v35-phase4-positive-columns', checked:false, alreadyVoted:false, needsGroupId:true };
   }
   if (!deviceId) {
-    return { ok:true, type:'manometerFeedbackStatus', feature:'manometer-v34-leader-fixed-role', checked:false, alreadyVoted:false, groupId:groupId };
+    return { ok:true, type:'manometerFeedbackStatus', feature:'manometer-v35-phase4-positive-columns', checked:false, alreadyVoted:false, groupId:groupId };
   }
 
   const submitted = participationAlreadySubmitted_(deviceId, groupId);
@@ -697,7 +703,7 @@ function manometerFeedbackStatus_(p) {
   return {
     ok:true,
     type:'manometerFeedbackStatus',
-    feature:'manometer-v34-leader-fixed-role',
+    feature:'manometer-v35-phase4-positive-columns',
     checked:true,
     alreadyVoted: already,
     duplicate: already,
@@ -764,19 +770,19 @@ function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
   const deviceId = textValue_(data.deviceId || data.device || data.browserId);
-  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v34-leader-fixed-role', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v35-phase4-positive-columns', error: 'Keine Geräte-ID übermittelt.' };
   const groupId = textValue_(data.groupId || data.g || data.groupToken || data.token);
-  if (!groupId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v34-leader-fixed-role', error: 'Keine Gruppen-ID übermittelt. Bitte den Feedback-QR-Code aus dem Gruppenfortschritt erneut scannen.' };
+  if (!groupId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v35-phase4-positive-columns', error: 'Keine Gruppen-ID übermittelt. Bitte den Feedback-QR-Code aus dem Gruppenfortschritt erneut scannen.' };
 
   const submitted = participationAlreadySubmitted_(deviceId, groupId);
   if (submitted.found) {
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v34-leader-fixed-role', error: 'Von diesem Gerät wurde für diese Feedbackrunde bereits Feedback abgegeben.', rowNumber: submitted.feedbackRow || submitted.rowNumber, participationId: submitted.participationId, source: 'participationSheet' };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v35-phase4-positive-columns', error: 'Von diesem Gerät wurde für diese Feedbackrunde bereits Feedback abgegeben.', rowNumber: submitted.feedbackRow || submitted.rowNumber, participationId: submitted.participationId, source: 'participationSheet' };
   }
 
   const duplicateRow = findFeedbackRowByDeviceIdAndGroup_(sheet, deviceId, groupId);
   if (duplicateRow >= 2) {
     upsertFeedbackParticipation_(deviceId, groupId, 'abgegeben', duplicateRow);
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v34-leader-fixed-role', error: 'Von diesem Gerät wurde für diese Feedbackrunde bereits Feedback abgegeben.', rowNumber: duplicateRow, source: 'feedbackSheet' };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v35-phase4-positive-columns', error: 'Von diesem Gerät wurde für diese Feedbackrunde bereits Feedback abgegeben.', rowNumber: duplicateRow, source: 'feedbackSheet' };
   }
   const scores = isObject_(data.scores) ? data.scores : data;
   const improvements = isObject_(data.improvements) ? data.improvements : {};
@@ -808,7 +814,7 @@ function saveFeedbackData_(data) {
   const savedRow = sheet.getLastRow();
   registerDeviceId_(data);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v34-leader-fixed-role', message: 'Manometer-Feedback gespeichert.', rowNumber: savedRow };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v35-phase4-positive-columns', message: 'Manometer-Feedback gespeichert.', rowNumber: savedRow };
 }
 
 function findFeedbackRowByDeviceId_(sheet, deviceId) {
@@ -853,7 +859,7 @@ function resetManometerDeviceIdsGet_(e) {
 
 function resetManometerDeviceIds_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v34-leader-fixed-role', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v35-phase4-positive-columns', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const beforeRegistryRows = getDeviceRegistryRowCount_();
@@ -865,7 +871,7 @@ function resetManometerDeviceIds_(password) {
   return {
     ok: true,
     type: 'resetManometerDeviceIds',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     mode: 'recreatedDeviceRegistry',
     message: 'Manometer-Geräte-IDs wurden freigegeben.',
     clearedRows: beforeRegistryRows,
@@ -889,7 +895,7 @@ function deleteManometerFeedbackAllPost_(body) {
 
 function deleteManometerFeedbackAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v34-leader-fixed-role', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v35-phase4-positive-columns', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const beforeFeedbackRows = getFeedbackRowCount_();
@@ -906,7 +912,7 @@ function deleteManometerFeedbackAll_(password) {
   return {
     ok: true,
     type: 'deleteManometerFeedbackAll',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     mode: 'recreatedSheets',
     message: 'Manometer-Feedbackblatt und Geräte-Registry wurden neu erstellt.',
     deletedRows: beforeFeedbackRows,
@@ -942,7 +948,7 @@ function manometerAdminStatus_() {
   return {
     ok: true,
     type: 'manometerAdminStatus',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     feedbackSheetName: FEEDBACK_SHEET_NAME,
     deviceRegistrySheetName: DEVICE_REGISTRY_SHEET_NAME,
     feedbackRows: getFeedbackRowCount_(),
@@ -989,7 +995,7 @@ function registerGroupPost_(body) {
 
 function registerGroup_(params) {
   const groupId = textValue_(params.groupId || params.g || params.groupToken || params.token);
-  if (!groupId) return { ok: false, type: 'registerGroup', feature: 'manometer-v34-leader-fixed-role', error: 'Keine Gruppen-ID übermittelt.' };
+  if (!groupId) return { ok: false, type: 'registerGroup', feature: 'manometer-v35-phase4-positive-columns', error: 'Keine Gruppen-ID übermittelt.' };
   const sheet = getGroupRegistrySheet_();
   const now = new Date();
   const groupName = textValue_(params.groupName || groupId);
@@ -1001,11 +1007,11 @@ function registerGroup_(params) {
   if (existing >= 2) {
     sheet.getRange(existing, 1, 1, GROUP_REGISTRY_HEADERS.length).setValues([row]);
     SpreadsheetApp.flush();
-    return { ok: true, type: 'registerGroup', feature: 'manometer-v34-leader-fixed-role', mode: 'updated', groupId: groupId, rowNumber: existing };
+    return { ok: true, type: 'registerGroup', feature: 'manometer-v35-phase4-positive-columns', mode: 'updated', groupId: groupId, rowNumber: existing };
   }
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'registerGroup', feature: 'manometer-v34-leader-fixed-role', mode: 'created', groupId: groupId, rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'registerGroup', feature: 'manometer-v35-phase4-positive-columns', mode: 'created', groupId: groupId, rowNumber: sheet.getLastRow() };
 }
 
 function registerDeviceGroupGet_(e) {
@@ -1020,8 +1026,8 @@ function registerDeviceGroupPost_(body) {
 function registerDeviceGroup_(params) {
   const deviceId = textValue_(params.deviceId || params.device || params.browserId);
   const groupId = textValue_(params.groupId || params.g || params.groupToken || params.token);
-  if (!deviceId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v34-leader-fixed-role', error: 'Keine Geräte-ID übermittelt.' };
-  if (!groupId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v34-leader-fixed-role', error: 'Keine Gruppen-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v35-phase4-positive-columns', error: 'Keine Geräte-ID übermittelt.' };
+  if (!groupId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v35-phase4-positive-columns', error: 'Keine Gruppen-ID übermittelt.' };
 
   const sheet = getDeviceRegistrySheet_();
   const existing = findDeviceRegistryRow_(deviceId);
@@ -1038,11 +1044,11 @@ function registerDeviceGroup_(params) {
   if (existing >= 2) {
     sheet.getRange(existing, 1, 1, Math.max(DEVICE_REGISTRY_HEADERS.length, row.length)).setValues([row]);
     SpreadsheetApp.flush();
-    return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v34-leader-fixed-role', mode: 'updated', deviceId: deviceId, groupId: groupId, rowNumber: existing };
+    return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v35-phase4-positive-columns', mode: 'updated', deviceId: deviceId, groupId: groupId, rowNumber: existing };
   }
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v34-leader-fixed-role', mode: 'created', deviceId: deviceId, groupId: groupId, rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v35-phase4-positive-columns', mode: 'created', deviceId: deviceId, groupId: groupId, rowNumber: sheet.getLastRow() };
 }
 
 function resolveDeviceGroupGet_(e) {
@@ -1056,15 +1062,15 @@ function resolveDeviceGroupPost_(body) {
 
 function resolveDeviceGroup_(params) {
   const deviceId = textValue_(params.deviceId || params.device || params.browserId);
-  if (!deviceId) return { ok: false, type: 'resolveDeviceGroup', feature: 'manometer-v34-leader-fixed-role', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'resolveDeviceGroup', feature: 'manometer-v35-phase4-positive-columns', error: 'Keine Geräte-ID übermittelt.' };
   const sheet = getDeviceRegistrySheet_();
   const row = findDeviceRegistryRow_(deviceId);
-  if (row < 2) return { ok: true, type: 'resolveDeviceGroup', feature: 'manometer-v34-leader-fixed-role', found: false };
+  if (row < 2) return { ok: true, type: 'resolveDeviceGroup', feature: 'manometer-v35-phase4-positive-columns', found: false };
   const values = sheet.getRange(row, 1, 1, Math.max(sheet.getLastColumn(), DEVICE_REGISTRY_HEADERS.length)).getValues()[0];
   return {
     ok: true,
     type: 'resolveDeviceGroup',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     found: true,
     deviceId: values[0] || '',
     timestamp: formatDate_(values[1]),
@@ -1121,7 +1127,7 @@ function deleteGroupsAllPost_(body) {
 
 function deleteGroupsAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteGroupsAll', feature: 'manometer-v34-leader-fixed-role', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteGroupsAll', feature: 'manometer-v35-phase4-positive-columns', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
   const groupSheet = getGroupRegistrySheet_();
   const deviceSheet = getDeviceRegistrySheet_();
@@ -1146,7 +1152,7 @@ function deleteGroupsAll_(password) {
   return {
     ok: true,
     type: 'deleteGroupsAll',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     message: 'Alle Gruppen, Gruppensitzungen und Gerätezuordnungen wurden gelöscht.',
     deletedGroups: beforeGroups,
     deletedDevices: beforeDevices,
@@ -1185,10 +1191,10 @@ function deleteRowsByGroupId_(sheet, groupColIndex, groupId) {
 
 function deleteGroup_(password, groupId) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteGroup', feature: 'manometer-v34-leader-fixed-role', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteGroup', feature: 'manometer-v35-phase4-positive-columns', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
   const gid = textValue_(groupId);
-  if (!gid) return { ok: false, type: 'deleteGroup', feature: 'manometer-v34-leader-fixed-role', error: 'Keine Gruppen-ID übermittelt.' };
+  if (!gid) return { ok: false, type: 'deleteGroup', feature: 'manometer-v35-phase4-positive-columns', error: 'Keine Gruppen-ID übermittelt.' };
 
   const groupSheet = getGroupRegistrySheet_();
   const deviceSheet = getDeviceRegistrySheet_();
@@ -1212,7 +1218,7 @@ function deleteGroup_(password, groupId) {
   return {
     ok: true,
     type: 'deleteGroup',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     groupId: gid,
     deletedGroups: deletedGroups,
     deletedDevices: deletedDevices,
@@ -1236,7 +1242,7 @@ function deleteMainResultsAllPost_(body) {
 
 function deleteMainResultsAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteMainResultsAll', feature: 'manometer-v34-leader-fixed-role', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteMainResultsAll', feature: 'manometer-v35-phase4-positive-columns', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const sheet = getSheet_();
@@ -1256,7 +1262,7 @@ function deleteMainResultsAll_(password) {
   return {
     ok: true,
     type: 'deleteMainResultsAll',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     message: 'Alle normalen Ergebnis-Einträge wurden gelöscht.',
     deletedRows: deletedRows,
     resultsRowsAfter: Math.max(0, sheet.getLastRow() - 1),
@@ -1398,14 +1404,14 @@ function createGroupSession_(p) {
   const deviceId = textValue_(p.deviceId || p.device || p.browserId);
   const name = textValue_(p.name || p.memberName);
   const deviceType = textValue_(p.deviceType || 'Unbekannt');
-  if (!deviceId) return { ok:false, type:'createGroupSession', feature:'manometer-v34-leader-fixed-role', error:'Keine Geräte-ID übermittelt.' };
-  if (!name) return { ok:false, type:'createGroupSession', feature:'manometer-v34-leader-fixed-role', error:'Kein Name übermittelt.' };
+  if (!deviceId) return { ok:false, type:'createGroupSession', feature:'manometer-v35-phase4-positive-columns', error:'Keine Geräte-ID übermittelt.' };
+  if (!name) return { ok:false, type:'createGroupSession', feature:'manometer-v35-phase4-positive-columns', error:'Kein Name übermittelt.' };
   const groupId = textValue_(p.groupId || p.g) || makeTempGroupId_();
   upsertGroupSession_(groupId, groupId, 'offen', deviceId, 1);
   upsertGroupMember_(groupId, deviceId, name, deviceType, '', true);
   registerDeviceGroup_({ deviceId: deviceId, groupId: groupId, groupName: groupId, role: '', assignedName: name });
   const members = membersForGroup_(groupId);
-  return { ok:true, type:'createGroupSession', feature:'manometer-v34-leader-fixed-role', groupId:groupId, groupName:groupId, members:members };
+  return { ok:true, type:'createGroupSession', feature:'manometer-v35-phase4-positive-columns', groupId:groupId, groupName:groupId, members:members };
 }
 
 function joinGroupSessionGet_(e) {
@@ -1419,14 +1425,14 @@ function joinGroupSession_(p) {
   const deviceId = textValue_(p.deviceId || p.device || p.browserId);
   const name = textValue_(p.name || p.memberName);
   const deviceType = textValue_(p.deviceType || 'Unbekannt');
-  if (!groupId) return { ok:false, type:'joinGroupSession', feature:'manometer-v34-leader-fixed-role', error:'Keine Gruppen-ID übermittelt.' };
-  if (!deviceId) return { ok:false, type:'joinGroupSession', feature:'manometer-v34-leader-fixed-role', error:'Keine Geräte-ID übermittelt.' };
-  if (!name) return { ok:false, type:'joinGroupSession', feature:'manometer-v34-leader-fixed-role', error:'Kein Name übermittelt.' };
+  if (!groupId) return { ok:false, type:'joinGroupSession', feature:'manometer-v35-phase4-positive-columns', error:'Keine Gruppen-ID übermittelt.' };
+  if (!deviceId) return { ok:false, type:'joinGroupSession', feature:'manometer-v35-phase4-positive-columns', error:'Keine Geräte-ID übermittelt.' };
+  if (!name) return { ok:false, type:'joinGroupSession', feature:'manometer-v35-phase4-positive-columns', error:'Kein Name übermittelt.' };
   if (findGroupSessionRow_(groupId) < 2) upsertGroupSession_(groupId, groupId, 'offen', '', 0);
   const existingMemberRow = findGroupMemberRow_(groupId, deviceId);
   const existingMembers = membersForGroup_(groupId);
   if (existingMemberRow < 2 && existingMembers.length >= 5) {
-    return { ok:false, type:'joinGroupSession', feature:'manometer-v34-leader-fixed-role', error:'Diese Gruppe ist bereits voll. Maximal 5 Mitglieder sind möglich.' };
+    return { ok:false, type:'joinGroupSession', feature:'manometer-v35-phase4-positive-columns', error:'Diese Gruppe ist bereits voll. Maximal 5 Mitglieder sind möglich.' };
   }
   upsertGroupMember_(groupId, deviceId, name, deviceType, '', false);
   clearRolesAndDeviceAssignmentsForGroup_(groupId);
@@ -1435,7 +1441,7 @@ function joinGroupSession_(p) {
   upsertGroupSession_(groupId, groupName, 'offen', '', members.length);
   fastUpsertGroupRegistry_(groupId, groupName, members, {});
   registerDeviceGroup_({ deviceId: deviceId, groupId: groupId, groupName: groupName, role: '', assignedName: name });
-  return { ok:true, type:'joinGroupSession', feature:'manometer-v34-leader-fixed-role', groupId:groupId, groupName:groupName, members:members, rolesCleared:true };
+  return { ok:true, type:'joinGroupSession', feature:'manometer-v35-phase4-positive-columns', groupId:groupId, groupName:groupName, members:members, rolesCleared:true };
 }
 
 function listGroupMembersGet_(e) {
@@ -1446,10 +1452,10 @@ function listGroupMembersPost_(body) {
 }
 function listGroupMembers_(p) {
   const groupId = textValue_(p.groupId || p.g);
-  if (!groupId) return { ok:false, type:'listGroupMembers', feature:'manometer-v34-leader-fixed-role', error:'Keine Gruppen-ID übermittelt.' };
+  if (!groupId) return { ok:false, type:'listGroupMembers', feature:'manometer-v35-phase4-positive-columns', error:'Keine Gruppen-ID übermittelt.' };
   const members = membersForGroup_(groupId);
   const groupName = sessionGroupNameFromMembers_(members) || groupId;
-  return { ok:true, type:'listGroupMembers', feature:'manometer-v34-leader-fixed-role', groupId:groupId, groupName:groupName, members:members };
+  return { ok:true, type:'listGroupMembers', feature:'manometer-v35-phase4-positive-columns', groupId:groupId, groupName:groupName, members:members };
 }
 
 
@@ -1639,14 +1645,14 @@ function removeGroupMember_(p) {
   const deviceIdToRemove = textValue_(p.deviceIdToRemove || p.deviceId || p.removeDeviceId);
   const removeRowNumber = Number(p.removeRowNumber || p.rowNumber || 0) || 0;
   const requesterDeviceId = textValue_(p.requesterDeviceId || p.requester || p.adminDeviceId);
-  if (!groupId) return { ok:false, type:'removeGroupMember', feature:'manometer-v34-leader-fixed-role', error:'Keine Gruppen-ID übermittelt.' };
-  if (!deviceIdToRemove && removeRowNumber < 2) return { ok:false, type:'removeGroupMember', feature:'manometer-v34-leader-fixed-role', error:'Kein Mitglied zum Entfernen übermittelt.' };
+  if (!groupId) return { ok:false, type:'removeGroupMember', feature:'manometer-v35-phase4-positive-columns', error:'Keine Gruppen-ID übermittelt.' };
+  if (!deviceIdToRemove && removeRowNumber < 2) return { ok:false, type:'removeGroupMember', feature:'manometer-v35-phase4-positive-columns', error:'Kein Mitglied zum Entfernen übermittelt.' };
 
   const requesterRow = requesterDeviceId ? findGroupMemberRow_(groupId, requesterDeviceId) : 0;
-  if (requesterRow < 2) return { ok:false, type:'removeGroupMember', feature:'manometer-v34-leader-fixed-role', error:'Nur der Gruppenanführer kann Mitglieder entfernen.' };
+  if (requesterRow < 2) return { ok:false, type:'removeGroupMember', feature:'manometer-v35-phase4-positive-columns', error:'Nur der Gruppenanführer kann Mitglieder entfernen.' };
   const requester = getGroupMemberSheet_().getRange(requesterRow, 1, 1, GROUP_MEMBER_HEADERS.length).getValues()[0];
   if (String(requester[6]).toLowerCase() !== 'true') {
-    return { ok:false, type:'removeGroupMember', feature:'manometer-v34-leader-fixed-role', error:'Nur der Gruppenanführer kann Mitglieder entfernen.' };
+    return { ok:false, type:'removeGroupMember', feature:'manometer-v35-phase4-positive-columns', error:'Nur der Gruppenanführer kann Mitglieder entfernen.' };
   }
 
   let removeRow = deviceIdToRemove ? findGroupMemberRow_(groupId, deviceIdToRemove) : 0;
@@ -1654,10 +1660,10 @@ function removeGroupMember_(p) {
     const candidate = getGroupMemberSheet_().getRange(removeRowNumber, 1, 1, GROUP_MEMBER_HEADERS.length).getValues()[0];
     if (textValue_(candidate[1]) === groupId) removeRow = removeRowNumber;
   }
-  if (removeRow < 2) return { ok:false, type:'removeGroupMember', feature:'manometer-v34-leader-fixed-role', error:'Dieses Mitglied wurde nicht gefunden.' };
+  if (removeRow < 2) return { ok:false, type:'removeGroupMember', feature:'manometer-v35-phase4-positive-columns', error:'Dieses Mitglied wurde nicht gefunden.' };
   const row = getGroupMemberSheet_().getRange(removeRow, 1, 1, GROUP_MEMBER_HEADERS.length).getValues()[0];
   const actualDeviceIdToRemove = textValue_(row[2]) || deviceIdToRemove;
-  if (String(row[6]).toLowerCase() === 'true') return { ok:false, type:'removeGroupMember', feature:'manometer-v34-leader-fixed-role', error:'Der Gruppenanführer kann nicht aus der Gruppe entfernt werden.' };
+  if (String(row[6]).toLowerCase() === 'true') return { ok:false, type:'removeGroupMember', feature:'manometer-v35-phase4-positive-columns', error:'Der Gruppenanführer kann nicht aus der Gruppe entfernt werden.' };
 
   getGroupMemberSheet_().deleteRow(removeRow);
   if (actualDeviceIdToRemove) deleteRowsByGroupIdAndDevice_(getDeviceRegistrySheet_(), 3, groupId, 1, actualDeviceIdToRemove);
@@ -1668,7 +1674,7 @@ function removeGroupMember_(p) {
   fastUpsertGroupRegistry_(groupId, groupName, members, {});
   batchUpsertDeviceRegistryForMembers_(groupId, groupName, members);
   SpreadsheetApp.flush();
-  return { ok:true, type:'removeGroupMember', feature:'manometer-v34-leader-fixed-role', groupId:groupId, removedDeviceId:actualDeviceIdToRemove, deletedDeviceData:deletedDeviceData, members:members };
+  return { ok:true, type:'removeGroupMember', feature:'manometer-v35-phase4-positive-columns', groupId:groupId, removedDeviceId:actualDeviceIdToRemove, deletedDeviceData:deletedDeviceData, members:members };
 }
 
 function deleteRowsByGroupIdAndDevice_(sheet, groupColIndex, groupId, deviceColIndex, deviceId) {
@@ -1700,11 +1706,11 @@ function assignRolesToMembers_(p) {
 
   try {
     const groupId = textValue_(p.groupId || p.g);
-    if (!groupId) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v34-leader-fixed-role', error:'Keine Gruppen-ID übermittelt.' };
+    if (!groupId) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v35-phase4-positive-columns', error:'Keine Gruppen-ID übermittelt.' };
 
     let members = membersForGroup_(groupId);
-    if (members.length < 4) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v34-leader-fixed-role', error:'Mindestens 4 Gruppenmitglieder erforderlich.' };
-    if (members.length > 5) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v34-leader-fixed-role', error:'Maximal 5 Gruppenmitglieder sind möglich.' };
+    if (members.length < 4) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v35-phase4-positive-columns', error:'Mindestens 4 Gruppenmitglieder erforderlich.' };
+    if (members.length > 5) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v35-phase4-positive-columns', error:'Maximal 5 Gruppenmitglieder sind möglich.' };
 
     const primaryMember = members.find(function(m){ return m.primary === true || String(m.primary).toLowerCase() === 'true' || String(m.primary).toLowerCase() === 'ja' || String(m.primary) === '1'; }) || members[0];
 
@@ -1715,7 +1721,7 @@ function assignRolesToMembers_(p) {
       return {
         ok:true,
         type:'assignRolesToMembers',
-        feature:'manometer-v34-leader-fixed-role',
+        feature:'manometer-v35-phase4-positive-columns',
         groupId:groupId,
         groupName:groupNameExisting,
         assignments:assignmentsExisting,
@@ -1765,7 +1771,7 @@ function assignRolesToMembers_(p) {
     return {
       ok:true,
       type:'assignRolesToMembers',
-      feature:'manometer-v34-leader-fixed-role',
+      feature:'manometer-v35-phase4-positive-columns',
       groupId:groupId,
       groupName:groupName,
       assignments:assignments,
@@ -1776,7 +1782,7 @@ function assignRolesToMembers_(p) {
     return {
       ok:false,
       type:'assignRolesToMembers',
-      feature:'manometer-v34-leader-fixed-role',
+      feature:'manometer-v35-phase4-positive-columns',
       error: String(err && err.message ? err.message : err)
     };
   } finally {
@@ -1793,11 +1799,11 @@ function resolveAssignedRoleForDevicePost_(body) {
 function resolveAssignedRoleForDevice_(p) {
   const groupId = textValue_(p.groupId || p.g);
   const deviceId = textValue_(p.deviceId || p.device || p.browserId);
-  if (!groupId || !deviceId) return { ok:false, type:'resolveAssignedRoleForDevice', feature:'manometer-v34-leader-fixed-role', error:'Gruppen-ID oder Geräte-ID fehlt.' };
+  if (!groupId || !deviceId) return { ok:false, type:'resolveAssignedRoleForDevice', feature:'manometer-v35-phase4-positive-columns', error:'Gruppen-ID oder Geräte-ID fehlt.' };
   const rowNo = findGroupMemberRow_(groupId, deviceId);
-  if (rowNo < 2) return { ok:true, type:'resolveAssignedRoleForDevice', feature:'manometer-v34-leader-fixed-role', found:false };
+  if (rowNo < 2) return { ok:true, type:'resolveAssignedRoleForDevice', feature:'manometer-v35-phase4-positive-columns', found:false };
   const row = getGroupMemberSheet_().getRange(rowNo, 1, 1, GROUP_MEMBER_HEADERS.length).getValues()[0];
-  return { ok:true, type:'resolveAssignedRoleForDevice', feature:'manometer-v34-leader-fixed-role', found:true, groupId:row[1]||'', deviceId:row[2]||'', name:row[3]||'', deviceType:row[4]||'', role:row[5]||'', isPrimary:String(row[6]).toLowerCase()==='true' };
+  return { ok:true, type:'resolveAssignedRoleForDevice', feature:'manometer-v35-phase4-positive-columns', found:true, groupId:row[1]||'', deviceId:row[2]||'', name:row[3]||'', deviceType:row[4]||'', role:row[5]||'', isPrimary:String(row[6]).toLowerCase()==='true' };
 }
 
 
@@ -1865,7 +1871,7 @@ function listGroups_(params) {
     });
   }
   groups.sort(function(a, b){ return String(a.groupName || a.groupId).localeCompare(String(b.groupName || b.groupId)); });
-  return { ok: true, type: 'listGroups', feature: 'manometer-v34-leader-fixed-role', groups: groups, total: groups.length };
+  return { ok: true, type: 'listGroups', feature: 'manometer-v35-phase4-positive-columns', groups: groups, total: groups.length };
 }
 
 
@@ -1882,7 +1888,7 @@ function checkGroupExists_(p) {
   const groupId = textValue_(p.groupId || p.g);
   const deviceId = textValue_(p.deviceId || p.device || p.browserId);
   if (!groupId && !deviceId) {
-    return { ok: true, type: 'checkGroupExists', feature: 'manometer-v34-leader-fixed-role', checked: false, exists: true };
+    return { ok: true, type: 'checkGroupExists', feature: 'manometer-v35-phase4-positive-columns', checked: false, exists: true };
   }
 
   let resolvedGroupId = groupId;
@@ -1896,7 +1902,7 @@ function checkGroupExists_(p) {
   }
 
   if (!resolvedGroupId) {
-    return { ok: true, type: 'checkGroupExists', feature: 'manometer-v34-leader-fixed-role', checked: true, exists: false, groupId: '', reason: 'Keine gültige Gruppen-ID gefunden.' };
+    return { ok: true, type: 'checkGroupExists', feature: 'manometer-v35-phase4-positive-columns', checked: true, exists: false, groupId: '', reason: 'Keine gültige Gruppen-ID gefunden.' };
   }
 
   const gid = textValue_(resolvedGroupId);
@@ -1912,7 +1918,7 @@ function checkGroupExists_(p) {
   return {
     ok: true,
     type: 'checkGroupExists',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     checked: true,
     exists: exists,
     groupId: gid,
@@ -1964,7 +1970,7 @@ function groupProgress_(params) {
   return {
     ok: true,
     type: 'groupProgress',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     resolvedByDevice: resolvedByDevice,
     deviceId: deviceId,
     groupId: groupId,
@@ -2057,7 +2063,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v34-leader-fixed-role',
+    feature: 'manometer-v35-phase4-positive-columns',
     anonymous: true,
     groupIndependent: true,
     entries: entries,

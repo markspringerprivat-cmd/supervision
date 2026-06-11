@@ -89,7 +89,7 @@
       ]},
       {id:'s3',elements:[
         {id:'s3_title',type:'title',text:'Vertiefte Problembearbeitung'}, {id:'s3_subtitle',type:'subtitle',text:'Diese Folie hält hilfreiche Kritik und Absprachen für die weitere Zusammenarbeit fest.'},
-        {id:'s3_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Hilfreiche Kritik',first(values.p4kritik,p4.kritik)],['Positives zur Schulleitung',first(values.p4perspektiveSL,p4.perspektiveSL)],['Positives zu Lehrkraft A',first(values.p4perspektiveA,p4.perspektiveA)],['Positives zu Lehrkraft B',first(values.p4perspektiveB,p4.perspektiveB)],['Absprachen zum weiteren Vorgehen',first(values.p4absprachen,p4.absprachen)]])}
+        {id:'s3_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Hilfreiche Kritik',first(values.p4kritik,p4.kritik)],['Positive Rückmeldung zur Schulleitung',first(values.p4posSL,(p4.positivSL||p4.perspektiveSL))],['Positive Rückmeldung zu Lehrkraft A',first(values.p4posA,(p4.positivA||p4.perspektiveA))],['Positive Rückmeldung zu Lehrkraft B',first(values.p4posB,(p4.positivB||p4.perspektiveB))],['Absprachen zum weiteren Vorgehen',first(values.p4absprachen,p4.absprachen)]])}
       ]},
       {id:'s4',elements:[
         {id:'s4_title',type:'title',text:'Umsetzung'}, {id:'s4_subtitle',type:'subtitle',text:'Die Vereinbarung wird auf Zustimmung, Praxistauglichkeit und konkrete nächste Schritte hin gesichert.'},

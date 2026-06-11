@@ -8,7 +8,7 @@
     1:['sup_p1_rahmen'],
     2:['sup_p2_sl_probleme','sup_p2_sl_gefuehle','sup_p2_sl_wuensche','sup_p2_a_probleme','sup_p2_a_gefuehle','sup_p2_a_wuensche','sup_p2_b_probleme','sup_p2_b_gefuehle','sup_p2_b_wuensche'],
     3:['sup_p3_ziel_sl','sup_p3_ziel_a','sup_p3_ziel_b','sup_p3_gemeinsamkeiten','sup_p3_gemeinsames_ziel'],
-    4:['sup_p4_kritik','sup_p4_anerkennung','sup_p4_absprachen'],
+    4:['sup_p4_kritik','sup_p4_pos_sl','sup_p4_pos_a','sup_p4_pos_b','sup_p4_absprachen'],
     5:['sup_p5_zustimmung_status','sup_p5_zustimmung'],
     6:['sup_p6_praxistauglichkeit','sup_p6_unterstuetzung','sup_p6_umsetzung']
   };

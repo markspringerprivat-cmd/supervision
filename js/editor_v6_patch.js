@@ -58,7 +58,7 @@
     p2aProblems: 'sup_p2_a_probleme', p2aFeelings: 'sup_p2_a_gefuehle', p2aWishes: 'sup_p2_a_wuensche',
     p2bProblems: 'sup_p2_b_probleme', p2bFeelings: 'sup_p2_b_gefuehle', p2bWishes: 'sup_p2_b_wuensche',
     p3zielSL: 'sup_p3_ziel_sl', p3zielA: 'sup_p3_ziel_a', p3zielB: 'sup_p3_ziel_b', p3gemeinsam: 'sup_p3_gemeinsamkeiten', p3ziel: 'sup_p3_gemeinsames_ziel',
-    p4kritik: 'sup_p4_kritik', p4perspektiveSL:'sup_p4_pos_sl', p4perspektiveA:'sup_p4_pos_a', p4perspektiveB:'sup_p4_pos_b', p4absprachen: 'sup_p4_absprachen',
+    p4kritik: 'sup_p4_kritik', p4posSL:'sup_p4_pos_sl', p4posA:'sup_p4_pos_a', p4posB:'sup_p4_pos_b', p4absprachen: 'sup_p4_absprachen',
     p5zustimmung: 'sup_p5_zustimmung', p6prax: 'sup_p6_praxistauglichkeit', p6support: 'sup_p6_unterstuetzung', p6steps: 'sup_p6_umsetzung'
   };
 
@@ -73,7 +73,7 @@
       p2aProblems: d.p2?.aProbleme || loadTextSafe(FIELD_MAP.p2aProblems), p2aFeelings: d.p2?.aGefuehle || loadTextSafe(FIELD_MAP.p2aFeelings), p2aWishes: d.p2?.aWuensche || loadTextSafe(FIELD_MAP.p2aWishes),
       p2bProblems: d.p2?.bProbleme || loadTextSafe(FIELD_MAP.p2bProblems), p2bFeelings: d.p2?.bGefuehle || loadTextSafe(FIELD_MAP.p2bFeelings), p2bWishes: d.p2?.bWuensche || loadTextSafe(FIELD_MAP.p2bWishes),
       p3zielSL: d.p3?.zielSL || loadTextSafe(FIELD_MAP.p3zielSL), p3zielA: d.p3?.zielA || loadTextSafe(FIELD_MAP.p3zielA), p3zielB: d.p3?.zielB || loadTextSafe(FIELD_MAP.p3zielB), p3gemeinsam: d.p3?.gemeinsamkeiten || loadTextSafe(FIELD_MAP.p3gemeinsam), p3ziel: d.p3?.gemeinsamesZiel || loadTextSafe(FIELD_MAP.p3ziel),
-      p4kritik: d.p4?.kritik || loadTextSafe(FIELD_MAP.p4kritik), p4perspektiveSL: d.p4?.perspektiveSL || loadTextSafe(FIELD_MAP.p4perspektiveSL), p4perspektiveA: d.p4?.perspektiveA || loadTextSafe(FIELD_MAP.p4perspektiveA), p4perspektiveB: d.p4?.perspektiveB || loadTextSafe(FIELD_MAP.p4perspektiveB), p4absprachen: d.p4?.absprachen || loadTextSafe(FIELD_MAP.p4absprachen),
+      p4kritik: d.p4?.kritik || loadTextSafe(FIELD_MAP.p4kritik), p4posSL: d.p4?.positivSL || loadTextSafe(FIELD_MAP.p4posSL), p4posA: d.p4?.positivA || loadTextSafe(FIELD_MAP.p4posA), p4posB: d.p4?.positivB || loadTextSafe(FIELD_MAP.p4posB), p4absprachen: d.p4?.absprachen || loadTextSafe(FIELD_MAP.p4absprachen),
       p5zustimmung: d.p5?.zustimmung || loadTextSafe(FIELD_MAP.p5zustimmung), p6prax: d.p6?.praxistauglichkeit || loadTextSafe(FIELD_MAP.p6prax), p6support: d.p6?.unterstuetzung || loadTextSafe(FIELD_MAP.p6support), p6steps: d.p6?.umsetzung || loadTextSafe(FIELD_MAP.p6steps)
     };
   }
@@ -185,7 +185,7 @@
       { id:'deep', title:'Vertiefte Problembearbeitung', elements:[
           {id:'s3_title', type:'title', html:'Vertiefte Problembearbeitung'},
           {id:'s3_subtitle', type:'subtitle', html:'Die Gruppe hat Kriterien für hilfreiche Kritik, nachvollziehbare Perspektiven und konkrete Absprachen für die weitere Zusammenarbeit gesammelt.'},
-          {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positives zur Schulleitung','p4perspektiveSL'],['Positives zu Lehrkraft A','p4perspektiveA'],['Positives zu Lehrkraft B','p4perspektiveB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
+          {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positive Rückmeldung zur Schulleitung','p4posSL'],['Positive Rückmeldung zu Lehrkraft A','p4posA'],['Positive Rückmeldung zu Lehrkraft B','p4posB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
       ]},
       { id:'implementation', title:'Umsetzung', elements:[
           {id:'s4_title', type:'title', html:'Umsetzung'},

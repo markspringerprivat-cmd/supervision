@@ -9475,9 +9475,9 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
 })();
 
 
-/* group exists guard v42 */
+/* group exists guard v44 */
 (function(){
-  const GUARD_FLAG='sv_group_deleted_guard_shown_v42';
+  const GUARD_FLAG='sv_group_deleted_guard_shown_v44';
   const GROUP_KEYS=[
     'sv_current_group','sv_group_id','groupId','supervision_group_id',
     'sv_group_name','sv_group_members','sv_role_assignments','sv_selected_role',
@@ -9538,15 +9538,15 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     }catch(_){}
   }
   function showDeletedModal(){
-    if(document.getElementById('groupDeletedModalV42')) return;
+    if(document.getElementById('groupDeletedModalV44')) return;
     try{sessionStorage.setItem(GUARD_FLAG,'1');}catch(_){}
     clearGroupLocalData();
     const overlay=document.createElement('div');
-    overlay.id='groupDeletedModalV42';
+    overlay.id='groupDeletedModalV44';
     overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(7,19,35,.58);display:grid;place-items:center;padding:24px;';
-    overlay.innerHTML='<div style="width:min(560px,calc(100vw - 32px));background:#fff;border-radius:26px;padding:28px;border:1px solid #d9e5f2;box-shadow:0 28px 80px rgba(0,0,0,.28);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#10223a;text-align:center"><h2 style="margin:0 0 12px;font-size:1.55rem">Deine Gruppe wurde gelöscht.</h2><p style="color:#607187;line-height:1.55">Die gespeicherte Gruppen-ID existiert nicht mehr. Die lokalen Daten dieser Webseite wurden auf diesem Gerät gelöscht.</p><button id="groupDeletedHomeBtnV42" style="border:0;border-radius:999px;background:#2f5f97;color:white;font-weight:800;padding:13px 18px;cursor:pointer">Zurück zur Startseite</button></div>';
+    overlay.innerHTML='<div style="width:min(560px,calc(100vw - 32px));background:#fff;border-radius:26px;padding:28px;border:1px solid #d9e5f2;box-shadow:0 28px 80px rgba(0,0,0,.28);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#10223a;text-align:center"><h2 style="margin:0 0 12px;font-size:1.55rem">Deine Gruppe wurde gelöscht.</h2><p style="color:#607187;line-height:1.55">Die gespeicherte Gruppen-ID existiert nicht mehr. Die lokalen Daten dieser Webseite wurden auf diesem Gerät gelöscht.</p><button id="groupDeletedHomeBtnV44" style="border:0;border-radius:999px;background:#2f5f97;color:white;font-weight:800;padding:13px 18px;cursor:pointer">Zurück zur Startseite</button></div>';
     document.body.appendChild(overlay);
-    document.getElementById('groupDeletedHomeBtnV42').onclick=()=>{location.href='index.html';};
+    document.getElementById('groupDeletedHomeBtnV44').onclick=()=>{location.href='index.html';};
   }
   async function checkGroupExistsGuard(){
     if(!isGroupContext()) return true;
@@ -9567,29 +9567,5 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   }
   window.supervisionCheckGroupStillExists = checkGroupExistsGuard;
   document.addEventListener('DOMContentLoaded',()=>{checkGroupExistsGuard();});
-  document.addEventListener('click',function(ev){
-    const el=ev.target && ev.target.closest && ev.target.closest('a,button');
-    if(!el || el.id==='groupDeletedHomeBtnV42') return;
-    if(el.dataset && el.dataset.guardBypassOnce==='1'){
-      delete el.dataset.guardBypassOnce;
-      return;
-    }
-    if(el.closest && el.closest('#groupDeletedModalV42')) return;
-    if(!isGroupContext()) return;
-    const href=el.getAttribute && el.getAttribute('href');
-    const isNav=el.tagName==='A' && href && href !== '#' && !href.startsWith('javascript:');
-    const isAction=el.tagName==='BUTTON' || isNav;
-    if(!isAction) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    checkGroupExistsGuard().then(ok=>{
-      if(!ok) return;
-      if(isNav) location.href=href;
-      else {
-        try{ el.dataset.guardBypassOnce='1'; }catch(_){}
-        setTimeout(()=>{ try{ el.click(); }catch(_){} },0);
-      }
-    });
-  },true);
 })();
 

@@ -1,4 +1,4 @@
-/* Group session rebuild v41 leader member edit */
+/* Group session rebuild v44 load guard and remove fix */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -184,7 +184,7 @@
     box.innerHTML = latestMembers.length ? latestMembers.map((m,i)=>`
       <div class="member-item" data-device-id="${esc(m.deviceId||'')}">
         <div class="member-line"><strong>${esc(m.name||('Mitglied '+(i+1)))}</strong><span>${esc(m.deviceType||'Gerät')}</span><span>${esc(m.role ? ROLE_LABELS[m.role]||m.role : 'noch keine Rolle')}</span></div>
-        <div class="member-line"><span>${m.isPrimary?'Gruppenanführer':'Mitglied'}</span>${currentIsLeader && !m.isPrimary ? `<button type="button" class="member-remove leader-only" data-remove-device="${esc(m.deviceId||'')}" title="Mitglied entfernen">×</button>` : ''}</div>
+        <div class="member-line"><span>${m.isPrimary?'Gruppenanführer':'Mitglied'}</span>${currentIsLeader && !m.isPrimary ? `<button type="button" class="member-remove leader-only" data-remove-device="${esc(m.deviceId||'')}" data-remove-row="${esc(m.rowNumber||'')}" title="Mitglied entfernen">×</button>` : ''}</div>
       </div>`).join('') : '<p>Noch keine Mitglieder registriert.</p>';
   }
   async function refreshMembers(){
@@ -308,13 +308,13 @@
 
 
 
-  async function removeMember(deviceIdToRemove){
+  async function removeMember(deviceIdToRemove,rowNumberToRemove){
     if(!currentIsLeader){status('sessionStatus','Nur der Gruppenanführer kann Mitglieder entfernen.','warning');return;}
     if(!currentGroupId) currentGroupId=groupIdFromUrl();
-    if(!currentGroupId || !deviceIdToRemove)return;
+    if(!currentGroupId || (!deviceIdToRemove && !rowNumberToRemove)){status('sessionStatus','Dieses Mitglied konnte nicht eindeutig erkannt werden. Bitte aktualisieren.','warning');return;}
     try{
       status('sessionStatus','Mitglied wird entfernt …');
-      const res=await jsonp({action:'removeGroupMember',groupId:currentGroupId,deviceIdToRemove:deviceIdToRemove,requesterDeviceId:deviceId()});
+      const res=await jsonp({action:'removeGroupMember',groupId:currentGroupId,deviceIdToRemove:deviceIdToRemove,removeRowNumber:rowNumberToRemove,requesterDeviceId:deviceId()});
       if(!res||res.ok===false)throw new Error(res&&res.error||'Mitglied konnte nicht entfernt werden.');
       status('sessionStatus','Mitglied entfernt. Rollen müssen neu verteilt werden.','ok');
       clearAssignedOverviewState();
@@ -350,7 +350,7 @@
     document.getElementById('groupCompleteBtn')?.addEventListener('click',()=>showStep('assign'));
     document.getElementById('backToMembersBtn')?.addEventListener('click',()=>showStep('join'));
     document.getElementById('assignRolesSessionBtn')?.addEventListener('click',()=>assignRoles().catch(e=>status('assignSessionStatus',e.message,'warning')));
-    document.getElementById('membersList')?.addEventListener('click',e=>{const btn=e.target.closest('[data-remove-device]');if(btn){e.preventDefault();removeMember(btn.getAttribute('data-remove-device'));}});
+    document.getElementById('membersList')?.addEventListener('click',e=>{const btn=e.target.closest('[data-remove-device],[data-remove-row]');if(btn){e.preventDefault();removeMember(btn.getAttribute('data-remove-device'),btn.getAttribute('data-remove-row'));}});
     document.getElementById('simulateMemberBtn')?.addEventListener('click',()=>simulateMember());
     currentGroupId=groupIdFromUrl();
     if(!currentGroupId){

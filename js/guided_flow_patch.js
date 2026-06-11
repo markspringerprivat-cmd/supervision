@@ -112,7 +112,9 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
     return new Promise(resolve=>{
       const wrap=document.createElement('div');
       wrap.className='sv-flow-modal';
-      wrap.innerHTML=`<div class="sv-flow-backdrop"></div><div class="sv-flow-card" role="dialog" aria-modal="true"><h2>${esc(opts.title)}</h2><p>${esc(opts.text)}</p><div class="sv-flow-actions">${opts.actions.map((a,i)=>`<button type="button" class="${a.className||''}" data-idx="${i}">${esc(a.label)}</button>`).join('')}</div></div>`;
+      const dialogTitle = String(opts.title || '');
+      const forcedText = /Gespräch starten/i.test(dialogTitle) ? 'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.' : String(opts.text || '');
+      wrap.innerHTML=`<div class="sv-flow-backdrop"></div><div class="sv-flow-card" role="dialog" aria-modal="true"><h2>${esc(opts.title)}</h2><p class="sv-dialog-text">${esc(forcedText)}</p><div class="sv-flow-actions">${opts.actions.map((a,i)=>`<button type="button" class="${a.className||''}" data-idx="${i}">${esc(a.label)}</button>`).join('')}</div></div>`;
       document.body.appendChild(wrap);
       wrap.addEventListener('click',e=>{
         const b=e.target.closest('button[data-idx]'); if(!b) return;
@@ -353,9 +355,50 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
     var dialog=window.supervisionNiceDialog;
     var go=function(){location.href=withGroupV99(target);};
     if(typeof dialog==='function'){
-      dialog({title:'Gespräch starten',text:'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.',actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]}).then(function(ok){ if(ok) go(); else delete btn.dataset.v99PopupHandled; });
+      dialog({title:'Gespräch starten', text:'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.',actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]}).then(function(ok){ if(ok) go(); else delete btn.dataset.v99PopupHandled; });
     }else{
       if(confirm('Gespräch starten?')) go(); else delete btn.dataset.v99PopupHandled;
     }
   },true);
+})();
+
+
+/* v114: Gespräch-starten-Dialogtext immer erzwingen */
+(function(){
+  const TEXT = 'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.';
+  function fixStartDialogTextV114(){
+    document.querySelectorAll('.sv-flow-card,[role="dialog"]').forEach(function(card){
+      const heading = card.querySelector('h1,h2,h3');
+      if(!heading || !/Gespräch starten/i.test(heading.textContent || '')) return;
+      let body = card.querySelector('.sv-dialog-text, p');
+      if(!body){
+        body = document.createElement('p');
+        body.className = 'sv-dialog-text';
+        const actions = card.querySelector('.sv-flow-actions, .dialog-actions, footer');
+        card.insertBefore(body, actions || null);
+      }
+      body.textContent = TEXT;
+      body.hidden = false;
+      body.style.display = 'block';
+      body.style.visibility = 'visible';
+      body.style.opacity = '1';
+      body.style.color = '#142a44';
+      body.style.margin = '10px 0 18px';
+      body.style.lineHeight = '1.45';
+      body.style.fontWeight = '600';
+      const okOnly = Array.from(card.querySelectorAll('button')).filter(b => /^(ok|okay)$/i.test((b.textContent||'').trim()));
+      if(okOnly.length === 1 && card.querySelectorAll('button').length === 1){
+        okOnly[0].textContent = 'Gespräch starten';
+      }
+    });
+  }
+  document.addEventListener('click', function(ev){
+    if(ev.target && ev.target.closest && ev.target.closest('#startPhase1')){
+      setTimeout(fixStartDialogTextV114,0);
+      setTimeout(fixStartDialogTextV114,80);
+      setTimeout(fixStartDialogTextV114,250);
+    }
+  }, true);
+  new MutationObserver(fixStartDialogTextV114).observe(document.documentElement, {childList:true,subtree:true});
+  window.fixStartDialogTextV114 = fixStartDialogTextV114;
 })();

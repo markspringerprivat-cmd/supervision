@@ -5505,3 +5505,16 @@ body[data-mode="rolecard"] .role-card-case .notice{font-weight:800}
 .role-tile.role-lehrkraft-a,.role-tile.role-lehrkraft-b{border-color:#d62828!important;background:linear-gradient(180deg,#fff1f1,#fff)!important}
 .role-tile.role-protokoll{border-color:#f2a51a!important;background:linear-gradient(180deg,#fff8e8,#fff)!important}
 .role-tile strong,.role-tile .name{color:#10223a!important}
+
+
+/* v114: Text im Gespräch-starten-Popup sichtbar */
+.sv-flow-card .sv-dialog-text,
+.sv-flow-card p{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:#142a44!important;
+  line-height:1.45!important;
+  margin:10px 0 18px!important;
+  font-weight:600!important;
+}

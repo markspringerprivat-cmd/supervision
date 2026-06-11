@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-thanks-slide-beige-v113">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-thanks-beige-hardfix-v116">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -56,7 +56,7 @@
     .choice-axis .pct{color:#60758b;font-weight:750;font-size:.88rem}
     .choice-total{position:absolute;top:6px;right:12px;border-radius:999px;background:#eaf2fb;border:1px solid #d7e6f5;color:#234972;font-weight:900;padding:10px 14px}
     @keyframes growChoiceBar{from{height:0}to{height:var(--target-height)}}
-    .thanks-slide .slide-inner{align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;background:linear-gradient(135deg,#eef4fb 0%,#e7eff8 58%,#e9f3ee 100%)}.thanks-slide h2{font-size:clamp(2rem,4vw,4rem);margin-bottom:16px}.thanks-slide p{max-width:680px;color:var(--muted);font-size:1.2rem;line-height:1.55}.confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}.confetti-piece{position:absolute;top:-30px;width:10px;height:16px;border-radius:3px;opacity:.78;animation:confettiFall 4.2s linear infinite}
+    .thanks-slide .slide-inner{align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;background:#f4f2ee!important;background-image:none!important}.thanks-slide h2{font-size:clamp(2rem,4vw,4rem);margin-bottom:16px}.thanks-slide p{max-width:680px;color:var(--muted);font-size:1.2rem;line-height:1.55}.confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}.confetti-piece{position:absolute;top:-30px;width:10px;height:16px;border-radius:3px;opacity:.78;animation:confettiFall 4.2s linear infinite}
     .nav-dock{display:flex;align-items:center;justify-content:space-between;gap:16px;background:rgba(255,255,255,.1);backdrop-filter:none;border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:14px 16px;color:#fff}.nav-left,.nav-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.nav-center{font-weight:800;color:rgba(255,255,255,.85)}.nav-dock button,.nav-dock a{border:none;border-radius:999px;padding:12px 18px;font-weight:900;cursor:pointer;text-decoration:none}.nav-dock .primary{background:#fff;color:#16355b}.nav-dock .secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.16)}.nav-dock button:disabled{opacity:.45;cursor:not-allowed}.status{margin:0;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.12)}.present-tip{font-size:.92rem;color:rgba(255,255,255,.8)}
 
     @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}@keyframes growStripe{from{opacity:0;transform:scaleX(.2)}to{opacity:1;transform:scaleX(1)}}@keyframes dropIn{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}@keyframes confettiFall{0%{transform:translate3d(0,-40px,0) rotate(0deg);opacity:0}12%{opacity:.9}100%{transform:translate3d(var(--drift),calc(100vh + 80px),0) rotate(520deg);opacity:0}}
@@ -162,7 +162,79 @@
   background-image:none!important;
 }
 
+
+/* v115: Punkteverteilung echte prozentuale Balkenhöhe */
+.distribution .stripe-stack{
+  position:relative!important;
+  display:block!important;
+  height:100%!important;
+  min-height:0!important;
+  padding:6px!important;
+  overflow:hidden!important;
+}
+.distribution .stripe-stack .stripe-fill{
+  position:absolute!important;
+  left:6px!important;
+  right:6px!important;
+  bottom:6px!important;
+  height:calc(var(--fill-ratio,0) * (100% - 12px))!important;
+  min-height:0!important;
+  display:block!important;
+  border-radius:999px!important;
+  background:
+    repeating-linear-gradient(
+      to top,
+      transparent 0 4px,
+      rgba(255,255,255,.95) 4px 7px
+    ),
+    linear-gradient(
+      to top,
+      #00c853 0%,
+      #64dd17 22%,
+      #ffd600 38%,
+      #ffab00 54%,
+      #ff6d00 70%,
+      #ff1744 86%,
+      #b00020 100%
+    )!important;
+  opacity:0;
+  transform-origin:bottom center;
+  transform:scaleY(.04);
+  box-shadow:0 1px 5px rgba(0,0,0,.16);
+}
+.slide.play .distribution .stripe-stack .stripe-fill{
+  animation:growDistributionFillV115 .7s cubic-bezier(.18,.84,.22,1) forwards;
+}
+@keyframes growDistributionFillV115{
+  from{opacity:0;transform:scaleY(.04)}
+  to{opacity:1;transform:scaleY(1)}
+}
+.distribution .stripe-stack .stripe{
+  display:none!important;
+}
+
 </style>
+
+<style id="thanks_beige_hardfix_v116">
+  body .deck .slide.thanks-slide,
+  body .deck article.slide.thanks-slide,
+  body .deck .slide.thanks-slide .slide-inner,
+  body .deck article.slide.thanks-slide .slide-inner,
+  body .deck .slide.thanks-slide.active,
+  body .deck .slide.thanks-slide.active .slide-inner {
+    background: #f4f2ee !important;
+    background-color: #f4f2ee !important;
+    background-image: none !important;
+  }
+  body .deck .slide.thanks-slide::before,
+  body .deck .slide.thanks-slide::after,
+  body .deck .slide.thanks-slide .slide-inner::before,
+  body .deck .slide.thanks-slide .slide-inner::after {
+    background: none !important;
+    background-image: none !important;
+  }
+</style>
+
 </head>
 <body data-mode="manometer-results">
 <div id="loadingScreen" class="loading-screen"><div class="loading-card"><h2>Auswertung wird geladen</h2><p>Die Präsentation wird vorbereitet.</p><div class="loading-track"><div id="loadingFill" class="loading-fill"></div></div><div id="loadingStatus" class="loading-status">Daten werden geladen …</div></div></div>
@@ -181,8 +253,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=manometer-thanks-slide-beige-v113"></script>
-<script src="js/app.js?v=manometer-thanks-slide-beige-v113"></script>
+<script src="js/config.js?v=manometer-thanks-beige-hardfix-v116"></script>
+<script src="js/app.js?v=manometer-thanks-beige-hardfix-v116"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -281,17 +353,7 @@
     for(var d=1;d<=10;d++){
       var n=counts[d]||0;
       var fillRatio=maxBucketCount?Math.max(0,Math.min(1,n/maxBucketCount)):0;
-      var scaled=Math.round(fillRatio*totalStripes);
-      if(n>0&&scaled<1)scaled=1;
-      if(fillRatio>=0.999)scaled=totalStripes;
-      if(scaled>totalStripes)scaled=totalStripes;
-      cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack" style="--fill-ratio:'+fillRatio.toFixed(4)+'"><div class="stripe-fill">';
-      for(var s=0;s<scaled;s++){
-        var colorIndex=Math.max(0,Math.min(totalStripes-1,Math.round((s/Math.max(1,scaled-1))*(totalStripes-1))));
-        cols+='<span class="stripe" style="background:'+stripeColor(colorIndex)+';animation-delay:'+(0.12+stripeCounter*0.045).toFixed(3)+'s"></span>';
-        stripeCounter++;
-      }
-      cols+='</div></div><div class="tick">'+d+'</div></div>';
+      cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack" style="--fill-ratio:'+fillRatio.toFixed(4)+'"><div class="stripe-fill"></div></div><div class="tick">'+d+'</div></div>';
     }
     var comments=listPreviewHtml('Kritik / Verbesserungsvorschläge', improvements, 'Keine Verbesserungsvorschläge oder Kritik zu dieser Frage vorhanden.');
     return '<article class="slide" data-card="scale"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(q.category)+'</span><h2>'+escapeHtml(q.label)+'</h2></div><div class="slide-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div><div class="scale-slide-grid"><section class="scale-panel"><div class="modern-metric"><div class="avg-tile" data-color-target="'+(av===null?0:av.toFixed(1))+'"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt von 10</span></div><div class="mini-stats"><div class="mini-stat"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt</span></div><div class="mini-stat"><strong data-countto="'+vals.length+'">0</strong><span>Antworten</span></div></div></div><div class="scale-viz"><div class="scale-head"><div class="scale-title">Punkteverteilung</div></div><div class="distribution">'+cols+'</div></div></section><aside class="feedback-panel"><h3>Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></aside></div></div></article>'
@@ -404,6 +466,6 @@
   document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-thanks-slide-beige-v113"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-thanks-beige-hardfix-v116"></script>
 </body>
 </html>

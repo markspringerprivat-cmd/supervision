@@ -188,7 +188,7 @@
 
     target.innerHTML = `
       <div class="card highlight role-card-main">
-        <p class="role-pill" style="color:${color(roleKey)}">${esc(label)}</p>
+        <p class="role-pill" style="color:${color(roleKey)}">${esc(assignedName ? (label + ' (' + assignedName + ')') : label)}</p>
         <h2>${esc(data.title)}</h2>
         <p><strong>Zugewiesene Person:</strong> <span id="assignedPersonName" data-assigned-name-for="${esc(roleKey)}">${assignedName ? esc(assignedName) : '<span class="sv-spinner tiny"></span> wird geladen / nicht gesetzt'}</span></p>
         <p>${esc(data.intro)}</p>
@@ -211,7 +211,8 @@
 
     const next = document.getElementById('nextPrep');
     if (next) {
-      const file = FLOW_FILES[roleKey] || 'ablauf-supervisor.html';
+      const knownMap = storedNames();
+      const file = roleKey === 'supervisor' && knownMap.protokoll ? 'ablauf-supervisor-moderation.html' : (FLOW_FILES[roleKey] || 'ablauf-supervisor.html');
       const suffix = querySuffix();
       next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '');
       next.classList.remove('is-busy');
@@ -239,6 +240,16 @@
       saveNames(map);
       const el = document.getElementById('assignedPersonName');
       if (el) el.textContent = map[roleKey] || 'nicht gesetzt';
+      const pill = document.querySelector('.role-pill');
+      if (pill) pill.textContent = map[roleKey] ? ((ROLE_LABELS[roleKey]||roleKey) + ' (' + map[roleKey] + ')') : (ROLE_LABELS[roleKey]||roleKey);
+      if(roleKey === 'supervisor'){
+        const next = document.getElementById('nextPrep');
+        if(next){
+          const suffix = querySuffix();
+          const file = map.protokoll ? 'ablauf-supervisor-moderation.html' : 'ablauf-supervisor.html';
+          next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '');
+        }
+      }
     } catch (err) {
       const el = document.getElementById('assignedPersonName');
       if (el && /wird geladen/.test(el.textContent || '')) el.textContent = 'nicht gesetzt';

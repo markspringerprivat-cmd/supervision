@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-clean-modern-v68">
+  <link rel="stylesheet" href="css/styles.css?v=group-presentation-editor-v85">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -63,14 +63,14 @@
       <p id="presentationInfo">Noch keine Präsentationsdaten geladen.</p>
       <div class="presentation-actions">
         <a id="presentationFinalLink" class="button presentation-open" href="presentation.html">Finale Präsentation ansehen</a>
-        <a id="presentationEditLink" class="button secondary presentation-open" href="zusammenfassung.html">Präsentation bearbeiten</a>
+        <a id="presentationEditLink" class="button secondary presentation-open" href="zusammenfassung.html">Gruppenpräsentation direkt bearbeiten</a>
         <a class="button secondary" href="index.html">Zurück zur Startseite</a>
       </div>
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=manometer-clean-modern-v68"></script>
-<script src="js/app.js?v=manometer-clean-modern-v68"></script>
+<script src="js/config.js?v=group-presentation-editor-v85"></script>
+<script src="js/app.js?v=group-presentation-editor-v85"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -93,16 +93,31 @@
     });
   }
   function qrUrl(text){return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text)}
-  function renderUsers(count,done){
+  function renderUsers(count,done,data){
     var target=document.getElementById('feedbackUsers');target.innerHTML='';
-    var total=Math.max(4,Number(count||5)); var completed=Math.min(total,Number(done||0));
-    for(var i=1;i<=total;i++){
-      var d=document.createElement('div');
-      var isDone=i<=completed;
-      d.className='feedback-user '+(isDone?'done':'open');
-      d.innerHTML='<span>Nutzer '+i+'</span><span>'+(isDone?'Feedback abgegeben':'offen')+'</span>';
-      target.appendChild(d);
+    var members=(data&&data.groupMembers)||[];
+    var feedback=(data&&data.feedbackEntries)||[];
+    var byDevice={};
+    feedback.forEach(function(f){ if(f&&f.deviceId) byDevice[String(f.deviceId)]=true; });
+    var total=Number(count||members.length||5);
+    total=Math.max(4,Math.min(5,total));
+    var rows=[];
+    if(members.length){
+      rows=members.slice(0,total).map(function(m,i){
+        var doneByDevice=!!(m.deviceId&&byDevice[String(m.deviceId)]);
+        return {name:m.name||('Teilnehmer '+(i+1)),done:doneByDevice,role:m.role||''};
+      });
+    }else{
+      var completed=Math.min(total,Number(done||0));
+      for(var i=1;i<=total;i++) rows.push({name:'Teilnehmer '+i,done:i<=completed,role:''});
     }
+    while(rows.length<total) rows.push({name:'Teilnehmer '+(rows.length+1),done:false,role:''});
+    rows.forEach(function(row){
+      var d=document.createElement('div');
+      d.className='feedback-user '+(row.done?'done':'open');
+      d.innerHTML='<span>'+escHtml(row.name)+'</span><span>'+(row.done?'Feedback abgegeben':'offen')+'</span>';
+      target.appendChild(d);
+    });
   }
   function renderActivities(data){
     var target=document.getElementById('activities');
@@ -196,7 +211,7 @@ function render(data){
       finalLink.style.pointerEvents='';
       finalLink.style.opacity='1';
       editLink.href='gruppe-praesentation-bearbeiten.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber);
-      editLink.textContent='Präsentation bearbeiten';
+      editLink.textContent='Gruppenpräsentation direkt bearbeiten';
       editLink.style.pointerEvents='';
       editLink.style.opacity='1';
     }else if(data.hasResult && rowNumber){
@@ -206,7 +221,7 @@ function render(data){
       finalLink.style.pointerEvents='none';
       finalLink.style.opacity='.55';
       editLink.href='gruppe-praesentation-bearbeiten.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber);
-      editLink.textContent='Präsentation bearbeiten';
+      editLink.textContent='Gruppenpräsentation direkt bearbeiten';
       editLink.style.pointerEvents='';
       editLink.style.opacity='1';
     }else{
@@ -231,6 +246,6 @@ function render(data){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-clean-modern-v68"></script>
+<script src="js/role_personalizer_v62.js?v=group-presentation-editor-v85"></script>
 </body>
 </html>

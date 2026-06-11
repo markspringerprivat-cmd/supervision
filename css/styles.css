@@ -5337,3 +5337,57 @@ body[data-mode="rolecard"] .role-card-case .notice{font-weight:800}
   text-align:center!important;
   line-height:1.08!important;
 }
+
+
+/* v83 Rollen-/Phasenlayout */
+.equal-phase-layout{
+  align-items:stretch!important;
+}
+.equal-phase-layout.two-col{
+  display:grid!important;
+  grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)!important;
+  gap:18px!important;
+}
+.equal-phase-layout.phase-layout-stacked{
+  display:grid!important;
+  grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr)!important;
+  gap:18px!important;
+  align-items:stretch!important;
+}
+.equal-phase-layout > .card,
+.equal-phase-layout .equal-fill-card{
+  height:100%!important;
+  min-height:100%!important;
+}
+.equal-phase-layout textarea{
+  min-height:72px;
+}
+.equal-phase-layout .protocol-overview-card{
+  display:flex;
+  flex-direction:column;
+}
+.equal-phase-layout .phase2-doc-grid{
+  flex:1 1 auto;
+  align-items:stretch;
+}
+.equal-phase-layout .role-note-block{
+  display:flex;
+  flex-direction:column;
+}
+.equal-phase-layout .role-note-block .required-field-box{
+  flex:1 1 0;
+  display:flex;
+  flex-direction:column;
+}
+.equal-phase-layout .role-note-block textarea{
+  flex:1 1 auto;
+  min-height:86px;
+}
+.note-ref{margin:10px 0}
+.note-ref h3{margin:0 0 6px}
+@media(max-width:900px){
+  .equal-phase-layout.two-col,
+  .equal-phase-layout.phase-layout-stacked{
+    grid-template-columns:1fr!important;
+  }
+}

@@ -150,13 +150,25 @@
 
   let roleScannerStream = null;
   let roleScannerTimer = null;
+  let roleScannerCanvas = null;
+  let roleScannerJsQrPromise = null;
+
   function normalizeScannedRoleTarget(text){
     const value=String(text||'').trim();
     if(!value) return '';
-    if(/^https?:\/\//i.test(value)) return value;
-    if(/\.html(\?|$)/i.test(value)) return new URL(value, location.href).toString();
-    return '';
+    let url='';
+    try{
+      if(/^https?:\/\//i.test(value)) url=new URL(value).toString();
+      else if(/\.html(\?|$)/i.test(value)) url=new URL(value, location.href).toString();
+      else return '';
+      const u=new URL(url, location.href);
+      const file=(u.pathname.split('/').pop()||'').toLowerCase();
+      const allowed=['rolle-supervisor.html','rolle-schulleitung.html','rolle-lehrkraft-a.html','rolle-lehrkraft-b.html','rolle-protokoll.html'];
+      if(!allowed.includes(file)) return '';
+      return u.toString();
+    }catch(_){ return ''; }
   }
+
   function closeRoleScanner(){
     const modal=document.getElementById('roleScannerModal');
     if(modal) modal.classList.remove('open');
@@ -165,49 +177,119 @@
     if(roleScannerTimer){ clearInterval(roleScannerTimer); roleScannerTimer=null; }
     if(roleScannerStream){ roleScannerStream.getTracks().forEach(track=>track.stop()); roleScannerStream=null; }
   }
+
   function roleScannerStatus(msg, cls){
     const el=document.getElementById('roleScannerStatus');
     if(!el) return;
     el.textContent=msg;
     el.className='scanner-status'+(cls?(' '+cls):'');
   }
+
+  function loadJsQrFallback(){
+    if(window.jsQR) return Promise.resolve(window.jsQR);
+    if(roleScannerJsQrPromise) return roleScannerJsQrPromise;
+    roleScannerJsQrPromise = new Promise((resolve,reject)=>{
+      const existing=document.querySelector('script[data-jsqr-role-scanner="1"]');
+      if(existing){
+        existing.addEventListener('load',()=>resolve(window.jsQR));
+        existing.addEventListener('error',reject);
+        return;
+      }
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+      s.async=true;
+      s.defer=true;
+      s.dataset.jsqrRoleScanner='1';
+      s.onload=()=>window.jsQR?resolve(window.jsQR):reject(new Error('jsQR nicht geladen'));
+      s.onerror=()=>reject(new Error('jsQR konnte nicht geladen werden'));
+      document.head.appendChild(s);
+    });
+    return roleScannerJsQrPromise;
+  }
+
+  function detectWithJsQr(video){
+    if(!window.jsQR || !video || !video.videoWidth || !video.videoHeight) return '';
+    if(!roleScannerCanvas) roleScannerCanvas=document.createElement('canvas');
+    const canvas=roleScannerCanvas;
+    const w=video.videoWidth;
+    const h=video.videoHeight;
+    canvas.width=w;
+    canvas.height=h;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.drawImage(video,0,0,w,h);
+    const img=ctx.getImageData(0,0,w,h);
+    const code=window.jsQR(img.data,w,h,{inversionAttempts:'attemptBoth'});
+    return code && code.data ? String(code.data).trim() : '';
+  }
+
   async function openRoleScanner(){
     const modal=document.getElementById('roleScannerModal');
     const video=document.getElementById('roleScanVideo');
     if(!modal || !video) return;
+    closeRoleScanner();
     modal.classList.add('open');
     roleScannerStatus('Kamera wird geöffnet …');
-    const Barcode=window.BarcodeDetector;
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      roleScannerStatus('Dieser Browser unterstützt keinen eingebetteten Kamerazugriff. Bitte füge unten den Link der Rollenkarte ein.','warning');
+      roleScannerStatus('Dieser Browser erlaubt hier keinen eingebetteten Kamerazugriff. Bitte Link unten einfügen oder die normale Kamera-App zum QR-Code-Scannen verwenden.','warning');
       return;
     }
     try{
-      roleScannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+      roleScannerStream=await navigator.mediaDevices.getUserMedia({
+        video:{
+          facingMode:{ideal:'environment'},
+          width:{ideal:1280},
+          height:{ideal:1280}
+        },
+        audio:false
+      });
       video.srcObject=roleScannerStream;
-      await video.play().catch(()=>{});
-      if(!Barcode){
-        roleScannerStatus('Der eingebaute QR-Scanner wird in diesem Browser nicht unterstützt. Bitte füge unten den Link der Rollenkarte ein.','warning');
-        return;
+      video.setAttribute('playsinline','');
+      video.muted=true;
+      await video.play();
+
+      let barcodeDetector=null;
+      if(window.BarcodeDetector){
+        try{ barcodeDetector=new BarcodeDetector({formats:['qr_code']}); }catch(_){ barcodeDetector=null; }
       }
-      const detector=new BarcodeDetector({formats:['qr_code']});
-      roleScannerStatus('QR-Code im Kamerabild ausrichten …');
+
+      let jsQrReady=false;
+      if(!barcodeDetector){
+        roleScannerStatus('Scanner wird vorbereitet …');
+        try{ await loadJsQrFallback(); jsQrReady=!!window.jsQR; }
+        catch(_){ jsQrReady=false; }
+      }
+
+      if(barcodeDetector) roleScannerStatus('QR-Code im Kamerabild ausrichten …');
+      else if(jsQrReady) roleScannerStatus('QR-Code im Kamerabild ausrichten …');
+      else roleScannerStatus('Automatisches Erkennen ist in diesem Browser nicht verfügbar. Bitte Link unten einfügen.','warning');
+
       roleScannerTimer=setInterval(async()=>{
         try{
           if(!video.videoWidth) return;
-          const codes=await detector.detect(video);
-          if(!codes || !codes.length) return;
-          const raw=(codes[0].rawValue||'').trim();
+          let raw='';
+          if(barcodeDetector){
+            const codes=await barcodeDetector.detect(video);
+            if(codes && codes.length) raw=(codes[0].rawValue||'').trim();
+          }else if(window.jsQR){
+            raw=detectWithJsQr(video);
+          }
+          if(!raw) return;
           const target=normalizeScannedRoleTarget(raw);
-          if(!target){ roleScannerStatus('Der gescannte Code ist keine gültige Rollenkarten-Adresse.','warning'); return; }
+          if(!target){
+            roleScannerStatus('QR erkannt, aber keine gültige Rollenkarten-Adresse.','warning');
+            return;
+          }
           closeRoleScanner();
           location.href=target;
-        }catch(_){ }
-      },700);
+        }catch(err){
+          // Bei einzelnen Erkennungsfehlern weiter scannen.
+        }
+      },450);
     }catch(err){
-      roleScannerStatus('Kamera konnte nicht geöffnet werden. Bitte füge unten den Link der Rollenkarte ein.','warning');
+      roleScannerStatus('Kamera konnte nicht geöffnet werden. Bitte Browser-Kamerazugriff erlauben oder Link unten einfügen.','warning');
     }
   }
+
   function renderPostJoinState(groupId, member, opts){
     const options=opts||{};
     const main=document.querySelector('main');

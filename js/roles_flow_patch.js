@@ -1563,7 +1563,9 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     if(next){
       let targetRole = role || profile;
       if(profile === 'lehrkraft' && (!targetRole || targetRole === 'lehrkraft')) targetRole = 'lehrkraft-a';
-      next.href = (typeof linkWithState === 'function') ? linkWithState(`gedanken-${targetRole}.html`) : `gedanken-${targetRole}.html`;
+      let targetFile = `gedanken-${targetRole}.html`;
+      if(profile === 'supervisor' && (hasProtocolV83() || /ablauf-supervisor-moderation\.html$/i.test(location.pathname))) targetFile = 'phase1-supervisor.html';
+      next.href = (typeof linkWithState === 'function') ? linkWithState(targetFile) : targetFile;
       next.classList.add('disabled'); next.setAttribute('aria-disabled','true');
     }
     if(!box) return;
@@ -1864,4 +1866,157 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     }
   };
   try { initPhase = window.initPhase; } catch(_) {}
+})();
+
+
+/* ------------------------------------------------------------
+   v83 Rollen-/Phasenlogik: 4er/5er Supervisor, Notizsichtbarkeit, Rollenname zuerst
+   ------------------------------------------------------------ */
+(function(){
+  const LABELS_V83 = {
+    supervisor:'Supervisor*in',
+    schulleitung:'Schulleitung',
+    'lehrkraft-a':'Lehrkraft A',
+    'lehrkraft-b':'Lehrkraft B',
+    protokoll:'Protokoll'
+  };
+  function escV83(v){
+    if(typeof escapeHtml==='function') return escapeHtml(v);
+    return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function roleClassV83(role){return 'role-' + String(role||'').replace(/[^a-z0-9-]/g,'');}
+  function loadV83(k){try{return (typeof loadText==='function')?loadText(k):'';}catch(_){return '';}}
+  function namesMapV83(){try{return JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{};}catch(_){return {};}}
+  function assignmentsV83(){try{return (typeof loadObj==='function')?loadObj('assignments',{}):{};}catch(_){return {};}}
+  function hasProtocolV83(){const a=assignmentsV83();const n=namesMapV83();return !!((a&&a.protokoll)||(n&&n.protokoll));}
+  function rolePersonV83(role){const a=assignmentsV83(); const n=namesMapV83(); return a && a[role] ? String(a[role]) : (n&&n[role]?String(n[role]):'');}
+  function roleDisplayV83(role){const label=LABELS_V83[role]||role; const name=rolePersonV83(role); return name ? `${label} (${name})` : label;}
+  function reqV83(label,key,hint){return `<div class="required-field-box"><div class="required-label">Pflichtfeld!</div><label>${escV83(label)}</label>${hint?`<p class="small">${escV83(hint)}</p>`:''}<textarea data-save="${escV83(key)}"></textarea></div>`;}
+  function readonlyV83(label,value){return `<div class="note-ref"><h3>${escV83(label)}</h3><div class="readonly-box">${escV83(value||'Noch keine Notiz gespeichert.')}</div></div>`;}
+  function miniV83(){return (typeof miniSummaryHtml==='function')?miniSummaryHtml():'';}
+  function prepMapV83(role){
+    const base = {
+      schulleitung:[
+        ['Beobachtung', 'prep_schulleitung_beobachtung'],
+        ['Gefühle', 'prep_schulleitung_gefuehle'],
+        ['Wünsche', 'prep_schulleitung_wuensche'],
+        ['Lösungsideen / Unterstützung', 'prep_schulleitung_loesung']
+      ],
+      'lehrkraft-a':[
+        ['Beobachtung / Perspektive', 'prep_lehrkraft-a_perspektive'],
+        ['Gefühle', 'prep_lehrkraft-a_gefuehle'],
+        ['Wünsche', 'prep_lehrkraft-a_wuensche'],
+        ['Lösungsideen / Zielgedanken', 'prep_lehrkraft-a_ziele']
+      ],
+      'lehrkraft-b':[
+        ['Beobachtung / Perspektive', 'prep_lehrkraft-b_perspektive'],
+        ['Gefühle', 'prep_lehrkraft-b_gefuehle'],
+        ['Wünsche', 'prep_lehrkraft-b_wuensche'],
+        ['Lösungsideen / Zielgedanken', 'prep_lehrkraft-b_ziele']
+      ]
+    };
+    return base[role]||[];
+  }
+  function prepCardV83(role, phase){
+    const items=prepMapV83(role);
+    if(!items.length) return '';
+    let filtered=[];
+    let title='Deine Notizen';
+    if(phase===2){ filtered=items.slice(0,3); title='Notizen für Beobachtung, Gefühle und Wünsche'; }
+    else if(phase===3){ filtered=items.slice(3); title='Deine Lösungsideen / Zielgedanken'; }
+    else if(phase===4){ return ''; }
+    else if(phase===5){ filtered=items; title='Alle Notizen zum Abgleichen'; }
+    else if(phase===6){ return ''; }
+    else { return ''; }
+    return `<section class="card prep-reference-card"><h2>${escV83(title)}</h2>${filtered.map(([label,k])=>readonlyV83(label,loadV83(k))).join('')}</section>`;
+  }
+  function participantPhaseV83(role,phase){
+    const label=roleDisplayV83(role);
+    const pill=`<p class="role-pill ${roleClassV83(role)}">${escV83(label)}</p>`;
+    if(phase===1) return `<section class="card highlight">${pill}<h2>Gesprächsstart</h2><p>Höre der Supervisor*in zu. Achte auf Gesprächsrahmen, Regeln und darauf, ob du bereit bist, deine Perspektive später einzubringen.</p></section>`;
+    if(phase===2) return `<section class="card highlight">${pill}<h2>Problembeschreibung</h2><p>Wenn du das Wort bekommst, sprich zu Beobachtung oder Problem, Gefühlen und Wünschen. Bleibe konkret und vermeide Vorwürfe.</p></section>${prepCardV83(role,2)}`;
+    if(phase===3) return `<section class="card highlight">${pill}<h2>Zielformulierung</h2><p>Nutze deine vorbereiteten Lösungsideen oder Zielgedanken. Arbeite mit der Gruppe an einer gemeinsamen Zielvereinbarung.</p><p class="notice">Du musst hier keine neue individuelle Zielformulierung eintragen.</p></section>${prepCardV83(role,3)}`;
+    if(phase===4) return `<section class="card highlight">${pill}<h2>Vertiefte Problembearbeitung</h2><p>Beteilige dich am Gespräch über hilfreiche Kritik und konkrete Absprachen. Für deine Rolle werden in dieser Phase keine vorbereiteten Notizen angezeigt.</p></section>`;
+    if(phase===5) return `<section class="card highlight">${pill}<h2>Ergebnissicherung</h2><p>Prüfe, ob Beobachtungen, Gefühle, Wünsche und Lösungsideen korrekt aufgenommen wurden. Sage klar, ob du die Vereinbarung mittragen kannst.</p></section>${prepCardV83(role,5)}`;
+    if(phase===6 && role==='schulleitung') return `<section class="card highlight">${pill}<h2>Praxistauglichkeit prüfen</h2><p>Prüfe, ob die Vereinbarung im Schulalltag realistisch ist. Benenne Unterstützungsmöglichkeiten und erste konkrete Umsetzungsschritte.</p></section>`;
+    if(phase===6) return `<section class="card highlight">${pill}<h2>Abschluss</h2><p>Die Praxistauglichkeit wird vor allem mit der Schulleitung geprüft. Höre zu und überlege, welchen ersten Schritt du selbst nach der Supervision gehen kannst.</p></section>`;
+    return '';
+  }
+  function reqNoteV83(label, saveKey, hint){ return reqV83(label,saveKey,hint); }
+  function protocolFieldsV83(phase){
+    const sl=roleDisplayV83('schulleitung'), a=roleDisplayV83('lehrkraft-a'), b=roleDisplayV83('lehrkraft-b');
+    if(phase===1) return `<section class="card protocol-overview-card equal-fill-card"><h2>Dokumentation: Gesprächsrahmen</h2><p class="small">Notiere Gesprächsregeln und Bereitschaft der Beteiligten.</p>${reqNoteV83('Gesprächsrahmen / Regeln / Bereitschaft','sup_p1_rahmen','Zum Beispiel: ausreden lassen, Ich-Aussagen, respektvoll bleiben, konkrete Beobachtungen nennen.')}</section>`;
+    if(phase===2) return `<section class="card protocol-overview-card phase2-protocol-section equal-fill-card"><div class="phase2-title-row"><h2>Phase 2: Problembeschreibung</h2><div class="phase-task-card"><h3>Deine Aufgabe in Phase 2</h3><p>Trenne Aussagen nach Rolle und Kategorie: Beobachtung oder Problem, Gefühle und Wünsche.</p></div></div><div class="phase2-doc-grid"><div class="role-note-block"><h3>${escV83(sl)}</h3>${reqNoteV83('Problem / Beobachtung','sup_p2_sl_probleme')}${reqNoteV83('Gefühle','sup_p2_sl_gefuehle')}${reqNoteV83('Wünsche','sup_p2_sl_wuensche')}</div><div class="role-note-block"><h3>${escV83(a)}</h3>${reqNoteV83('Problem / Perspektive','sup_p2_a_probleme')}${reqNoteV83('Gefühle','sup_p2_a_gefuehle')}${reqNoteV83('Wünsche','sup_p2_a_wuensche')}</div><div class="role-note-block"><h3>${escV83(b)}</h3>${reqNoteV83('Problem / Perspektive','sup_p2_b_probleme')}${reqNoteV83('Gefühle','sup_p2_b_gefuehle')}${reqNoteV83('Wünsche','sup_p2_b_wuensche')}</div></div></section>`;
+    if(phase===3) return `<section class="card protocol-overview-card equal-fill-card"><h2>Dokumentation: Ziele</h2><p class="small">Notiere Einzelziele, Gemeinsamkeiten und die gemeinsame Zielvereinbarung.</p>${reqNoteV83('Ziel Schulleitung','sup_p3_ziel_sl')}${reqNoteV83('Ziel Lehrkraft A','sup_p3_ziel_a')}${reqNoteV83('Ziel Lehrkraft B','sup_p3_ziel_b')}${reqNoteV83('Gemeinsamkeiten','sup_p3_gemeinsamkeiten')}${reqNoteV83('Gemeinsame Zielformulierung','sup_p3_gemeinsames_ziel')}</section>`;
+    if(phase===4) return `<section class="card protocol-overview-card equal-fill-card"><h2>Dokumentation: Vertiefte Problembearbeitung</h2><p class="small">Halte hilfreiche Kritik, positive Rückmeldungen und Absprachen fest.</p>${reqNoteV83('Kriterien für hilfreiche Kritik','sup_p4_kritik')}<div class="three-col">${reqNoteV83('Positive Rückmeldung zur Schulleitung','sup_p4_pos_sl')}${reqNoteV83('Positive Rückmeldung zu Lehrkraft A','sup_p4_pos_a')}${reqNoteV83('Positive Rückmeldung zu Lehrkraft B','sup_p4_pos_b')}</div>${reqNoteV83('Absprachen zum weiteren Vorgehen','sup_p4_absprachen')}</section>`;
+    if(phase===5) return `<section class="card protocol-overview-card equal-fill-card"><h2>Dokumentation: Ergebnissicherung</h2><p class="small">Fasse Ergebnisse, Zustimmung und offene Punkte zusammen.</p><div class="summary-block"><strong>Zwischenergebnisse</strong><br>${miniV83()}</div><label>Zustimmung erfolgt?</label><select class="standard-required" data-save="sup_p5_zustimmung_status"><option value="">Bitte auswählen</option><option value="Alle stimmen zu">Alle stimmen zu</option><option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option><option value="Keine Zustimmung">Keine Zustimmung</option></select>${reqNoteV83('Rückmeldungen / Zustimmung / offene Punkte','sup_p5_zustimmung')}</section>`;
+    if(phase===6) return `<section class="card protocol-overview-card equal-fill-card"><h2>Dokumentation: Praxistauglichkeit</h2>${reqNoteV83('Einschätzung der Praxistauglichkeit','sup_p6_praxistauglichkeit')}${reqNoteV83('Unterstützung durch Schulleitung','sup_p6_unterstuetzung')}${reqNoteV83('Erste konkrete Umsetzungsschritte','sup_p6_umsetzung')}</section>`;
+    return '';
+  }
+  function fallbackModeratorV83(phase){
+    if(typeof moderatorCard==='function'){
+      try{return moderatorCard(phase).replace(/<section class="card highlight moderation-only-card"/,'<section class="card highlight moderation-only-card equal-fill-card"');}catch(_){}
+    }
+    return `<section class="card highlight moderation-only-card equal-fill-card"><h2>Moderationskarte Phase ${phase}</h2><p>Leite die Phase anhand der vorbereiteten Fragen.</p></section>`;
+  }
+  function supervisorFullV83(phase){
+    if(phase===2) return `<div class="phase-layout-stacked equal-phase-layout">${fallbackModeratorV83(phase)}${protocolFieldsV83(phase)}</div>`;
+    return `<div class="two-col equal-phase-layout">${fallbackModeratorV83(phase)}${protocolFieldsV83(phase)}</div>`;
+  }
+  function protocolOnlyV83(phase){
+    return `<div class="phase-layout-stacked equal-phase-layout"><section class="card highlight protokoll-note-card equal-fill-card"><p class="role-pill role-protokoll">${escV83(roleDisplayV83('protokoll'))}</p><h2>Deine Aufgabe in Phase ${phase}</h2><p>Höre genau zu und fülle die Dokumentationsfelder. Du moderierst nicht. Bitte bei unklaren Aussagen kurz um Wiederholung oder Zusammenfassung.</p></section>${protocolFieldsV83(phase)}</div>`;
+  }
+
+  const oldInitPhaseV83 = window.initPhase;
+  window.initPhase=function(){
+    if(typeof initCommon==='function') initCommon();
+    const role=(typeof getPageRole==='function')?getPageRole():document.body.dataset.role;
+    const phase=(typeof getPhase==='function')?getPhase():Number(document.body.dataset.phase||'0');
+    if(typeof renderPhaseBar==='function') renderPhaseBar(phase);
+    const title=document.getElementById('phaseTitle');
+    if(title) title.textContent=`Phase ${phase}: ${({1:'Erstkontakt',2:'Problembeschreibung',3:'Zielformulierung',4:'Vertiefte Problembearbeitung',5:'Ergebnissicherung',6:'Reflexionstauglichkeit'}[phase]||'')}`;
+    const content=document.getElementById('phaseContent');
+    if(!content) return;
+    if(role==='protokoll') content.innerHTML=protocolOnlyV83(phase);
+    else if(role==='supervisor' && hasProtocolV83()) content.innerHTML=fallbackModeratorV83(phase);
+    else if(role==='supervisor') content.innerHTML=supervisorFullV83(phase);
+    else content.innerHTML=participantPhaseV83(role,phase);
+    if(typeof setupSaving==='function') setupSaving();
+    const next=document.getElementById('nextPhase');
+    if(next){
+      if(phase<6){ next.href=(typeof linkWithState==='function')?linkWithState(`phase${phase+1}-${role}.html`):`phase${phase+1}-${role}.html`; next.textContent=`Bereit für Phase ${phase+1}`; }
+      else {
+        let target='abschluss.html';
+        if(role==='protokoll') target='zusammenfassung-protokoll.html';
+        else if(role==='supervisor' && !hasProtocolV83()) target='zusammenfassung.html';
+        next.href=(typeof linkWithState==='function')?linkWithState(target):target;
+        next.textContent=target.indexOf('zusammenfassung')>=0?'Ergebnisse zusammenfassen':'Abschluss';
+      }
+    }
+  };
+  try{initPhase=window.initPhase;}catch(_){}
+
+  const oldInitRoleCardV83 = window.initRoleCard;
+  window.initRoleCard=function(){
+    if(typeof oldInitRoleCardV83==='function') oldInitRoleCardV83();
+    const role=(typeof getPageRole==='function')?getPageRole():document.body.dataset.role;
+    const target=document.getElementById('roleCard');
+    if(!target) return;
+    target.querySelectorAll('.role-name-pill').forEach(el=>{
+      const r=el.getAttribute('data-role-label')||role;
+      el.textContent=roleDisplayV83(r);
+    });
+    target.querySelectorAll('[data-assigned-name-for]').forEach(el=>{
+      const r=el.getAttribute('data-assigned-name-for');
+      const name=rolePersonV83(r);
+      if(name) el.textContent=name;
+    });
+    const next=document.getElementById('nextPrep');
+    if(next && role==='supervisor'){
+      const query=typeof currentQueryString==='function'?currentQueryString():'';
+      const file=hasProtocolV83()?'ablauf-supervisor-moderation.html':'ablauf-supervisor.html';
+      next.href=`${file}?role=${encodeURIComponent(role)}${query?'&'+query:''}`;
+    }
+  };
+  try{initRoleCard=window.initRoleCard;}catch(_){}
 })();

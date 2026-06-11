@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppe beitreten</title>
-  <link rel="stylesheet" href="css/styles.css?v=group-session-v62">
+  <link rel="stylesheet" href="css/styles.css?v=group-presentation-editor-v85">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .join-shell{width:min(720px,calc(100vw - 34px));margin:0 auto;padding:34px 0 44px;display:grid;gap:18px}
@@ -28,7 +28,7 @@
     .scanner-head h2{margin:0;color:#10223a;font-size:1.2rem}
     .scanner-close{border:0;background:#eef5fb;color:#24456b;border-radius:999px;width:38px;height:38px;font-size:1.15rem;cursor:pointer}
     #roleScanVideo{width:100%;aspect-ratio:1/1;border-radius:18px;background:#0b1830;object-fit:cover}
-    .scanner-status{padding:10px 12px;border-radius:14px;background:#f5f9ff;border:1px solid #d7e5f3;color:#355171;font-size:.95rem}
+    .scanner-status{padding:10px 12px;border-radius:14px;background:#f5f9ff;border:1px solid #d7e5f3;color:#355171;font-size:.95rem}.scanner-status.warning{background:#fff7e6;border-color:#f0d69a;color:#8a5a00}
     .scanner-fallback{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .scanner-fallback input{flex:1 1 220px}
     @media (max-width:700px){
@@ -66,7 +66,7 @@
 <div id="roleScannerModal" class="scanner-modal" aria-hidden="true">
   <div class="scanner-box">
     <div class="scanner-head"><h2>QR-Code Rollenkarte scannen</h2><button id="closeRoleScannerBtn" type="button" class="scanner-close" aria-label="Schließen">×</button></div>
-    <p>Scanne im nächsten Schritt den QR-Code deiner Rollenkarte. Wenn dein Browser keinen eingebetteten Scanner unterstützt, kannst du den Link auch unten einfügen.</p>
+    <p>Scanne im nächsten Schritt den QR-Code deiner Rollenkarte. Der Scanner nutzt BarcodeDetector oder einen jsQR-Fallback. Erlaube den Kamerazugriff. Falls das Gerät das nicht unterstützt, füge den Link unten ein.</p>
     <video id="roleScanVideo" playsinline muted></video>
     <div id="roleScannerStatus" class="scanner-status">Scanner wird vorbereitet …</div>
     <div class="scanner-fallback">
@@ -75,9 +75,9 @@
     </div>
   </div>
 </div>
-<script src="js/config.js?v=group-session-v62"></script>
-<script src="js/app.js?v=group-session-v62"></script>
-<script src="js/group_session_v33.js?v=group-session-v62"></script>
-<script src="js/role_personalizer_v62.js?v=manometer-clean-modern-v68"></script>
+<script src="js/config.js?v=group-presentation-editor-v85"></script>
+<script src="js/app.js?v=group-presentation-editor-v85"></script>
+<script src="js/group_session_v33.js?v=group-presentation-editor-v85"></script>
+<script src="js/role_personalizer_v62.js?v=group-presentation-editor-v85"></script>
 </body>
 </html>

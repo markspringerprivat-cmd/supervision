@@ -4,51 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rollenkarte Schulleitung</title>
-  <link rel="stylesheet" href="css/styles.css?v=rolecard-loading-v61">
+  <link rel="stylesheet" href="css/styles.css?v=rolecard-clean-v63">
 </head>
 <body data-mode="rolecard" data-role="schulleitung">
 <header><div class="wrap"><h1>Rollenkarte Schulleitung</h1><p>Lies deine Rolle sorgfältig. Danach siehst du den passenden Ablauf für deine Rolle.</p></div></header>
 <main class="wide-main">
-  <div id="roleCard" class="grid"></div>
+  <div id="roleCard" class="grid">
+    <section class="card">
+      <h2>Rollenkarte wird geladen</h2>
+      <p><span class="sv-spinner"></span> Die Rollenkarte wird vorbereitet …</p>
+    </section>
+  </div>
   <div class="nav-row">
     <a id="nextPrep" class="button" href="#">Weiter: Ablauf ansehen</a>
     <a id="backToRolesOverview" class="button secondary" href="rollen.html" data-keep-state>Zur Rollenverteilung</a>
   </div>
 </main>
-<footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
-<script src="js/config.js?v=rolecard-loading-v61"></script><script src="js/app.js?v=rolecard-loading-v61"></script>
-<script src="js/roles_flow_patch.js?v=rolecard-loading-v61"></script>
-<script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=rolecard-loading-v61"></script>
-<script src="js/group_registry_patch.js?v=group-registry-v22"></script>
-<script src="js/group_session_v33.js?v=group-session-v61"></script>
-
-<script id="rolecard_repair_v39">
-(function(){
-  function groupId(){
-    try{
-      var p=new URLSearchParams(location.search);
-      return p.get('groupId')||p.get('g')||localStorage.getItem('sv_current_group')||'';
-    }catch(_){return '';}
-  }
-  function repairLinks(){
-    var gid=groupId();
-    var back=document.getElementById('backToRolesOverview');
-    if(back && gid) back.href='rollen.html?groupId='+encodeURIComponent(gid);
-  }
-  function repairRoleContent(){
-    var target=document.getElementById('roleCard');
-    if(target && !target.innerHTML.trim()){
-      try{ if(typeof window.initRoleCard==='function') window.initRoleCard(); }catch(_){}
-      try{ if(!target.innerHTML.trim() && typeof initRoleCard==='function') initRoleCard(); }catch(_){}
-    }
-  }
-  repairLinks();
-  setTimeout(repairLinks,100);
-  setTimeout(repairRoleContent,100);
-  setTimeout(repairRoleContent,500);
-})();
-</script>
-<script src="js/role_personalizer_v61.js?v=role-loading-v61"></script>
+<footer><div class="wrap">Gruppen-ID: <span data-group-id>—</span></div></footer>
+<script src="js/config.js?v=rolecard-clean-v63"></script>
+<script src="js/role_card_core_v63.js?v=rolecard-clean-v63"></script>
 </body>
 </html>

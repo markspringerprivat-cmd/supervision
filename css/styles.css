@@ -5217,3 +5217,11 @@ body[data-mode="results"] .result-card[aria-current="true"].is-winner{
 .button.is-busy::after,button.is-busy::after,a.button.is-busy::after{content:"";display:inline-block;width:1em;height:1em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;margin-left:.55em;vertical-align:-.18em;animation:svSpin .75s linear infinite}
 .role-guard-loading{display:flex;align-items:center;gap:.3em;color:#52687f;margin:12px 0}
 .role-guard-loading.warning{color:#8a5a00;background:#fff7e6;border:1px solid #f0d69a;border-radius:12px;padding:10px 12px}
+
+
+/* v63 saubere Rollenkarten-Architektur */
+.sv-spinner{display:inline-block;width:1em;height:1em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-.18em;margin-right:.45em;animation:svSpin .75s linear infinite}
+.sv-spinner.tiny{width:.85em;height:.85em;border-width:1.8px;margin-right:.35em}
+@keyframes svSpin{to{transform:rotate(360deg)}}
+body[data-mode="rolecard"] .role-card-main .role-pill{font-weight:900;background:#eef5fb;border-radius:999px;display:inline-flex;padding:7px 12px}
+body[data-mode="rolecard"] .role-card-main h2{margin-top:10px}

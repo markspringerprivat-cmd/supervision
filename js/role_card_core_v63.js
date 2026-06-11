@@ -22,66 +22,94 @@
     'lehrkraft-b': 'ablauf-lehrkraft.html',
     protokoll: 'ablauf-protokoll.html'
   };
+
+  const CASE = {
+    title: 'Fallbeispiel: Teamteaching in einer ESE-Klasse',
+    context: [
+      'Zwei Lehrkräfte unterrichten gemeinsam eine Lerngruppe mit Schüler*innen mit dem Förderschwerpunkt emotionale und soziale Entwicklung.',
+      'Im Unterricht entstehen wiederholt Spannungen darüber, wer in herausfordernden Situationen eingreift, wie konsequent Regeln umgesetzt werden und wie Verantwortung im Team geteilt wird.',
+      'Die Klasse reagiert sensibel auf uneinheitliches Verhalten. Für einzelne Schüler*innen entstehen dadurch Unsicherheit, Unruhe und eine instabile Lernatmosphäre.'
+    ],
+    conflict: [
+      'Lehrkraft A erlebt, dass Absprachen nicht verlässlich eingehalten werden und sie in schwierigen Situationen häufig allein reagieren muss.',
+      'Lehrkraft B empfindet manche Interventionen von Lehrkraft A als zu streng und sieht die Gefahr, dass Beziehungsgestaltung und individuelle Förderung zu kurz kommen.',
+      'Die Schulleitung beobachtet, dass das Teamteaching nach außen nicht geschlossen wirkt und dass die Klasse mehr Klarheit und Stabilität braucht.'
+    ],
+    question: 'Wie kann das Team ein gemeinsames, verlässliches Vorgehen entwickeln, das pädagogisch tragfähig ist und den Schüler*innen mit ESE-Förderbedarf mehr Orientierung bietet?'
+  };
+
   const ROLE_DATA = {
     supervisor: {
       title: 'Rollenkarte: Supervisor*in',
-      intro: 'Du leitest das Gespräch. Deine Aufgabe ist nicht, eine Lösung vorzugeben, sondern die Supervision so zu strukturieren, dass alle Beteiligten zu einer tragfähigen Vereinbarung kommen.',
+      intro: 'Du leitest das Gespräch. Deine Aufgabe ist nicht, eine Lösung vorzugeben, sondern den Prozess so zu strukturieren, dass alle Beteiligten ihre Perspektiven klären und am Ende eine tragfähige Vereinbarung entsteht.',
+      perspective: 'Du stehst außerhalb des Konflikts. Du achtest auf Gesprächsführung, Reihenfolge, Fairness, Verständlichkeit und Ergebnissicherung.',
       bullets: [
-        'Du klärst Rahmen, Gesprächsregeln und Ziel der Supervision.',
-        'Du gibst den Beteiligten nacheinander das Wort und sicherst, dass alle Perspektiven hörbar werden.',
-        'Du fasst zentrale Punkte zusammen und arbeitest mit der Gruppe auf eine gemeinsame Vereinbarung hin.',
-        'Du achtest auf respektvolle Sprache, Struktur und Praxistauglichkeit.'
+        'Eröffne das Gespräch mit einem klaren Rahmen und benenne Ziel, Ablauf und Gesprächsregeln.',
+        'Sorge dafür, dass Schulleitung, Lehrkraft A und Lehrkraft B jeweils vollständig zu Wort kommen.',
+        'Trenne Beobachtungen, Gefühle, Wünsche und Ziele voneinander.',
+        'Fasse regelmäßig zusammen, ohne zu bewerten oder Partei zu ergreifen.',
+        'Achte darauf, dass Kritik konkret, situationsbezogen und nicht abwertend formuliert wird.',
+        'Führe die Gruppe am Ende zu einer realistischen, gemeinsamen Vereinbarung.'
       ],
-      focus: 'Dein Fokus liegt auf Gesprächsführung, Strukturierung, Klärung und Ergebnissicherung.'
+      focus: 'Dein Fokus liegt auf Struktur, Verständigung, Deeskalation und einer umsetzbaren Ergebnissicherung.'
     },
     schulleitung: {
       title: 'Rollenkarte: Schulleitung',
-      intro: 'Du bringst die Perspektive der Schulleitung ein und achtest darauf, dass pädagogische, organisatorische und schulische Rahmenbedingungen sichtbar werden.',
+      intro: 'Du bringst die Perspektive der Schulleitung ein. Du bist nicht nur Beobachter*in, sondern trägst Verantwortung für pädagogische Qualität, Teamstruktur und Verlässlichkeit im schulischen Alltag.',
+      perspective: 'Du nimmst wahr, dass die Situation nicht nur zwischen zwei Personen bleibt, sondern Auswirkungen auf Unterrichtsqualität, Teamkultur und die Stabilität der Klasse hat.',
       bullets: [
-        'Du beschreibst deine Beobachtungen sachlich und konkret.',
-        'Du benennst, welche Auswirkungen die Situation auf Unterricht, Team und Klasse hat.',
-        'Du formulierst Wünsche an Zusammenarbeit, Verlässlichkeit und gemeinsame Absprachen.',
-        'Du prüfst am Ende, ob die Vereinbarungen im Schulalltag umsetzbar sind.'
+        'Beschreibe sachlich, was du im Unterricht oder in Rückmeldungen wahrgenommen hast.',
+        'Benenne, warum die Situation aus Leitungsperspektive geklärt werden muss.',
+        'Formuliere Erwartungen an verbindliche Zusammenarbeit, Rollenklärung und Kommunikation.',
+        'Achte darauf, dass Lösungen im Schulalltag realistisch und überprüfbar sind.',
+        'Zeige, wo du unterstützen kannst, ohne die Verantwortung vollständig zu übernehmen.',
+        'Prüfe am Ende, ob die getroffene Vereinbarung organisatorisch tragfähig ist.'
       ],
-      focus: 'Dein Fokus liegt auf Stabilität, organisatorischer Umsetzbarkeit und verbindlichen Absprachen.'
+      focus: 'Dein Fokus liegt auf Stabilität, Verlässlichkeit, pädagogischer Qualität und umsetzbaren Rahmenbedingungen.'
     },
     'lehrkraft-a': {
       title: 'Rollenkarte: Lehrkraft A',
-      intro: 'Du vertrittst eine der beiden Lehrkraftperspektiven. Beschreibe deine Wahrnehmung, Gefühle und Wünsche möglichst konkret.',
+      intro: 'Du vertrittst die Perspektive von Lehrkraft A. Du erlebst die Situation als belastend, weil du das Gefühl hast, in schwierigen Momenten häufig allein für Ordnung und Konsequenz sorgen zu müssen.',
+      perspective: 'Dir ist wichtig, dass Schüler*innen mit ESE-Förderbedarf klare Orientierung bekommen. Wenn Absprachen nicht eingehalten werden, fühlst du dich in deiner Rolle unsicher und teilweise im Stich gelassen.',
       bullets: [
-        'Du schilderst, wie du die Situation im Teamteaching erlebst.',
-        'Du beschreibst, welche Gefühle und Belastungen bei dir entstehen.',
-        'Du formulierst, was du dir von der anderen Lehrkraft und der Schulleitung wünschst.',
-        'Du arbeitest an einer gemeinsamen, realistischen Vereinbarung mit.'
+        'Beschreibe konkret, welche Situationen für dich schwierig sind.',
+        'Benenne, welche Gefühle bei dir entstehen, zum Beispiel Druck, Überforderung oder Ärger.',
+        'Formuliere, was du von Lehrkraft B und der Schulleitung brauchst.',
+        'Achte darauf, bei deiner eigenen Wahrnehmung zu bleiben und keine Schuldzuweisungen zu formulieren.',
+        'Überlege, wo du selbst zu mehr Klarheit und Kooperation beitragen kannst.',
+        'Arbeite an einer Vereinbarung mit, die klare Zuständigkeiten und abgestimmtes Handeln ermöglicht.'
       ],
-      focus: 'Dein Fokus liegt auf deiner eigenen Perspektive, deiner Belastung und deinen Wünschen für eine bessere Zusammenarbeit.'
+      focus: 'Dein Fokus liegt auf Verlässlichkeit, Klarheit, abgestimmtem Handeln und Entlastung im Teamteaching.'
     },
     'lehrkraft-b': {
       title: 'Rollenkarte: Lehrkraft B',
-      intro: 'Du vertrittst die zweite Lehrkraftperspektive. Beschreibe deine Wahrnehmung, Gefühle und Wünsche möglichst konkret.',
+      intro: 'Du vertrittst die Perspektive von Lehrkraft B. Du nimmst die Situation anders wahr und hast Sorge, dass zu viel Strenge die Beziehung zu einzelnen Schüler*innen belastet.',
+      perspective: 'Dir ist wichtig, dass pädagogische Interventionen nicht nur konsequent, sondern auch beziehungsorientiert und individuell passend sind. Gleichzeitig merkst du, dass fehlende Abstimmung im Team zu Unsicherheit führt.',
       bullets: [
-        'Du schilderst deine Sicht auf die Zusammenarbeit und die Unterrichtssituation.',
-        'Du machst deutlich, welche pädagogischen oder persönlichen Anliegen dir wichtig sind.',
-        'Du formulierst, was du brauchst, damit Zusammenarbeit verlässlicher gelingt.',
-        'Du bringst dich in die gemeinsame Zielformulierung und Vereinbarung ein.'
+        'Beschreibe, wie du die Situation im gemeinsamen Unterricht wahrnimmst.',
+        'Benenne, welche pädagogischen Anliegen dir wichtig sind.',
+        'Formuliere, was du dir von Lehrkraft A und der Schulleitung wünschst.',
+        'Achte darauf, deine Haltung nachvollziehbar zu erklären, ohne die Perspektive der anderen abzuwerten.',
+        'Überlege, wo du selbst verbindlicher kommunizieren oder klarer handeln kannst.',
+        'Arbeite an einer Vereinbarung mit, die Beziehungsgestaltung und Verlässlichkeit verbindet.'
       ],
-      focus: 'Dein Fokus liegt auf deiner Rolle im Team, deinen pädagogischen Anliegen und abgestimmtem Handeln.'
+      focus: 'Dein Fokus liegt auf Beziehungsgestaltung, individueller Förderung, Verständigung und gemeinsamer pädagogischer Linie.'
     },
     protokoll: {
       title: 'Rollenkarte: Protokoll',
-      intro: 'Du dokumentierst die Ergebnisse. Deine Aufgabe ist es, die Beiträge neutral und strukturiert festzuhalten.',
+      intro: 'Du dokumentierst die Supervision. Deine Aufgabe ist es, die Beiträge neutral, klar und strukturiert festzuhalten, damit daraus später eine verständliche Ergebnispräsentation entstehen kann.',
+      perspective: 'Du bist nicht für die Lösung verantwortlich, aber du sicherst, dass zentrale Aussagen, Ziele, positive Rückmeldungen und Vereinbarungen nicht verloren gehen.',
       bullets: [
-        'Du notierst Probleme, Gefühle, Wünsche und Ziele getrennt voneinander.',
-        'Du hältst nachvollziehbare Perspektiven und konkrete Absprachen fest.',
-        'Du achtest besonders auf die gemeinsame Zielvereinbarung.',
-        'Du bereitest die Ergebnisübermittlung und Präsentation vor.'
+        'Notiere Beobachtungen, Gefühle, Wünsche und Ziele getrennt voneinander.',
+        'Halte die gemeinsame Zielvereinbarung möglichst präzise fest.',
+        'Dokumentiere in Phase 4 die positiven Rückmeldungen getrennt zur Schulleitung, zu Lehrkraft A und zu Lehrkraft B.',
+        'Sichere Zustimmung, offene Punkte und konkrete nächste Schritte.',
+        'Achte auf neutrale Sprache und vermeide wertende Formulierungen.',
+        'Bereite am Ende die Ergebnisübermittlung und Präsentation vor.'
       ],
-      focus: 'Dein Fokus liegt auf neutraler Dokumentation, klaren Ergebnissen und der späteren Ergebnisübermittlung.'
+      focus: 'Dein Fokus liegt auf Klarheit, Vollständigkeit, neutraler Dokumentation und einer präsentablen Ergebnissicherung.'
     }
   };
-
-  const CASE_TEXT = 'Der Fall betrifft eine ESE-Klasse, in der uneinheitliches Teamteaching zu Verunsicherung und fehlender Stabilität führt.';
-  const SUPERVISION_QUESTION = 'Wie kann das Team ein gemeinsames, verlässliches Vorgehen entwickeln?';
 
   function esc(value){
     return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -138,6 +166,12 @@
   function color(roleKey){
     return ROLE_COLORS[roleKey] || '#24456b';
   }
+  function list(items){
+    return '<ul class="tight">' + items.map(item => '<li>' + esc(item) + '</li>').join('') + '</ul>';
+  }
+  function paragraphs(items){
+    return items.map(item => '<p>' + esc(item) + '</p>').join('');
+  }
   function renderBase(){
     const roleKey = role();
     const label = ROLE_LABELS[roleKey] || roleKey;
@@ -158,16 +192,21 @@
         <h2>${esc(data.title)}</h2>
         <p><strong>Zugewiesene Person:</strong> <span id="assignedPersonName" data-assigned-name-for="${esc(roleKey)}">${assignedName ? esc(assignedName) : '<span class="sv-spinner tiny"></span> wird geladen / nicht gesetzt'}</span></p>
         <p>${esc(data.intro)}</p>
-        <h3>Deine Aufgabe</h3>
-        <ul class="tight">${data.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
-        <h3>Fokus im Fall</h3>
+        <h3>Rollenperspektive</h3>
+        <p>${esc(data.perspective)}</p>
+        <h3>Deine Aufgaben</h3>
+        ${list(data.bullets)}
+        <h3>Fokus im Gespräch</h3>
         <p>${esc(data.focus)}</p>
       </div>
       <div class="card role-card-case">
-        <h2>Fallgrundlage</h2>
-        <div class="readonly-box">${esc(CASE_TEXT)}</div>
+        <h2>${esc(CASE.title)}</h2>
+        <h3>Ausgangslage</h3>
+        ${paragraphs(CASE.context)}
+        <h3>Konfliktlinien</h3>
+        ${list(CASE.conflict)}
         <h3>Supervisionsfrage</h3>
-        <div class="notice">${esc(SUPERVISION_QUESTION)}</div>
+        <div class="notice">${esc(CASE.question)}</div>
       </div>`;
 
     const next = document.getElementById('nextPrep');

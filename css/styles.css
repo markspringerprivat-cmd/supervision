@@ -5225,3 +5225,79 @@ body[data-mode="results"] .result-card[aria-current="true"].is-winner{
 @keyframes svSpin{to{transform:rotate(360deg)}}
 body[data-mode="rolecard"] .role-card-main .role-pill{font-weight:900;background:#eef5fb;border-radius:999px;display:inline-flex;padding:7px 12px}
 body[data-mode="rolecard"] .role-card-main h2{margin-top:10px}
+
+
+/* v66 Präsentation: sauberer Default-Zustand */
+.v6-slide,
+.presentation-body #presentationSlide .v6-final-slide{
+  background:
+    radial-gradient(circle at 85% 12%, rgba(47,111,176,.10), transparent 26%),
+    radial-gradient(circle at 8% 88%, rgba(54,148,115,.10), transparent 24%),
+    #fbfdff!important;
+}
+.v6-type-title .v6-editable-text,
+.v6-type-groupName .v6-editable-text,
+.v6-type-kicker .v6-editable-text,
+.v6-type-subtitle .v6-editable-text,
+.v6-type-note .v6-editable-text{
+  text-align:center!important;
+}
+.v6-type-title .v6-editable-text{
+  font-weight:900!important;
+  letter-spacing:-.035em!important;
+  line-height:1.05!important;
+}
+.v6-type-subtitle .v6-editable-text{
+  font-weight:650!important;
+  line-height:1.35!important;
+  color:#405a76!important;
+}
+.v6-type-kicker .v6-editable-text{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:#e9f1fb;
+  color:#17385f;
+  border-radius:999px;
+  padding:.35em .85em;
+  height:auto!important;
+}
+.v6-type-note .v6-editable-text{
+  color:#607187!important;
+  font-weight:700!important;
+}
+.v6-table{
+  border-radius:18px!important;
+  border:1px solid #d8e6f4!important;
+  box-shadow:0 14px 34px rgba(30,58,95,.08)!important;
+  line-height:1.28!important;
+}
+.v6-table th{
+  background:linear-gradient(180deg,#eaf3ff,#dcecff)!important;
+  color:#17385f!important;
+  font-weight:900!important;
+}
+.v6-table td{
+  background:rgba(255,255,255,.92)!important;
+}
+.v6-table tbody tr:nth-child(even) td{
+  background:#f7fbff!important;
+}
+.v6-table th,.v6-table td{
+  padding:.62em .78em!important;
+}
+.v6-type-thanks .v6-editable-text{
+  text-align:center!important;
+  line-height:1.08!important;
+}
+
+
+/* v66 Rollenkarten: ausführliche Fall- und Rollenbeschreibung */
+body[data-mode="rolecard"] .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+body[data-mode="rolecard"] .role-card-main,
+body[data-mode="rolecard"] .role-card-case{line-height:1.55}
+body[data-mode="rolecard"] .role-card-main h3,
+body[data-mode="rolecard"] .role-card-case h3{margin-top:18px;margin-bottom:8px;color:#17385f}
+body[data-mode="rolecard"] .role-card-case p{margin:.45rem 0}
+body[data-mode="rolecard"] .role-card-case .notice{font-weight:800}
+@media(max-width:900px){body[data-mode="rolecard"] .grid{grid-template-columns:1fr}}

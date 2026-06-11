@@ -88,7 +88,7 @@
         {id:'s2_table',type:'table',html:table(['Bereich','Eintrag'],[['Ziel Schulleitung',first(values.p3zielSL,p3.zielSL)],['Ziel Lehrkraft A',first(values.p3zielA,p3.zielA)],['Ziel Lehrkraft B',first(values.p3zielB,p3.zielB)],['Gemeinsamkeiten',first(values.p3gemeinsam,p3.gemeinsamkeiten)],['Gemeinsame Zielvereinbarung',first(values.p3ziel,p3.gemeinsamesZiel)]])}
       ]},
       {id:'s3',elements:[
-        {id:'s3_title',type:'title',text:'Vertiefte Problembearbeitung'}, {id:'s3_subtitle',type:'subtitle',text:'Diese Folie hält hilfreiche Kritik und Absprachen für die weitere Zusammenarbeit fest.'},
+        {id:'s3_title',type:'title',text:'Vertiefte Problembearbeitung'}, {id:'s3_subtitle',type:'subtitle',text:'Die Gruppe hält fest, wie hilfreiche Kritik, positive Rückmeldungen und verbindliche Absprachen die weitere Zusammenarbeit stärken.'},
         {id:'s3_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Hilfreiche Kritik',first(values.p4kritik,p4.kritik)],['Positive Rückmeldung zur Schulleitung',first(values.p4posSL,(p4.positivSL||p4.perspektiveSL))],['Positive Rückmeldung zu Lehrkraft A',first(values.p4posA,(p4.positivA||p4.perspektiveA))],['Positive Rückmeldung zu Lehrkraft B',first(values.p4posB,(p4.positivB||p4.perspektiveB))],['Absprachen zum weiteren Vorgehen',first(values.p4absprachen,p4.absprachen)]])}
       ]},
       {id:'s4',elements:[

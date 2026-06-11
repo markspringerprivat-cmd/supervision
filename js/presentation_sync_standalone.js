@@ -258,7 +258,7 @@
       ]},
       {id:'s3', parts:[
         {id:'s3_title', type:'title', html:'Vertiefte Problembearbeitung'},
-        {id:'s3_subtitle', type:'subtitle', html:'Diese Folie hält hilfreiche Kritik und Absprachen für die weitere Zusammenarbeit fest.'},
+        {id:'s3_subtitle', type:'subtitle', html:'Die Gruppe hält fest, wie hilfreiche Kritik, positive Rückmeldungen und verbindliche Absprachen die weitere Zusammenarbeit stärken.'},
         {id:'s3_table', type:'table', html:table(['Aspekt','Ergebnis'], [['Hilfreiche Kritik', first(v.p4kritik,p4.kritik)], ['Absprachen zum weiteren Vorgehen', first(v.p4absprachen,p4.absprachen,p4.weiteresVorgehen)]])}
       ]},
       {id:'s4', parts:[

@@ -6,9 +6,9 @@
   'use strict';
 
   const THEME_DEFAULT = {
-    heading:'#1e3a5f', text:'#0f172a', background:'#071323', slide:'#ffffff',
-    slidePattern:'none', backgroundPattern:'none',
-    slidePatternColor:'#dbe4ef', backgroundPatternColor:'#12372d', tableStyle:'classic'
+    heading:'#17385f', text:'#132238', background:'#08192e', slide:'#fbfdff',
+    slidePattern:'dots', backgroundPattern:'waves',
+    slidePatternColor:'#d7e6f6', backgroundPatternColor:'#163a5c', tableStyle:'soft'
   };
   const SLIDE_COUNT = 6;
   let state = null;
@@ -133,16 +133,20 @@
   }
   function elementKey(id){ return id + '__text'; }
   function defaultLayout(type, slide){
-    if(type === 'title') return {x:7,y:7,w:86,h:12,rot:0,z:20,fontSize:40,color:null};
-    if(type === 'kicker') return {x:7,y:22,w:50,h:5,rot:0,z:20,fontSize:13,color:null};
-    if(type === 'groupName') return {x:7,y:29,w:82,h:8,rot:0,z:20,fontSize:30,color:null};
-    if(type === 'subtitle') return {x:7,y:21,w:82,h:8,rot:0,z:20,fontSize:15,color:null};
-    if(type === 'table') return Number(slide) === 0 ? {x:7,y:43,w:86,h:34,rot:0,z:20,fontSize:15,color:null} : {x:7,y:34,w:86,h:42,rot:0,z:20,fontSize:15,color:null};
-    if(type === 'note') return {x:7,y:84,w:72,h:6,rot:0,z:20,fontSize:13,color:null};
-    if(type === 'thanks') return {x:12,y:38,w:76,h:18,rot:0,z:20,fontSize:46,color:null};
+    // v66: ruhiger, zentrierter Default für sofort präsentable Folien.
+    if(type === 'title') return {x:8,y:7,w:84,h:10,rot:0,z:20,fontSize:38,color:null};
+    if(type === 'kicker') return {x:25,y:18,w:50,h:5,rot:0,z:20,fontSize:13,color:null};
+    if(type === 'groupName') return {x:12,y:25,w:76,h:8,rot:0,z:20,fontSize:28,color:null};
+    if(type === 'subtitle') return {x:12,y:19,w:76,h:9,rot:0,z:20,fontSize:15,color:null};
+    if(type === 'table') {
+      if(Number(slide) === 0) return {x:12,y:39,w:76,h:37,rot:0,z:20,fontSize:14,color:null};
+      return {x:10,y:33,w:80,h:44,rot:0,z:20,fontSize:13,color:null};
+    }
+    if(type === 'note') return {x:14,y:82,w:72,h:7,rot:0,z:20,fontSize:12,color:null};
+    if(type === 'thanks') return {x:15,y:36,w:70,h:22,rot:0,z:20,fontSize:44,color:null};
     if(type === 'textbox') return {x:12,y:74,w:25,h:10,rot:0,z:80,fontSize:18,color:null};
     if(type === 'sticker') return {x:60,y:48,w:24,h:22,rot:0,z:90};
-    return {x:7,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null};
+    return {x:10,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null};
   }
   function slideDefs(values){
     return [
@@ -165,7 +169,7 @@
       ]},
       {id:'deep', elements:[
         {id:'s3_title', type:'title', html:'Vertiefte Problembearbeitung'},
-        {id:'s3_subtitle', type:'subtitle', html:'Die Gruppe hat Kriterien für hilfreiche Kritik, nachvollziehbare Perspektiven und konkrete Absprachen für die weitere Zusammenarbeit gesammelt.'},
+        {id:'s3_subtitle', type:'subtitle', html:'Die Gruppe hat Kriterien für hilfreiche Kritik, positive Rückmeldungen und konkrete Absprachen für die weitere Zusammenarbeit gesammelt.'},
         {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positive Rückmeldung zur Schulleitung','p4posSL'],['Positive Rückmeldung zu Lehrkraft A','p4posA'],['Positive Rückmeldung zu Lehrkraft B','p4posB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
       ]},
       {id:'implementation', elements:[

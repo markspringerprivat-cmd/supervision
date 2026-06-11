@@ -1,44 +1,6 @@
 
-/* v108: sichtbarer Gespräch-starten-Text und stabile 5er-Supervisor-Erkennung */
-window.__svSupervisorHasProtocolV108 = window.__svSupervisorHasProtocolV108 || function(){
-  try{
-    const p=new URLSearchParams(location.search);
-    const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'default';
-    if(p.get('supervisorMode')==='moderation'||p.get('mode')==='moderation'||p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
-    if(localStorage.getItem('sv_supervisor_mode_'+gid)==='moderation'||localStorage.getItem('sv_supervisor_mode_active')==='moderation') return true;
-    const a=(typeof loadObj==='function')?loadObj('assignments',{}):{};
-    if(a&&a.protokoll) return true;
-    const m=JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
-    return Array.isArray(m)&&m.some(x=>x&&x.role==='protokoll');
-  }catch(_){return false;}
-};
-window.__svSupervisorHasProtocolV107 = window.__svSupervisorHasProtocolV107 || window.__svSupervisorHasProtocolV108;
-window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || window.__svSupervisorHasProtocolV108;
-(function(){
-  const popupText='Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.';
-  function fixDialog(){
-    document.querySelectorAll('.sv-flow-card').forEach(function(card){
-      const h=card.querySelector('h2');
-      if(!h||!/Gespräch starten/i.test(h.textContent||'')) return;
-      let p=card.querySelector('p');
-      if(!p){
-        p=document.createElement('p');
-        const actions=card.querySelector('.sv-flow-actions');
-        card.insertBefore(p, actions||null);
-      }
-      if(!p.textContent.trim()) p.textContent=popupText;
-      p.style.display='block';
-      p.style.visibility='visible';
-      p.style.color='#142a44';
-      p.style.margin='10px 0 18px';
-      p.style.lineHeight='1.45';
-    });
-  }
-  document.addEventListener('click',function(ev){ if(ev.target&&ev.target.closest&&ev.target.closest('#startPhase1')) setTimeout(fixDialog,0); },true);
-  new MutationObserver(fixDialog).observe(document.documentElement,{childList:true,subtree:true});
-})();
 
-
+/* removed old startPhase popup observer in v118 */
 /* v107 helper: Supervisor*in mit Protokollrolle wird nicht gegen Protokoll-Pflichtfelder geprüft */
 window.__svSupervisorHasProtocolV107 = window.__svSupervisorHasProtocolV107 || function(){
   try{
@@ -177,22 +139,7 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
       }
     }, true);
   }
-  function installPrepWaitPopup(){
-    if(document.body.dataset.mode !== 'prep') return;
-    const btn=document.getElementById('startPhase1'); if(!btn || btn.dataset.waitPopup==='1') return;
-    btn.dataset.waitPopup='1';
-    const rawPhase1Href = (btn.getAttribute('href') || '').trim();
-    const phase1Target = (!rawPhase1Href || rawPhase1Href === '#' || rawPhase1Href.toLowerCase().startsWith('javascript:'))
-      ? `phase1-${roleFromPage()}.html`
-      : rawPhase1Href.split('?')[0];
-    function phase1Href(){ return linkWithG(phase1Target); }
-    btn.setAttribute('href', phase1Href());
-    btn.addEventListener('click', async function(e){
-      e.preventDefault(); e.stopImmediatePropagation();
-      const go = await niceDialog({title:'Gespräch starten', text:'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.', actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]});
-      if(go) location.href = phase1Href();
-    }, true);
-  }
+  function installPrepWaitPopup(){ return; }
 
   function installSummaryGuidance(){
     if(!/zusammenfassung(?:-protokoll)?\.html$/.test(location.pathname)) return;
@@ -334,71 +281,7 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
 })();
 
 
-/* v99: Gespräch starten nur über Popup, keine automatische Vorabweiterleitung */
-(function(){
-  function roleFromBodyV99(){return (document.body&&document.body.dataset&&document.body.dataset.role)||'';}
-  function withGroupV99(file){
-    try{
-      var p=new URLSearchParams(location.search);
-      var gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
-      return gid?file+'?g='+encodeURIComponent(gid):file;
-    }catch(_){return file;}
-  }
-  document.addEventListener('click',function(e){
-    var btn=e.target&&e.target.closest&&e.target.closest('#startPhase1');
-    if(!btn || btn.dataset.v117Rebuilt==='1' || btn.dataset.v99PopupHandled==='1') return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    btn.dataset.v99PopupHandled='1';
-    var role=roleFromBodyV99();
-    var target=(btn.getAttribute('href')||('phase1-'+role+'.html')).split('?')[0];
-    var dialog=window.supervisionNiceDialog;
-    var go=function(){location.href=withGroupV99(target);};
-    if(typeof dialog==='function'){
-      dialog({title:'Gespräch starten', text:'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.',actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]}).then(function(ok){ if(ok) go(); else delete btn.dataset.v99PopupHandled; });
-    }else{
-      if(confirm('Gespräch starten?')) go(); else delete btn.dataset.v99PopupHandled;
-    }
-  },true);
-})();
 
+/* removed old startPhase popup observer in v118 */
 
-/* v114: Gespräch-starten-Dialogtext immer erzwingen */
-(function(){
-  const TEXT = 'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.';
-  function fixStartDialogTextV114(){
-    document.querySelectorAll('.sv-flow-card,[role="dialog"]').forEach(function(card){
-      const heading = card.querySelector('h1,h2,h3');
-      if(!heading || !/Gespräch starten/i.test(heading.textContent || '')) return;
-      let body = card.querySelector('.sv-dialog-text, p');
-      if(!body){
-        body = document.createElement('p');
-        body.className = 'sv-dialog-text';
-        const actions = card.querySelector('.sv-flow-actions, .dialog-actions, footer');
-        card.insertBefore(body, actions || null);
-      }
-      body.textContent = TEXT;
-      body.hidden = false;
-      body.style.display = 'block';
-      body.style.visibility = 'visible';
-      body.style.opacity = '1';
-      body.style.color = '#142a44';
-      body.style.margin = '10px 0 18px';
-      body.style.lineHeight = '1.45';
-      body.style.fontWeight = '600';
-      const okOnly = Array.from(card.querySelectorAll('button')).filter(b => /^(ok|okay)$/i.test((b.textContent||'').trim()));
-      if(okOnly.length === 1 && card.querySelectorAll('button').length === 1){
-        okOnly[0].textContent = 'Gespräch starten';
-      }
-    });
-  }
-  document.addEventListener('click', function(ev){
-    if(ev.target && ev.target.closest && ev.target.closest('#startPhase1') && !ev.target.closest('#startPhase1').dataset.v117Rebuilt){
-      setTimeout(fixStartDialogTextV114,0);
-      setTimeout(fixStartDialogTextV114,80);
-      setTimeout(fixStartDialogTextV114,250);
-    }
-  }, true);
-  new MutationObserver(fixStartDialogTextV114).observe(document.documentElement, {childList:true,subtree:true});
-  window.fixStartDialogTextV114 = fixStartDialogTextV114;
-})();
+/* removed old startPhase popup observer in v118 */

@@ -1,4 +1,4 @@
-/* v117: Gespräch-starten-Button komplett neu aufgebaut */
+/* v118: Gespräch-starten-Button alleinige stabile Implementierung */
 (function(){
   'use strict';
 
@@ -101,8 +101,6 @@
   function installRepeated(){
     install();
     setTimeout(install, 80);
-    setTimeout(install, 250);
-    setTimeout(install, 600);
   }
 
   if(document.readyState === 'loading'){

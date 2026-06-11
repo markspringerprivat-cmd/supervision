@@ -1,4 +1,4 @@
-/* Group session rebuild v44 load guard and remove fix */
+/* Group session rebuild v46 mobile ppt and remove ui */
 (function(){
   const ROLES = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
   const ROLE_LABELS = {
@@ -312,15 +312,26 @@
     if(!currentIsLeader){status('sessionStatus','Nur der Gruppenanführer kann Mitglieder entfernen.','warning');return;}
     if(!currentGroupId) currentGroupId=groupIdFromUrl();
     if(!currentGroupId || (!deviceIdToRemove && !rowNumberToRemove)){status('sessionStatus','Dieses Mitglied konnte nicht eindeutig erkannt werden. Bitte aktualisieren.','warning');return;}
+    const rowEl=document.querySelector(`[data-remove-row="${window.CSS&&CSS.escape?CSS.escape(String(rowNumberToRemove||'')):String(rowNumberToRemove||'')}"]`)?.closest('.member-item') || document.querySelector(`[data-device-id="${window.CSS&&CSS.escape?CSS.escape(String(deviceIdToRemove||'')):String(deviceIdToRemove||'')}"]`);
     try{
+      if(rowEl) rowEl.classList.add('is-removing');
       status('sessionStatus','Mitglied wird entfernt …');
       const res=await jsonp({action:'removeGroupMember',groupId:currentGroupId,deviceIdToRemove:deviceIdToRemove,removeRowNumber:rowNumberToRemove,requesterDeviceId:deviceId()});
       if(!res||res.ok===false)throw new Error(res&&res.error||'Mitglied konnte nicht entfernt werden.');
-      status('sessionStatus','Mitglied entfernt. Rollen müssen neu verteilt werden.','ok');
+      if(rowEl) rowEl.remove();
+      if(Array.isArray(res.members)){
+        renderMembers(res.members);
+      }else{
+        await refreshMembers();
+      }
       clearAssignedOverviewState();
-      await refreshMembers();
+      status('sessionStatus','Mitglied entfernt. Rollen müssen neu verteilt werden.','ok');
       showStep('join');
-    }catch(err){status('sessionStatus',err.message,'warning');}
+      setTimeout(()=>refreshMembers().catch(()=>{}),450);
+    }catch(err){
+      if(rowEl) rowEl.classList.remove('is-removing');
+      status('sessionStatus',err.message,'warning');
+    }
   }
 
   const SIM_NAMES = ['Mara','Jonas','Lea','Emil','Nora','Ben','Lina','Tom','Sofia','Finn','Amira','Luis'];

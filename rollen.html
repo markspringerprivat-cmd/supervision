@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rollenverteilung</title>
+  <link rel="stylesheet" href="css/styles.css?v=supervisor-flow-clean-v103">
+  <style>
+    body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
+    .session-shell{width:min(1100px,calc(100vw - 36px));margin:0 auto;padding:28px 0 42px;display:grid;gap:18px}
+    .session-card{background:#fff;border:1px solid #d9e5f2;border-radius:28px;padding:26px;box-shadow:0 18px 42px rgba(15,31,53,.08)}
+    .session-card h2{margin:0 0 10px;color:#10223a}
+    .session-card p{color:#607187;line-height:1.55}
+    .session-card.is-active{display:block}
+    .session-card.is-hidden-step{display:none}
+    .top-input-row{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:end;margin-top:18px}
+    .form-row{display:grid;gap:8px;margin-bottom:0}
+    .form-row label{font-weight:800;color:#143a63}
+    .form-row input,.form-row select{border:1px solid #cfe0f1;border-radius:14px;padding:12px 13px;font:inherit;background:#f8fbff}
+    .button-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+    .admin-test-row{display:none;justify-content:flex-end;margin-bottom:10px}
+    body.is-global-admin .admin-test-row{display:flex}
+    .member-list{display:grid;gap:8px;margin-top:12px}
+    .member-item{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dce8f4;border-radius:14px;background:#f8fbff;padding:10px 12px}.member-item.is-removing{opacity:.52;filter:grayscale(.25);transform:scale(.995)}
+    .member-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .member-line strong{color:#10223a}.member-line span{color:#607187;font-size:.9rem}.member-remove{width:32px;height:32px;border-radius:999px;border:1px solid #efc5c5;background:#fff2f2;color:#8a1f1f;font-weight:900;display:grid;place-items:center;padding:0;line-height:1}.member-remove:hover{background:#ffdede}.leader-only{display:none}.is-leader .leader-only{display:inline-flex}
+    .join-box{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+    .join-box img{width:190px;height:190px;border:1px solid #d9e5f2;border-radius:18px;background:#fff;padding:8px}
+    .role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-top:16px}.loading-card{text-align:center}.loading-card .spinner{width:42px;height:42px;border-radius:50%;border:4px solid #d9e5f2;border-top-color:#2f5f97;margin:10px auto 14px;animation:spin .9s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .role-tile{border:3px solid #d9e5f2;border-radius:20px;background:#f8fbff;padding:16px;display:grid;gap:10px;text-align:center;align-content:start}.role-tile.role-supervisor{border-color:#2f6fb0;background:linear-gradient(180deg,#eef6ff,#fff)}.role-tile.role-schulleitung{border-color:#2f9e44;background:linear-gradient(180deg,#eefaf2,#fff)}.role-tile.role-lehrkraft-a,.role-tile.role-lehrkraft-b{border-color:#d62828;background:linear-gradient(180deg,#fff1f1,#fff)}.role-tile.role-protokoll{border-color:#f2a51a;background:linear-gradient(180deg,#fff8e8,#fff)}
+    .role-tile strong{color:#10223a}.role-tile .name{font-weight:800;color:#2f5f97}
+    .role-tile img{width:150px;height:150px;justify-self:center;border-radius:14px;background:#fff;border:1px solid #d9e5f2;padding:6px}
+    .status{padding:12px 14px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972;margin-top:19px}
+    .status.status-transient{margin-top:19px}
+    .warning{background:#fff2f2;border-color:#efc5c5;color:#8a1f1f}
+    .ok{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
+    @media(max-width:1050px){.role-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}@media(max-width:760px){.top-input-row,.join-box{grid-template-columns:1fr}.join-box img{justify-self:center}.admin-test-row{justify-content:flex-start}}
+  
+    /* Mobile roles layout v54 */
+    @media(max-width:900px){
+      .session-shell{width:calc(100vw - 24px)!important;padding:18px 0!important}
+      .session-card{padding:18px!important;border-radius:22px!important}
+      .top-input-row,.join-box{grid-template-columns:1fr!important}
+      .member-item{align-items:flex-start!important;gap:8px!important}
+      .member-line{flex-wrap:wrap!important}
+      .role-grid{grid-template-columns:1fr!important}
+      .role-tile img{width:150px;height:150px;justify-self:center}
+      .admin-test-row{justify-content:flex-start!important}
+    }
+    @media(min-width:901px) and (max-width:1180px){
+      .role-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    }
+  </style>
+</head>
+<body data-mode="roles-session">
+<header><div class="wrap"><h1>Rollenverteilung</h1><p>Gruppe erstellen, Mitglieder beitreten lassen und Rollen gerätegebunden verteilen</p></div></header>
+<main class="session-shell">
+  <div class="admin-test-row">
+    <button id="simulateMemberBtn" type="button" class="secondary">Eintrag simulieren</button>
+  </div>
+
+  <section class="session-card is-active loading-card" id="loadingCard">
+    <h2>Rollenverteilung wird geprüft</h2>
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Bitte kurz warten. Es wird geprüft, ob dieses Gerät bereits einer Gruppe zugeordnet ist.</p>
+  </section>
+
+  <section class="session-card is-hidden-step" id="creatorCard" hidden>
+    <h2>1. Gruppe starten</h2>
+    <p>Trage zuerst deinen Namen und den Gerätetyp dieses Hauptgeräts ein. Danach wird eine vorläufige Gruppe erstellt.</p>
+    <div class="top-input-row">
+      <div class="form-row">
+        <label for="creatorName">Dein Name</label>
+        <input id="creatorName" type="text" placeholder="Name der startenden Person">
+      </div>
+      <div class="form-row">
+        <label for="creatorDevice">Gerätetyp</label>
+        <select id="creatorDevice">
+          <option value="Laptop">Laptop</option>
+          <option value="Tablet">Tablet</option>
+          <option value="Smartphone">Smartphone</option>
+          <option value="Unbekannt">Unbekannt / anderes Gerät</option>
+        </select>
+      </div>
+    </div>
+    <div class="button-row">
+      <button id="createGroupSessionBtn" type="button">Gruppe erstellen</button>
+    </div>
+    <div id="sessionStatus" class="status status-transient">Noch keine Gruppe erstellt.</div>
+  </section>
+
+  <section class="session-card is-hidden-step" id="joinCard" hidden>
+    <h2>2. Gruppenmitglieder beitreten lassen</h2>
+    <div class="join-box">
+      <img id="joinQr" alt="QR-Code zum Gruppenbeitritt">
+      <div>
+        <p>Alle weiteren Gruppenmitglieder scannen diesen QR-Code, tragen ihren Namen und Gerätetyp ein und treten der Gruppe bei.</p>
+        <p><strong>Beitrittslink:</strong><br><span id="joinLinkText"></span></p>
+      </div>
+    </div>
+    <h3>Registrierte Mitglieder</h3>
+    <div id="membersList" class="member-list"></div>
+    <div class="button-row">
+      <button id="groupCompleteBtn" type="button">Gruppe vollständig</button>
+      <button id="refreshMembersBtn" type="button" class="secondary">Aktualisieren</button>
+    </div>
+  </section>
+
+  <section class="session-card is-hidden-step" id="assignCard" hidden>
+    <h2>3. Rollen verteilen</h2>
+    <p>Wenn alle Gruppenmitglieder registriert sind, werden die Rollen zufällig zugeteilt und gerätegebunden gespeichert.</p>
+    <div class="button-row">
+      <button id="backToMembersBtn" type="button" class="secondary">Zurück zu den Mitgliedern</button>
+      <button id="assignRolesSessionBtn" type="button">Rollen verteilen</button>
+    </div>
+    <p id="assignSessionStatus" class="status">Noch nicht verteilt.</p>
+    <div id="roleTiles" class="role-grid"></div>
+  </section>
+</main>
+<footer><div class="wrap">Gruppen-ID: <span id="sessionGroupId">noch nicht erstellt</span></div></footer>
+<script src="js/config.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/app.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/group_session_v33.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/role_personalizer_v62.js?v=supervisor-flow-clean-v103"></script>
+</body>
+</html>

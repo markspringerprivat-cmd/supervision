@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zusammenfassung</title>
+  <link rel="stylesheet" href="css/styles.css?v=supervisor-flow-clean-v103">
+</head>
+<body data-mode="summary" data-role="protokoll">
+<header><div class="wrap"><h1>Zusammenfassung</h1><p>Präsentation vorbereiten und Ergebnisse sichern</p></div></header>
+<main class="wide-main">
+  <section class="card highlight" id="summaryPresentationIntro">
+    <h2>Präsentation vorbereiten</h2>
+    <p>Im nächsten Schritt werden eure protokollierten Notizen automatisch als Präsentation dargestellt. Ihr könnt die Folien noch prüfen und überarbeiten: Texte anpassen, Farben und Muster wählen, Sticker einfügen oder Elemente verschieben.</p>
+    <p>Die gespeicherte Präsentation wird später in der zentralen Ergebnisübersicht genutzt. Dort kann per Zufall eine Gruppe ausgewählt werden, die ihre Präsentation vorstellt. Deshalb sollte die Präsentation hier einmal sorgfältig geprüft und gespeichert werden.</p>
+    <div class="nav-row">
+      <button type="button" id="openPresentationPrepBtnSafe" data-open-prep-safe="1">Präsentation anzeigen</button>
+    </div>
+    <p class="small">Nach dem Speichern könnt ihr mit „Speichern und weiter“ zur Übermittlung der Ergebnisse wechseln.</p>
+  </section>
+
+  <section class="summary-accordion card" id="summaryOverviewSection" style="margin-top:18px">
+    <button type="button" class="summary-toggle" data-toggle-target="summaryContent" aria-expanded="false">Übersicht</button>
+    <div id="summaryContent" class="summary-panel" hidden></div>
+  </section>
+</main>
+<footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
+
+<script id="summary_group_param_v40">
+(function(){
+  try{
+    var params=new URLSearchParams(location.search);
+    var gid=params.get('g')||params.get('groupId');
+    if(gid) localStorage.setItem('sv_current_group',gid);
+  }catch(_){}
+})();
+</script>
+<script src="js/config.js?v=supervisor-flow-clean-v103"></script><script src="js/app.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/roles_flow_patch.js?v=supervisor-flow-clean-v103"></script>
+<script>
+(function(){
+  function openPrepSafe(){
+    try {
+      if (typeof window.openPresentationPrepModalFinal === 'function') {
+        window.openPresentationPrepModalFinal(true);
+        return;
+      }
+      alert('Die Präsentationsvorbereitung konnte nicht geöffnet werden. Bitte Seite neu laden.');
+    } catch (err) {
+      console.error('Präsentationsvorbereitung konnte nicht geöffnet werden:', err);
+      alert('Die Präsentationsvorbereitung konnte nicht geöffnet werden. Bitte die Seite neu laden und erneut versuchen.');
+    }
+  }
+  window.__openPresentationPrepSafe = openPrepSafe;
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('openPresentationPrepBtnSafe');
+    if (!btn) return;
+    btn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); openPrepSafe(); });
+  });
+})();
+</script>
+<script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
+<script src="js/guided_flow_patch.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/role_personalizer_v62.js?v=supervisor-flow-clean-v103"></script>
+</body>
+</html>

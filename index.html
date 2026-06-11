@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gruppensupervision ESE</title>
+  <link rel="stylesheet" href="css/styles.css?v=supervisor-flow-clean-v103">
+  <style>
+    :root{
+      --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
+      --ink:#0f1f35;--muted:#607187;--line:#d9e5f2;--panel:#ffffff;
+    }
+    body[data-mode="landing"]{background:linear-gradient(135deg,#eef5fb,#f8fbff);min-height:100vh}
+    .landing-shell{width:min(1440px,calc(100vw - 36px));margin:0 auto;padding:26px 0 34px;display:grid;gap:22px}
+    .landing-hero{display:grid;grid-template-columns:minmax(260px,.82fr) minmax(320px,1.05fr) minmax(260px,.82fr);gap:22px;align-items:stretch}
+    .landing-card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:0 18px 42px rgba(15,31,53,.08);min-height:270px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:inherit}
+    .landing-card h2,.landing-card h3{margin:0;color:var(--ink);letter-spacing:-.01em}
+    .landing-card p{margin:0;color:var(--muted);line-height:1.55}
+    .resource-card{border-left:7px solid var(--blue)}
+    .role-main-card{border:4px solid var(--red);justify-content:center;text-align:center;align-items:center;background:radial-gradient(circle at top left,rgba(214,40,40,.08),transparent 34%),#fff}
+    .role-main-card .big{font-size:clamp(2rem,3vw,3.2rem);font-weight:850;line-height:1.08;color:var(--ink)}
+    .role-main-card p{max-width:580px}
+    .progress-card{border-left:7px solid var(--green)}
+    .progress-card.is-disabled{opacity:.72;filter:saturate(.85)}
+    .progress-card .disabled-pill{margin-top:auto;align-self:flex-start;background:#fff7e8;border:1px solid #ffd99e;color:#8a5200;border-radius:999px;padding:9px 12px;font-weight:700}
+    .button-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
+    .about-box{border:3px solid #2b65a3!important;border-radius:28px!important;box-shadow:0 18px 42px rgba(43,101,163,.10)!important}
+    .about-box h2{color:#143a63}
+    .admin-side-panel{position:fixed;right:18px;top:230px;width:250px;z-index:30;background:rgba(255,255,255,.96);border:3px solid #d62828;border-radius:22px;padding:14px;box-shadow:0 18px 44px rgba(15,31,53,.16);display:none}
+    body.is-global-admin .admin-side-panel{display:block}
+    .admin-side-panel h3{margin:0 0 10px;color:#143a63;font-size:1rem}
+    .admin-mini-card{display:block;text-decoration:none;color:inherit;border-radius:16px;border:2px solid var(--line);background:#fff;padding:12px;margin-top:10px}
+    .admin-mini-card strong{display:block;color:#11243a;margin-bottom:4px}
+    .admin-mini-card small{color:#607187;line-height:1.35}
+    .admin-mini-card.group{border-color:var(--orange)}
+    .admin-mini-card.results{border-color:var(--yellow)}
+    .admin-mini-card.mano{border-color:var(--green)}
+    .admin-actions{display:grid;gap:8px;margin-top:10px}
+
+    .admin-actions a.button,
+    .admin-actions button{
+      width:100%;
+      min-height:44px;
+      display:flex!important;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      margin:0;
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:800;
+      box-sizing:border-box;
+    }
+    .admin-actions .secondary,
+    .admin-actions .button{
+      background:#2f5f97!important;
+      color:#fff!important;
+      border:0!important;
+    }
+    .admin-actions .danger-soft{
+      background:#eef3f8!important;
+      color:#8a1f1f!important;
+      border:1px solid #efc5c5!important;
+    }
+
+    .admin-actions button,.admin-actions a{width:100%;justify-content:center}
+    .small-status{font-size:.82rem;color:#607187;margin:6px 0 0;line-height:1.35}
+
+    .clickable-admin-card{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+    .clickable-admin-card:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(15,31,53,.12);background:#fbfdff}
+    .clickable-admin-card .admin-actions{cursor:default}
+    .admin-reset-all{margin-top:12px;border-top:1px solid #e2e9f2;padding-top:12px}
+
+.landing-card.main-action-card{
+      position:relative;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      min-height:315px;
+      padding:34px 30px;
+      border:1px solid var(--line)!important;
+      border-left:8px solid var(--blue)!important;
+      border-radius:28px;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      transition:transform .22s ease,box-shadow .22s ease,background .22s ease,border-color .22s ease;
+      font-family:"Aptos Display","Segoe UI Variable Display","Segoe UI",Roboto,Arial,sans-serif;
+    }
+    .landing-card.main-action-card:hover{
+      transform:translateY(-6px);
+      box-shadow:0 28px 64px rgba(15,31,53,.16);
+      background:#fff;
+    }
+    .landing-card.main-action-card h2{
+      margin:0;
+      color:#10223a;
+      font-size:clamp(1.7rem,2.2vw,2.35rem);
+      font-weight:820;
+      letter-spacing:-.035em;
+      line-height:1.08;
+      text-wrap:balance;
+    }
+    .landing-card.main-action-card p{
+      margin:14px auto 0;
+      max-width:390px;
+      color:#66778d;
+      font-size:1.02rem;
+      line-height:1.58;
+      font-weight:430;
+      text-align:center;
+    }
+    .role-session-members{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:12px}.role-session-members span{border:1px solid #d7e5f2;background:#f8fbff;border-radius:999px;padding:6px 9px;color:#49637d;font-weight:750;font-size:.86rem}
+    .landing-card.main-action-card .button-row,
+    .landing-card.main-action-card .progress-preview,
+    .landing-card.main-action-card .disabled-pill,
+    .landing-card.main-action-card .ppt-list{
+      display:none!important;
+    }
+    .resource-card.main-action-card{border-left-color:#2b65a3!important}
+    .role-main-card.main-action-card{border-left-color:#d62828!important}
+    .progress-card.main-action-card{border-left-color:#2f9e44!important}
+    .ppt-list{display:grid;gap:9px;margin-top:8px}
+    .ppt-list span{display:block;border:1px solid #dce8f4;border-radius:14px;padding:10px 12px;background:#f8fbff;color:#304964}
+    @media (max-width:1200px){
+      .landing-hero{grid-template-columns:1fr}
+      .admin-side-panel{position:static;width:auto;margin:0 auto 20px;display:none}
+    }
+  </style>
+</head>
+<body data-mode="landing">
+<header>
+  <div class="wrap topbar">
+    <div>
+      <h1>Simulation einer Gruppensupervision</h1>
+      <p>Teamteaching, ESE-Fall und Konfliktklärung im schulischen Kontext</p>
+    </div>
+    <div class="header-actions"><button id="globalAdminBtn" class="secondary" type="button" data-admin-login>Administrator</button></div>
+  </div>
+</header>
+
+<aside class="admin-side-panel" aria-label="Admin-Panel">
+  <h3>Admin-Panel</h3>
+  <a class="admin-mini-card group" href="gruppenzuweisung.html" data-admin-required="true"><strong>Gruppenzuweisung</strong><small>Teilnehmende und Gruppen verwalten.</small></a>
+
+  <div class="admin-mini-card results clickable-admin-card" data-admin-required="true" data-card-href="ergebnisse.html" role="link" tabindex="0">
+    <strong>Ergebnisse / Roulette</strong>
+    <small>Normale Ergebnisübersicht, Zufallsauswahl und Ergebnisdaten verwalten.</small>
+    <div class="admin-actions">
+      <button id="deleteMainResultsBtn" type="button" class="secondary danger-soft">Alle Ergebnis-Einträge löschen</button>
+    </div>
+    <p id="deleteMainResultsStatus" class="small-status" aria-live="polite"></p>
+  </div>
+
+  <div class="admin-mini-card results clickable-admin-card" data-admin-required="true" data-card-href="admin-gruppen.html" role="link" tabindex="0">
+    <strong>Gruppenergebnisse</strong>
+    <small>Alle Gruppen, Fortschritt, Abgaben und Präsentationen im Überblick.</small>
+    <div class="admin-actions">
+      <button id="deleteAllGroupsBtn" type="button" class="secondary danger-soft">Gruppen löschen</button>
+    </div>
+    <p id="deleteAllGroupsStatus" class="small-status" aria-live="polite"></p>
+  </div>
+
+  <div class="admin-mini-card mano clickable-admin-card" data-admin-required="true" data-card-href="manometer-auswertung.html" role="link" tabindex="0">
+    <strong>Manometer-Ergebnisse</strong>
+    <small>Feedback-Auswertung und Gerätefreigabe.</small>
+    <div class="admin-actions">
+      <button id="resetManometerDevicesBtn" type="button" class="secondary">Hardware-IDs freigeben</button>
+      <button id="deleteManometerFeedbackBtn" type="button" class="secondary danger-soft">Alle Einträge löschen</button>
+    </div>
+    <p id="resetManometerDevicesStatus" class="small-status" aria-live="polite"></p>
+    <p id="deleteManometerFeedbackStatus" class="small-status" aria-live="polite"></p>
+  </div>
+
+  <div class="admin-mini-card mano clickable-admin-card" data-admin-required="true" data-card-href="supervisionssprint.html" role="link" tabindex="0">
+    <strong>Supervisionssprint</strong>
+    <small>Highscores aus dem Spiel verwalten.</small>
+    <div class="admin-actions">
+      <button id="deleteSprintHighscoresBtn" type="button" class="secondary danger-soft">Alle Einträge löschen</button>
+    </div>
+    <p id="deleteSprintHighscoresStatus" class="small-status" aria-live="polite"></p>
+  </div>
+  <div class="admin-actions admin-reset-all">
+    <button id="resetEverythingBtn" type="button" class="secondary danger-soft">Seite zurücksetzen</button>
+    <p id="resetEverythingStatus" class="small-status" aria-live="polite"></p>
+  </div>
+</aside>
+
+<main class="landing-shell">
+  <section class="landing-hero">
+    <a class="landing-card resource-card main-action-card" href="praesentation-nachschlagen.html">
+      <h2>Präsentation nachschlagen</h2>
+      <p>Öffnet die PowerPoint direkt als scrollbare Folienansicht oder als Vollbild-Präsentation für das Plenum.</p>
+    </a>
+
+    <a id="roleSessionCard" class="landing-card role-main-card main-action-card" href="rollen.html">
+      <h2>Rollenverteilung starten</h2>
+      <p>Namen eintragen, Rollen zufällig zuweisen und Rollenkarten per QR-Code öffnen.</p>
+    </a>
+
+    <a id="groupProgressCard" class="landing-card progress-card main-action-card is-disabled" href="gruppe-fortschritt.html" aria-disabled="true">
+      <h2>Gruppenfortschritt einsehen</h2>
+      <p>Öffnet nach der Gruppenzuweisung automatisch die Übersicht zur eigenen Gruppe.</p>
+      <span id="progressHint" class="disabled-pill">Erst nach Gruppenzuweisung anklickbar</span>
+    </a>
+  </section>
+
+  <section class="card about-box" style="margin-top:0">
+    <h2>Worum geht es?</h2>
+    <p>Die Gruppen simulieren eine kollegiale Fallberatung beziehungsweise Gruppensupervision im schulischen Kontext. Ausgangspunkt ist eine ESE-Klasse, in der die pädagogische Stabilität zunehmend belastet ist: Im Teamteaching werden Regeln, Abläufe und Interventionen unterschiedlich umgesetzt.</p>
+    <p>Dadurch entsteht Unsicherheit bei den Schüler*innen. Die Lehrkräfte erleben die Situation verschieden, und auch die Schulleitung nimmt wahr, dass der Konflikt im Team den Unterrichtsalltag beeinflusst. In der Supervision soll geklärt werden, wie die Beteiligten wieder zu einem gemeinsamen, verlässlichen Vorgehen kommen.</p>
+    <p class="notice"><strong>Hinweis:</strong> Dies ist eine Seminarsimulation. Die Website unterstützt Gruppenzuweisung, Rollenklärung, Ablaufübersicht, Notizen, Phasenarbeit, Ergebnissicherung, Präsentation und Feedback-Auswertung.</p>
+  </section>
+</main>
+
+<footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
+
+<script src="js/config.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/app.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/roles_flow_patch.js?v=supervisor-flow-clean-v103"></script>
+<script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
+<script src="js/guided_flow_patch.js?v=supervisor-flow-clean-v103"></script>
+
+<script>
+(function(){
+  function localGroupId(){
+    var params=new URLSearchParams(location.search);
+    return params.get('g') || params.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || localStorage.getItem('groupId') || localStorage.getItem('supervision_group_id') || '';
+  }
+  function getDeviceIdLocal(){
+    try{
+      var id=localStorage.getItem('supervision_device_id_v21') || localStorage.getItem('supervision_device_id_v20') || localStorage.getItem('manometer_device_id_v2');
+      if(id) return id;
+    }catch(_){}
+    return '';
+  }
+  function enableProgressCard(id, label){
+    var card=document.getElementById('groupProgressCard');
+    var hint=document.getElementById('progressHint');
+    if(!card || !id) return;
+    try{localStorage.setItem('sv_current_group', id);}catch(_){}
+    card.classList.remove('is-disabled');
+    card.removeAttribute('aria-disabled');
+    card.href='gruppe-fortschritt.html?g='+encodeURIComponent(id);
+    card.onclick=null;
+    if(hint){
+      hint.textContent=label || 'Gruppenfortschritt öffnen';
+      hint.style.background='#e9f8ef';
+      hint.style.borderColor='#abe1bd';
+      hint.style.color='#16703a';
+    }
+  }
+  function disableProgressCard(){
+    var card=document.getElementById('groupProgressCard');
+    if(!card) return;
+    card.classList.add('is-disabled');
+    card.addEventListener('click',function(ev){ev.preventDefault();}, {once:false});
+  }
+
+  function escInline(v){
+    return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function updateRoleSessionCard(groupId, members){
+    var card=document.getElementById('roleSessionCard');
+    if(!card || !groupId) return;
+    card.href='rollen.html?groupId='+encodeURIComponent(groupId);
+    var names=(members||[]).map(function(m){return m&&m.name?m.name:'';}).filter(Boolean).slice(0,5);
+    card.innerHTML='<h2>Rollenverteilung einsehen</h2><p>Die Gruppe ist diesem Gerät zugeordnet. Öffne die fertige Rollenübersicht mit QR-Codes.</p>'+(names.length?'<div class="role-session-members">'+names.map(function(n){return '<span>'+escInline(n)+'</span>';}).join('')+'</div>':'');
+  }
+  async function updateRoleSessionFromDevice(){
+    var url=getScriptUrlLocal();
+    var deviceId=getDeviceIdLocal();
+    if(!url || !deviceId) return;
+    var groupId=localGroupId();
+    try{
+      if(!groupId){
+        var resolved=await jsonpLocal(url,{action:'resolveDeviceGroup',deviceId:deviceId});
+        if(resolved&&resolved.ok&&resolved.found&&resolved.groupId){
+          groupId=resolved.groupId;
+          try{localStorage.setItem('sv_current_group',groupId);}catch(_){}
+        }
+      }
+      if(groupId){
+        var members=await jsonpLocal(url,{action:'listGroupMembers',groupId:groupId});
+        if(members&&members.ok&&members.members&&members.members.length){
+          updateRoleSessionCard(groupId,members.members);
+        }
+      }
+    }catch(_){}
+  }
+
+  async function updateProgressCard(){
+    var id=localGroupId();
+    if(id){ enableProgressCard(id); return; }
+    disableProgressCard();
+    var url=getScriptUrlLocal();
+    var deviceId=getDeviceIdLocal();
+    var hint=document.getElementById('progressHint');
+    if(!url || !deviceId) return;
+    if(hint) hint.textContent='Gruppenzuordnung wird geprüft …';
+    try{
+      var res=await jsonpLocal(url,{action:'resolveDeviceGroup',deviceId:deviceId});
+      if(res && res.ok && res.found && res.groupId){
+        enableProgressCard(res.groupId,'Gruppenfortschritt öffnen');
+      }else if(hint){
+        hint.textContent='Erst nach Gruppenzuweisung anklickbar';
+      }
+    }catch(_){
+      if(hint) hint.textContent='Erst nach Gruppenzuweisung anklickbar';
+    }
+  }
+  function getScriptUrlLocal(){try{ if(typeof getAppsScriptUrl === 'function') return getAppsScriptUrl(); }catch(_){} return (window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL) || '';}
+  function adminPasswordLocal(){
+    try{
+      return sessionStorage.getItem('sv_admin_password') || localStorage.getItem('sv_admin_password') || localStorage.getItem('adminPassword') || (document.body.classList.contains('is-global-admin') ? 'Mark123' : '');
+    }catch(_){
+      return document.body.classList.contains('is-global-admin') ? 'Mark123' : '';
+    }
+  }
+  function jsonpLocal(url, params){
+    return new Promise(function(resolve,reject){
+      var cb='manoAdminCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+      var qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now());
+      var s=document.createElement('script'); var done=false;
+      window[cb]=function(data){done=true;cleanup();resolve(data);};
+      function cleanup(){try{delete window[cb];}catch(_){} if(s.parentNode)s.parentNode.removeChild(s);}
+      s.onerror=function(){if(!done){cleanup();reject(new Error('Apps Script konnte nicht erreicht werden.'));}};
+      s.src=url+(url.indexOf('?')>=0?'&':'?')+qs.toString(); document.body.appendChild(s);
+      setTimeout(function(){if(!done){cleanup();reject(new Error('Zeitüberschreitung.'));}},12000);
+    });
+  }
+  async function callManometerAdmin(action, statusId, okText){
+    var status=document.getElementById(statusId);
+    var url=getScriptUrlLocal();
+    if(!url){status.textContent='Keine Apps-Script-URL gefunden.';return;}
+    var password=adminPasswordLocal();
+    if(!password){status.textContent='Bitte zuerst den Admin-Modus aktivieren.';return;}
+    status.textContent='Bitte warten …';
+    try{
+      var res=await jsonpLocal(url,{action:action,adminPassword:password});
+      if(!res||res.ok===false) throw new Error((res&&res.error)||'Aktion fehlgeschlagen.');
+      if(action==='deleteManometerFeedbackAll' && res.type!=='deleteManometerFeedbackAll') throw new Error('Falscher Apps-Script-Endpunkt.');
+      if(action==='resetManometerDeviceIds' && res.type!=='resetManometerDeviceIds') throw new Error('Falscher Apps-Script-Endpunkt.');
+      if(action==='deleteMainResultsAll' && res.type!=='deleteMainResultsAll') throw new Error('Falscher Apps-Script-Endpunkt.');
+      if(action==='deleteGroupsAll' && res.type!=='deleteGroupsAll') throw new Error('Falscher Apps-Script-Endpunkt.');
+      if(action==='deleteSprintHighscoresAll' && res.type!=='deleteSprintHighscoresAll') throw new Error('Falscher Apps-Script-Endpunkt.');
+      status.textContent=okText+' '+(res.deletedRows!==undefined?('Gelöschte Zeilen: '+res.deletedRows+'.'):(res.clearedRows!==undefined?('Freigegebene IDs: '+res.clearedRows+'.'):''));
+      try{ if(action==='resetManometerDeviceIds'||action==='deleteManometerFeedbackAll') localStorage.removeItem('manometer_voted_global_v2'); }catch(_){}
+    }catch(err){status.textContent='Fehler: '+err.message;}
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    updateProgressCard();
+    updateRoleSessionFromDevice();
+    var del=document.getElementById('deleteManometerFeedbackBtn');
+    if(del) del.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteManometerFeedbackAll','deleteManometerFeedbackStatus','Alle Manometer-Feedbackeinträge wurden gelöscht.');});
+    var delSprint=document.getElementById('deleteSprintHighscoresBtn');
+    if(delSprint) delSprint.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteSprintHighscoresAll','deleteSprintHighscoresStatus','Alle Supervisionssprint-Highscores wurden gelöscht.');});
+    var reset=document.getElementById('resetManometerDevicesBtn');
+    if(reset) reset.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('resetManometerDeviceIds','resetManometerDevicesStatus','Hardware-IDs wurden freigegeben.');});
+    var delResults=document.getElementById('deleteMainResultsBtn');
+    if(delResults) delResults.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteMainResultsAll','deleteMainResultsStatus','Alle normalen Ergebnis-Einträge wurden gelöscht.');});
+    var delGroups=document.getElementById('deleteAllGroupsBtn');
+    if(delGroups) delGroups.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteGroupsAll','deleteAllGroupsStatus','Alle Gruppen wurden gelöscht.');});
+        var resetEverything=document.getElementById('resetEverythingBtn');
+    if(resetEverything) resetEverything.addEventListener('click',async function(ev){
+      ev.preventDefault();ev.stopPropagation();
+      var status=document.getElementById('resetEverythingStatus');
+      status.textContent='Bitte warten …';
+      try{
+        await callManometerAdmin('deleteMainResultsAll','resetEverythingStatus','Normale Ergebnis-Einträge gelöscht.');
+        await callManometerAdmin('deleteGroupsAll','resetEverythingStatus','Gruppen gelöscht.');
+        await callManometerAdmin('deleteManometerFeedbackAll','resetEverythingStatus','Manometer-Einträge gelöscht.');
+        await callManometerAdmin('deleteSprintHighscoresAll','resetEverythingStatus','Supervisionssprint-Highscores gelöscht.');
+        status.textContent='Alle serverseitigen Einträge wurden zurückgesetzt.';
+      }catch(err){status.textContent='Fehler: '+err.message;}
+    });
+
+    document.querySelectorAll('.clickable-admin-card[data-card-href]').forEach(function(card){
+      card.addEventListener('click',function(ev){ if(ev.target.closest('button,a')) return; location.href=card.dataset.cardHref; });
+      card.addEventListener('keydown',function(ev){ if(ev.key==='Enter'||ev.key===' '){ev.preventDefault(); location.href=card.dataset.cardHref;} });
+    });
+  });
+})();
+</script>
+<script src="js/role_personalizer_v62.js?v=supervisor-flow-clean-v103"></script>
+</body>
+</html>

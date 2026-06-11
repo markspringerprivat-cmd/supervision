@@ -704,7 +704,197 @@
       .tick-pill{height:24px!important;font-size:.72rem!important}
     }
 
-  </style>
+  
+  /* v69 Manometer-Fragebogen: Layout nach Skizze */
+  .question-grid-v69{
+    grid-template-columns:minmax(0,1.18fr) minmax(350px,.82fr)!important;
+    gap:28px!important;
+    align-items:stretch!important;
+  }
+  .question-left-v69{
+    display:grid!important;
+    grid-template-rows:auto auto!important;
+    gap:18px!important;
+  }
+  .metrics-v69{
+    grid-template-columns:132px 1fr!important;
+    align-items:stretch!important;
+    gap:16px!important;
+  }
+  .score-tile{
+    border-radius:26px!important;
+    min-height:124px!important;
+    padding:18px 18px 16px!important;
+    background:linear-gradient(145deg,#ff3232 0%,#ff7a18 35%,#ffc533 58%,#84de49 82%,#13c65a 100%)!important;
+    box-shadow:0 16px 30px rgba(11,24,48,.18)!important;
+  }
+  .score-tile .value{
+    font-size:3.35rem!important;
+    font-weight:860!important;
+    line-height:.92!important;
+  }
+  .score-tile .caption{
+    margin-top:6px!important;
+    font-size:.93rem!important;
+    font-weight:760!important;
+    letter-spacing:.01em!important;
+  }
+  .question-copy-v69{
+    display:flex!important;
+    align-items:center!important;
+    padding:6px 4px 6px 4px!important;
+    min-height:124px!important;
+  }
+  .question-copy-v69 .question-title{
+    margin:0!important;
+    font-size:clamp(1.45rem,1.95vw,2.15rem)!important;
+    line-height:1.16!important;
+    font-weight:850!important;
+    color:#152742!important;
+    letter-spacing:-.025em!important;
+    max-width:100%!important;
+  }
+  .slider-zone-v69{
+    padding:0!important;
+    background:transparent!important;
+    border:none!important;
+    box-shadow:none!important;
+  }
+  .slider-box-v69{
+    min-height:unset!important;
+    border:none!important;
+    background:transparent!important;
+    border-radius:0!important;
+    padding:0!important;
+    gap:10px!important;
+  }
+  .slider-box-v69 .range-bg{
+    padding:12px 8px 0!important;
+    border-radius:0!important;
+  }
+  .slider-box-v69 .range-bg::before{
+    top:18px!important;
+    transform:none!important;
+    height:18px!important;
+    opacity:.18!important;
+  }
+  .slider-box-v69 input[type=range]::-webkit-slider-runnable-track{
+    height:18px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#ef4444 0%,#f59e0b 34%,#eab308 52%,#84cc16 74%,#22c55e 100%)!important;
+    border:none!important;
+  }
+  .slider-box-v69 input[type=range]::-moz-range-track{
+    height:18px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#ef4444 0%,#f59e0b 34%,#eab308 52%,#84cc16 74%,#22c55e 100%)!important;
+    border:none!important;
+  }
+  .slider-box-v69 input[type=range]::-webkit-slider-thumb{
+    width:30px!important;height:30px!important;margin-top:-6px!important;
+    background:#244b78!important;border:4px solid #fff!important;box-shadow:0 10px 18px rgba(19,39,69,.22)!important;
+  }
+  .slider-box-v69 input[type=range]::-moz-range-thumb{
+    width:24px!important;height:24px!important;
+    background:#244b78!important;border:4px solid #fff!important;box-shadow:0 10px 18px rgba(19,39,69,.22)!important;
+  }
+  .tick-row-v69{
+    display:flex!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:0 6px!important;
+    margin-top:2px!important;
+    position:relative!important;
+  }
+  .tick-row-v69::before{
+    content:'';position:absolute;left:6px;right:6px;top:-7px;height:2px;border-radius:999px;background:#b8846d;opacity:.9;
+  }
+  .tick-row-v69 .tick-pill{
+    border:none!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    height:auto!important;
+    min-width:18px!important;
+    padding:6px 0 0!important;
+    border-radius:0!important;
+    color:#6d5a55!important;
+    font-size:.84rem!important;
+    font-weight:760!important;
+  }
+  .question-right-v69{
+    padding:8px 0 8px 26px!important;
+    background:transparent!important;
+    border:none!important;
+    border-left:1px solid #dbe4ee!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    display:flex!important;
+    flex-direction:column!important;
+    min-height:100%!important;
+  }
+  .question-right-v69 .list-head{
+    margin:4px 0 12px!important;
+    align-items:center!important;
+  }
+  .question-right-v69 h3{
+    font-size:1.12rem!important;
+    font-weight:820!important;
+    color:#17365a!important;
+  }
+  .question-right-v69 .entry-list{
+    flex:1 1 auto!important;
+    align-content:start!important;
+    gap:12px!important;
+  }
+  .question-right-v69 .entry-row textarea,
+  .question-right-v69 .entry-row input{
+    min-height:86px!important;
+    border-radius:18px!important;
+    border:1px solid #d8e4ef!important;
+    background:#fff!important;
+    box-shadow:0 8px 18px rgba(15,35,61,.04)!important;
+  }
+  .question-right-v69 .entry-row input{
+    min-height:auto!important;
+    padding:16px!important;
+  }
+  .question-right-v69 .remove-entry{
+    align-self:flex-start!important;
+    margin-top:4px!important;
+  }
+  .question-right-v69 .add-btn{
+    background:#244b78!important;
+  }
+  .question-right-v69 .add-btn:hover{filter:brightness(1.04)}
+  .range-ends{display:none!important}
+  .slider-panel,.mini-stack,.mini-box{display:none!important}
+  .req-note{
+    margin-top:4px!important;
+    padding:14px 16px!important;
+    border:1px solid #fde1bf!important;
+    background:linear-gradient(180deg,#fff7e7,#fffdf8)!important;
+    color:#8a5a00!important;
+    border-radius:18px!important;
+    font-size:.9rem!important;
+    line-height:1.45!important;
+    font-weight:620!important;
+  }
+  @media(max-width:960px){
+    .question-grid-v69{grid-template-columns:1fr!important;gap:18px!important}
+    .metrics-v69{grid-template-columns:110px 1fr!important;gap:12px!important}
+    .score-tile{min-height:104px!important;padding:16px 14px!important}
+    .question-copy-v69{min-height:104px!important;padding:0!important}
+    .question-copy-v69 .question-title{font-size:1.25rem!important}
+    .question-right-v69{padding:14px 0 0!important;border-left:none!important;border-top:1px solid #dbe4ee!important}
+    .question-right-v69 .entry-row textarea,.question-right-v69 .entry-row input{min-height:70px!important}
+    .tick-row-v69{gap:2px!important;padding:0 2px!important}
+    .tick-row-v69::before{left:2px;right:2px}
+    .tick-row-v69 .tick-pill{font-size:.74rem!important;min-width:0!important}
+    .req-note{font-size:.82rem!important;padding:10px 12px!important}
+  }
+
+</style>
 </head>
 <body data-mode="manometer">
   <div id="loadingScreen" class="loading-screen">
@@ -796,24 +986,23 @@
       <section class="card" data-step="scale" data-key="${question.key}">
         <div class="card-inner">
           <div class="card-head"><div><span class="kicker">${escapeHtml(question.category)}</span></div><div class="counter">Frage ${index+1} von ${QUESTIONS.length}</div></div>
-          <div class="question-grid">
-            <div class="question-left">
-              <div class="metrics">
-                <div class="score-tile" data-color-for="${question.key}"><div class="value" data-value-for="${question.key}">5</div><div class="caption">von 10 Punkten</div></div>
-                <div class="mini-stack"><div class="mini-box">1 = gar nicht · 10 = vollständig</div></div>
+          <div class="question-grid question-grid-v69">
+            <div class="question-left question-left-v69">
+              <div class="metrics metrics-v69">
+                <div class="score-tile" data-color-for="${question.key}"><div class="value" data-value-for="${question.key}">5</div><div class="caption">Punktzahl</div></div>
+                <div class="question-copy-v69">
+                  <h2 class="question-title">${escapeHtml(question.label)}</h2>
+                </div>
               </div>
-              <div class="panel slider-panel">
-                <h2 class="question-title" style="font-size:clamp(1.25rem,1.75vw,1.85rem);font-weight:650;margin:0 0 14px">${escapeHtml(question.label)}</h2>
-                <h3>Bewertung</h3>
-                <div class="slider-box">
+              <div class="slider-zone-v69">
+                <div class="slider-box slider-box-v69">
                   <div class="range-bg"><input data-scale-key="${question.key}" id="${question.key}" type="range" min="1" max="10" step="1" value="5"></div>
-                  <div class="range-ends"><span>1 · gar nicht</span><span>10 · vollständig</span></div>
-                  <div class="tick-row">${tickPills}</div>
-                  <div class="req-note" data-required-note="${question.key}">Bei weniger als 10 Punkten ist mindestens ein konkreter Kritik- oder Verbesserungshinweis erforderlich.</div>
+                  <div class="tick-row tick-row-v69">${tickPills}</div>
+                  <div class="req-note" data-required-note="${question.key}">Wenn du weniger als 10 Punkte vergibst, gib bitte rechts eine kurze Begründung oder einen Verbesserungshinweis an.</div>
                 </div>
               </div>
             </div>
-            <div class="panel question-right">
+            <div class="question-right question-right-v69">
               <div class="list-head"><h3>Kritik und Verbesserungsvorschläge</h3><button type="button" class="add-btn" data-add-entry="${question.key}">+ Eintrag</button></div>
               <div class="entry-list" data-entry-list="${question.key}"></div>
             </div>

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-v13-recreate-delete">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-questions-schema-v72">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -154,20 +154,20 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=manometer-v13-recreate-delete"></script>
-<script src="js/app.js?v=manometer-v13-recreate-delete"></script>
+<script src="js/config.js?v=manometer-questions-schema-v72"></script>
+<script src="js/app.js?v=manometer-questions-schema-v72"></script>
 <script>
 (function(){
   var QUESTIONS=[
-    {key:'presentationPressure',category:'Startfrage',label:'Die Aussicht auf eine zufällige Präsentation im Plenum hat dazu geführt, dass die Aufgaben gewissenhafter bearbeitet wurden.'},
-    {key:'caseConsultation',category:'Inhaltliches Verständnis',label:'Ich kenne verschiedene Arten der Fallberatung.'},
-    {key:'phaseUnderstanding',category:'Inhaltliches Verständnis',label:'Ich verstehe die Phasen einer strukturierten Gruppensupervision.'},
-    {key:'rolePerspective',category:'Inhaltliches Verständnis',label:'Ich kann die Perspektiven der verschiedenen Rollen besser einordnen.'},
-    {key:'technicalClarity',category:'Technische Umsetzung und Bedienbarkeit',label:'Die technische Umsetzung der Anwendung war verständlich.'},
-    {key:'usability',category:'Technische Umsetzung und Bedienbarkeit',label:'Die Anwendung war gut bedienbar.'},
-    {key:'presentationDesign',category:'Allgemeine Gestaltung der Präsentation',label:'Die Gestaltung der Präsentation war übersichtlich und ansprechend.'},
-    {key:'presentationUsefulness',category:'Allgemeine Gestaltung der Präsentation',label:'Die erstellte Präsentation eignet sich gut, um Ergebnisse im Plenum vorzustellen.'},
-    {key:'creativeOptions',category:'Allgemeine Gestaltung der Präsentation',label:'Die Bearbeitungsmöglichkeiten der Präsentation waren hilfreich.'}
+    {key:'supervisionUnderstanding',category:'Verständnis von Supervision',label:'Ich habe ein Verständnis dafür entwickelt, was Supervision ist.'},
+    {key:'supervisionProcess',category:'Verständnis von Supervision',label:'Ich habe eine Vorstellung davon entwickelt, wie eine Supervision verläuft.'},
+    {key:'supervisionBenefits',category:'Verständnis von Supervision',label:'Ich kenne die Vorteile einer Supervision.'},
+    {key:'futureSupervisionUse',category:'Transfer und Relevanz',label:'Ich kann mir vorstellen, in Zukunft auf Supervision, insbesondere im Rahmen kollegialer Fallberatung, zurückzugreifen.'},
+    {key:'schoolSupervisionImportance',category:'Transfer und Relevanz',label:'Ich halte Supervision in der Schule für wichtig.'},
+    {key:'presentationUnderstandable',category:'Technische und didaktische Umsetzung',label:'Die Präsentation war nachvollziehbar.'},
+    {key:'webAppTechnicalUnderstandable',category:'Technische und didaktische Umsetzung',label:'Die Web-App war technisch verständlich.'},
+    {key:'webAppContentUnderstandable',category:'Technische und didaktische Umsetzung',label:'Die Web-App war inhaltlich verständlich.'},
+    {key:'simulationUnderstanding',category:'Technische und didaktische Umsetzung',label:'Die Simulation hat zu einem besseren Verständnis von Supervision beigetragen.'}
   ];
   var cards=[],current=0,animatedSlides=new WeakSet();
   var deck=document.getElementById('deck'),slideCounter=document.getElementById('slideCounter'),statusEl=document.getElementById('status'),fullscreenBtn=document.getElementById('fullscreenBtn'),progressBar=document.getElementById('progressBar'),loadingScreen=document.getElementById('loadingScreen'),loadingFill=document.getElementById('loadingFill'),loadingStatus=document.getElementById('loadingStatus');
@@ -219,8 +219,8 @@
   }
   function renderCover(){return '<article class="slide cover-slide"><div class="slide-inner"><div class="cover-mark">Manometer</div><h2 class="cover-title">Auswertung</h2><p class="cover-subtitle">Präsentationsdeck für die gemeinsame Reflexion im Plenum</p></div></article>'}
   function renderOverview(entries){
-    var per=QUESTIONS.map(function(q){return{question:q,stat:statsForQuestion(q,entries)}}),all=[];per.forEach(function(x){all=all.concat(x.stat.vals)});var overall=avg(all),strong=per.slice().sort(function(a,b){return(b.stat.avg||0)-(a.stat.avg||0)})[0],feedback=per.slice().sort(function(a,b){return(b.stat.improvements.length||0)-(a.stat.improvements.length||0)})[0],llmYes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,openNotes=entries.reduce(function(sum,e){return sum+(e.generalPraise?1:0)+(e.generalCriticism?1:0)+(e.generalSuggestions?1:0)},0)+per.reduce(function(sum,x){return sum+x.stat.improvements.length},0);
-    return '<article class="slide"><div class="slide-inner"><div class="hero-grid"><section class="hero-panel"><span class="slide-label">Gesamtbild</span><h2 class="hero-title">Manometer – Gesamtbild</h2><p class="hero-lead">Zum Abschluss werden die zentralen Kennzahlen und Auffälligkeiten der Rückmeldungen gebündelt.</p><div class="summary-grid"><div class="summary-card"><strong data-countto="'+(entries.length||0)+'">0</strong><span>'+plural(entries.length,'Rückmeldung','Rückmeldungen')+'</span></div><div class="summary-card"><strong data-countto="'+((overall||0).toFixed(1))+'">0.0</strong><span>Ø Gesamtbewertung</span></div><div class="summary-card"><strong data-countto="'+(openNotes||0)+'">0</strong><span>Textbeiträge</span></div><div class="summary-card"><strong data-countto="'+(llmYes||0)+'">0</strong><span>LLM-Nutzung mit „Ja“</span></div></div></section><aside class="hero-side"><div class="summary-list"><div class="summary-note"><h3>Stärkster Bereich</h3><p><strong>'+escapeHtml((strong&&strong.question.label)||'–')+'</strong>'+(strong&&strong.stat.avg!=null?'<br>Durchschnitt: '+strong.stat.avg.toFixed(1)+' / 10':'')+'</p></div><div class="summary-note"><h3>Meiste Verbesserungshinweise</h3><p><strong>'+escapeHtml((feedback&&feedback.question.label)||'–')+'</strong>'+(feedback?'<br>'+feedback.stat.improvements.length+' Hinweise':'')+'</p></div><div class="summary-note"><h3>Abschluss</h3><p>Danach folgt die Dankesfolie.</p></div></div></aside></div></div></article>'
+    var per=QUESTIONS.map(function(q){return{question:q,stat:statsForQuestion(q,entries)}}),all=[];per.forEach(function(x){all=all.concat(x.stat.vals)});var overall=avg(all),strong=per.slice().sort(function(a,b){return(b.stat.avg||0)-(a.stat.avg||0)})[0],feedback=per.slice().sort(function(a,b){return(b.stat.improvements.length||0)-(a.stat.improvements.length||0)})[0],motivationYes=entries.filter(function(e){return String(e.presentationMotivation||'').toLowerCase()==='ja'}).length,avoidYes=entries.filter(function(e){return String(e.avoidCriticism||'').toLowerCase()==='ja'}).length,llmYes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,openNotes=entries.reduce(function(sum,e){return sum+(e.generalPraise?1:0)+(e.generalCriticism?1:0)+(e.generalSuggestions?1:0)},0)+per.reduce(function(sum,x){return sum+x.stat.improvements.length},0);
+    return '<article class="slide"><div class="slide-inner"><div class="hero-grid"><section class="hero-panel"><span class="slide-label">Gesamtbild</span><h2 class="hero-title">Manometer – Gesamtbild</h2><p class="hero-lead">Zum Abschluss werden die zentralen Kennzahlen und Auffälligkeiten der Rückmeldungen gebündelt.</p><div class="summary-grid"><div class="summary-card"><strong data-countto="'+(entries.length||0)+'">0</strong><span>'+plural(entries.length,'Rückmeldung','Rückmeldungen')+'</span></div><div class="summary-card"><strong data-countto="'+((overall||0).toFixed(1))+'">0.0</strong><span>Ø Gesamtbewertung</span></div><div class="summary-card"><strong data-countto="'+(motivationYes||0)+'">0</strong><span>Zufallspräsentation motivierte</span></div><div class="summary-card"><strong data-countto="'+(openNotes||0)+'">0</strong><span>Textbeiträge</span></div></div></section><aside class="hero-side"><div class="summary-list"><div class="summary-note"><h3>Stärkster Bereich</h3><p><strong>'+escapeHtml((strong&&strong.question.label)||'–')+'</strong>'+(strong&&strong.stat.avg!=null?'<br>Durchschnitt: '+strong.stat.avg.toFixed(1)+' / 10':'')+'</p></div><div class="summary-note"><h3>Meiste Verbesserungshinweise</h3><p><strong>'+escapeHtml((feedback&&feedback.question.label)||'–')+'</strong>'+(feedback?'<br>'+feedback.stat.improvements.length+' Hinweise':'')+'</p></div><div class="summary-note"><h3>Zusatzfragen</h3><p>Zufallspräsentation motivierte: <strong>'+motivationYes+'</strong><br>Pflichtkritik vermieden: <strong>'+avoidYes+'</strong><br>LLM-Nutzung mit „Ja“: <strong>'+llmYes+'</strong></p></div></div></aside></div></div></article>'
   }
   function renderScale(q,entries,idx){
     var vals=entries.map(function(e){return Number(e.scores&&e.scores[q.key])}).filter(function(n){return !isNaN(n)&&n>=1&&n<=10}),counts={};for(var i=1;i<=10;i++)counts[i]=0;vals.forEach(function(v){counts[v]=(counts[v]||0)+1});var av=avg(vals),improvements=[];entries.forEach(function(e){improvements=improvements.concat(asList(e.improvements&&e.improvements[q.key]));});var maxCount=Math.max(1,Math.max.apply(null,Object.keys(counts).map(function(k){return counts[k]})));var cols='',stripeCounter=0;for(var d=1;d<=10;d++){var n=counts[d]||0,scaled=Math.round((n/maxCount)*20);if(n>0&&scaled<1)scaled=1;cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack">';for(var s=0;s<scaled;s++){cols+='<span class="stripe" style="background:'+stripeColor(s)+';animation-delay:'+(0.12+stripeCounter*0.045).toFixed(3)+'s"></span>';stripeCounter++}cols+='</div><div class="tick">'+d+'</div></div>'}
@@ -334,6 +334,6 @@
   document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-clean-modern-v68"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-questions-schema-v72"></script>
 </body>
 </html>

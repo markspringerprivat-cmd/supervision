@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-game-update-v88">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-game-tuning-v89">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -381,7 +381,7 @@
       .game-head p{display:none!important}
       .game-stats{
         display:grid!important;
-        grid-template-columns:repeat(3,1fr)!important;
+        grid-template-columns:repeat(2,1fr)!important;
         gap:5px!important;
         width:100%;
       }
@@ -2091,8 +2091,8 @@
       <div id="mobileStepCounter" class="mobile-step-counter">Kachel 1 / 1</div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-game-update-v88"></script>
-  <script src="js/app.js?v=manometer-game-update-v88"></script>
+  <script src="js/config.js?v=manometer-game-tuning-v89"></script>
+  <script src="js/app.js?v=manometer-game-tuning-v89"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -2188,7 +2188,7 @@
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="presentationMotivation"><div class="card-inner"><div class="yn-layout"><span class="kicker">Zufallspräsentation</span><h2>Die Aussicht auf eine verbindliche Präsentation nach dem Zufallsprinzip hat meine extrinsische Motivation zur Bearbeitung der Aufgaben gesteigert.</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="presentationMotivation" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="presentationMotivation" value="Nein"><span>Nein</span></label></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="avoidCheck"><div class="card-inner"><div class="yn-layout"><h2>Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="avoidCriticism" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="avoidCriticism" value="Nein"><span>Nein</span></label></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="llmCheck"><div class="card-inner"><div class="yn-layout"><h2>Wurde für die Antwortengenerierung während der Simulation ChatGPT oder ein anderes LLM verwendet?</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="llmUsed" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="llmUsed" value="Nein"><span>Nein</span></label></div><div class="llm-box"><input id="llmDetails" class="llm-input" type="text" placeholder="Optionale Hinweise zu LLM-Nutzung …"></div></div></div></section>`);
-      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="submit"><div class="card-inner"><div id="submitInitial" class="submit-state"><span class="kicker">Abschluss</span><h2>Vielen Dank für dein Feedback.</h2><p>Wenn alles passt, kannst du deine Rückmeldung jetzt absenden.</p><button id="submitBtn" type="submit" class="primary-btn">Feedback absenden</button></div><div id="submitSuccess" class="submit-state hidden centered-submit"><span class="kicker">Gespeichert</span><h2>Vielen Dank für deine Teilnahme.</h2><p>Deine Rückmeldung wurde gespeichert.</p><div class="separator"></div><div class="inline-actions centered-actions"><a id="backToGroupProgressBtn" href="gruppe-fortschritt.html" class="secondary-btn">Zurück zum Gruppenfortschritt</a><button id="openGameInlineBtn" type="button" class="primary-btn">Spiel starten</button></div></div><div id="submitGame" class="submit-state hidden"><div class="game-box"><div class="game-head"><div><span class="kicker">Spiel</span><h3>Supervisions-Sprint</h3><p id="gameIntroText">Löse die Probleme der streitenden Passanten, indem du durch sie durchläufst. Aber Achtung: Auf dem Weg begegnen dir Probleme und Hindernisse, denen du ausweichen musst.</p></div><div class="inline-actions centered-actions"><button id="startGameBtn" type="button" class="primary-btn">Spiel starten</button><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div class="game-stats"><div class="chip">Punkte: <span id="gameScore">0</span></div><div class="chip">Highscore: <span id="gameHighscore">0</span></div><div class="chip">Leben: <span id="gameLives">2</span></div></div><div class="game-canvas-wrap"><canvas id="runnerCanvas" width="960" height="260"></canvas></div><div class="mobile-jump-hint">Zum Springen den Bildschirm berühren.</div><div class="game-footer"><div id="gameMessage" class="game-msg">Drücke „Spiel starten“.</div></div></div></div></div></section>`);
+      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="submit"><div class="card-inner"><div id="submitInitial" class="submit-state"><span class="kicker">Abschluss</span><h2>Vielen Dank für dein Feedback.</h2><p>Wenn alles passt, kannst du deine Rückmeldung jetzt absenden.</p><button id="submitBtn" type="submit" class="primary-btn">Feedback absenden</button></div><div id="submitSuccess" class="submit-state hidden centered-submit"><span class="kicker">Gespeichert</span><h2>Vielen Dank für deine Teilnahme.</h2><p>Deine Rückmeldung wurde gespeichert.</p><div class="separator"></div><div class="inline-actions centered-actions"><a id="backToGroupProgressBtn" href="gruppe-fortschritt.html" class="secondary-btn">Zurück zum Gruppenfortschritt</a><button id="openGameInlineBtn" type="button" class="primary-btn">Spiel starten</button></div></div><div id="submitGame" class="submit-state hidden"><div class="game-box"><div class="game-head"><div><span class="kicker">Spiel</span><h3>Supervisions-Sprint</h3><p id="gameIntroText">Löse die Probleme der streitenden Passanten, indem du durch sie durchläufst. Aber Achtung: Auf dem Weg begegnen dir Probleme und Hindernisse, denen du ausweichen musst.</p></div><div class="inline-actions centered-actions"><button id="startGameBtn" type="button" class="primary-btn">Spiel starten</button><a href="index.html" class="secondary-btn">Zurück zur Startseite</a></div></div><div class="game-stats"><div class="chip">Punkte: <span id="gameScore">0</span></div><div class="chip">Highscore: <span id="gameHighscore">0</span></div><div class="chip">Leben: <span id="gameLives">2</span></div><div class="chip">Gelöst: <span id="gameSolved">0</span>/10</div></div><div class="game-canvas-wrap"><canvas id="runnerCanvas" width="960" height="260"></canvas></div><div class="mobile-jump-hint">Zum Springen den Bildschirm berühren.</div><div class="game-footer"><div id="gameMessage" class="game-msg">Drücke „Spiel starten“.</div></div></div></div></div></section>`);
       steps=Array.from(stage.querySelectorAll('.card'));
       QUESTIONS.forEach(q=>addEntry(q.key,'')); ['praise','criticism','suggestions'].forEach(kind=>addEntry(kind,''));
       bindDynamicEvents(); const openGameInlineBtn=document.getElementById('openGameInlineBtn'); if(openGameInlineBtn) openGameInlineBtn.addEventListener('click', showGameInline);
@@ -2249,15 +2249,14 @@
     function switchSubmitState(targetId){['submitInitial','submitSuccess','submitGame'].forEach(id=>{const el=document.getElementById(id); if(!el)return; el.classList.toggle('hidden', id!==targetId)})}
     function showSubmitSuccess(){switchSubmitState('submitSuccess'); updateBackToGroupProgressBtnV88(); document.getElementById('navDock').style.display='none'; document.getElementById('arrowPrev').style.display='none'; document.getElementById('arrowNext').style.display='none'; document.querySelector('.progress-wrap').style.display='none';}
     function showGameInline(){switchSubmitState('submitGame'); if(!game) initGame(); refreshGameHud();}
-    function refreshGameHud(){if(!game)return; document.getElementById('gameScore').textContent=Math.floor(game.score); document.getElementById('gameHighscore').textContent=String(game.highscore||0); document.getElementById('gameLives').textContent=String(game.lives)}
     function initGame(){
       const canvas=document.getElementById('runnerCanvas');
       const ctx=canvas.getContext('2d');
       const high=Number(localStorage.getItem('manometer_runner_highscore')||0);
       game={
         canvas,ctx,running:false,last:0,ground:208,x:86,y:158,width:36,height:48,vy:0,gravity:.68,jump:-12.8,
-        score:0,highscore:high,lives:2,invuln:0,speed:5.0,obstacles:[],clouds:[{x:540,y:60,w:42},{x:780,y:74,w:56}],
-        spawnAt:80,message:'Drücke „Spiel starten“.',bonusTexts:[]
+        score:0,highscore:high,lives:2,invuln:0,speed:6.1,obstacles:[],clouds:[{x:540,y:60,w:42},{x:780,y:74,w:56}],
+        spawnAt:48,message:'Drücke „Spiel starten“.',bonusTexts:[],solved:0,nextLifeAt:10
       };
       const loop=(ts)=>{if(!game)return; if(!game.last)game.last=ts; const dt=Math.min(32,ts-game.last); game.last=ts; if(game.running)updateGame(dt); drawGame(); requestAnimationFrame(loop)};
       requestAnimationFrame(loop);
@@ -2270,27 +2269,117 @@
     function startGame(){
       if(!game) initGame();
       const sb=document.getElementById('startGameBtn'); if(sb) sb.textContent='Neustart';
-      game.running=true; game.last=0; game.score=0; game.lives=2; game.invuln=0; game.speed=5.0; game.obstacles=[]; game.clouds=[{x:540,y:60,w:42},{x:780,y:74,w:56}]; game.bonusTexts=[];
-      game.message='Löse Konflikte und weiche Hindernissen aus.'; game.spawnAt=58; game.y=158; game.vy=0;
+      game.running=true; game.last=0; game.score=0; game.lives=2; game.invuln=0; game.speed=6.1; game.obstacles=[]; game.clouds=[{x:540,y:60,w:42},{x:780,y:74,w:56}]; game.bonusTexts=[];
+      game.solved=0; game.nextLifeAt=10;
+      game.message='Löse Konflikte und weiche Hindernissen aus.'; game.spawnAt=42; game.y=158; game.vy=0;
       refreshGameHud(); document.getElementById('gameMessage').textContent=game.message;
     }
-    function spawnObstacle(){var roll=Math.random(); if(roll<.20){game.obstacles.push({x:game.canvas.width+30,y:78+Math.random()*36,w:26,h:26,type:'paper'}); return} if(roll<.46){game.obstacles.push({x:game.canvas.width+30,y:game.ground-22,w:36,h:22,type:'book'}); return} if(roll<.72){game.obstacles.push({x:game.canvas.width+30,y:game.ground-56,w:58,h:56,type:'conflict',resolved:0,bonusShown:false}); return} if(roll<.86){game.obstacles.push({x:game.canvas.width+30,y:92+Math.random()*20,w:58,h:56,type:'airConflict',resolved:0,bonusShown:false}); return} var w=22+Math.random()*18,h=26+Math.random()*18; game.obstacles.push({x:game.canvas.width+30,y:game.ground-h,w:w,h:h,type:'cone'})}
+    function spawnObstacle(){
+      var roll=Math.random();
+      if(roll<.24){game.obstacles.push({x:game.canvas.width+30,y:72+Math.random()*34,w:26,h:26,type:'paper'}); return}
+      if(roll<.54){
+        var level=Math.random();
+        var h=level<.45?20:(level<.78?30:40);
+        var w=32+Math.random()*18;
+        game.obstacles.push({x:game.canvas.width+30,y:game.ground-h,w:w,h:h,type:'book',bookH:h});
+        return
+      }
+      if(roll<.84){game.obstacles.push({x:game.canvas.width+30,y:game.ground-66,w:60,h:66,type:'conflict',resolved:0,bonusShown:false}); return}
+      game.obstacles.push({x:game.canvas.width+30,y:50+Math.random()*18,w:58,h:56,type:'airConflict',resolved:0,bonusShown:false});
+    }
     function intersects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
     function addBonusText(x,y,text){game.bonusTexts.push({x:x,y:y,text:text,life:750,max:750});}
-    function loseLife(){if(game.invuln>0)return; if(game.lives>1){game.lives-=1; game.invuln=1500; game.message='Extraleben genutzt – weiter geht’s!'; if(game.obstacles.length)game.obstacles.shift()} else {game.lives=0; game.running=false; game.highscore=Math.max(game.highscore,Math.floor(game.score)); localStorage.setItem('manometer_runner_highscore',String(game.highscore)); game.message='Du konntest viele Probleme lösen. Bleib am Ball, übe weiter und du wirst ein toller Supervisor.'; const sb=document.getElementById('startGameBtn'); if(sb)sb.textContent='Neustart'} refreshGameHud(); document.getElementById('gameMessage').textContent=game.message}
-    function resolveConflict(obstacle){if(obstacle.done)return; obstacle.done=true; obstacle.resolved=650; game.score+=100; if(!obstacle.bonusShown){addBonusText(obstacle.x+obstacle.w/2,obstacle.y-8,'+100'); obstacle.bonusShown=true} game.message='Problem gelöst: +100'; document.getElementById('gameMessage').textContent=game.message; refreshGameHud();}
-    function updateGame(dt){const f=dt/16.6667; game.score+=0.06*dt; game.speed=Math.min(8.4,game.speed+0.00055*dt); game.spawnAt-=f; if(game.spawnAt<=0){spawnObstacle(); game.spawnAt=62+Math.random()*42-Math.min(16,game.speed)} if(game.invuln>0)game.invuln-=dt; game.vy+=game.gravity*f; game.y+=game.vy*f; if(game.y>158){game.y=158; game.vy=0} game.obstacles.forEach(o=>{o.x-=game.speed*f; if(o.resolved>0)o.resolved-=dt}); game.obstacles=game.obstacles.filter(o=>o.x+o.w>-30&&!((o.type==='conflict'||o.type==='airConflict')&&o.done&&o.resolved<=0)); game.clouds.forEach(c=>{c.x-=0.8*f; if(c.x+c.w<0){c.x=game.canvas.width+40+Math.random()*100; c.y=42+Math.random()*46; c.w=38+Math.random()*30}}); game.bonusTexts.forEach(b=>{b.y-=0.45*f;b.life-=dt}); game.bonusTexts=game.bonusTexts.filter(b=>b.life>0); const player={x:game.x,y:game.y,w:game.width,h:game.height}; for(const obstacle of game.obstacles){if(!intersects(player,obstacle))continue; if(obstacle.type==='conflict'||obstacle.type==='airConflict'){resolveConflict(obstacle); continue} loseLife(); break} game.highscore=Math.max(game.highscore,Math.floor(game.score)); refreshGameHud()}
+    function loseLife(){
+      if(game.invuln>0)return;
+      if(game.lives>1){
+        game.lives-=1; game.invuln=1400; game.message='Extraleben genutzt – weiter geht’s!';
+        if(game.obstacles.length)game.obstacles.shift();
+      }else{
+        game.lives=0; game.running=false;
+        game.highscore=Math.max(game.highscore,Math.floor(game.score));
+        localStorage.setItem('manometer_runner_highscore',String(game.highscore));
+        game.message='Du konntest viele Probleme lösen. Bleib am Ball, übe weiter und du wirst ein toller Supervisor.';
+        const sb=document.getElementById('startGameBtn'); if(sb)sb.textContent='Neustart';
+      }
+      refreshGameHud(); document.getElementById('gameMessage').textContent=game.message;
+    }
+    function resolveConflict(obstacle){
+      if(obstacle.done)return;
+      obstacle.done=true; obstacle.resolved=650;
+      game.solved=(game.solved||0)+1;
+      game.score+=100;
+      if(game.solved>=game.nextLifeAt){
+        game.lives+=1;
+        game.nextLifeAt+=10;
+        addBonusText(obstacle.x+obstacle.w/2, obstacle.y-24, '+1 Leben');
+        game.message='10 Probleme gelöst: +1 Extraleben';
+      }else{
+        game.message='Problem gelöst: +100';
+      }
+      if(!obstacle.bonusShown){addBonusText(obstacle.x+obstacle.w/2,obstacle.y-8,'+100'); obstacle.bonusShown=true}
+      document.getElementById('gameMessage').textContent=game.message;
+      refreshGameHud();
+    }
+    function updateGame(dt){
+      const f=dt/16.6667;
+      game.score+=0.08*dt;
+      game.speed=Math.min(10.2,game.speed+0.00105*dt);
+      game.spawnAt-=f;
+      if(game.spawnAt<=0){spawnObstacle(); game.spawnAt=46+Math.random()*34-Math.min(20,game.speed*1.35)}
+      if(game.invuln>0)game.invuln-=dt;
+      game.vy+=game.gravity*f; game.y+=game.vy*f; if(game.y>158){game.y=158; game.vy=0}
+      game.obstacles.forEach(o=>{o.x-=game.speed*f; if(o.resolved>0)o.resolved-=dt});
+      game.obstacles=game.obstacles.filter(o=>o.x+o.w>-30&&!((o.type==='conflict'||o.type==='airConflict')&&o.done&&o.resolved<=0));
+      game.clouds.forEach(c=>{c.x-=0.9*f; if(c.x+c.w<0){c.x=game.canvas.width+40+Math.random()*100; c.y=42+Math.random()*46; c.w=38+Math.random()*30}});
+      game.bonusTexts.forEach(b=>{b.y-=0.45*f;b.life-=dt});
+      game.bonusTexts=game.bonusTexts.filter(b=>b.life>0);
+      const player={x:game.x,y:game.y,w:game.width,h:game.height};
+      for(const obstacle of game.obstacles){
+        if(!intersects(player,obstacle))continue;
+        if(obstacle.type==='conflict'||obstacle.type==='airConflict'){resolveConflict(obstacle); continue}
+        loseLife(); break
+      }
+      game.highscore=Math.max(game.highscore,Math.floor(game.score));
+      refreshGameHud();
+    }
+    function refreshGameHud(){if(!game)return; document.getElementById('gameScore').textContent=Math.floor(game.score); document.getElementById('gameHighscore').textContent=String(game.highscore||0); document.getElementById('gameLives').textContent=String(game.lives); const solved=document.getElementById('gameSolved'); if(solved) solved.textContent=String((game.solved||0)%10)}
     function drawCloud(ctx,c){ctx.fillStyle='#dbe7f4'; ctx.beginPath(); ctx.arc(c.x,c.y,14,Math.PI*.5,Math.PI*1.5); ctx.arc(c.x+16,c.y-6,16,Math.PI,Math.PI*2); ctx.arc(c.x+34,c.y,13,Math.PI*1.5,Math.PI*.5); ctx.closePath(); ctx.fill()}
     function drawHeart(ctx,x,y,scale){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.fillStyle='#ff5c8a';ctx.beginPath();ctx.moveTo(0,5);ctx.bezierCurveTo(0,-2,-10,-2,-10,6);ctx.bezierCurveTo(-10,13,0,18,0,23);ctx.bezierCurveTo(0,18,10,13,10,6);ctx.bezierCurveTo(10,-2,0,-2,0,5);ctx.fill();ctx.restore()}
     function drawRunner(ctx){const x=game.x,y=game.y;ctx.save();ctx.fillStyle='#f8c9a0';ctx.beginPath();ctx.arc(x+18,y+11,9,0,Math.PI*2);ctx.fill();ctx.fillStyle='#2f68b8';ctx.beginPath();ctx.roundRect?ctx.roundRect(x+7,y+19,23,20,8):ctx.fillRect(x+7,y+19,23,20);ctx.fill();ctx.fillStyle='#e7f1ff';ctx.fillRect(x+12,y+24,13,4);ctx.fillStyle='#0f2748';ctx.fillRect(x+10,y+38,6,14);ctx.fillRect(x+20,y+38,6,14);ctx.fillRect(x+5,y+23,6,4);ctx.fillRect(x+29,y+23,6,4);drawHeart(ctx,x+34,y+12,.48);ctx.fillStyle='#fff';ctx.font='700 8px "Aptos","Segoe UI",sans-serif';ctx.fillText('S',x+15,y+32);ctx.restore()}
-    function drawConflictPair(ctx,o){const left={x:o.x+10,y:o.y+26},right={x:o.x+38,y:o.y+26};const drawPerson=(p,color)=>{ctx.fillStyle='#f8c9a0';ctx.beginPath();ctx.arc(p.x,p.y-18,7,0,Math.PI*2);ctx.fill();ctx.fillStyle=color;if(ctx.roundRect){ctx.beginPath();ctx.roundRect(p.x-8,p.y-10,16,22,7);ctx.fill()}else{ctx.fillRect(p.x-8,p.y-10,16,22)}ctx.fillStyle='#30455f';ctx.fillRect(p.x-6,p.y+10,4,12);ctx.fillRect(p.x+2,p.y+10,4,12)};drawPerson(left,'#f28b82');drawPerson(right,'#65c3a5');if(o.done&&o.resolved>0){drawHeart(ctx,o.x+29,o.y+2,.5)}else{ctx.strokeStyle='#b83434';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(o.x+24,o.y+3);ctx.lineTo(o.x+30,o.y+10);ctx.lineTo(o.x+21,o.y+10);ctx.lineTo(o.x+33,o.y+19);ctx.stroke()}}
-    function drawObstacle(ctx,o){ctx.save();if(o.type==='paper'){ctx.fillStyle='#fff';ctx.strokeStyle='#9cb7d6';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<7;i++){const ang=(Math.PI*2/7)*i,rad=(i%2?8:11),px=o.x+o.w/2+Math.cos(ang)*rad,py=o.y+o.h/2+Math.sin(ang)*rad;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}ctx.closePath();ctx.fill();ctx.stroke()}else if(o.type==='book'){ctx.fillStyle='#ef7d32';if(ctx.roundRect){ctx.beginPath();ctx.roundRect(o.x,o.y+10,o.w,o.h-10,5);ctx.fill()}else{ctx.fillRect(o.x,o.y+10,o.w,o.h-10)}ctx.fillStyle='#ffbf8b';ctx.fillRect(o.x+4,o.y+14,o.w-8,3);ctx.fillStyle='#396aa8';if(ctx.roundRect){ctx.beginPath();ctx.roundRect(o.x+6,o.y,o.w-8,12,4);ctx.fill()}else{ctx.fillRect(o.x+6,o.y,o.w-8,12)}}else if(o.type==='conflict'){drawConflictPair(ctx,o)}else if(o.type==='airConflict'){ctx.strokeStyle='#64748b';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(o.x+30,o.y-30);ctx.lineTo(o.x+30,o.y+3);ctx.stroke();ctx.fillStyle='#f8d56b';ctx.beginPath();ctx.ellipse(o.x+30,o.y-42,18,24,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d6a83e';ctx.stroke();drawConflictPair(ctx,o)}else{ctx.fillStyle='#f59e0b';ctx.beginPath();ctx.moveTo(o.x+o.w/2,o.y);ctx.lineTo(o.x+o.w,o.y+o.h);ctx.lineTo(o.x,o.y+o.h);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(o.x+o.w/2,o.y+4);ctx.lineTo(o.x+o.w/2,o.y+o.h-4);ctx.stroke()}ctx.restore()}
-    function drawGame(){if(!game)return;const ctx=game.ctx,c=game.canvas;ctx.clearRect(0,0,c.width,c.height);const sky=ctx.createLinearGradient(0,0,0,c.height);sky.addColorStop(0,'#f8fbff');sky.addColorStop(.6,'#eef5fb');sky.addColorStop(1,'#eaf2f9');ctx.fillStyle=sky;ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#d7ebff';ctx.fillRect(0,0,c.width,44);game.clouds.forEach(cloud=>drawCloud(ctx,cloud));ctx.fillStyle='#cfe7c5';ctx.fillRect(0,game.ground,c.width,c.height-game.ground);ctx.fillStyle='#b9d2a8';for(let x=0;x<c.width;x+=30){ctx.fillRect(x,game.ground+18,12,2)}ctx.strokeStyle='#90a5b8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,game.ground+4);ctx.lineTo(c.width,game.ground+4);ctx.stroke();const blink=game.invuln>0&&Math.floor(game.invuln/100)%2===0;if(!blink)drawRunner(ctx);game.obstacles.forEach(o=>drawObstacle(ctx,o));game.bonusTexts.forEach(b=>{ctx.globalAlpha=Math.max(0,b.life/b.max);ctx.fillStyle='#1c7c45';ctx.font='900 24px "Aptos","Segoe UI",sans-serif';ctx.textAlign='center';ctx.fillText(b.text,b.x,b.y);ctx.globalAlpha=1});ctx.fillStyle='#34465d';ctx.font='600 15px "Aptos","Segoe UI",sans-serif';ctx.textAlign='left';ctx.fillText('Leben: '+game.lives,18,24);ctx.fillText('Punkte: '+Math.floor(game.score),18,46);if(!game.running){ctx.fillStyle='rgba(255,255,255,.72)';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#1c3658';ctx.font='700 30px "Aptos","Segoe UI",sans-serif';ctx.textAlign='center';ctx.fillText('Supervisions-Sprint',c.width/2,90);ctx.font='500 18px "Aptos","Segoe UI",sans-serif';ctx.fillText(game.message,c.width/2,126);ctx.fillText('Löse Probleme streitender Passanten und meide Hindernisse.',c.width/2,154);ctx.textAlign='left'}document.getElementById('gameMessage').textContent=game.message}
+    function drawConflictPair(ctx,o){
+      const baseY=o.type==='airConflict'?o.y+34:o.y+34;
+      const left={x:o.x+11,y:baseY},right={x:o.x+39,y:baseY};
+      const drawPerson=(p,color)=>{ctx.fillStyle='#f8c9a0';ctx.beginPath();ctx.arc(p.x,p.y-26,7,0,Math.PI*2);ctx.fill();ctx.fillStyle=color;if(ctx.roundRect){ctx.beginPath();ctx.roundRect(p.x-8,p.y-18,16,30,7);ctx.fill()}else{ctx.fillRect(p.x-8,p.y-18,16,30)}ctx.fillStyle='#30455f';ctx.fillRect(p.x-6,p.y+10,4,16);ctx.fillRect(p.x+2,p.y+10,4,16)};
+      drawPerson(left,'#f28b82');drawPerson(right,'#65c3a5');
+      if(o.done&&o.resolved>0){drawHeart(ctx,o.x+30,o.y+3,.5)}else{ctx.strokeStyle='#b83434';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(o.x+25,o.y+6);ctx.lineTo(o.x+31,o.y+13);ctx.lineTo(o.x+22,o.y+13);ctx.lineTo(o.x+34,o.y+22);ctx.stroke()}
+    }
+    function drawObstacle(ctx,o){
+      ctx.save();
+      if(o.type==='paper'){
+        ctx.fillStyle='#fff';ctx.strokeStyle='#9cb7d6';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<7;i++){const ang=(Math.PI*2/7)*i,rad=(i%2?8:11),px=o.x+o.w/2+Math.cos(ang)*rad,py=o.y+o.h/2+Math.sin(ang)*rad;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}ctx.closePath();ctx.fill();ctx.stroke()
+      }else if(o.type==='book'){
+        const books=Math.max(1,Math.round((o.bookH||o.h)/10));
+        for(let i=0;i<books;i++){
+          const yy=o.y+o.h-(i+1)*10;
+          ctx.fillStyle=i%2?'#396aa8':'#ef7d32';
+          if(ctx.roundRect){ctx.beginPath();ctx.roundRect(o.x+((i%2)*3),yy,o.w-((i%2)*4),9,3);ctx.fill()}else{ctx.fillRect(o.x,yy,o.w,9)}
+          ctx.fillStyle='rgba(255,255,255,.45)';ctx.fillRect(o.x+5,yy+3,o.w-10,2);
+        }
+      }else if(o.type==='conflict'){
+        drawConflictPair(ctx,o)
+      }else if(o.type==='airConflict'){
+        ctx.strokeStyle='#64748b';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(o.x+30,o.y-42);ctx.lineTo(o.x+30,o.y+2);ctx.stroke();ctx.fillStyle='#f8d56b';ctx.beginPath();ctx.ellipse(o.x+30,o.y-58,18,24,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d6a83e';ctx.stroke();drawConflictPair(ctx,o)
+      }
+      ctx.restore()
+    }
+    function drawGame(){
+      if(!game)return;const ctx=game.ctx,c=game.canvas;ctx.clearRect(0,0,c.width,c.height);const sky=ctx.createLinearGradient(0,0,0,c.height);sky.addColorStop(0,'#f8fbff');sky.addColorStop(.6,'#eef5fb');sky.addColorStop(1,'#eaf2f9');ctx.fillStyle=sky;ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#d7ebff';ctx.fillRect(0,0,c.width,44);game.clouds.forEach(cloud=>drawCloud(ctx,cloud));ctx.fillStyle='#cfe7c5';ctx.fillRect(0,game.ground,c.width,c.height-game.ground);ctx.fillStyle='#b9d2a8';for(let x=0;x<c.width;x+=30){ctx.fillRect(x,game.ground+18,12,2)}ctx.strokeStyle='#90a5b8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,game.ground+4);ctx.lineTo(c.width,game.ground+4);ctx.stroke();const blink=game.invuln>0&&Math.floor(game.invuln/100)%2===0;if(!blink)drawRunner(ctx);game.obstacles.forEach(o=>drawObstacle(ctx,o));game.bonusTexts.forEach(b=>{ctx.globalAlpha=Math.max(0,b.life/b.max);ctx.fillStyle='#1c7c45';ctx.font='900 24px "Aptos","Segoe UI",sans-serif';ctx.textAlign='center';ctx.fillText(b.text,b.x,b.y);ctx.globalAlpha=1});ctx.fillStyle='#34465d';ctx.font='600 15px "Aptos","Segoe UI",sans-serif';ctx.textAlign='left';ctx.fillText('Leben: '+game.lives,18,24);ctx.fillText('Punkte: '+Math.floor(game.score),18,46);ctx.fillText('Gelöst: '+((game.solved||0)%10)+'/10',18,68);if(!game.running){ctx.fillStyle='rgba(255,255,255,.72)';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#1c3658';ctx.font='700 30px "Aptos","Segoe UI",sans-serif';ctx.textAlign='center';ctx.fillText('Supervisions-Sprint',c.width/2,90);ctx.font='500 18px "Aptos","Segoe UI",sans-serif';ctx.fillText(game.message,c.width/2,126);ctx.fillText('Löse Probleme streitender Passanten und meide Hindernisse.',c.width/2,154);ctx.textAlign='left'}document.getElementById('gameMessage').textContent=game.message
+    }
         async function boot(){if(booted)return; booted=true; const p=new URLSearchParams(location.search); const directGame=p.get('game')==='1'; if(!directGame && await checkAlreadyVotedBeforeStart())return; setLoading(10,'Karten werden aufgebaut …'); buildMarkup(); setLoading(45,'Layout wird optimiert …'); requestAnimationFrame(()=>requestAnimationFrame(()=>{setActive(directGame?Math.max(0,steps.length-1):0); document.getElementById('feedbackStage').classList.add('ready'); if(directGame){showGameInline();} setLoading(90,'Interaktionen werden aktiviert …'); setTimeout(()=>{setLoading(100,'Bereit'); setTimeout(()=>document.getElementById('loadingScreen').classList.add('hidden'),180)},120)}))}
     document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); const mobilePrevBtn=document.getElementById('mobilePrevBtn'); const mobileNextBtn=document.getElementById('mobileNextBtn'); if(mobilePrevBtn) mobilePrevBtn.addEventListener('click',goPrev); if(mobileNextBtn) mobileNextBtn.addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
-<script src="js/role_personalizer_v62.js?v=manometer-game-update-v88"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-game-tuning-v89"></script>
 
 <script id="manometer_no_busy_v81">
 (function(){

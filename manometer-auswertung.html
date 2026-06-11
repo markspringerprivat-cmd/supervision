@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-game-update-v88">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-game-tuning-v89">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -154,8 +154,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=manometer-game-update-v88"></script>
-<script src="js/app.js?v=manometer-game-update-v88"></script>
+<script src="js/config.js?v=manometer-game-tuning-v89"></script>
+<script src="js/app.js?v=manometer-game-tuning-v89"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -223,10 +223,30 @@
     return '<article class="slide"><div class="slide-inner"><div class="hero-grid"><section class="hero-panel"><span class="slide-label">Gesamtbild</span><h2 class="hero-title">Manometer – Gesamtbild</h2><p class="hero-lead">Zum Abschluss werden die zentralen Kennzahlen und Auffälligkeiten der Rückmeldungen gebündelt.</p><div class="summary-grid"><div class="summary-card"><strong data-countto="'+(entries.length||0)+'">0</strong><span>'+plural(entries.length,'Rückmeldung','Rückmeldungen')+'</span></div><div class="summary-card"><strong data-countto="'+((overall||0).toFixed(1))+'">0.0</strong><span>Ø Gesamtbewertung</span></div><div class="summary-card"><strong data-countto="'+(motivationYes||0)+'">0</strong><span>Zufallspräsentation motivierte</span></div><div class="summary-card"><strong data-countto="'+(openNotes||0)+'">0</strong><span>Textbeiträge</span></div></div></section><aside class="hero-side"><div class="summary-list"><div class="summary-note"><h3>Stärkster Bereich</h3><p><strong>'+escapeHtml((strong&&strong.question.label)||'–')+'</strong>'+(strong&&strong.stat.avg!=null?'<br>Durchschnitt: '+strong.stat.avg.toFixed(1)+' / 10':'')+'</p></div><div class="summary-note"><h3>Meiste Verbesserungshinweise</h3><p><strong>'+escapeHtml((feedback&&feedback.question.label)||'–')+'</strong>'+(feedback?'<br>'+feedback.stat.improvements.length+' Hinweise':'')+'</p></div><div class="summary-note"><h3>Zusatzfragen</h3><p>Zufallspräsentation motivierte: <strong>'+motivationYes+'</strong><br>Pflichtkritik vermieden: <strong>'+avoidYes+'</strong><br>LLM-Nutzung mit „Ja“: <strong>'+llmYes+'</strong></p></div></div></aside></div></div></article>'
   }
   function renderScale(q,entries,idx){
-    var vals=entries.map(function(e){return Number(e.scores&&e.scores[q.key])}).filter(function(n){return !isNaN(n)&&n>=1&&n<=10}),counts={};for(var i=1;i<=10;i++)counts[i]=0;vals.forEach(function(v){counts[v]=(counts[v]||0)+1});var av=avg(vals),improvements=[];entries.forEach(function(e){improvements=improvements.concat(asList(e.improvements&&e.improvements[q.key]));});var maxCount=Math.max(1,Math.max.apply(null,Object.keys(counts).map(function(k){return counts[k]})));var cols='',stripeCounter=0;for(var d=1;d<=10;d++){var n=counts[d]||0,scaled=Math.round((n/maxCount)*20);if(n>0&&scaled<1)scaled=1;cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack">';for(var s=0;s<scaled;s++){cols+='<span class="stripe" style="background:'+stripeColor(s)+';animation-delay:'+(0.12+stripeCounter*0.045).toFixed(3)+'s"></span>';stripeCounter++}cols+='</div><div class="tick">'+d+'</div></div>'}
+    var vals=entries.map(function(e){return Number(e.scores&&e.scores[q.key])}).filter(function(n){return !isNaN(n)&&n>=1&&n<=10}),counts={};
+    for(var i=1;i<=10;i++)counts[i]=0;
+    vals.forEach(function(v){counts[v]=(counts[v]||0)+1});
+    var av=avg(vals),improvements=[];
+    entries.forEach(function(e){improvements=improvements.concat(asList(e.improvements&&e.improvements[q.key]));});
+    var totalVotes=Math.max(1,vals.length);
+    var totalStripes=20;
+    var cols='',stripeCounter=0;
+    for(var d=1;d<=10;d++){
+      var n=counts[d]||0;
+      var scaled=Math.round((n/totalVotes)*totalStripes);
+      if(n>0&&scaled<1)scaled=1;
+      if(scaled>totalStripes)scaled=totalStripes;
+      cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack">';
+      for(var s=0;s<scaled;s++){
+        cols+='<span class="stripe" style="background:'+stripeColor(s)+';animation-delay:'+(0.12+stripeCounter*0.045).toFixed(3)+'s"></span>';
+        stripeCounter++;
+      }
+      cols+='</div><div class="tick">'+d+'</div></div>';
+    }
     var comments=listPreviewHtml('Kritik / Verbesserungsvorschläge', improvements, 'Keine Verbesserungsvorschläge oder Kritik zu dieser Frage vorhanden.');
     return '<article class="slide" data-card="scale"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(q.category)+'</span><h2>'+escapeHtml(q.label)+'</h2></div><div class="slide-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div><div class="scale-slide-grid"><section class="scale-panel"><div class="modern-metric"><div class="avg-tile" data-color-target="'+(av===null?0:av.toFixed(1))+'"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt von 10</span></div><div class="mini-stats"><div class="mini-stat"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt</span></div><div class="mini-stat"><strong data-countto="'+vals.length+'">0</strong><span>Antworten</span></div></div></div><div class="scale-viz"><div class="scale-head"><div class="scale-title">Punkteverteilung</div></div><div class="distribution">'+cols+'</div></div></section><aside class="feedback-panel"><h3>Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></aside></div></div></article>'
   }
+
   function splitGeneralFeedback(entry,kind){var direct=[];if(kind==='praise')direct=asList(entry.generalPraise);if(kind==='criticism')direct=asList(entry.generalCriticism);if(kind==='suggestions')direct=asList(entry.generalSuggestions);if(direct.length)return direct;var raw=String(entry.generalFeedback||''),labels={praise:'Lob:',criticism:'Kritik:',suggestions:'Anregungen:'},label=labels[kind],parts=raw.split(/\n\s*\n/);for(var i=0;i<parts.length;i++){if(parts[i].indexOf(label)===0)return [parts[i].replace(label,'').trim()].filter(Boolean)}return[]}
   function renderGeneralFeedbackCard(entries){function list(kind,title){var items=[];entries.forEach(function(e){items=items.concat(splitGeneralFeedback(e,kind));});return listPreviewHtml(title,items,'Keine Einträge vorhanden.')}return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">Offene Antworten</span><h2>Allgemeines Lob, Kritik und Anregungen</h2></div><div class="slide-counter">Optional</div></div><div class="general-feedback-grid"><section class="general-feedback-column"><h3>Lob</h3>'+list('praise','Lob')+'</section><section class="general-feedback-column"><h3>Kritik</h3>'+list('criticism','Kritik')+'</section><section class="general-feedback-column"><h3>Anregungen</h3>'+list('suggestions','Anregungen')+'</section></div></div></article>'}
   function renderChoiceCard(title,kicker,entries,key){var yes=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='nein'}).length,total=Math.max(yes+no,1),yesPct=Math.round((yes/total)*100),noPct=Math.round((no/total)*100);return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">'+(yes+no)+' Antworten</div></div><div class="choice-grid"><div class="choice-total">Gesamt: '+(yes+no)+'</div><section class="choice-bar-card yes"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+yesPct+'%"></div></div></div><div class="choice-axis"><span>Ja: '+yes+'</span><span class="pct">'+yesPct+'%</span></div></section><section class="choice-bar-card no"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+noPct+'%"></div></div></div><div class="choice-axis"><span>Nein: '+no+'</span><span class="pct">'+noPct+'%</span></div></section></div></div></article>'}
@@ -334,6 +354,6 @@
   document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=manometer-game-update-v88"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-game-tuning-v89"></script>
 </body>
 </html>

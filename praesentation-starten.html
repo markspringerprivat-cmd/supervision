@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Präsentation starten</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;overflow:hidden;background:#071323;color:#fff;font-family:"Aptos","Segoe UI Variable","Segoe UI",Roboto,Arial,sans-serif}
+    .presenter{position:fixed;inset:0;display:grid;grid-template-rows:56px 1fr 54px;background:radial-gradient(circle at 10% 20%,rgba(60,120,190,.25),transparent 28%),#071323}
+    .topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:rgba(7,19,35,.92);border-bottom:1px solid rgba(255,255,255,.12);z-index:20}
+    .topbar strong{font-size:1rem;letter-spacing:.01em}
+    .topbar .hint{color:rgba(255,255,255,.68);font-size:.92rem}
+    .topbar .spacer{flex:1}
+    button,a.button{border:0;border-radius:999px;padding:9px 14px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+    button.primary,a.primary{background:#2f6fb0;color:#fff}
+    button.light,a.light{background:#eef4fb;color:#10223a}
+    .stage{position:relative;overflow:hidden;display:grid;place-items:center;padding:18px}
+    .slide{position:absolute;inset:18px;display:grid;place-items:center;opacity:0;transform:translateX(70px) scale(.985);transition:opacity .32s ease,transform .42s cubic-bezier(.18,.82,.22,1);pointer-events:none}
+    .slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+    .slide.prev{opacity:0;transform:translateX(-70px) scale(.985)}
+    .slide img{max-width:100%;max-height:100%;width:auto;height:auto;border-radius:18px;box-shadow:0 28px 90px rgba(0,0,0,.42);background:#fff}
+    .bottom{display:flex;align-items:center;gap:12px;padding:0 16px;background:rgba(7,19,35,.92);border-top:1px solid rgba(255,255,255,.12)}
+    .counter{margin-left:auto;font-weight:900;color:#fff}
+    .nav-arrow{position:fixed;top:50%;transform:translateY(-50%);width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.20);font-size:2.1rem;z-index:30;display:grid;place-items:center}
+    .nav-arrow:hover{background:rgba(255,255,255,.2)}
+    .nav-arrow.left{left:18px}.nav-arrow.right{right:18px}
+    @media(max-width:760px){.topbar .hint{display:none}.slide{inset:10px}.nav-arrow{width:48px;height:48px}}
+  </style>
+</head>
+<body>
+  <main class="presenter">
+    <div class="topbar">
+      <strong>Supervision in der Schule</strong>
+      <span class="hint">Pfeiltasten oder Leertaste zum Wechseln · F für Vollbild</span>
+      <span class="spacer"></span>
+      <button id="fullscreenBtn" class="primary" type="button">Vollbild starten (F)</button>
+      <a class="button light" href="praesentation-nachschlagen.html">Zur Übersicht</a>
+    </div>
+    <button id="prevBtn" class="nav-arrow left" type="button" aria-label="Vorherige Folie">‹</button>
+    <section id="stage" class="stage">
+      <section class="slide active" data-slide="1"><img src="assets/ppt_slides/slide-01.png" alt="Folie 1"></section>
+      <section class="slide" data-slide="2"><img src="assets/ppt_slides/slide-02.png" alt="Folie 2"></section>
+      <section class="slide" data-slide="3"><img src="assets/ppt_slides/slide-03.png" alt="Folie 3"></section>
+      <section class="slide" data-slide="4"><img src="assets/ppt_slides/slide-04.png" alt="Folie 4"></section>
+      <section class="slide" data-slide="5"><img src="assets/ppt_slides/slide-05.png" alt="Folie 5"></section>
+      <section class="slide" data-slide="6"><img src="assets/ppt_slides/slide-06.png" alt="Folie 6"></section>
+      <section class="slide" data-slide="7"><img src="assets/ppt_slides/slide-07.png" alt="Folie 7"></section>
+      <section class="slide" data-slide="8"><img src="assets/ppt_slides/slide-08.png" alt="Folie 8"></section>
+      <section class="slide" data-slide="9"><img src="assets/ppt_slides/slide-09.png" alt="Folie 9"></section>
+      <section class="slide" data-slide="10"><img src="assets/ppt_slides/slide-10.png" alt="Folie 10"></section>
+      <section class="slide" data-slide="11"><img src="assets/ppt_slides/slide-11.png" alt="Folie 11"></section>
+    </section>
+    <button id="nextBtn" class="nav-arrow right" type="button" aria-label="Nächste Folie">›</button>
+    <div class="bottom">
+      <button id="backBtn" class="light" type="button">← Zurück</button>
+      <button id="forwardBtn" class="primary" type="button">Weiter →</button>
+      <span id="counter" class="counter">Folie 1 / 11</span>
+    </div>
+  </main>
+<script>
+(function(){
+  var slides=Array.from(document.querySelectorAll('.slide'));
+  var current=0;
+  function update(){
+    slides.forEach(function(s,i){
+      s.classList.remove('active','prev');
+      if(i===current)s.classList.add('active');
+      else if(i<current)s.classList.add('prev');
+    });
+    document.getElementById('counter').textContent='Folie '+(current+1)+' / '+slides.length;
+  }
+  function next(){current=Math.min(slides.length-1,current+1);update();}
+  function prev(){current=Math.max(0,current-1);update();}
+  function toggleFullscreen(){
+    if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}
+    else{document.exitFullscreen&&document.exitFullscreen();}
+  }
+  document.getElementById('nextBtn').onclick=next;
+  document.getElementById('forwardBtn').onclick=next;
+  document.getElementById('prevBtn').onclick=prev;
+  document.getElementById('backBtn').onclick=prev;
+  document.getElementById('fullscreenBtn').onclick=toggleFullscreen;
+  document.addEventListener('fullscreenchange',function(){
+    document.getElementById('fullscreenBtn').textContent=document.fullscreenElement?'Vollbild beenden (F)':'Vollbild starten (F)';
+  });
+  document.addEventListener('keydown',function(ev){
+    if(ev.key==='ArrowRight'||ev.key==='PageDown'||ev.key===' '){ev.preventDefault();next();}
+    if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault();prev();}
+    if((ev.key||'').toLowerCase()==='f'){ev.preventDefault();toggleFullscreen();}
+    if(ev.key==='Escape'&&!document.fullscreenElement){location.href='praesentation-nachschlagen.html';}
+  });
+  update();
+})();
+</script>
+</body>
+</html>

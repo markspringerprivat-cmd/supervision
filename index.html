@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v26-ppt-embed-polish">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v27-ppt-present">
   <style>
     :root{
       --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
@@ -38,13 +38,52 @@
     .admin-actions{display:grid;gap:8px;margin-top:10px}
     .admin-actions button,.admin-actions a{width:100%;justify-content:center}
     .small-status{font-size:.82rem;color:#607187;margin:6px 0 0;line-height:1.35}
-
-    .landing-card.main-action-card{justify-content:center;align-items:center;text-align:center;min-height:310px;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
-    .landing-card.main-action-card:hover{transform:translateY(-5px);box-shadow:0 24px 58px rgba(15,31,53,.15);background:#fbfdff}
-    .landing-card.main-action-card h2{font-size:clamp(1.55rem,2.1vw,2.2rem);font-weight:850;margin:0;color:var(--ink)}
-    .landing-card.main-action-card p{max-width:360px;text-align:center;color:#607187;font-size:1rem}
-    .landing-card.main-action-card .button-row,.landing-card.main-action-card .progress-preview,.landing-card.main-action-card .disabled-pill{display:none!important}
-    .landing-card.main-action-card[aria-disabled="true"]{cursor:not-allowed}
+.landing-card.main-action-card{
+      position:relative;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      min-height:315px;
+      padding:34px 30px;
+      border:1px solid var(--line)!important;
+      border-left:8px solid var(--blue)!important;
+      border-radius:28px;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      transition:transform .22s ease,box-shadow .22s ease,background .22s ease,border-color .22s ease;
+      font-family:"Aptos Display","Segoe UI Variable Display","Segoe UI",Roboto,Arial,sans-serif;
+    }
+    .landing-card.main-action-card:hover{
+      transform:translateY(-6px);
+      box-shadow:0 28px 64px rgba(15,31,53,.16);
+      background:#fff;
+    }
+    .landing-card.main-action-card h2{
+      margin:0;
+      color:#10223a;
+      font-size:clamp(1.7rem,2.2vw,2.35rem);
+      font-weight:820;
+      letter-spacing:-.035em;
+      line-height:1.08;
+      text-wrap:balance;
+    }
+    .landing-card.main-action-card p{
+      margin:14px auto 0;
+      max-width:390px;
+      color:#66778d;
+      font-size:1.02rem;
+      line-height:1.58;
+      font-weight:430;
+      text-align:center;
+    }
+    .landing-card.main-action-card .button-row,
+    .landing-card.main-action-card .progress-preview,
+    .landing-card.main-action-card .disabled-pill,
+    .landing-card.main-action-card .ppt-list{
+      display:none!important;
+    }
+    .resource-card.main-action-card{border-left-color:#2b65a3!important}
+    .role-main-card.main-action-card{border-left-color:#d62828!important}
+    .progress-card.main-action-card{border-left-color:#2f9e44!important}
     .ppt-list{display:grid;gap:9px;margin-top:8px}
     .ppt-list span{display:block;border:1px solid #dce8f4;border-radius:14px;padding:10px 12px;background:#f8fbff;color:#304964}
     @media (max-width:1200px){
@@ -85,14 +124,7 @@
   <section class="landing-hero">
     <a class="landing-card resource-card main-action-card" href="praesentation-nachschlagen.html">
       <h2>Präsentation nachschlagen</h2>
-      <p>Kurze, geordnete Nachschlageansicht zu Fall, Rollen, Ablauf und Ziel der Gruppensupervision.</p>
-      <div class="ppt-list">
-        <span>Fallkontext ESE-Klasse</span>
-        <span>Rollen und Perspektiven</span>
-        <span>Phasen der Supervision</span>
-        <span>Ergebnis- und Präsentationsphase</span>
-      </div>
-      <div class="button-row"><span class="button">Inhalte öffnen</span></div>
+      <p>Öffnet die PowerPoint direkt als scrollbare Folienansicht oder als Vollbild-Präsentation für das Plenum.</p>
     </a>
 
     <a class="landing-card role-main-card main-action-card" href="rollen.html">
@@ -117,11 +149,11 @@
 
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
 
-<script src="js/config.js?v=landing-v26-ppt-embed-polish"></script>
-<script src="js/app.js?v=landing-v26-ppt-embed-polish"></script>
-<script src="js/roles_flow_patch.js?v=landing-v26-ppt-embed-polish"></script>
+<script src="js/config.js?v=landing-v27-ppt-present"></script>
+<script src="js/app.js?v=landing-v27-ppt-present"></script>
+<script src="js/roles_flow_patch.js?v=landing-v27-ppt-present"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=landing-v26-ppt-embed-polish"></script>
+<script src="js/guided_flow_patch.js?v=landing-v27-ppt-present"></script>
 
 <script>
 (function(){

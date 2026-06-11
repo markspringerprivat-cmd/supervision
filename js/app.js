@@ -470,7 +470,7 @@ function supervisorPhase(phase) {
       <section class="card">
         <h2>Brainstorming festhalten</h2>
         ${noteArea("Kriterien für hilfreiche Kritik", "sup_p4_kritik")}
-        <div class="perspective-table-entry"><h3>Positive Rückmeldungen</h3><p class="small">Tragt zu jeder Person kurz ein, was die anderen Beteiligten an ihrer Perspektive nachvollziehbar, hilfreich oder positiv fanden.</p><div class="three-col">${noteArea("Positive Rückmeldung zur Schulleitung", "sup_p4_pos_sl")}${noteArea("Positive Rückmeldung zu Lehrkraft A", "sup_p4_pos_a")}${noteArea("Positive Rückmeldung zu Lehrkraft B", "sup_p4_pos_b")}</div></div>
+        <div class="perspective-table-entry"><p class="small">Tragt getrennt zu jeder Person ein, was die anderen Beteiligten an ihrer Perspektive nachvollziehbar, hilfreich oder positiv fanden.</p><div class="three-col">${noteArea("Positive Rückmeldung zur Schulleitung", "sup_p4_pos_sl")}${noteArea("Positive Rückmeldung zu Lehrkraft A", "sup_p4_pos_a")}${noteArea("Positive Rückmeldung zu Lehrkraft B", "sup_p4_pos_b")}</div></div>
         ${noteArea("Mögliche neue Absprachen", "sup_p4_absprachen")}
       </section>
     </div>`;

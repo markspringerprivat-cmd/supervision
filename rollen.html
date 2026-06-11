@@ -35,6 +35,21 @@
     .warning{background:#fff2f2;border-color:#efc5c5;color:#8a1f1f}
     .ok{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
     @media(max-width:1050px){.role-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}@media(max-width:760px){.top-input-row,.join-box{grid-template-columns:1fr}.join-box img{justify-self:center}.admin-test-row{justify-content:flex-start}}
+  
+    /* Mobile roles layout v54 */
+    @media(max-width:900px){
+      .session-shell{width:calc(100vw - 24px)!important;padding:18px 0!important}
+      .session-card{padding:18px!important;border-radius:22px!important}
+      .top-input-row,.join-box{grid-template-columns:1fr!important}
+      .member-item{align-items:flex-start!important;gap:8px!important}
+      .member-line{flex-wrap:wrap!important}
+      .role-grid{grid-template-columns:1fr!important}
+      .role-tile img{width:150px;height:150px;justify-self:center}
+      .admin-test-row{justify-content:flex-start!important}
+    }
+    @media(min-width:901px) and (max-width:1180px){
+      .role-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    }
   </style>
 </head>
 <body data-mode="roles-session">

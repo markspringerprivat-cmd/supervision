@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=feedback-qr-qrcodefix-v53">
+  <link rel="stylesheet" href="css/styles.css?v=mobile-responsive-v54">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -22,6 +22,18 @@
     .status{padding:13px 15px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972}
     .button-row{display:flex;gap:10px;flex-wrap:wrap}.member-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.member-pill{border-radius:999px;background:#eaf2fb;border:1px solid #d7e5f2;color:#1d416a;padding:8px 11px;font-weight:800}
     @media(max-width:900px){.progress-grid{grid-template-columns:1fr}.feedback-layout{grid-template-columns:1fr}.feedback-qr-card{min-height:150px}}
+  
+    /* Mobile feedback layout v54 */
+    @media(max-width:900px){
+      .feedback-layout{grid-template-columns:1fr!important}
+      .feedback-qr-card{min-height:140px}
+      .feedback-qr-card img{width:140px;height:140px}
+      .progress-grid{grid-template-columns:1fr!important}
+    }
+    @media(min-width:901px) and (max-width:1180px){
+      .feedback-layout{grid-template-columns:minmax(0,1fr) 170px}
+      .feedback-qr-card img{width:138px;height:138px}
+    }
   </style>
 </head>
 <body>
@@ -57,8 +69,8 @@
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=feedback-qr-qrcodefix-v53"></script>
-<script src="js/app.js?v=feedback-qr-qrcodefix-v53"></script>
+<script src="js/config.js?v=mobile-responsive-v54"></script>
+<script src="js/app.js?v=mobile-responsive-v54"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}

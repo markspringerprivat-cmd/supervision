@@ -2,9 +2,9 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=feedback-qr-qrcodefix-v53">
+  <link rel="stylesheet" href="css/styles.css?v=mobile-responsive-v54">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -167,6 +167,83 @@
     @media (max-width:1650px){.stage-arrow.left{left:-24px}.stage-arrow.right{right:-24px}}
     @media (max-width:1180px){.question-grid,.intro-grid,.text-grid{grid-template-columns:1fr}.feedback-stage{height:min(87vh,1060px); min-height:780px}.text-lists{grid-template-columns:1fr}.card-inner{overflow:auto}.stage-arrow.left{left:8px}.stage-arrow.right{right:8px}.question-left{grid-template-rows:auto auto}}
     @media (max-width:780px){.shell{padding-left:10px;padding-right:10px}.progress-wrap,.stage-wrap,.nav-dock,.status-row{width:100%}.card-inner{padding:22px 18px 18px}.metrics{grid-template-columns:1fr}.nav-dock{flex-direction:column;align-items:stretch}.nav-side{justify-content:center}.yn-card{width:190px;height:138px;font-size:1.7rem}.stage-arrow{width:48px;height:48px;font-size:1.6rem}}
+  
+    /* Mobile/iPad Optimierung v54 */
+    @media (max-width: 900px){
+      html,body{height:auto;min-height:100%;overflow:auto!important}
+      body[data-mode="manometer"]{overflow:auto!important}
+      body[data-mode="manometer"] .local-reset-bar{display:none!important}
+      .loading-screen{position:fixed}
+      .shell{height:auto;min-height:100dvh;padding:12px 10px 12px;gap:10px}
+      .progress-wrap{width:calc(100vw - 20px);height:8px}
+      .stage-wrap{width:calc(100vw - 20px);display:block;flex:0 0 auto}
+      .feedback-stage{height:auto;min-height:0;opacity:1;display:block}
+      .card{position:relative;inset:auto;display:none;width:100%;height:auto;min-height:calc(100dvh - 112px);border-radius:22px;transform:none!important;opacity:1!important;visibility:visible!important;overflow:visible;margin:0 auto;box-shadow:0 14px 34px rgba(7,19,35,.14)}
+      .card.active{display:flex;pointer-events:auto}
+      .card.prev,.card.next,.card.far{display:none}
+      .card-inner{height:auto;min-height:calc(100dvh - 112px);padding:20px 16px 18px;overflow:visible}
+      .card-head{display:block;margin-bottom:16px}
+      .counter{display:block;margin-top:8px;font-size:.92rem}
+      .card h2{font-size:1.55rem;line-height:1.18}
+      .card p{font-size:.96rem}
+      .intro-grid,.question-grid,.text-grid{display:grid;grid-template-columns:1fr;gap:14px;flex:0 0 auto}
+      .panel{border-radius:20px}
+      .panel.padded{padding:16px}
+      .panel.scroll{overflow:visible}
+      .intro-left{padding:18px}
+      .intro-left h2{font-size:2rem}
+      .intro-points{grid-template-columns:1fr;gap:10px}
+      .flow-steps{display:grid;gap:8px}
+      .flow-arrow{transform:rotate(90deg);justify-self:center}
+      .question-right{min-height:160px}
+      .range-panel{padding:16px}
+      .scale-row{display:grid;gap:10px}
+      .scale-value{font-size:2rem}
+      input[type="range"]{width:100%;min-height:44px}
+      .tick-row{grid-template-columns:repeat(5,1fr);gap:6px}
+      .tick-pill{font-size:.78rem;padding:5px 0}
+      .entry-list{max-height:none}
+      .entry-row{grid-template-columns:1fr auto;gap:8px}
+      .entry-row textarea{min-height:84px;font-size:16px}
+      .text-lists{grid-template-columns:1fr;gap:12px}
+      .yn-layout{padding:6px 0;align-content:start}
+      .yn-layout h2{font-size:1.55rem}
+      .yn-buttons{grid-template-columns:1fr;gap:10px}
+      .yn-card{min-height:76px}
+      .llm-box{margin-top:12px}
+      .llm-input{font-size:16px;min-height:46px}
+      .submit-state{min-height:calc(100dvh - 160px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+      .inline-actions,.centered-actions{display:flex;flex-direction:column;align-items:stretch;width:100%;max-width:320px;margin-inline:auto}
+      .inline-actions .primary-btn,.inline-actions .secondary-btn,.primary-btn,.secondary-btn{width:100%;justify-content:center;min-height:46px}
+      .game-head{display:grid;gap:12px}
+      .game-stats{grid-template-columns:1fr;gap:8px}
+      .game-canvas-wrap{overflow:auto}
+      #runnerCanvas{width:100%;height:auto;min-width:520px}
+      .feedback-qr-intro img{width:160px;height:160px}
+      .nav-dock{position:sticky;bottom:0;z-index:30;width:100%;margin:10px auto 0;padding:10px;border-radius:20px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;background:rgba(38,58,86,.96);backdrop-filter:blur(12px)}
+      .nav-dock .nav-center{font-size:.92rem}
+      .stage-arrow{display:none!important}
+      #prevBtn,#nextBtn{min-width:88px;padding:10px 12px}
+    }
+    @media (min-width: 901px) and (max-width: 1180px){
+      body[data-mode="manometer"]{overflow:auto!important}
+      .shell{height:auto;min-height:100dvh}
+      .feedback-stage{height:auto;min-height:760px}
+      .stage-wrap{width:calc(100vw - 44px)}
+      .intro-grid,.question-grid,.text-grid{grid-template-columns:1fr;gap:18px}
+      .card-inner{padding:26px}
+      .text-lists{grid-template-columns:1fr}
+      .stage-arrow.left{left:8px}.stage-arrow.right{right:8px}
+    }
+    @media (max-width: 520px){
+      .card-inner{padding:16px 12px}
+      .card h2{font-size:1.35rem}
+      .kicker{font-size:.7rem;padding:6px 10px}
+      .feedback-qr-intro img{width:140px;height:140px}
+      .nav-dock{grid-template-columns:1fr;gap:8px;text-align:center}
+      #prevBtn,#nextBtn{width:100%}
+    }
+
   </style>
 </head>
 <body data-mode="manometer">
@@ -195,8 +272,8 @@
       <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
   </main>
-  <script src="js/config.js?v=feedback-qr-qrcodefix-v53"></script>
-  <script src="js/app.js?v=feedback-qr-qrcodefix-v53"></script>
+  <script src="js/config.js?v=mobile-responsive-v54"></script>
+  <script src="js/app.js?v=mobile-responsive-v54"></script>
   <script>
   (function(){
     const QUESTIONS = [

@@ -346,7 +346,7 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
   }
   document.addEventListener('click',function(e){
     var btn=e.target&&e.target.closest&&e.target.closest('#startPhase1');
-    if(!btn || btn.dataset.v99PopupHandled==='1') return;
+    if(!btn || btn.dataset.v117Rebuilt==='1' || btn.dataset.v99PopupHandled==='1') return;
     e.preventDefault();
     e.stopImmediatePropagation();
     btn.dataset.v99PopupHandled='1';
@@ -393,7 +393,7 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
     });
   }
   document.addEventListener('click', function(ev){
-    if(ev.target && ev.target.closest && ev.target.closest('#startPhase1')){
+    if(ev.target && ev.target.closest && ev.target.closest('#startPhase1') && !ev.target.closest('#startPhase1').dataset.v117Rebuilt){
       setTimeout(fixStartDialogTextV114,0);
       setTimeout(fixStartDialogTextV114,80);
       setTimeout(fixStartDialogTextV114,250);

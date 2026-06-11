@@ -714,14 +714,14 @@
   .question-left-v69{
     display:grid!important;
     grid-template-rows:auto auto!important;
-    gap:22px!important;
-    align-content:center!important;
-    justify-content:center!important;
+    gap:18px!important;
+    align-content:start!important;
+    justify-content:stretch!important;
     min-height:100%!important;
   }
   .metrics-v69{
     grid-template-columns:140px minmax(0,1fr)!important;
-    align-items:center!important;
+    align-items:stretch!important;
     gap:20px!important;
   }
   .score-tile{
@@ -732,7 +732,7 @@
     min-height:140px!important;
     padding:18px 16px 16px!important;
     box-shadow:0 18px 32px rgba(11,24,48,.18)!important;
-    align-self:center!important;
+    align-self:stretch!important;
   }
   .score-tile .value{
     font-size:3.35rem!important;
@@ -758,11 +758,11 @@
   .question-copy-v69 .question-title{
     margin:0!important;
     font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif!important;
-    font-size:clamp(1.42rem,1.9vw,2.05rem)!important;
-    line-height:1.16!important;
-    font-weight:830!important;
+    font-size:clamp(1.12rem,1.45vw,1.58rem)!important;
+    line-height:1.18!important;
+    font-weight:790!important;
     color:#152742!important;
-    letter-spacing:-.03em!important;
+    letter-spacing:-.025em!important;
     max-width:100%!important;
   }
   .slider-zone-v69{
@@ -884,21 +884,26 @@
   .req-note{
     margin-top:4px!important;
     padding:14px 16px!important;
-    border:1px solid #fde1bf!important;
-    background:linear-gradient(180deg,#fff7e7,#fffdf8)!important;
-    color:#8a5a00!important;
+    border:1px solid #cfe0f3!important;
+    background:linear-gradient(180deg,#eef6ff,#f8fbff)!important;
+    color:#244b78!important;
     border-radius:18px!important;
     font-size:.9rem!important;
     line-height:1.45!important;
     font-weight:620!important;
   }
+  .intro-start-screen{display:grid!important;place-items:center!important;flex:1 1 auto!important;min-height:0!important}
+  .intro-start-panel{width:min(560px,100%)!important;padding:38px 34px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:22px!important;text-align:center!important}
+  .intro-start-panel h2{margin:0!important;font-size:clamp(2rem,3vw,3rem)!important;font-weight:800!important;color:#152742!important}
+  .intro-start-panel .intro-actions{display:flex!important;justify-content:center!important}
+  .intro-start-panel .primary-btn{min-width:220px!important;min-height:54px!important;font-size:1rem!important}
   @media(max-width:960px){
     .question-grid-v69{grid-template-columns:1fr!important;gap:18px!important}
     .question-left-v69{justify-content:stretch!important;align-content:start!important}
     .metrics-v69{grid-template-columns:110px 1fr!important;gap:12px!important}
     .score-tile{width:110px!important;min-width:110px!important;min-height:110px!important;padding:16px 14px!important}
     .question-copy-v69{min-height:110px!important;padding:18px!important}
-    .question-copy-v69 .question-title{font-size:1.25rem!important}
+    .question-copy-v69 .question-title{font-size:1.08rem!important}
     .question-right-v69{padding:14px 0 0!important;border-left:none!important;border-top:1px solid #dbe4ee!important}
     .question-right-v69 .entry-row textarea,.question-right-v69 .entry-row input{min-height:70px!important}
     .tick-row-v69{gap:2px!important;padding:0 2px!important}
@@ -1027,7 +1032,7 @@
     function buildMarkup(){
       const stage=document.getElementById('feedbackStage');
       stage.innerHTML=`
-      <section class="card active" data-step="intro"><div class="card-inner"><div class="card-head"><div><span class="kicker">Start</span><h2>Deine Rückmeldung</h2><p>Beantworte die Fragen einzeln. Die Auswertung erfolgt anonym und unabhängig von der Gruppen-ID.</p></div><div class="counter">Einführung</div></div><div class="intro-grid"><div class="panel intro-left"><h2>Manometer</h2><p>Nutze den Regler, um jede Aussage von 1 bis 10 einzuschätzen. Bei Werten unter 10 kannst du rechts konkrete Kritik und Verbesserungsvorschläge ergänzen.</p><div class="intro-points"><div class="intro-note"><strong>1–10 Skala</strong>1 bedeutet „trifft gar nicht zu“, 10 bedeutet „trifft vollständig zu“.</div><div class="intro-note"><strong>Anonym</strong>Die Auswertung wird anonym gespeichert und später nur in der Präsentationsansicht angezeigt.</div><div class="intro-note"><strong>Einmal pro Gerät</strong>Von einem Gerät kann nur einmal abgestimmt werden, bis die Administration die Gerätefreigabe zurücksetzt.</div></div></div><div class="panel padded scroll"><h3 style="margin:0 0 12px; color:#1b3f67; font-size:1.05rem; font-weight:650">Ablauf</h3><div class="flow-steps"><div class="flow-card"><strong>1. Skalenfragen</strong>Bewerte jede Aussage von 1 bis 10.</div><div class="flow-arrow">↓</div><div class="flow-card"><strong>2. Einträge ergänzen</strong>Bei Bedarf Kritik, Verbesserungsvorschläge, Lob und Anregungen eintragen.</div><div class="flow-arrow">↓</div><div class="flow-card"><strong>3. Zusatzfragen</strong>Zwei kurze Ja/Nein-Fragen beantworten.</div><div class="flow-arrow">↓</div><div class="flow-card"><strong>4. Absenden</strong>Feedback anonym speichern.</div></div><div class="feedback-start-inline"><button type="button" class="primary-btn" id="startSurveyBtn">Feedback starten</button></div></div></div></div></section>`;
+      <section class="card active" data-step="intro"><div class="card-inner"><div class="card-head"><div><span class="kicker">Start</span><h2>Deine Rückmeldung</h2></div><div class="counter">Einführung</div></div><div class="intro-start-screen"><div class="panel intro-start-panel"><h2>Feedback</h2><div class="intro-actions"><button type="button" class="primary-btn" id="startSurveyBtn">Feedback starten</button></div></div></div></div></section>`;
       QUESTIONS.forEach((q,i)=>stage.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)));
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="generalText"><div class="card-inner"><div class="card-head"><div><span class="kicker">Freitext</span><h2>Allgemeines Lob, Kritik und Anregungen</h2><p>Diese drei Listen sind optional. Jeder Eintrag wird einzeln gespeichert und später einzeln dargestellt.</p></div><div class="counter">Freitext</div></div><div class="text-grid"><div class="text-lists"><div class="list-column"><div class="panel"><div class="list-head"><h3>Lob</h3><button type="button" class="add-btn" data-add-entry="praise">+ Eintrag</button></div><div class="entry-list" data-entry-list="praise"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Kritik</h3><button type="button" class="add-btn" data-add-entry="criticism">+ Eintrag</button></div><div class="entry-list" data-entry-list="criticism"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Anregungen</h3><button type="button" class="add-btn" data-add-entry="suggestions">+ Eintrag</button></div><div class="entry-list" data-entry-list="suggestions"></div></div></div></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="avoidCheck"><div class="card-inner"><div class="yn-layout"><h2>Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="avoidCriticism" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="avoidCriticism" value="Nein"><span>Nein</span></label></div></div></div></section>`);
@@ -1048,7 +1053,7 @@
       const tile=document.querySelector(`[data-color-for="${key}"]`);
       if(tile)tile.style.background=`linear-gradient(145deg, ${scoreColor(Math.max(1,value-1))}, ${scoreColor(value)})`;
       const note=document.querySelector(`[data-required-note="${key}"]`);
-      if(note) note.style.display = value < 10 ? '' : 'none';
+      if(note) note.style.display = '';
       updateControls();
     }
     function setActive(index){current=Math.max(0,Math.min(index,steps.length-1)); steps.forEach((step,i)=>{step.classList.remove('active','prev','next','far'); if(i===current)step.classList.add('active'); else if(i===current-1)step.classList.add('prev'); else if(i===current+1)step.classList.add('next'); else step.classList.add('far')}); updateControls(); clearStatus(); try{window.scrollTo({top:0,behavior:'smooth'});}catch(_){window.scrollTo(0,0);} const activeStep=steps[current]; try{activeStep&&activeStep.querySelector('input,textarea,button')&&activeStep.querySelector('input,textarea,button').blur&&activeStep.querySelector('input,textarea,button').blur();}catch(_){}}

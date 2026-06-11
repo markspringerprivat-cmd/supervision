@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=leader-member-edit-v41">
+  <link rel="stylesheet" href="css/styles.css?v=group-exists-guard-v42">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -57,8 +57,8 @@
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=leader-member-edit-v41"></script>
-<script src="js/app.js?v=leader-member-edit-v41"></script>
+<script src="js/config.js?v=group-exists-guard-v42"></script>
+<script src="js/app.js?v=group-exists-guard-v42"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -169,16 +169,26 @@ function render(data){
       editLink.textContent='Präsentation bearbeiten';
       editLink.style.pointerEvents='';
       editLink.style.opacity='1';
+    }else if(data.hasResult && rowNumber){
+      document.getElementById('presentationInfo').textContent='Ein Gruppenergebnis wurde gefunden. Die Präsentation kann jetzt bearbeitet werden.';
+      finalLink.href='#';
+      finalLink.textContent='Noch keine finale Präsentation vorhanden';
+      finalLink.style.pointerEvents='none';
+      finalLink.style.opacity='.55';
+      editLink.href='zusammenfassung.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber);
+      editLink.textContent='Präsentation bearbeiten';
+      editLink.style.pointerEvents='';
+      editLink.style.opacity='1';
     }else{
-      document.getElementById('presentationInfo').textContent='Für diese Gruppe wurde noch keine fertige Präsentation übermittelt.';
+      document.getElementById('presentationInfo').textContent='Für diese Gruppe wurde noch kein Gruppenergebnis übermittelt. Die Präsentation kann noch nicht vorbereitet werden.';
       finalLink.href='#';
       finalLink.textContent='Noch keine Präsentation vorhanden';
       finalLink.style.pointerEvents='none';
       finalLink.style.opacity='.55';
-      editLink.href='zusammenfassung.html?g='+encodeURIComponent(data.groupId||'');
-      editLink.textContent='Präsentation vorbereiten';
-      editLink.style.pointerEvents='';
-      editLink.style.opacity='1';
+      editLink.href='#';
+      editLink.textContent='Präsentation noch nicht verfügbar';
+      editLink.style.pointerEvents='none';
+      editLink.style.opacity='.55';
     }
   }
   async function boot(){

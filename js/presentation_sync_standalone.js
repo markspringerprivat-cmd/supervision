@@ -237,12 +237,12 @@
         {id:'s0_title', type:'title', html:'Gruppenvorstellung'},
         {id:'s0_kicker', type:'kicker', html:timestamp},
         {id:'s0_groupName', type:'heading2', html:groupName},
-        {id:'s0_table', type:'table', html:table(['Rolle','Name'], [['Supervisor*in',supervisor],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb],['Protokoll',pr]])},
+        {id:'s0_table', type:'table', html:table(['Rolle','Name'], [['Supervisor*in',supervisor],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb]].concat(pr?[['Protokoll',pr]]:[]))},
         {id:'s0_note', type:'note', html:'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.'}
       ]},
       {id:'s1', parts:[
         {id:'s1_title', type:'title', html:'Problembeschreibung'},
-        {id:'s1_subtitle', type:'subtitle', html:'Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.'},
+        {id:'s1_subtitle', type:'subtitle', html:'Die unterschiedlichen Perspektiven im Teamteaching-Konflikt werden sichtbar: Beobachtungen, Gefühle und Wünsche der Beteiligten.'},
         {id:'s1_table', type:'table', html:table(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], [
           ['Schulleitung', first(v.p2slProblems,p2.slProbleme,p2.slProblem), first(v.p2slFeelings,p2.slGefuehle), first(v.p2slWishes,p2.slWuensche)],
           ['Lehrkraft A', first(v.p2aProblems,p2.aProbleme,p2.aPerspektive), first(v.p2aFeelings,p2.aGefuehle), first(v.p2aWishes,p2.aWuensche)],
@@ -263,7 +263,7 @@
       ]},
       {id:'s4', parts:[
         {id:'s4_title', type:'title', html:'Umsetzung'},
-        {id:'s4_subtitle', type:'subtitle', html:'Diese Folie zeigt Zustimmung, Praxistauglichkeit und konkrete Schritte zur Umsetzung.'},
+        {id:'s4_subtitle', type:'subtitle', html:'Die Vereinbarung wird auf Zustimmung, Praxistauglichkeit und konkrete nächste Schritte hin gesichert.'},
         {id:'s4_table', type:'table', html:table(['Aspekt','Ergebnis'], [
           ['Zustimmung zur Vereinbarung', dedupeText(first(v.p5zustimmung,p5.zustimmung))], ['Einschätzung der Praxistauglichkeit', first(v.p6prax,p6.praxistauglichkeit,p6.einschaetzung)], ['Unterstützung durch Schulleitung', first(v.p6support,p6.unterstuetzung)], ['Erste konkrete Umsetzungsschritte', first(v.p6steps,p6.umsetzung,p6.konkreteUmsetzungsschritte)]
         ])}

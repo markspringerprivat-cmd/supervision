@@ -5205,3 +5205,5 @@ body[data-mode="results"] .result-card[aria-current="true"].is-winner{
 .three-col label{font-size:.92rem}
 .standard-required{border-width:1px!important;box-shadow:none!important}
 @media(max-width:900px){.three-col{grid-template-columns:1fr}}
+
+.readonly-group-name{background:#eef3f8!important;color:#52687f!important;cursor:not-allowed!important;border-color:#d7e3ef!important}

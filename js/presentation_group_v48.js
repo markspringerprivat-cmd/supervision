@@ -156,27 +156,27 @@
         {id:'s0_title', type:'title', html:'Gruppenvorstellung'},
         {id:'s0_kicker', type:'kicker', html:formatTs(values.timestamp)},
         {id:'s0_groupName', type:'groupName', html:valueText(values.groupName), field:'groupName'},
-        {id:'s0_table', type:'table', table:{headers:['Rolle','Name'], rows:[['Supervisor*in','supervisor'],['Schulleitung','schulleitung'],['Lehrkraft A','lehrkraftA'],['Lehrkraft B','lehrkraftB'],['Protokoll','protokoll']]}},
+        {id:'s0_table', type:'table', table:{headers:['Rolle','Name'], rows:[['Supervisor*in','supervisor'],['Schulleitung','schulleitung'],['Lehrkraft A','lehrkraftA'],['Lehrkraft B','lehrkraftB'],...(values.protokoll?[['Protokoll','protokoll']]:[])]}},
         {id:'s0_note', type:'note', html:'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.'}
       ]},
       {id:'problem', elements:[
         {id:'s1_title', type:'title', html:'Problembeschreibung'},
-        {id:'s1_subtitle', type:'subtitle', html:'Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.'},
+        {id:'s1_subtitle', type:'subtitle', html:'Die unterschiedlichen Perspektiven im Teamteaching-Konflikt werden sichtbar: Beobachtungen, Gefühle und Wünsche der Beteiligten.'},
         {id:'s1_table', type:'table', table:{headers:['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'], rows:[['Schulleitung','p2slProblems','p2slFeelings','p2slWishes'],['Lehrkraft A','p2aProblems','p2aFeelings','p2aWishes'],['Lehrkraft B','p2bProblems','p2bFeelings','p2bWishes']]}}
       ]},
       {id:'goals', elements:[
         {id:'s2_title', type:'title', html:'Zielformulierung'},
-        {id:'s2_subtitle', type:'subtitle', html:'Hier werden die Einzelziele der Beteiligten, erkennbare Gemeinsamkeiten und die gemeinsame Zielvereinbarung zusammengeführt.'},
+        {id:'s2_subtitle', type:'subtitle', html:'Aus den vorbereiteten Zielgedanken wurde eine gemeinsame Zielvereinbarung für die weitere Zusammenarbeit abgeleitet.'},
         {id:'s2_table', type:'table', table:{headers:['Bereich','Eintrag'], rows:[['Ziel Schulleitung','p3zielSL'],['Ziel Lehrkraft A','p3zielA'],['Ziel Lehrkraft B','p3zielB'],['Gefundene Gemeinsamkeiten','p3gemeinsam'],['Gemeinsame Zielvereinbarung','p3ziel']]}}
       ]},
       {id:'deep', elements:[
         {id:'s3_title', type:'title', html:'Vertiefte Problembearbeitung'},
-        {id:'s3_subtitle', type:'subtitle', html:'Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.'},
+        {id:'s3_subtitle', type:'subtitle', html:'Die Gruppe hat Kriterien für hilfreiche Kritik, nachvollziehbare Perspektiven und konkrete Absprachen für die weitere Zusammenarbeit gesammelt.'},
         {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positives zur Schulleitung','p4perspektiveSL'],['Positives zu Lehrkraft A','p4perspektiveA'],['Positives zu Lehrkraft B','p4perspektiveB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
       ]},
       {id:'implementation', elements:[
         {id:'s4_title', type:'title', html:'Umsetzung'},
-        {id:'s4_subtitle', type:'subtitle', html:'Diese Folie zeigt Zustimmung, Praxistauglichkeit und erste konkrete Schritte zur Umsetzung der Vereinbarung.'},
+        {id:'s4_subtitle', type:'subtitle', html:'Die Vereinbarung wird auf Zustimmung, Praxistauglichkeit und konkrete nächste Schritte hin gesichert.'},
         {id:'s4_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Zustimmung zur Vereinbarung','p5zustimmung'],['Einschätzung der Praxistauglichkeit durch die Schulleitung','p6prax'],['Unterstützungsmöglichkeiten durch die Schulleitung','p6support'],['Erste konkrete Umsetzungsschritte','p6steps']]}}
       ]},
       {id:'thanks', elements:[{id:'s5_thanks', type:'thanks', html:'Vielen Dank fürs Zuhören!'}]}

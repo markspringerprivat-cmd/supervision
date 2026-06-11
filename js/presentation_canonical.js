@@ -72,11 +72,11 @@
     return [
       {id:'s0',elements:[
         {id:'s0_title',type:'title',text:'Gruppenvorstellung'}, {id:'s0_kicker',type:'kicker',text:ts}, {id:'s0_groupName',type:'heading2',text:groupName},
-        {id:'s0_table',type:'table',html:table(['Rolle','Name'],[['Supervisor*in',sup],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb],['Protokoll',pr]])},
+        {id:'s0_table',type:'table',html:table(['Rolle','Name'],[['Supervisor*in',sup],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb]].concat(pr?[['Protokoll',pr]]:[]))},
         {id:'s0_note',type:'note',text:'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.'}
       ]},
       {id:'s1',elements:[
-        {id:'s1_title',type:'title',text:'Problembeschreibung'}, {id:'s1_subtitle',type:'subtitle',text:'Diese Folie bündelt die individuellen Sichtweisen der Beteiligten: Beobachtungen bzw. Probleme, Gefühle und Wünsche.'},
+        {id:'s1_title',type:'title',text:'Problembeschreibung'}, {id:'s1_subtitle',type:'subtitle',text:'Die unterschiedlichen Perspektiven im Teamteaching-Konflikt werden sichtbar: Beobachtungen, Gefühle und Wünsche der Beteiligten.'},
         {id:'s1_table',type:'table',html:table(['Rolle','Probleme / Beobachtung','Gefühle','Wünsche'],[
           ['Schulleitung',first(values.p2slProblems,p2.slProbleme),first(values.p2slFeelings,p2.slGefuehle),first(values.p2slWishes,p2.slWuensche)],
           ['Lehrkraft A',first(values.p2aProblems,p2.aProbleme),first(values.p2aFeelings,p2.aGefuehle),first(values.p2aWishes,p2.aWuensche)],
@@ -92,7 +92,7 @@
         {id:'s3_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Hilfreiche Kritik',first(values.p4kritik,p4.kritik)],['Positives zur Schulleitung',first(values.p4perspektiveSL,p4.perspektiveSL)],['Positives zu Lehrkraft A',first(values.p4perspektiveA,p4.perspektiveA)],['Positives zu Lehrkraft B',first(values.p4perspektiveB,p4.perspektiveB)],['Absprachen zum weiteren Vorgehen',first(values.p4absprachen,p4.absprachen)]])}
       ]},
       {id:'s4',elements:[
-        {id:'s4_title',type:'title',text:'Umsetzung'}, {id:'s4_subtitle',type:'subtitle',text:'Diese Folie zeigt Zustimmung, Praxistauglichkeit und konkrete Schritte zur Umsetzung.'},
+        {id:'s4_title',type:'title',text:'Umsetzung'}, {id:'s4_subtitle',type:'subtitle',text:'Die Vereinbarung wird auf Zustimmung, Praxistauglichkeit und konkrete nächste Schritte hin gesichert.'},
         {id:'s4_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Zustimmung zur Vereinbarung',dedupeText(first(values.p5zustimmung,p5.zustimmung))],['Einschätzung der Praxistauglichkeit',first(values.p6prax,p6.praxistauglichkeit)],['Unterstützung durch Schulleitung',first(values.p6support,p6.unterstuetzung)],['Erste konkrete Umsetzungsschritte',first(values.p6steps,p6.umsetzung)]])}
       ]},
       {id:'s5',elements:[{id:'s5_thanks',type:'thanks',html:'<h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p>'}]}

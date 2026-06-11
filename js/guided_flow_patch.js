@@ -110,6 +110,7 @@
       if(!next) return;
       const phase=phaseFromPage();
       const isSummaryButton = phase===6 && /zusammenfassen/i.test(next.textContent || '');
+      if(document.body.dataset.role==='supervisor' && typeof window.__svSupervisorHasProtocolV105==='function' && window.__svSupervisorHasProtocolV105()) return;
       if(!isRecorderRole() && !isSummaryButton) return;
       const missing = missingForRange(1, phase, true);
       if(missing.length){

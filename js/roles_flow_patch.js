@@ -2027,279 +2027,402 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
 /* v102 direct flowNext interceptor removed in v103: clean flow renderer owns navigation. */
 
 
-/* ============================================================
-   v103: sauberer Ablauf-Renderer für 4er-/5er-Supervision
-   ============================================================ */
-(function(){
-  const STEPS_V103=[
-    {
-      title:'1. Erstkontakt und Rahmen',
-      moderation:'Du eröffnest das Gespräch, klärst Ziel, Freiwilligkeit, Vertraulichkeit, respektvolle Sprache und die Bereitschaft zur Mitarbeit.',
-      protocol:'Dokumentiere Gesprächsrahmen, Gesprächsregeln und ob die Beteiligten bereit sind, an der Klärung mitzuwirken.'
-    },
-    {
-      title:'2. Problembeschreibung',
-      moderation:'Du gibst zuerst der Schulleitung das Wort und lässt anschließend Lehrkraft A und Lehrkraft B ergänzen. Achte auf Beobachtungen, Gefühle und Wünsche.',
-      protocol:'Halte getrennt fest: Problem/Beobachtung, Gefühle und Wünsche der Schulleitung, Lehrkraft A und Lehrkraft B.'
-    },
-    {
-      title:'3. Zielformulierung',
-      moderation:'Du fragst nach individuellen Zielen, bündelst Gemeinsamkeiten und formulierst mit der Gruppe eine gemeinsame Zielvereinbarung.',
-      protocol:'Dokumentiere Ziel Schulleitung, Ziel Lehrkraft A, Ziel Lehrkraft B, Gemeinsamkeiten und gemeinsame Zielformulierung.'
-    },
-    {
-      title:'4. Vertiefte Problembearbeitung',
-      moderation:'Du leitest hilfreiche Kritik, positive Rückmeldungen und konkrete Absprachen für die weitere Zusammenarbeit an.',
-      protocol:'Halte Kriterien hilfreicher Kritik, positive Rückmeldungen und Absprachen zum weiteren Vorgehen fest.'
-    },
-    {
-      title:'5. Ergebnissicherung',
-      moderation:'Du fasst die Zwischenergebnisse zusammen, prüfst Zustimmung und klärst offene Punkte.',
-      protocol:'Dokumentiere Rückmeldungen, Zustimmung und offene Punkte.'
-    },
-    {
-      title:'6. Praxistauglichkeit',
-      moderation:'Du prüfst mit der Schulleitung, ob die Vereinbarung im Schulalltag realistisch ist und welche Unterstützung nötig ist.',
-      protocol:'Halte Einschätzung der Praxistauglichkeit, Unterstützung durch Schulleitung und erste Umsetzungsschritte fest.'
-    }
-  ];
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function pageFile(){return (location.pathname.split('/').pop()||'').toLowerCase();}
-  function groupQuery(){
-    try{
-      var p=new URLSearchParams(location.search);
-      var gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
-      return gid ? '?g='+encodeURIComponent(gid) : '';
-    }catch(_){return '';}
-  }
-  function roleFromPage(){
-    try{
-      var p=new URLSearchParams(location.search);
-      return p.get('role') || document.body.dataset.role || document.body.dataset.flowProfile || '';
-    }catch(_){return document.body.dataset.role || document.body.dataset.flowProfile || '';}
-  }
-  function thoughtTarget(){
-    var role=roleFromPage() || 'supervisor';
-    if(role==='lehrkraft') role='lehrkraft-a';
-    return 'gedanken-'+role+'.html'+groupQuery();
-  }
-  function mode(){
-    var file=pageFile();
-    if(file==='ablauf-supervisor-moderation.html') return 'supervisor-moderation-only';
-    if(file==='ablauf-supervisor.html') return 'supervisor-full';
-    if(file==='ablauf-protokoll.html') return 'protocol-only';
-    if(file==='ablauf-schulleitung.html') return 'schulleitung';
-    if(file==='ablauf-lehrkraft.html') return 'lehrkraft';
-    return '';
-  }
-  function card(step, idx, m){
-    if(m==='supervisor-moderation-only'){
-      return '<article class="card flow-step is-visible is-read"><div class="flow-step-head"><span class="step-badge">'+(idx+1)+'</span><h3>'+esc(step.title)+'</h3></div><p><strong>Moderationskarte:</strong> '+esc(step.moderation)+'</p></article>';
-    }
-    if(m==='supervisor-full'){
-      return '<article class="card flow-step is-visible is-read"><div class="flow-step-head"><span class="step-badge">'+(idx+1)+'</span><h3>'+esc(step.title)+'</h3></div><div class="two-col equal-phase-layout"><section class="mini-card"><h4>Moderation</h4><p>'+esc(step.moderation)+'</p></section><section class="mini-card"><h4>Protokoll durch Supervisor*in</h4><p>'+esc(step.protocol)+'</p></section></div></article>';
-    }
-    if(m==='protocol-only'){
-      return '<article class="card flow-step is-visible is-read"><div class="flow-step-head"><span class="step-badge">'+(idx+1)+'</span><h3>'+esc(step.title)+'</h3></div><p><strong>Protokollkarte:</strong> '+esc(step.protocol)+'</p></article>';
-    }
-    if(m==='schulleitung'){
-      return '<article class="card flow-step is-visible is-read"><div class="flow-step-head"><span class="step-badge">'+(idx+1)+'</span><h3>'+esc(step.title)+'</h3></div><p>'+esc(['Du sortierst Anlass und Beobachtung.','Du schilderst Beobachtung, Gefühle und Wünsche aus Leitungssicht.','Du formulierst dein Ziel für die Supervision.','Du prüfst hilfreiche Kritik und tragfähige Absprachen.','Du prüfst die Ergebnissicherung und Zustimmung.','Du bewertest Praxistauglichkeit und notwendige Unterstützung.'][idx]||step.moderation)+'</p></article>';
-    }
-    return '<article class="card flow-step is-visible is-read"><div class="flow-step-head"><span class="step-badge">'+(idx+1)+'</span><h3>'+esc(step.title)+'</h3></div><p>'+esc(['Du klärst deine Rolle im Konflikt.','Du bereitest Beobachtung/Perspektive, Gefühle und Wünsche vor.','Du formulierst Zielgedanken.','Du beteiligst dich an hilfreicher Kritik und Absprachen.','Du prüfst, ob die Ergebnisse für dich stimmen.','Du überlegst, welchen nächsten Schritt du selbst mittragen kannst.'][idx]||step.moderation)+'</p></article>';
-  }
-  function applyHeader(m){
-    if(m==='supervisor-moderation-only'){
-      var h=document.querySelector('header h1'); if(h) h.textContent='Ablauf für Supervisor*in – Moderation';
-      var p=document.querySelector('header p'); if(p) p.textContent='Nur Moderationskarten. Die Dokumentation übernimmt die Rolle Protokoll.';
-      var intro=document.querySelector('main .card.highlight p:not(.role-pill)'); if(intro) intro.textContent='Lies die Moderationskarten nacheinander. Du leitest das Gespräch; die Protokollierung übernimmt die Rolle Protokoll.';
-    }
-    if(m==='supervisor-full'){
-      var h2=document.querySelector('header h1'); if(h2) h2.textContent='Ablauf für Supervisor*in – Moderation und Protokoll';
-      var p2=document.querySelector('header p'); if(p2) p2.textContent='Vierergruppe: Du moderierst und dokumentierst zugleich.';
-      var intro2=document.querySelector('main .card.highlight p:not(.role-pill)'); if(intro2) intro2.textContent='Lies die Ablaufkarten nacheinander. Du übernimmst sowohl die Moderation als auch die Protokollfelder in den Phasen.';
-    }
-    if(m==='protocol-only'){
-      var hp=document.querySelector('header h1'); if(hp) hp.textContent='Ablauf für Protokoll';
-      var pp=document.querySelector('header p'); if(pp) pp.textContent='Du dokumentierst die Ergebnisse. Die Supervisor*in moderiert.';
-    }
-  }
-  function renderCleanFlow(){
-    var m=mode();
-    if(!m) return;
-    var box=document.getElementById('flowSteps');
-    if(!box) return;
-    applyHeader(m);
-    box.innerHTML=STEPS_V103.map(function(step,idx){return card(step,idx,m);}).join('');
-    var next=document.getElementById('flowNext');
-    if(next){
-      var target=thoughtTarget();
-      var clean=next.cloneNode(true);
-      clean.href=target;
-      clean.textContent='Weiter: Mach dir Gedanken';
-      clean.classList.remove('disabled','is-busy');
-      clean.removeAttribute('aria-disabled');
-      clean.style.pointerEvents='auto';
-      clean.onclick=function(ev){ev.preventDefault(); location.href=target;};
-      next.replaceWith(clean);
-    }
-  }
-  window.renderCleanFlowV103=renderCleanFlow;
-  window.addEventListener('DOMContentLoaded',function(){
-    renderCleanFlow();
-    setTimeout(renderCleanFlow,80);
-    setTimeout(renderCleanFlow,300);
-  });
-})();
+
+/* conflicting emergency override removed in v105 */
+
+/* conflicting emergency override removed in v105 */
 
 
-/* ============================================================
-   v104: echte Moderationskarten in den Supervisor-Phasen
-   ============================================================ */
+/* ------------------------------------------------------------
+   FINAL MODERATION PATCH v2 RESTORED v105: Gesprächsführung mit Antwortpausen,
+   Phase-2-Dokumentation in drei Spalten, Protokoll-Zusammenfassung.
+   ------------------------------------------------------------ */
 (function(){
-  const MOD_V104={
-    1:{
-      title:'Moderationskarte Phase 1: Erstkontakt',
-      aim:'Einen sicheren Gesprächsrahmen herstellen.',
-      lines:[
-        '„Willkommen. Ich freue mich, dass Sie alle da sind und sich Zeit für die Klärung nehmen.“',
-        '„Heute geht es nicht um Schuld, sondern darum, die unterschiedlichen Perspektiven zu verstehen.“',
-        '„Wir arbeiten mit Ich-Aussagen, konkreten Beobachtungen und respektvoller Sprache.“',
-        '„Sind alle bereit, zuzuhören und an einer gemeinsamen Klärung mitzuwirken?“'
-      ]
-    },
-    2:{
-      title:'Moderationskarte Phase 2: Problembeschreibung',
-      aim:'Beobachtungen, Gefühle und Wünsche getrennt sammeln.',
-      lines:[
-        '„Ich würde zunächst gerne von der Schulleitung hören: Was haben Sie beobachtet?“',
-        '„Welche Gefühle oder Sorgen löst die Situation bei Ihnen aus?“',
-        '„Welche Wünsche haben Sie an das Teamteaching?“',
-        '„Lehrkraft A, wie stellt sich die Situation aus Ihrer Perspektive dar?“',
-        '„Lehrkraft B, ich stelle Ihnen dieselben Fragen: Perspektive, Gefühle und Wünsche.“',
-        '„Ich fasse kurz zusammen, was ich gehört habe.“'
-      ]
-    },
-    3:{
-      title:'Moderationskarte Phase 3: Zielformulierung',
-      aim:'Aus Einzelzielen eine gemeinsame Zielvereinbarung entwickeln.',
-      lines:[
-        '„Was soll nach dieser Supervision klarer oder anders sein?“',
-        '„Bitte formulieren Sie das Ziel möglichst konkret und positiv.“',
-        '„Welche Gemeinsamkeiten hören wir in diesen Zielen?“',
-        '„Welche gemeinsame Zielformulierung könnten alle mittragen?“',
-        '„Ich halte fest: Unser gemeinsames Ziel lautet … Stimmen Sie dem so zu?“'
-      ]
-    },
-    4:{
-      title:'Moderationskarte Phase 4: Vertiefte Problembearbeitung',
-      aim:'Hilfreiche Kritik und konkrete Absprachen entwickeln.',
-      lines:[
-        '„Wir schauen jetzt darauf, wie Kritik im Teamteaching hilfreich geäußert werden kann.“',
-        '„Was macht Kritik so, dass sie nicht als Angriff ankommt?“',
-        '„Welche Regeln helfen: unter vier Augen, konkret, zeitnah, Ich-Botschaft, Bezug auf die Situation?“',
-        '„Nennen Sie bitte einen Punkt an einer anderen Perspektive, den Sie nachvollziehen können.“',
-        '„Welche konkrete Absprache hilft dem Team ab morgen?“'
-      ]
-    },
-    5:{
-      title:'Moderationskarte Phase 5: Ergebnissicherung',
-      aim:'Ergebnisse bündeln und Zustimmung prüfen.',
-      lines:[
-        '„Ich fasse die zentralen Ergebnisse zusammen.“',
-        '„Habe ich die Beobachtungen, Gefühle, Wünsche und Ziele korrekt erfasst?“',
-        '„Welche Punkte sind noch offen?“',
-        '„Können alle diese Vereinbarung mittragen?“',
-        '„Was muss noch ergänzt werden, damit die Absprache tragfähig ist?“'
-      ]
-    },
-    6:{
-      title:'Moderationskarte Phase 6: Praxistauglichkeit',
-      aim:'Umsetzbarkeit und erste Schritte klären.',
-      lines:[
-        '„Wir prüfen jetzt, ob die Vereinbarung im Schulalltag realistisch ist.“',
-        '„Welche Unterstützung braucht es durch die Schulleitung?“',
-        '„Was ist der erste konkrete Schritt?“',
-        '„Woran merken wir, dass die Vereinbarung funktioniert?“',
-        '„Ich fasse die nächsten Schritte abschließend zusammen.“'
-      ]
-    }
+  const LABELS = {
+    supervisor: 'Supervisor*in',
+    schulleitung: 'Schulleitung',
+    'lehrkraft-a': 'Lehrkraft A',
+    'lehrkraft-b': 'Lehrkraft B',
+    protokoll: 'Protokoll'
   };
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function role(){return (document.body&&document.body.dataset&&document.body.dataset.role)||'';}
-  function phase(){return Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;}
-  function groupQuery(){
+  const PHASE_NAMES = {
+    1: 'Erstkontakt',
+    2: 'Problembeschreibung',
+    3: 'Zielformulierung',
+    4: 'Vertiefte Problembearbeitung',
+    5: 'Ergebnissicherung',
+    6: 'Reflexionstauglichkeit'
+  };
+  function esc(v){
+    if (typeof escapeHtml === 'function') return escapeHtml(v);
+    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function roleClass(role){ return 'role-' + String(role || '').replace(/[^a-z0-9-]/g,''); }
+  function getAssignments(){ try { return (typeof loadObj === 'function') ? loadObj('assignments', {}) : {}; } catch(_) { return {}; } }
+  function groupIdV105(){
     try{
       const p=new URLSearchParams(location.search);
-      const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
-      return gid?'?g='+encodeURIComponent(gid):'';
-    }catch(_){return '';}
+      return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
+    }catch(_){ return localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || ''; }
   }
-  function storedNames(){
-    try{return JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{};}catch(_){return {};}
-  }
-  function cachedMembers(){
+  function cachedMembersV105(){
     try{
-      const p=new URLSearchParams(location.search);
-      const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
-      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
-    }catch(_){return [];}
+      const gid=groupIdV105();
+      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid) || localStorage.getItem('sv_cached_group_members_active') || '[]') || [];
+    }catch(_){ return []; }
   }
   function hasProtocol(){
-    const names=storedNames();
-    if(names.protokoll) return true;
-    const members=cachedMembers();
-    if(Array.isArray(members) && members.some(m=>m&&m.role==='protokoll')) return true;
+    const a = getAssignments();
+    if(a && a.protokoll) return true;
     try{
-      const p=new URLSearchParams(location.search);
-      if(p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
+      const names = JSON.parse(localStorage.getItem('sv_role_names_v58') || '{}') || {};
+      if(names && names.protokoll) return true;
+    }catch(_){}
+    const members = cachedMembersV105();
+    if(Array.isArray(members) && members.some(m => m && m.role === 'protokoll')) return true;
+    try{
+      const p = new URLSearchParams(location.search);
+      if(p.get('members') === '5' || p.get('size') === '5' || p.get('groupSize') === '5') return true;
+      if(p.get('mode') === 'moderation' || p.get('supervisorMode') === 'moderation') return true;
     }catch(_){}
     return false;
   }
-  function req(label,key,hint){
-    return '<div class="required-field-wrap"><div class="required-label">Pflichtfeld!</div><label>'+esc(label)+'</label>'+(hint?'<p class="small">'+esc(hint)+'</p>':'')+'<textarea data-save="'+esc(key)+'"></textarea></div>';
+  function loadSafe(k){ try { return (typeof loadText === 'function') ? loadText(k) : ''; } catch(_) { return ''; } }
+  function reqNote(label, saveKey, hint){
+    return `<div class="required-field-box"><div class="required-label">Pflichtfeld!</div><label>${esc(label)}</label>${hint?`<p class="small">${esc(hint)}</p>`:''}<textarea data-save="${esc(saveKey)}"></textarea></div>`;
   }
-  function moderationCard(n){
-    const m=MOD_V104[n]||MOD_V104[1];
-    return '<section class="card highlight moderation-only-card equal-fill-card"><p class="role-pill">Supervisor*in</p><h2>'+esc(m.title)+'</h2><p><strong>Ziel:</strong> '+esc(m.aim)+'</p><div class="script-card"><h3>Mögliche Formulierungen</h3><ul class="tight">'+m.lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div></section>';
+  function waitBox(text){ return `<div class="answer-wait">${esc(text || 'Antwort abwarten. Erst danach zum nächsten Punkt wechseln.')}</div>`; }
+  function scriptBlock(items){
+    return `<div class="moderation-script">${items.map(item => {
+      if (typeof item === 'string') return `<div class="script-step"><p>${esc(item)}</p></div>`;
+      return `<div class="script-step"><p>${esc(item.text)}</p>${item.wait ? waitBox(item.wait) : ''}</div>`;
+    }).join('')}</div>`;
   }
-  function protocolCard(n){
-    if(n===1) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 1: Gesprächsrahmen</h2>'+req('Gesprächsrahmen / Regeln / Bereitschaft','sup_p1_rahmen','Zum Beispiel: ausreden lassen, Ich-Aussagen, konkrete Beobachtungen nennen.')+'</section>';
-    if(n===2) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 2: Problembeschreibung</h2><div class="three-col"><div>'+req('Problem / Beobachtung Schulleitung','sup_p2_sl_probleme')+req('Gefühle Schulleitung','sup_p2_sl_gefuehle')+req('Wünsche Schulleitung','sup_p2_sl_wuensche')+'</div><div>'+req('Problem / Perspektive Lehrkraft A','sup_p2_a_probleme')+req('Gefühle Lehrkraft A','sup_p2_a_gefuehle')+req('Wünsche Lehrkraft A','sup_p2_a_wuensche')+'</div><div>'+req('Problem / Perspektive Lehrkraft B','sup_p2_b_probleme')+req('Gefühle Lehrkraft B','sup_p2_b_gefuehle')+req('Wünsche Lehrkraft B','sup_p2_b_wuensche')+'</div></div></section>';
-    if(n===3) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 3: Ziele</h2>'+req('Ziel Schulleitung','sup_p3_ziel_sl')+req('Ziel Lehrkraft A','sup_p3_ziel_a')+req('Ziel Lehrkraft B','sup_p3_ziel_b')+req('Gemeinsamkeiten','sup_p3_gemeinsamkeiten')+req('Gemeinsame Zielformulierung','sup_p3_gemeinsames_ziel')+'</section>';
-    if(n===4) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 4: Vertiefte Problembearbeitung</h2>'+req('Kriterien für hilfreiche Kritik','sup_p4_kritik')+'<div class="three-col">'+req('Positive Rückmeldung zur Schulleitung','sup_p4_pos_sl')+req('Positive Rückmeldung zu Lehrkraft A','sup_p4_pos_a')+req('Positive Rückmeldung zu Lehrkraft B','sup_p4_pos_b')+'</div>'+req('Absprachen zum weiteren Vorgehen','sup_p4_absprachen')+'</section>';
-    if(n===5) return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 5: Ergebnissicherung</h2><label>Zustimmung erfolgt?</label><select class="standard-required" data-save="sup_p5_zustimmung_status"><option value="">Bitte auswählen</option><option value="Alle stimmen zu">Alle stimmen zu</option><option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option><option value="Keine Zustimmung">Keine Zustimmung</option></select>'+req('Rückmeldungen / Zustimmung / offene Punkte','sup_p5_zustimmung')+'</section>';
-    return '<section class="card protocol-overview-card equal-fill-card"><h2>Protokoll Phase 6: Praxistauglichkeit</h2>'+req('Einschätzung der Praxistauglichkeit','sup_p6_praxistauglichkeit')+req('Unterstützung durch Schulleitung','sup_p6_unterstuetzung')+req('Erste konkrete Umsetzungsschritte','sup_p6_umsetzung')+'</section>';
+  function protocolCheckLine(){
+    return hasProtocol()
+      ? '„Protokollführung: Ist bis hierhin alles so notiert, dass wir zur nächsten Phase gehen können?“'
+      : '„Ich prüfe kurz meine Notizen. Ist aus Ihrer Sicht noch etwas Wesentliches offen, bevor wir zur nächsten Phase gehen?“';
   }
-  function renderSupervisorPhase(){
-    if(role()!=='supervisor') return false;
-    const n=phase();
-    const content=document.getElementById('phaseContent');
-    if(!content||!n) return false;
-    const onlyModeration=hasProtocol();
-    content.innerHTML=onlyModeration
-      ? moderationCard(n)
-      : '<div class="two-col equal-phase-layout">'+moderationCard(n)+protocolCard(n)+'</div>';
-    const label=document.querySelector('.card.muted .role-pill');
-    if(label) label.textContent=onlyModeration?'Supervisor*in – Moderation':'Supervisor*in – Moderation und Protokoll';
-    if(typeof setupSaving==='function') setupSaving();
-    const next=document.getElementById('nextPhase');
-    if(next){
-      if(n<6){next.href='phase'+(n+1)+'-supervisor.html'+groupQuery();next.textContent='Bereit für Phase '+(n+1);}
-      else{next.href=(onlyModeration?'abschluss.html':'zusammenfassung.html')+groupQuery();next.textContent=onlyModeration?'Abschluss':'Ergebnisse zusammenfassen';}
-      next.classList.remove('disabled','is-busy');
-      next.removeAttribute('aria-disabled');
-      next.style.pointerEvents='auto';
-    }
-    return true;
+  function miniSummary(){ return (typeof miniSummaryHtml === 'function') ? miniSummaryHtml() : ''; }
+
+  function moderatorCard(phase){
+    const cards = {
+      1: {
+        title: 'Erstkontakt',
+        aim: 'Gespräch eröffnen, Bereitschaft klären und einen verbindlichen Gesprächsrahmen vereinbaren.',
+        lines: [
+          { text: '„Willkommen. Ich freue mich, dass Sie alle da sind. Wir nutzen diese Supervision, um den Konflikt im Teamteaching geordnet zu klären.“' },
+          { text: '„Die Schulleitung hat mich hinzugezogen, weil die Uneinigkeit im Teamteaching die Zusammenarbeit belastet und die Klasse dadurch zu wenig Stabilität erlebt.“' },
+          { text: '„Mir ist wichtig: Es geht nicht um Schuldzuweisung. Es geht darum, Beobachtungen, Gefühle, Wünsche und Ziele so zu sortieren, dass eine gemeinsame Vereinbarung möglich wird.“' },
+          { text: '„Sind alle bereit, an dieser Klärung mitzuwirken und die Perspektiven der anderen zunächst anzuhören?“', wait: 'Antworten der Beteiligten abwarten.' },
+          { text: '„Ich möchte jetzt mit Ihnen einen Gesprächsrahmen vereinbaren. Was brauchen Sie, damit dieses Gespräch respektvoll und hilfreich verlaufen kann?“', wait: 'Beispiele sammeln lassen: ausreden lassen, Ich-Aussagen, konkrete Beobachtungen, keine persönlichen Angriffe, keine vorschnellen Bewertungen.' },
+          { text: '„Ich halte fest: Wir sprechen respektvoll, lassen einander ausreden, bleiben bei konkreten Beobachtungen und prüfen am Ende gemeinsam die Vereinbarung.“' },
+          { text: protocolCheckLine(), wait: 'Kurze Bestätigung abwarten.' }
+        ]
+      },
+      2: {
+        title: 'Problembeschreibung',
+        aim: 'Die Situation aus drei Perspektiven verstehen: Beobachtung oder Problem, Gefühle und Wünsche.',
+        lines: [
+          { text: '„Ich würde jetzt zunächst die Schulleitung bitten: Welche Beobachtung haben Sie zur Situation im Teamteaching gemacht?“', wait: 'Schulleitung sprechen lassen. Danach kurz zusammenfassen.' },
+          { text: '„Welche Gefühle löst diese Situation bei Ihnen aus?“', wait: 'Antwort abwarten.' },
+          { text: '„Welche Wünsche haben Sie an das Teamteaching und an die Zusammenarbeit der Lehrkräfte?“', wait: 'Antwort abwarten.' },
+          { text: '„Lehrkraft A, wie erleben Sie die Situation? Was ist aus Ihrer Sicht das zentrale Problem?“', wait: 'Lehrkraft A sprechen lassen. Danach Gefühle und Wünsche erfragen.' },
+          { text: '„Welche Gefühle sind damit verbunden, und was wünschen Sie sich konkret?“', wait: 'Antworten abwarten.' },
+          { text: '„Lehrkraft B, wie erleben Sie die Situation? Was ist aus Ihrer Sicht das zentrale Problem?“', wait: 'Lehrkraft B sprechen lassen. Danach Gefühle und Wünsche erfragen.' },
+          { text: '„Welche Gefühle sind damit verbunden, und was wünschen Sie sich konkret?“', wait: 'Antworten abwarten.' },
+          { text: '„Gibt es noch eine sachliche Ergänzung zur Problembeschreibung, ohne die andere Perspektive zu bewerten?“', wait: 'Kurze Ergänzungen zulassen.' },
+          { text: protocolCheckLine(), wait: 'Bestätigung der Protokollführung beziehungsweise Notizen abwarten.' }
+        ]
+      },
+      3: {
+        title: 'Zielformulierung',
+        aim: 'Einzelziele sichtbar machen und daraus eine gemeinsame Zielvereinbarung entwickeln.',
+        lines: [
+          { text: '„Wir gehen jetzt von der Problembeschreibung zur Zielformulierung. Bitte formulieren Sie möglichst konkret, was nach dieser Klärung anders sein soll.“' },
+          { text: '„Schulleitung: Welches Ziel verfolgen Sie mit Blick auf Stabilität für die Klasse und die Zusammenarbeit im Team?“', wait: 'Ziel der Schulleitung abwarten und kurz bündeln.' },
+          { text: '„Lehrkraft A: Welches Ziel wäre aus Ihrer Perspektive wichtig, damit Sie im Teamteaching handlungsfähig bleiben?“', wait: 'Ziel von Lehrkraft A abwarten.' },
+          { text: '„Lehrkraft B: Welches Ziel wäre aus Ihrer Perspektive wichtig, damit Veränderung und Zusammenarbeit möglich werden?“', wait: 'Ziel von Lehrkraft B abwarten.' },
+          { text: '„Welche Gemeinsamkeiten sehen Sie in diesen Zielen?“', wait: 'Gemeinsamkeiten durch die Gruppe benennen lassen.' },
+          { text: '„Lassen Sie uns daraus eine gemeinsame Zielvereinbarung formulieren. Sie sollte kurz, konkret und für alle tragbar sein.“', wait: 'Gemeinsame Formulierung entwickeln lassen.' },
+          { text: '„Ich lese die Formulierung einmal vor. Passt sie für alle als Arbeitsgrundlage?“', wait: 'Korrekturen abwarten.' },
+          { text: protocolCheckLine(), wait: 'Bestätigung abwarten.' }
+        ]
+      },
+      4: {
+        title: 'Vertiefte Problembearbeitung',
+        aim: 'Hilfreiche Kritik, Anerkennung und konkrete Absprachen entwickeln.',
+        lines: [
+          { text: '„Wir schauen jetzt darauf, wie Kritik im Teamteaching künftig hilfreicher geäußert werden kann.“' },
+          { text: '„Wie würden Sie sich in Zukunft wünschen, dass Kritik angesprochen wird?“', wait: 'Ideen sammeln lassen. Protokoll notiert Kriterien.' },
+          { text: '„Welche Regeln wären dafür hilfreich: unter vier Augen, konkret, zeitnah, Ich-Botschaft, Bezug auf eine Situation statt auf die Person?“', wait: 'Ergänzungen abwarten.' },
+          { text: '„Ich leite jetzt eine kurze Übung zur Stärkung der Teamfähigkeit an. Jede Paarung sagt sich gegenseitig, was sie an der Perspektive des Gegenübers nachvollziehbar oder hilfreich findet.“' },
+          { text: '„Zuerst: Schulleitung und Lehrkraft A. Was finden Sie an der Perspektive der jeweils anderen Person nachvollziehbar?“', wait: 'Kurzen Austausch abwarten.' },
+          { text: '„Jetzt: Lehrkraft A und Lehrkraft B. Was können Sie an der Perspektive der anderen Person anerkennen?“', wait: 'Kurzen Austausch abwarten.' },
+          { text: '„Jetzt: Schulleitung und Lehrkraft B. Was ist an der jeweiligen Perspektive nachvollziehbar oder hilfreich?“', wait: 'Kurzen Austausch abwarten.' },
+          { text: '„Zum Schluss dieser Phase: Was soll sich ab morgen konkret ändern? Welche Absprache hilft dem Team im nächsten Unterricht?“', wait: 'Konkrete Absprachen formulieren lassen.' },
+          { text: protocolCheckLine(), wait: 'Bestätigung abwarten.' }
+        ]
+      },
+      5: {
+        title: 'Ergebnissicherung',
+        aim: 'Zentrale Punkte zusammenfassen, Zielvereinbarung prüfen und Zustimmung sichern.',
+        lines: hasProtocol() ? [
+          { text: '„Wir sichern jetzt die Ergebnisse. Protokollführung, bitte fassen Sie noch einmal die geäußerten Probleme, Gefühle, Wünsche, Ziele und Absprachen zusammen.“', wait: 'Zusammenfassung der Protokollführung abwarten.' },
+          { text: '„Bitte lesen Sie anschließend die gemeinsame Zielvereinbarung vor.“', wait: 'Zielvereinbarung vorlesen lassen.' },
+          { text: '„Gibt es konkrete Korrekturen oder Ergänzungen?“', wait: 'Korrekturen abwarten und durch Protokoll ergänzen lassen.' },
+          { text: '„Können alle diese Vereinbarung mittragen?“', wait: 'Zustimmung jeder beteiligten Person abwarten.' },
+          { text: '„Gibt es offene Rückmeldungen oder offene Punkte, die noch ergänzt werden sollen?“', wait: 'Offene Punkte abwarten.' },
+          { text: '„Protokollführung: Bitte setzen Sie die Zustimmung entsprechend und ergänzen Sie offene Rückmeldungen.“', wait: 'Eintrag abwarten.' }
+        ] : [
+          { text: '„Ich fasse die zentralen Punkte zusammen: Probleme, Gefühle, Wünsche, Ziele und Absprachen.“', wait: 'Kurz prüfen, ob alle folgen können.' },
+          { text: '„Die gemeinsame Zielvereinbarung lautet …“', wait: 'Zielvereinbarung vorlesen.' },
+          { text: '„Gibt es konkrete Korrekturen oder Ergänzungen?“', wait: 'Korrekturen eintragen.' },
+          { text: '„Können alle diese Vereinbarung mittragen?“', wait: 'Zustimmung jeder Person abwarten und setzen.' },
+          { text: '„Gibt es offene Rückmeldungen oder offene Punkte, die noch ergänzt werden sollen?“', wait: 'Antworten notieren.' }
+        ]
+      },
+      6: {
+        title: 'Reflexionstauglichkeit',
+        aim: 'Mit der Schulleitung prüfen, ob die Vereinbarung im Schulalltag tragfähig ist.',
+        lines: [
+          { text: '„Das Folgende richtet sich jetzt vor allem an die Schulleitung.“' },
+          { text: '„Wie schätzen Sie ein, dass die heute besprochenen Punkte und Ziele im Schulalltag wirklich umgesetzt werden können?“', wait: 'Einschätzung der Schulleitung abwarten.' },
+          { text: '„Welche Unterstützungsmöglichkeiten sehen Sie bei sich selbst oder durch die Schule?“', wait: 'Unterstützungsmöglichkeiten abwarten.' },
+          { text: '„Was werden Sie konkret unternehmen, um ein harmonischeres Miteinander im Teamteaching zu fördern?“', wait: 'Erste Umsetzungsschritte abwarten.' },
+          { text: protocolCheckLine(), wait: 'Bestätigung abwarten.' }
+        ]
+      }
+    };
+    const c = cards[phase] || cards[1];
+    const note = hasProtocol()
+      ? '<div class="handoff-note"><strong>Hinweis:</strong> Die Moderationsfragen folgen den Feldern, die die Protokollführung ausfüllen muss. Stelle die Fragen nacheinander und warte bewusst auf Antworten.</div>'
+      : '<div class="handoff-note"><strong>Hinweis:</strong> Du moderierst und dokumentierst. Die Fragen folgen den Feldern, die später in Zusammenfassung und Präsentation erscheinen.</div>';
+    return `<section class="card highlight moderation-only-card"><h2>Moderationskarte: ${esc(c.title)}</h2><p><strong>Ziel:</strong> ${esc(c.aim)}</p>${scriptBlock(c.lines)}${note}</section>`;
   }
-  const oldInit=window.initPhase;
-  window.initPhase=function(){
-    if(typeof oldInit==='function') oldInit.apply(this,arguments);
-    renderSupervisorPhase();
+
+  function protocolFields(phase){
+    if(phase === 1) return `<section class="card protocol-overview-card"><h2>Dokumentation: Gesprächsrahmen</h2><p class="small">Notiere, welche Gesprächsregeln vereinbart wurden und ob die Beteiligten zur Klärung bereit sind.</p>${reqNote('Gesprächsrahmen / Regeln / Bereitschaft','sup_p1_rahmen','Zum Beispiel: ausreden lassen, Ich-Aussagen, respektvoll bleiben, konkrete Beobachtungen nennen.')}</section>`;
+    if(phase === 2) return `<section class="card protocol-overview-card phase2-protocol-section"><div class="phase2-title-row"><h2>Phase 2: Problembeschreibung</h2><div class="phase-task-card"><h3>Deine Aufgabe in Phase 2</h3><p>Trenne die Aussagen nach Rolle und Kategorie. Halte nur fest, was gesagt wurde: Problem oder Beobachtung, Gefühle und Wünsche.</p></div></div><div class="phase2-doc-grid"><div class="role-note-block"><h3>Schulleitung</h3>${reqNote('Problem / Beobachtung','sup_p2_sl_probleme')}${reqNote('Gefühle','sup_p2_sl_gefuehle')}${reqNote('Wünsche','sup_p2_sl_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft A</h3>${reqNote('Problem / Perspektive','sup_p2_a_probleme')}${reqNote('Gefühle','sup_p2_a_gefuehle')}${reqNote('Wünsche','sup_p2_a_wuensche')}</div><div class="role-note-block"><h3>Lehrkraft B</h3>${reqNote('Problem / Perspektive','sup_p2_b_probleme')}${reqNote('Gefühle','sup_p2_b_gefuehle')}${reqNote('Wünsche','sup_p2_b_wuensche')}</div></div></section>`;
+    if(phase === 3) return `<section class="card protocol-overview-card"><h2>Dokumentation: Ziele</h2><p class="small">Notiere erst die Einzelziele und danach die Gemeinsamkeiten und die gemeinsame Zielvereinbarung.</p>${reqNote('Ziel Schulleitung','sup_p3_ziel_sl')}${reqNote('Ziel Lehrkraft A','sup_p3_ziel_a')}${reqNote('Ziel Lehrkraft B','sup_p3_ziel_b')}${reqNote('Gemeinsamkeiten','sup_p3_gemeinsamkeiten')}${reqNote('Gemeinsame Zielformulierung','sup_p3_gemeinsames_ziel')}</section>`;
+    if(phase === 4) return `<section class="card protocol-overview-card"><h2>Dokumentation: Vertiefte Problembearbeitung</h2><p class="small">Halte fest, wie Kritik künftig hilfreich geäußert werden soll und welche konkreten Absprachen entstehen.</p>${reqNote('Kriterien für hilfreiche Kritik','sup_p4_kritik')}<div class="perspective-table-entry"><div class="three-col">${reqNote('Positive Rückmeldung zur Schulleitung','sup_p4_pos_sl')}${reqNote('Positive Rückmeldung zu Lehrkraft A','sup_p4_pos_a')}${reqNote('Positive Rückmeldung zu Lehrkraft B','sup_p4_pos_b')}</div></div>${reqNote('Absprachen zum weiteren Vorgehen','sup_p4_absprachen')}</section>`;
+    if(phase === 5) return `<section class="card protocol-overview-card"><h2>Dokumentation: Ergebnissicherung</h2><p class="small">Fasse die Ergebnisse für die Gruppe zusammen. Trage Zustimmung und offene Punkte ein.</p><div class="summary-block"><strong>Zwischenergebnisse</strong><br>${miniSummary()}</div><label>Zustimmung erfolgt?</label><select class="standard-required" data-save="sup_p5_zustimmung_status"><option value="">Bitte auswählen</option><option value="Alle stimmen zu">Alle stimmen zu</option><option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option><option value="Keine Zustimmung">Keine Zustimmung</option></select>${reqNote('Rückmeldungen / Zustimmung / offene Punkte','sup_p5_zustimmung')}</section>`;
+    if(phase === 6) return `<section class="card protocol-overview-card"><h2>Dokumentation: Praxistauglichkeit</h2><p class="small">Dokumentiere die Einschätzung der Schulleitung und die nächsten konkreten Schritte.</p>${reqNote('Einschätzung der Praxistauglichkeit','sup_p6_praxistauglichkeit')}${reqNote('Unterstützung durch Schulleitung','sup_p6_unterstuetzung')}${reqNote('Erste konkrete Umsetzungsschritte','sup_p6_umsetzung')}</section>`;
+    return '';
+  }
+  function supervisorFullPhase(phase){
+    if(phase === 2) return `<div class="phase-layout-stacked">${moderatorCard(phase)}${protocolFields(phase)}</div>`;
+    return `<div class="two-col">${moderatorCard(phase)}${protocolFields(phase)}</div>`;
+  }
+  function protocolOnlyPhase(phase){
+    return `<div class="phase-layout-stacked"><section class="card highlight protokoll-note-card"><p class="role-pill role-protokoll">Protokoll</p><h2>Deine Aufgabe in Phase ${phase}</h2><p>Höre genau zu und fülle die Dokumentationsfelder. Du moderierst nicht. Bitte bei unklaren Aussagen kurz um Wiederholung oder eine Zusammenfassung.</p></section>${protocolFields(phase)}</div>`;
+  }
+  function prepItems(role){
+    const map = {
+      schulleitung: [
+        ['Beobachtung', 'prep_schulleitung_beobachtung'],
+        ['Gefühle', 'prep_schulleitung_gefuehle'],
+        ['Wünsche', 'prep_schulleitung_wuensche'],
+        ['Lösungsideen / Unterstützung', 'prep_schulleitung_loesung']
+      ],
+      'lehrkraft-a': [
+        ['Perspektive', 'prep_lehrkraft-a_perspektive'],
+        ['Gefühle', 'prep_lehrkraft-a_gefuehle'],
+        ['Wünsche', 'prep_lehrkraft-a_wuensche'],
+        ['Zielgedanken', 'prep_lehrkraft-a_ziele']
+      ],
+      'lehrkraft-b': [
+        ['Perspektive', 'prep_lehrkraft-b_perspektive'],
+        ['Gefühle', 'prep_lehrkraft-b_gefuehle'],
+        ['Wünsche', 'prep_lehrkraft-b_wuensche'],
+        ['Zielgedanken', 'prep_lehrkraft-b_ziele']
+      ]
+    };
+    return (map[role] || []).map(([label,k]) => ({label, value: loadSafe(k)}));
+  }
+  function prepCard(role, title){
+    const items = prepItems(role);
+    if(!items.length) return '';
+    return `<section class="card prep-reference-card"><h2>${esc(title || 'Deine vorbereiteten Notizen')}</h2>${items.map(i => `<h3>${esc(i.label)}</h3><div class="readonly-box">${esc(i.value || 'Noch keine Notiz gespeichert.')}</div>`).join('')}</section>`;
+  }
+  function participantPhase(role, phase){
+    const label = LABELS[role] || role;
+    if(phase===1) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(label)}</p><h2>Gesprächsstart</h2><p>Höre der Supervisor*in zu. Achte auf den vereinbarten Gesprächsrahmen und darauf, ob du bereit bist, deine Perspektive einzubringen.</p></section>${prepCard(role,'Deine vorbereiteten Gedanken')}`;
+    if(phase===2) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(label)}</p><h2>Problembeschreibung</h2><p>Wenn du das Wort bekommst, nutze deine vorbereiteten Notizen: Perspektive oder Beobachtung, Gefühle und Wünsche. Sprich konkret und ohne Vorwurf.</p></section>${prepCard(role,'Notizen für deine Wortmeldung')}`;
+    if(phase===3) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(label)}</p><h2>Zielformulierung</h2><p>Nutze deine vorbereiteten Zielgedanken aus der Überlegungsphase. Im Gespräch arbeitest du mit der Gruppe an einer gemeinsamen Zielvereinbarung.</p><p class="notice">Du musst hier keine neue individuelle Zielformulierung mehr eintragen.</p></section>${prepCard(role,'Vorbereitete Ziele und Wünsche')}`;
+    if(phase===4) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(label)}</p><h2>Vertiefte Problembearbeitung</h2><p>Beteilige dich am Gespräch über hilfreiche Kritik. In der kurzen Übung sagst du, was du an der Perspektive einer anderen Person nachvollziehen kannst.</p></section>${prepCard(role,'Wünsche und Ziele als Orientierung')}`;
+    if(phase===5) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(label)}</p><h2>Ergebnissicherung</h2><p>Höre die Zusammenfassung. Prüfe, ob deine Perspektive, Gefühle, Wünsche und Ziele korrekt aufgenommen wurden. Sage klar, ob du die Vereinbarung mittragen kannst.</p></section>${prepCard(role,'Deine Notizen zum Abgleichen')}`;
+    if(phase===6 && role==='schulleitung') return `<section class="card highlight"><p class="role-pill role-schulleitung">Schulleitung</p><h2>Praxistauglichkeit prüfen</h2><p>Prüfe mit der Supervisor*in, ob die Vereinbarung im Schulalltag realistisch ist. Benenne Unterstützungsmöglichkeiten und erste konkrete Umsetzungsschritte.</p></section>${prepCard(role,'Vorbereitete Unterstützungsideen')}`;
+    if(phase===6) return `<section class="card highlight"><p class="role-pill ${roleClass(role)}">${esc(label)}</p><h2>Abschluss</h2><p>Die Praxistauglichkeit wird vor allem mit der Schulleitung geprüft. Überlege, welchen ersten Schritt du selbst nach der Supervision gehen kannst.</p></section>${prepCard(role,'Deine wichtigsten Punkte')}`;
+    return '';
+  }
+
+  const FLOW_STEPS = {
+    supervisor4: [
+      ['Gespräch eröffnen', 'Du begrüßt die Gruppe, benennst den Anlass neutral und vereinbarst einen Gesprächsrahmen.'],
+      ['Probleme und Wünsche erfassen', 'Du fragst nacheinander nach Beobachtungen oder Problemen, Gefühlen und Wünschen und hältst diese Punkte fest.'],
+      ['Ziele klären', 'Du fragst nach Einzelzielen und leitest eine gemeinsame Zielvereinbarung an.'],
+      ['Kritik und Absprachen bearbeiten', 'Du leitest die kurze Übung zur Anerkennung von Perspektiven und sammelst konkrete Absprachen.'],
+      ['Ergebnisse sichern', 'Du fasst Ergebnisse zusammen, prüfst Zustimmung und offene Punkte.'],
+      ['Praxistauglichkeit prüfen', 'Du klärst mit der Schulleitung Unterstützung und erste Umsetzungsschritte.']
+    ],
+    supervisor5: [
+      ['Gespräch eröffnen', 'Du begrüßt die Gruppe, benennst den Anlass neutral und vereinbarst einen Gesprächsrahmen.'],
+      ['Moderationskarten nutzen', 'Deine Karten sind entlang der Informationen aufgebaut, die für die Dokumentation gebraucht werden. Greife die vorgeschlagenen Fragen im Gespräch auf.'],
+      ['Antworten bewusst abwarten', 'Stelle Fragen nacheinander und gib genug Zeit, damit Antworten entstehen und dokumentiert werden können.'],
+      ['Ziele und Absprachen leiten', 'Du fragst nach Einzelzielen, Gemeinsamkeiten, hilfreicher Kritik und konkreten Absprachen.'],
+      ['Protokollierte Ergebnisse sichern', 'Du lässt die zentralen Punkte zusammenfassen und prüfst Korrekturen, Ergänzungen und Zustimmung.'],
+      ['Praxistauglichkeit prüfen', 'Du richtest die letzten Fragen an die Schulleitung: Umsetzbarkeit, Unterstützung und erste Schritte.']
+    ],
+    protokoll: [
+      ['Auftrag klären', 'Du dokumentierst neutral. Du moderierst nicht und bewertest keine Aussage.'],
+      ['Kategorien beachten', 'Trenne Problem/Beobachtung, Gefühle, Wünsche, Ziele, Absprachen, Zustimmung und Praxistauglichkeit.'],
+      ['Kurz und genau schreiben', 'Formuliere stichpunktartig. Bitte bei Unklarheiten um Wiederholung.'],
+      ['Zielvereinbarung sichern', 'Achte darauf, dass Einzelziele, Gemeinsamkeiten und gemeinsames Ziel klar notiert sind.'],
+      ['Zusammenfassung unterstützen', 'In der Ergebnissicherung liest du zentrale Punkte und die gemeinsame Zielvereinbarung vor.'],
+      ['Ergebnisse absenden', 'Am Ende prüfst du die Zusammenfassung, sendest sie ab und kannst den Gruppenlink teilen.']
+    ],
+    schulleitung: [
+      ['Anlass klären', 'Überlege, warum du die Supervision angeregt hast und was du beobachtet hast.'],
+      ['Perspektive vorbereiten', 'Trenne Beobachtung, Gefühl und Wunsch. So kannst du im Gespräch klar sprechen.'],
+      ['Ziel formulieren', 'Überlege, welche Stabilität die Klasse und welche Zusammenarbeit das Team braucht.'],
+      ['Unterstützung prüfen', 'Überlege, welche organisatorische Unterstützung du anbieten kannst.'],
+      ['Zustimmung prüfen', 'Prüfe, ob du die gemeinsame Vereinbarung mittragen und unterstützen kannst.']
+    ],
+    lehrkraft: [
+      ['Eigene Perspektive klären', 'Überlege, was für dich das zentrale Problem im Teamteaching ist.'],
+      ['Beobachtung statt Vorwurf', 'Bereite konkrete Situationen vor und vermeide Bewertungen über die andere Person.'],
+      ['Gefühle und Wünsche formulieren', 'Benenne, was die Situation bei dir auslöst und was du brauchst.'],
+      ['Ziel formulieren', 'Überlege, was nach der Supervision konkret anders laufen sollte.'],
+      ['Vereinbarung prüfen', 'Prüfe am Ende, ob du die gemeinsame Absprache mittragen kannst.']
+    ]
   };
-  window.addEventListener('DOMContentLoaded',function(){
-    renderSupervisorPhase();
-    setTimeout(renderSupervisorPhase,80);
-    setTimeout(renderSupervisorPhase,300);
-  });
+  window.initFlow = function(){
+    if(typeof initCommon === 'function') initCommon();
+    const params = new URLSearchParams(location.search);
+    let role = params.get('role') || document.body.dataset.role || '';
+    let profile = document.body.dataset.flowProfile || (role === 'protokoll' ? 'protokoll' : role === 'schulleitung' ? 'schulleitung' : role === 'supervisor' ? 'supervisor' : (role === 'lehrkraft-a' || role === 'lehrkraft-b') ? 'lehrkraft' : 'lehrkraft');
+    let steps = FLOW_STEPS.lehrkraft;
+    if(profile === 'supervisor') steps = hasProtocol() ? FLOW_STEPS.supervisor5 : FLOW_STEPS.supervisor4;
+    if(profile === 'protokoll') steps = FLOW_STEPS.protokoll;
+    if(profile === 'schulleitung') steps = FLOW_STEPS.schulleitung;
+    if(profile === 'lehrkraft') steps = FLOW_STEPS.lehrkraft;
+    const box = document.getElementById('flowSteps');
+    const next = document.getElementById('flowNext');
+    if(next){
+      let targetRole = role || profile;
+      if(profile === 'lehrkraft' && (!targetRole || targetRole === 'lehrkraft')) targetRole = 'lehrkraft-a';
+      next.href = (typeof linkWithState === 'function') ? linkWithState(`gedanken-${targetRole}.html`) : `gedanken-${targetRole}.html`;
+      next.classList.add('disabled'); next.setAttribute('aria-disabled','true');
+    }
+    if(!box) return;
+    const storageKey = (typeof key === 'function') ? key('flow_visible_moderation_v2_' + (role || profile)) : 'flow_visible_moderation_v2_' + (role || profile);
+    let visible = Number(localStorage.getItem(storageKey) || '1');
+    visible = Math.max(1, Math.min(steps.length, visible));
+    function block(e){ if(visible < steps.length){ e.preventDefault(); } }
+    function updateNext(){
+      if(!next) return;
+      const complete = visible >= steps.length;
+      next.classList.toggle('disabled', !complete);
+      next.setAttribute('aria-disabled', complete ? 'false' : 'true');
+      next.textContent = complete ? 'Weiter: Mach dir Gedanken' : 'Weiter wird nach allen Kacheln aktiviert';
+      next.onclick = complete ? null : block;
+    }
+    function render(){
+      box.innerHTML = '';
+      steps.slice(0, visible).forEach((step, idx) => {
+        const read = idx < visible - 1 || visible >= steps.length;
+        const card = document.createElement('article');
+        card.className = 'card flow-step is-visible' + (read ? ' is-read' : '');
+        card.innerHTML = `<div class="flow-step-head"><span class="step-badge">${idx+1}</span><h3>${esc(step[0])}</h3></div><p>${esc(step[1])}</p>${(!read && idx === visible-1) ? '<button type="button" class="secondary flow-read-btn">Gelesen</button>' : ''}`;
+        const btn = card.querySelector('.flow-read-btn');
+        if(btn) btn.addEventListener('click', () => { visible = Math.min(steps.length, visible + 1); localStorage.setItem(storageKey, String(visible)); render(); });
+        box.appendChild(card);
+      });
+      updateNext();
+    }
+    render();
+  };
+  try { initFlow = window.initFlow; } catch(_) {}
+
+  window.initPhase = function(){
+    if(typeof initCommon === 'function') initCommon();
+    const role = (typeof getPageRole === 'function') ? getPageRole() : document.body.dataset.role;
+    const phase = (typeof getPhase === 'function') ? getPhase() : Number(document.body.dataset.phase || '0');
+    if(typeof renderPhaseBar === 'function') renderPhaseBar(phase);
+    const title = document.getElementById('phaseTitle');
+    if(title) title.textContent = `Phase ${phase}: ${PHASE_NAMES[phase] || ''}`;
+    const content = document.getElementById('phaseContent');
+    if(!content) return;
+    if(role === 'protokoll') content.innerHTML = protocolOnlyPhase(phase);
+    else if(role === 'supervisor' && hasProtocol()) content.innerHTML = moderatorCard(phase);
+    else if(role === 'supervisor') content.innerHTML = supervisorFullPhase(phase);
+    else content.innerHTML = participantPhase(role, phase);
+    if(typeof setupSaving === 'function') setupSaving();
+    const next = document.getElementById('nextPhase');
+    if(next){
+      if(phase < 6){
+        next.href = (typeof linkWithState === 'function') ? linkWithState(`phase${phase+1}-${role}.html`) : `phase${phase+1}-${role}.html`;
+        next.textContent = `Bereit für Phase ${phase+1}`;
+      } else {
+        let target = 'abschluss.html';
+        if(role === 'protokoll') target = 'zusammenfassung-protokoll.html';
+        else if(role === 'supervisor' && !hasProtocol()) target = 'zusammenfassung.html';
+        next.href = (typeof linkWithState === 'function') ? linkWithState(target) : target;
+        next.textContent = target.indexOf('zusammenfassung') >= 0 ? 'Ergebnisse zusammenfassen' : 'Abschluss';
+      }
+    }
+  };
+  try { initPhase = window.initPhase; } catch(_) {}
 })();
+
+
+/* v105: Supervisor*in in 5er-Gruppe hat keine Protokoll-Pflichtfelder */
+(function(){
+  function groupId(){
+    try{
+      const p=new URLSearchParams(location.search);
+      return p.get('g') || p.get('groupId') || localStorage.getItem('sv_current_group') || localStorage.getItem('sv_group_id') || '';
+    }catch(_){return '';}
+  }
+  function cachedMembers(){
+    try{
+      const gid=groupId();
+      return JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid) || localStorage.getItem('sv_cached_group_members_active') || '[]') || [];
+    }catch(_){return [];}
+  }
+  function hasProtocol(){
+    try{
+      const a = (typeof loadObj === 'function') ? loadObj('assignments', {}) : {};
+      if(a && a.protokoll) return true;
+    }catch(_){}
+    try{
+      const names=JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{};
+      if(names.protokoll) return true;
+    }catch(_){}
+    const m=cachedMembers();
+    if(Array.isArray(m) && m.some(x=>x&&x.role==='protokoll')) return true;
+    try{
+      const p=new URLSearchParams(location.search);
+      return p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5'||p.get('mode')==='moderation'||p.get('supervisorMode')==='moderation';
+    }catch(_){return false;}
+  }
+  function link(file){
+    const gid=groupId();
+    return file+(gid?'?g='+encodeURIComponent(gid):'');
+  }
+  document.addEventListener('click', function(ev){
+    const next=ev.target && ev.target.closest && ev.target.closest('#nextPhase');
+    if(!next) return;
+    const role=(document.body&&document.body.dataset&&document.body.dataset.role)||'';
+    const phase=Number((document.body&&document.body.dataset&&document.body.dataset.phase)||'0')||0;
+    if(role==='supervisor' && hasProtocol()){
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      if(phase && phase<6) location.href=link('phase'+(phase+1)+'-supervisor.html');
+      else location.href=link('abschluss.html');
+    }
+  }, true);
+})();
+

@@ -163,18 +163,15 @@
     const gid = groupId();
     return gid ? ('groupId=' + encodeURIComponent(gid)) : '';
   }
-  function supervisorFlowFileFromMap(map){
-    return (map && map.protokoll) ? 'ablauf-supervisor-moderation.html' : 'ablauf-supervisor.html';
-  }
-  function applySupervisorFlowLink(map){
-    const next = document.getElementById('nextPrep');
-    if (!next || role() !== 'supervisor') return;
-    const suffix = querySuffix();
-    const file = supervisorFlowFileFromMap(map || storedNames());
-    next.href = file + '?role=supervisor' + (suffix ? '&' + suffix : '');
-    next.classList.remove('is-busy','disabled');
-    next.removeAttribute('aria-disabled');
-    next.style.pointerEvents = 'auto';
+  function hasProtocolCachedV105(){
+    try{
+      const p=new URLSearchParams(location.search);
+      const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+      const members=JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+      if(Array.isArray(members)&&members.some(m=>m&&m.role==='protokoll')) return true;
+      if(p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5') return true;
+    }catch(_){}
+    return false;
   }
 
   function color(roleKey){
@@ -202,7 +199,7 @@
 
     target.innerHTML = `
       <div class="card highlight role-card-main">
-        <p class="role-pill" style="color:${color(roleKey)}">${esc(assignedName ? (label + ' (' + assignedName + ')') : label)}</p>
+        <p class="role-pill" style="color:${color(roleKey)}">${esc(label)}</p>
         <h2>${esc(data.title)}</h2>
         <p><strong>Zugewiesene Person:</strong> <span id="assignedPersonName" data-assigned-name-for="${esc(roleKey)}">${assignedName ? esc(assignedName) : '<span class="sv-spinner tiny"></span> wird geladen / nicht gesetzt'}</span></p>
         <p>${esc(data.intro)}</p>
@@ -225,8 +222,7 @@
 
     const next = document.getElementById('nextPrep');
     if (next) {
-      const knownMap = storedNames();
-      const file = roleKey === 'supervisor' ? supervisorFlowFileFromMap(knownMap) : (FLOW_FILES[roleKey] || 'ablauf-supervisor.html');
+      const file = FLOW_FILES[roleKey] || 'ablauf-supervisor.html';
       const suffix = querySuffix();
       next.href = file + '?role=' + encodeURIComponent(roleKey) + (suffix ? '&' + suffix : '');
       next.classList.remove('is-busy');
@@ -252,12 +248,8 @@
       const map = storedNames();
       res.members.forEach(m => { if (m && m.role && m.name) map[m.role] = m.name; });
       saveNames(map);
-      applySupervisorFlowLink(map);
       const el = document.getElementById('assignedPersonName');
       if (el) el.textContent = map[roleKey] || 'nicht gesetzt';
-      const pill = document.querySelector('.role-pill');
-      if (pill) pill.textContent = map[roleKey] ? ((ROLE_LABELS[roleKey]||roleKey) + ' (' + map[roleKey] + ')') : (ROLE_LABELS[roleKey]||roleKey);
-      if(roleKey === 'supervisor') applySupervisorFlowLink(map);
     } catch (err) {
       const el = document.getElementById('assignedPersonName');
       if (el && /wird geladen/.test(el.textContent || '')) el.textContent = 'nicht gesetzt';
@@ -265,17 +257,6 @@
   }
   function boot(){
     renderBase();
-    applySupervisorFlowLink(storedNames());
-    const next = document.getElementById('nextPrep');
-    if(next && role()==='supervisor'){
-      next.addEventListener('click', function(ev){
-        if(!next.getAttribute('href') || next.getAttribute('href')==='#') {
-          ev.preventDefault();
-          applySupervisorFlowLink(storedNames());
-          if(next.getAttribute('href') && next.getAttribute('href')!=='#') location.href=next.getAttribute('href');
-        }
-      });
-    }
     loadAssignedName();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

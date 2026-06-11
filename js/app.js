@@ -463,14 +463,14 @@ function supervisorPhase(phase) {
         <ol class="tight">
           <li>Brainstorming: „Wie kann Kritik im Teamteaching so geäußert werden, dass sie nicht als persönlicher Angriff wirkt?“</li>
           <li>Sammle Kriterien für hilfreiche Kritik: konkret, zeitnah, unter vier Augen, Ich-Botschaft, Bezug auf Situation statt Person.</li>
-          <li>Leite zur Anerkennungsrunde über: Jede Person nennt an der Perspektive einer anderen Person einen nachvollziehbaren oder hilfreichen Punkt.</li>
+          <li>Leite zur Runde „Nachvollziehbare Perspektiven“ über: Zu Schulleitung, Lehrkraft A und Lehrkraft B wird jeweils ein positiver oder nachvollziehbarer Punkt festgehalten.</li>
           <li>Kurze Paarungen im freien Gespräch: Schulleitung ↔ A, Schulleitung ↔ B, A ↔ B.</li>
         </ol>
       </section>
       <section class="card">
         <h2>Brainstorming festhalten</h2>
         ${noteArea("Kriterien für hilfreiche Kritik", "sup_p4_kritik")}
-        ${noteArea("Anerkannte Stärken / Perspektiven", "sup_p4_anerkennung")}
+        <div class="perspective-table-entry"><h3>Nachvollziehbare Perspektiven</h3><p class="small">Tragt zu jeder Person kurz ein, was die anderen Beteiligten an ihrer Perspektive nachvollziehbar, hilfreich oder positiv fanden.</p><div class="three-col">${noteArea("Positives zur Schulleitung", "sup_p4_pos_sl")}${noteArea("Positives zu Lehrkraft A", "sup_p4_pos_a")}${noteArea("Positives zu Lehrkraft B", "sup_p4_pos_b")}</div></div>
         ${noteArea("Mögliche neue Absprachen", "sup_p4_absprachen")}
       </section>
     </div>`;
@@ -491,7 +491,7 @@ function supervisorPhase(phase) {
         <h2>Automatische Zwischenergebnisse</h2>
         ${miniSummaryHtml()}
         <label>Zustimmung erfolgt?</label>
-        <select data-save="sup_p5_zustimmung_status">
+        <select class="standard-required" data-save="sup_p5_zustimmung_status">
           <option value="">Bitte auswählen</option>
           <option value="Alle stimmen zu">Alle stimmen zu</option>
           <option value="Teilweise Zustimmung / offene Punkte">Teilweise Zustimmung / offene Punkte</option>
@@ -542,12 +542,10 @@ function participantPhase(role, phase) {
   if (phase === 3) return `
     <section class="card highlight">
       <h2>Deine Aufgabe in Phase 3</h2>
-      <p>Formuliere ein Ziel aus deiner Rolle. Es soll konkret, erreichbar und auf Zusammenarbeit bezogen sein.</p>
-      <p class="notice">Satzanfang: „Mein Ziel wäre, dass …“</p>
-      <label>Meine Zielformulierung</label>
-      <textarea data-save="participant_${role}_phase3_ziel"></textarea>
+      <p>Nutze deine vorbereiteten Zielgedanken aus der Überlegungsphase. Im Gespräch arbeitest du mit der Gruppe an einer gemeinsamen Zielvereinbarung.</p>
+      <p class="notice">Du musst hier keine neue individuelle Zielformulierung mehr eintragen.</p>
     </section>`;
-  if (phase === 4) return simpleListen(roleLabel, "Beteilige dich am Gespräch zur vertieften Problembearbeitung. Überlege: Wie kann Kritik geäußert werden, ohne das Gegenüber abzuwerten? Sage in der Anerkennungsrunde mindestens einen nachvollziehbaren Punkt an einer anderen Perspektive.");
+  if (phase === 4) return simpleListen(roleLabel, "Beteilige dich am Gespräch zur vertieften Problembearbeitung. Überlege: Wie kann Kritik geäußert werden, ohne das Gegenüber abzuwerten? Sage in der Runde „Nachvollziehbare Perspektiven“ einen positiven oder nachvollziehbaren Punkt zu einer anderen Person.");
   if (phase === 5) return simpleListen(roleLabel, "Höre die Zusammenfassung des/der Supervisor*in. Prüfe innerlich: Stimmen Problembeschreibung, Wünsche und Zielformulierung? Sage klar, ob du das gemeinsame Ziel mittragen kannst.");
   if (phase === 6) return simpleListen(roleLabel, role === "schulleitung" ? "Führe mit dem/der Supervisor*in das Gespräch zur Praxistauglichkeit. Kläre, wie du die Umsetzung organisatorisch unterstützen kannst." : "Die Reflexion zur Praxistauglichkeit findet vor allem zwischen Supervisor*in und Schulleitung statt. Warte auf den Abschluss oder nutze die Zeit, um deine persönliche Erkenntnis zu notieren.");
   return "";
@@ -582,14 +580,17 @@ function miniSummaryHtml() {
     </div>
     <div class="summary-block"><strong>Gemeinsame Zielvereinbarung:</strong><br>${escapeHtml(data.p3.gemeinsamesZiel || "Noch nicht notiert.")}</div>
     <div class="summary-block"><strong>Brainstorming / hilfreiche Kritik:</strong><br>${escapeHtml(data.p4.kritik || "Noch nicht notiert.")}</div>
+    <div class="summary-block"><strong>Nachvollziehbare Perspektiven:</strong><br>${escapeHtml([data.p4.perspektiveSL && ('Zu Schulleitung: '+data.p4.perspektiveSL), data.p4.perspektiveA && ('Zu Lehrkraft A: '+data.p4.perspektiveA), data.p4.perspektiveB && ('Zu Lehrkraft B: '+data.p4.perspektiveB)].filter(Boolean).join('\n') || data.p4.anerkennung || "Noch nicht notiert.")}</div>
     <div class="summary-block"><strong>Absprachen zum weiteren Vorgehen:</strong><br>${escapeHtml(data.p4.absprachen || "Noch nicht notiert.")}</div>
   `;
 }
 
 function shortLine(arr) { return arr.filter(Boolean).join("\n\n") || "Noch keine Notizen vorhanden."; }
+function uniqueLines(arr){ const seen=new Set(); return (arr||[]).map(x=>String(x||'').trim()).filter(Boolean).filter(x=>{const k=x.toLowerCase(); if(seen.has(k))return false; seen.add(k); return true;}); }
 
 function collectSupervisorData() {
-  const assignments = loadObj("assignments", {});
+  let assignments = loadObj("assignments", {});
+  try { assignments = Object.assign({}, JSON.parse(localStorage.getItem("sv_role_names_v58")||"{}"), assignments || {}); } catch(_) {}
   return {
     groupId: getGroupId(),
     groupName: Object.values(assignments).filter(Boolean).join(", "),
@@ -611,8 +612,8 @@ function collectSupervisorData() {
       zielSL: loadText("sup_p3_ziel_sl"), zielA: loadText("sup_p3_ziel_a"), zielB: loadText("sup_p3_ziel_b"),
       gemeinsamkeiten: loadText("sup_p3_gemeinsamkeiten"), gemeinsamesZiel: loadText("sup_p3_gemeinsames_ziel")
     },
-    p4: { kritik: loadText("sup_p4_kritik"), anerkennung: loadText("sup_p4_anerkennung"), absprachen: loadText("sup_p4_absprachen") },
-    p5: { zustimmung: [loadText("sup_p5_zustimmung_status"), loadText("sup_p5_zustimmung")].filter(Boolean).join("\n\n") },
+    p4: { kritik: loadText("sup_p4_kritik"), perspektiveSL: loadText("sup_p4_pos_sl"), perspektiveA: loadText("sup_p4_pos_a"), perspektiveB: loadText("sup_p4_pos_b"), anerkennung: loadText("sup_p4_anerkennung"), absprachen: loadText("sup_p4_absprachen") },
+    p5: { zustimmung: uniqueLines([loadText("sup_p5_zustimmung_status"), loadText("sup_p5_zustimmung")]).filter(Boolean).join("\n\n") },
     p6: { praxistauglichkeit: loadText("sup_p6_praxistauglichkeit"), unterstuetzung: loadText("sup_p6_unterstuetzung"), umsetzung: loadText("sup_p6_umsetzung") }
   };
 }
@@ -664,7 +665,7 @@ function labelize(s) {
     gemeinsamkeiten: "Gemeinsamkeiten",
     gemeinsamesZiel: "Gemeinsame Zielvereinbarung",
     kritik: "Brainstorming / hilfreiche Kritik",
-    anerkennung: "Anerkennungsrunde / Perspektiven",
+    anerkennung: "Runde nachvollziehbarer Perspektiven / Perspektiven",
     absprachen: "Absprachen zum weiteren Vorgehen",
     zustimmung: "Zustimmung / Rückmeldung",
     praxistauglichkeit: "Einschätzung der Praxistauglichkeit",
@@ -6764,31 +6765,6 @@ try {
 })();
 try { if (window.deleteAllResults) deleteAllResults = window.deleteAllResults; } catch (_) {}
 try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleResult; } catch (_) {}
-(function(){
-  function installManualShareButton(){
-    if (document.body.dataset.mode !== 'summary') return;
-    const row = document.querySelector('#submitResults') && document.querySelector('#submitResults').closest('.nav-row');
-    if (!row || document.getElementById('showGroupShareBoxBtn')) return;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.id = 'showGroupShareBoxBtn';
-    btn.className = 'secondary';
-    btn.textContent = 'Ergebnis mit Gruppe teilen';
-    btn.addEventListener('click', () => {
-      const box = document.getElementById('groupShareBox') || (typeof ensureShareBox === 'function' ? ensureShareBox() : null);
-      // ensureShareBox ist im Patch gekapselt; falls nicht direkt verfügbar, simuliert ein Klick auf Absenden nicht nötig.
-      if (box) { box.hidden = false; box.scrollIntoView({behavior:'smooth', block:'center'}); }
-      else {
-        const groupId = (typeof getGroupId === 'function') ? getGroupId() : (new URLSearchParams(location.search).get('g') || '');
-        const link = new URL('gruppe-ergebnis.html', location.href); link.searchParams.set('g', groupId);
-        window.open(link.toString(), '_blank');
-      }
-    });
-    row.appendChild(btn);
-  }
-  document.addEventListener('DOMContentLoaded', () => setTimeout(installManualShareButton, 30));
-})();
-
 /* ------------------------------------------------------------
    MOBILE PRESENTATION + COLLAPSIBLE TOP BAR PATCH
    ------------------------------------------------------------ */

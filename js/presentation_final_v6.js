@@ -150,7 +150,7 @@
         {id:'s0_title', type:'title', html:'Gruppenvorstellung'},
         {id:'s0_kicker', type:'kicker', html:formatTs(values.timestamp)},
         {id:'s0_groupName', type:'groupName', html:valueText(values.groupName), field:'groupName'},
-        {id:'s0_table', type:'table', table:{headers:['Rolle','Name'], rows:[['Supervisor*in','supervisor'],['Schulleitung','schulleitung'],['Lehrkraft A','lehrkraftA'],['Lehrkraft B','lehrkraftB']]}},
+        {id:'s0_table', type:'table', table:{headers:['Rolle','Name'], rows:[['Supervisor*in','supervisor'],['Schulleitung','schulleitung'],['Lehrkraft A','lehrkraftA'],['Lehrkraft B','lehrkraftB'],['Protokoll','protokoll']]}},
         {id:'s0_note', type:'note', html:'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.'}
       ]},
       {id:'problem', elements:[
@@ -166,7 +166,7 @@
       {id:'deep', elements:[
         {id:'s3_title', type:'title', html:'Vertiefte Problembearbeitung'},
         {id:'s3_subtitle', type:'subtitle', html:'Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.'},
-        {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
+        {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positives zur Schulleitung','p4perspektiveSL'],['Positives zu Lehrkraft A','p4perspektiveA'],['Positives zu Lehrkraft B','p4perspektiveB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
       ]},
       {id:'implementation', elements:[
         {id:'s4_title', type:'title', html:'Umsetzung'},

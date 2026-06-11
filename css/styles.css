@@ -5192,3 +5192,16 @@ body[data-mode="results"] .result-card[aria-current="true"].is-winner{
   .wrap,.wide-main,.progress-shell,.group-edit-shell{width:calc(100vw - 44px)!important;max-width:none!important}
   .progress-grid{grid-template-columns:1fr!important}
 }
+
+
+/* v58 Rollenfarben, Namensanzeige und Perspektiven-Tabelle */
+.role-text-supervisor,.role-supervisor{color:#2f6fb0!important}
+.role-text-schulleitung,.role-schulleitung{color:#2f9e44!important}
+.role-text-lehrkraft-a,.role-lehrkraft-a{color:#d62828!important}
+.role-text-lehrkraft-b,.role-lehrkraft-b{color:#d62828!important}
+.role-text-protokoll,.role-protokoll{color:#d99000!important}
+.perspective-table-entry{display:grid;gap:10px;margin:12px 0}
+.three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.three-col label{font-size:.92rem}
+.standard-required{border-width:1px!important;box-shadow:none!important}
+@media(max-width:900px){.three-col{grid-template-columns:1fr}}

@@ -61,17 +61,18 @@
     if(type==='thanks')return{x:8,y:30,w:84,h:34,z:20,fontSize:72};
     return{x:7,y:20,w:86,h:10,z:20,fontSize:20};
   }
+  function dedupeText(v){const seen=new Set();return String(v==null?'':v).split(/\n+/).map(x=>x.trim()).filter(Boolean).filter(x=>{const k=x.toLowerCase(); if(seen.has(k))return false; seen.add(k); return true;}).join('\n');}
   function table(headers, rows){ return '<div class="table-wrap"><table><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(val(c)).replace(/\n/g,'<br>')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'; }
   function time(v){ if(!v)return''; const s=String(v); if(/^\d{1,2}:\d{2}:\d{2}\s+\d{2}\.\d{2}\.\d{4}$/.test(s))return s; try{const d=new Date(v); if(isNaN(d))return s; return d.toLocaleString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}).replace(',','');}catch(_){return s;} }
   function baseSlides(data, values){
-    const a=data.assignments||{}, p2=data.p2||{}, p3=data.p3||{}, p4=data.p4||{}, p5=data.p5||{}, p6=data.p6||{};
+    let a=data.assignments||{}; try{a=Object.assign({}, JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}'), a||{});}catch(_){} const p2=data.p2||{}, p3=data.p3||{}, p4=data.p4||{}, p5=data.p5||{}, p6=data.p6||{};
     const groupName=first(values.groupName,data.groupName,state.row&&state.row.groupName,'Gruppe');
     const ts=time(first(values.timestamp,data.timestamp,data.timestampLocal,state.row&&state.row.timestamp,new Date().toISOString()));
-    const sup=first(values.supervisor,a.supervisor), sl=first(values.schulleitung,a.schulleitung), la=first(values.lehrkraftA,a['lehrkraft-a'],a.lehrkraftA), lb=first(values.lehrkraftB,a['lehrkraft-b'],a.lehrkraftB);
+    const sup=first(values.supervisor,a.supervisor), sl=first(values.schulleitung,a.schulleitung), la=first(values.lehrkraftA,a['lehrkraft-a'],a.lehrkraftA), lb=first(values.lehrkraftB,a['lehrkraft-b'],a.lehrkraftB), pr=first(values.protokoll,a.protokoll);
     return [
       {id:'s0',elements:[
         {id:'s0_title',type:'title',text:'Gruppenvorstellung'}, {id:'s0_kicker',type:'kicker',text:ts}, {id:'s0_groupName',type:'heading2',text:groupName},
-        {id:'s0_table',type:'table',html:table(['Rolle','Name'],[['Supervisor*in',sup],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb]])},
+        {id:'s0_table',type:'table',html:table(['Rolle','Name'],[['Supervisor*in',sup],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb],['Protokoll',pr]])},
         {id:'s0_note',type:'note',text:'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.'}
       ]},
       {id:'s1',elements:[
@@ -88,11 +89,11 @@
       ]},
       {id:'s3',elements:[
         {id:'s3_title',type:'title',text:'Vertiefte Problembearbeitung'}, {id:'s3_subtitle',type:'subtitle',text:'Diese Folie hält hilfreiche Kritik und Absprachen für die weitere Zusammenarbeit fest.'},
-        {id:'s3_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Hilfreiche Kritik',first(values.p4kritik,p4.kritik)],['Absprachen zum weiteren Vorgehen',first(values.p4absprachen,p4.absprachen)]])}
+        {id:'s3_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Hilfreiche Kritik',first(values.p4kritik,p4.kritik)],['Positives zur Schulleitung',first(values.p4perspektiveSL,p4.perspektiveSL)],['Positives zu Lehrkraft A',first(values.p4perspektiveA,p4.perspektiveA)],['Positives zu Lehrkraft B',first(values.p4perspektiveB,p4.perspektiveB)],['Absprachen zum weiteren Vorgehen',first(values.p4absprachen,p4.absprachen)]])}
       ]},
       {id:'s4',elements:[
         {id:'s4_title',type:'title',text:'Umsetzung'}, {id:'s4_subtitle',type:'subtitle',text:'Diese Folie zeigt Zustimmung, Praxistauglichkeit und konkrete Schritte zur Umsetzung.'},
-        {id:'s4_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Zustimmung zur Vereinbarung',first(values.p5zustimmung,p5.zustimmung)],['Einschätzung der Praxistauglichkeit',first(values.p6prax,p6.praxistauglichkeit)],['Unterstützung durch Schulleitung',first(values.p6support,p6.unterstuetzung)],['Erste konkrete Umsetzungsschritte',first(values.p6steps,p6.umsetzung)]])}
+        {id:'s4_table',type:'table',html:table(['Aspekt','Ergebnis'],[['Zustimmung zur Vereinbarung',dedupeText(first(values.p5zustimmung,p5.zustimmung))],['Einschätzung der Praxistauglichkeit',first(values.p6prax,p6.praxistauglichkeit)],['Unterstützung durch Schulleitung',first(values.p6support,p6.unterstuetzung)],['Erste konkrete Umsetzungsschritte',first(values.p6steps,p6.umsetzung)]])}
       ]},
       {id:'s5',elements:[{id:'s5_thanks',type:'thanks',html:'<h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p>'}]}
     ];

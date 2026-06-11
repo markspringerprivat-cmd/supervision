@@ -217,12 +217,13 @@
     document.documentElement.style.setProperty('--ps-bg', s.background);
   }
 
+  function dedupeText(v){const seen=new Set();return String(v==null?'':v).split(/\n+/).map(x=>x.trim()).filter(Boolean).filter(x=>{const k=x.toLowerCase(); if(seen.has(k))return false; seen.add(k); return true;}).join('\n');}
   function table(headers, rows){
     return '<div class="ps-table-wrap"><table class="ps-table"><thead><tr>' + headers.map(h=>'<th>'+esc(h)+'</th>').join('') + '</tr></thead><tbody>' + rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(val(c)).replace(/\n/g,'<br>')+'</td>').join('')+'</tr>').join('') + '</tbody></table></div>';
   }
 
   function buildSlides(){
-    const d = state.data, v = state.cfg.values || {}, a = d.assignments || {};
+    const d = state.data, v = state.cfg.values || {}; let a = d.assignments || {}; try{a=Object.assign({}, JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}'), a||{});}catch(_){}
     const p2=d.p2||{}, p3=d.p3||{}, p4=d.p4||{}, p5=d.p5||{}, p6=d.p6||{};
     const groupName = first(v.groupName, d.groupName, state.row && state.row.groupName, 'Gruppe');
     const timestamp = formatTimestamp(first(v.timestamp, d.timestamp, d.timestampLocal, state.row && state.row.timestamp, new Date().toISOString()));
@@ -230,12 +231,13 @@
     const sl = first(v.schulleitung, a.schulleitung);
     const la = first(v.lehrkraftA, a['lehrkraft-a'], a.lehrkraftA);
     const lb = first(v.lehrkraftB, a['lehrkraft-b'], a.lehrkraftB);
+    const pr = first(v.protokoll, a.protokoll);
     return [
       {id:'s0', parts:[
         {id:'s0_title', type:'title', html:'Gruppenvorstellung'},
         {id:'s0_kicker', type:'kicker', html:timestamp},
         {id:'s0_groupName', type:'heading2', html:groupName},
-        {id:'s0_table', type:'table', html:table(['Rolle','Name'], [['Supervisor*in',supervisor],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb]])},
+        {id:'s0_table', type:'table', html:table(['Rolle','Name'], [['Supervisor*in',supervisor],['Schulleitung',sl],['Lehrkraft A',la],['Lehrkraft B',lb],['Protokoll',pr]])},
         {id:'s0_note', type:'note', html:'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.'}
       ]},
       {id:'s1', parts:[
@@ -263,7 +265,7 @@
         {id:'s4_title', type:'title', html:'Umsetzung'},
         {id:'s4_subtitle', type:'subtitle', html:'Diese Folie zeigt Zustimmung, Praxistauglichkeit und konkrete Schritte zur Umsetzung.'},
         {id:'s4_table', type:'table', html:table(['Aspekt','Ergebnis'], [
-          ['Zustimmung zur Vereinbarung', first(v.p5zustimmung,p5.zustimmung)], ['Einschätzung der Praxistauglichkeit', first(v.p6prax,p6.praxistauglichkeit,p6.einschaetzung)], ['Unterstützung durch Schulleitung', first(v.p6support,p6.unterstuetzung)], ['Erste konkrete Umsetzungsschritte', first(v.p6steps,p6.umsetzung,p6.konkreteUmsetzungsschritte)]
+          ['Zustimmung zur Vereinbarung', dedupeText(first(v.p5zustimmung,p5.zustimmung))], ['Einschätzung der Praxistauglichkeit', first(v.p6prax,p6.praxistauglichkeit,p6.einschaetzung)], ['Unterstützung durch Schulleitung', first(v.p6support,p6.unterstuetzung)], ['Erste konkrete Umsetzungsschritte', first(v.p6steps,p6.umsetzung,p6.konkreteUmsetzungsschritte)]
         ])}
       ]},
       {id:'s5', parts:[ {id:'s5_thanks', type:'thanks', html:'<h2>Vielen Dank fürs Zuhören!</h2><p>Raum für Rückfragen und gemeinsame Reflexion.</p>'} ]}

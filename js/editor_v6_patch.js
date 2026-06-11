@@ -42,6 +42,7 @@
   function clone(obj){ return JSON.parse(JSON.stringify(obj || {})); }
   function uid(prefix){ return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
   function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+  function dedupePresentationText(v){ const seen=new Set(); return String(v==null?'':v).split(/\n+/).map(x=>x.trim()).filter(Boolean).filter(x=>{const k=x.toLowerCase(); if(seen.has(k))return false; seen.add(k); return true;}).join('\n'); }
   function valueText(v){ const t = String(v ?? '').trim(); return t ? t : '—'; }
   function num(v, fb){ const n = Number(v); return Number.isFinite(n) ? n : fb; }
   function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
@@ -57,22 +58,22 @@
     p2aProblems: 'sup_p2_a_probleme', p2aFeelings: 'sup_p2_a_gefuehle', p2aWishes: 'sup_p2_a_wuensche',
     p2bProblems: 'sup_p2_b_probleme', p2bFeelings: 'sup_p2_b_gefuehle', p2bWishes: 'sup_p2_b_wuensche',
     p3zielSL: 'sup_p3_ziel_sl', p3zielA: 'sup_p3_ziel_a', p3zielB: 'sup_p3_ziel_b', p3gemeinsam: 'sup_p3_gemeinsamkeiten', p3ziel: 'sup_p3_gemeinsames_ziel',
-    p4kritik: 'sup_p4_kritik', p4absprachen: 'sup_p4_absprachen',
+    p4kritik: 'sup_p4_kritik', p4perspektiveSL:'sup_p4_pos_sl', p4perspektiveA:'sup_p4_pos_a', p4perspektiveB:'sup_p4_pos_b', p4absprachen: 'sup_p4_absprachen',
     p5zustimmung: 'sup_p5_zustimmung', p6prax: 'sup_p6_praxistauglichkeit', p6support: 'sup_p6_unterstuetzung', p6steps: 'sup_p6_umsetzung'
   };
 
   function initialValues(){
     const d = getData();
-    const a = d.assignments || {};
+    let a = d.assignments || {}; try{ a = Object.assign({}, JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}'), a||{}); }catch(_){}
     return {
       groupName: d.groupName || [a.supervisor,a.schulleitung,a['lehrkraft-a']||a.lehrkraftA,a['lehrkraft-b']||a.lehrkraftB].filter(Boolean).join(', ') || 'Gruppe',
       timestamp: d.timestamp || new Date().toISOString(),
-      supervisor: a.supervisor || '', schulleitung: a.schulleitung || '', lehrkraftA: a['lehrkraft-a'] || a.lehrkraftA || '', lehrkraftB: a['lehrkraft-b'] || a.lehrkraftB || '',
+      supervisor: a.supervisor || '', schulleitung: a.schulleitung || '', lehrkraftA: a['lehrkraft-a'] || a.lehrkraftA || '', lehrkraftB: a['lehrkraft-b'] || a.lehrkraftB || '', protokoll: a.protokoll || '',
       p2slProblems: d.p2?.slProbleme || loadTextSafe(FIELD_MAP.p2slProblems), p2slFeelings: d.p2?.slGefuehle || loadTextSafe(FIELD_MAP.p2slFeelings), p2slWishes: d.p2?.slWuensche || loadTextSafe(FIELD_MAP.p2slWishes),
       p2aProblems: d.p2?.aProbleme || loadTextSafe(FIELD_MAP.p2aProblems), p2aFeelings: d.p2?.aGefuehle || loadTextSafe(FIELD_MAP.p2aFeelings), p2aWishes: d.p2?.aWuensche || loadTextSafe(FIELD_MAP.p2aWishes),
       p2bProblems: d.p2?.bProbleme || loadTextSafe(FIELD_MAP.p2bProblems), p2bFeelings: d.p2?.bGefuehle || loadTextSafe(FIELD_MAP.p2bFeelings), p2bWishes: d.p2?.bWuensche || loadTextSafe(FIELD_MAP.p2bWishes),
       p3zielSL: d.p3?.zielSL || loadTextSafe(FIELD_MAP.p3zielSL), p3zielA: d.p3?.zielA || loadTextSafe(FIELD_MAP.p3zielA), p3zielB: d.p3?.zielB || loadTextSafe(FIELD_MAP.p3zielB), p3gemeinsam: d.p3?.gemeinsamkeiten || loadTextSafe(FIELD_MAP.p3gemeinsam), p3ziel: d.p3?.gemeinsamesZiel || loadTextSafe(FIELD_MAP.p3ziel),
-      p4kritik: d.p4?.kritik || loadTextSafe(FIELD_MAP.p4kritik), p4absprachen: d.p4?.absprachen || loadTextSafe(FIELD_MAP.p4absprachen),
+      p4kritik: d.p4?.kritik || loadTextSafe(FIELD_MAP.p4kritik), p4perspektiveSL: d.p4?.perspektiveSL || loadTextSafe(FIELD_MAP.p4perspektiveSL), p4perspektiveA: d.p4?.perspektiveA || loadTextSafe(FIELD_MAP.p4perspektiveA), p4perspektiveB: d.p4?.perspektiveB || loadTextSafe(FIELD_MAP.p4perspektiveB), p4absprachen: d.p4?.absprachen || loadTextSafe(FIELD_MAP.p4absprachen),
       p5zustimmung: d.p5?.zustimmung || loadTextSafe(FIELD_MAP.p5zustimmung), p6prax: d.p6?.praxistauglichkeit || loadTextSafe(FIELD_MAP.p6prax), p6support: d.p6?.unterstuetzung || loadTextSafe(FIELD_MAP.p6support), p6steps: d.p6?.umsetzung || loadTextSafe(FIELD_MAP.p6steps)
     };
   }
@@ -167,7 +168,7 @@
           {id:'s0_title', type:'title', html:'Gruppenvorstellung', field:null},
           {id:'s0_kicker', type:'kicker', html:formatTs(values.timestamp), field:null},
           {id:'s0_groupName', type:'groupName', html:valueText(values.groupName), field:'groupName'},
-          {id:'s0_table', type:'table', table:{headers:['Rolle','Name'], rows:[['Supervisor*in','supervisor'],['Schulleitung','schulleitung'],['Lehrkraft A','lehrkraftA'],['Lehrkraft B','lehrkraftB']] }},
+          {id:'s0_table', type:'table', table:{headers:['Rolle','Name'], rows:[['Supervisor*in','supervisor'],['Schulleitung','schulleitung'],['Lehrkraft A','lehrkraftA'],['Lehrkraft B','lehrkraftB'],['Protokoll','protokoll']] }},
           {id:'s0_note', type:'note', html:'Simulation einer Gruppensupervision zum Teamteaching im Kontext ESE.', field:null}
         ]
       },
@@ -184,7 +185,7 @@
       { id:'deep', title:'Vertiefte Problembearbeitung', elements:[
           {id:'s3_title', type:'title', html:'Vertiefte Problembearbeitung'},
           {id:'s3_subtitle', type:'subtitle', html:'Hier wird festgehalten, wie hilfreiche Kritik formuliert werden kann und welche Absprachen für die weitere Zusammenarbeit getroffen wurden.'},
-          {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
+          {id:'s3_table', type:'table', table:{headers:['Aspekt','Ergebnis'], rows:[['Hilfreiche Kritik','p4kritik'],['Positives zur Schulleitung','p4perspektiveSL'],['Positives zu Lehrkraft A','p4perspektiveA'],['Positives zu Lehrkraft B','p4perspektiveB'],['Absprachen zum weiteren Vorgehen','p4absprachen']]}}
       ]},
       { id:'implementation', title:'Umsetzung', elements:[
           {id:'s4_title', type:'title', html:'Umsetzung'},

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-mobile-nav-v78">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-mobile-entryfix-v80">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -1900,6 +1900,137 @@
     }
   }
 
+
+  /* v79: Im Manometer keine Warte-Spinner auf Navigations-/Eingabe-Buttons */
+  body[data-mode="manometer"] #prevBtn.is-busy::after,
+  body[data-mode="manometer"] #nextBtn.is-busy::after,
+  body[data-mode="manometer"] #mobilePrevBtn.is-busy::after,
+  body[data-mode="manometer"] #mobileNextBtn.is-busy::after,
+  body[data-mode="manometer"] .add-btn.is-busy::after,
+  body[data-mode="manometer"] .remove-entry.is-busy::after{
+    content:none!important;
+    display:none!important;
+  }
+  body[data-mode="manometer"] #prevBtn.is-busy,
+  body[data-mode="manometer"] #nextBtn.is-busy,
+  body[data-mode="manometer"] #mobilePrevBtn.is-busy,
+  body[data-mode="manometer"] #mobileNextBtn.is-busy,
+  body[data-mode="manometer"] .add-btn.is-busy,
+  body[data-mode="manometer"] .remove-entry.is-busy{
+    pointer-events:auto!important;
+    opacity:1!important;
+  }
+
+
+  /* v80 Smartphone: Eintragsbereich ohne Überlappung */
+  @media (max-width:640px){
+    .question-right-v69{
+      grid-template-rows:auto minmax(0,1fr)!important;
+      padding-top:12px!important;
+      gap:8px!important;
+      overflow:hidden!important;
+    }
+    .question-right-v69 .list-head{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) auto!important;
+      gap:8px!important;
+      align-items:center!important;
+      width:100%!important;
+      min-width:0!important;
+      margin:0 0 4px!important;
+    }
+    .question-right-v69 .list-head h3{
+      min-width:0!important;
+      max-width:100%!important;
+      font-size:.70rem!important;
+      line-height:1.08!important;
+      overflow-wrap:anywhere!important;
+      hyphens:auto!important;
+    }
+    .question-right-v69 .add-btn{
+      min-width:82px!important;
+      max-width:96px!important;
+      height:30px!important;
+      min-height:30px!important;
+      padding:0 8px!important;
+      font-size:.64rem!important;
+      border-radius:999px!important;
+      white-space:nowrap!important;
+      justify-self:end!important;
+    }
+    .question-right-v69 .entry-list{
+      width:100%!important;
+      min-width:0!important;
+      overflow:hidden!important;
+      padding:0!important;
+      gap:7px!important;
+    }
+    .question-right-v69 .entry-row{
+      width:100%!important;
+      min-width:0!important;
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) 30px!important;
+      gap:7px!important;
+      align-items:start!important;
+      overflow:hidden!important;
+    }
+    .question-right-v69 .entry-row textarea,
+    .question-right-v69 .entry-row input{
+      width:100%!important;
+      min-width:0!important;
+      box-sizing:border-box!important;
+      min-height:46px!important;
+      max-height:58px!important;
+      font-size:12px!important;
+      line-height:1.2!important;
+      padding:7px 8px!important;
+      border-radius:12px!important;
+    }
+    .question-right-v69 .remove-entry{
+      width:30px!important;
+      min-width:30px!important;
+      height:30px!important;
+      min-height:30px!important;
+      border-radius:50%!important;
+      font-size:.78rem!important;
+      margin-top:4px!important;
+      justify-self:end!important;
+      display:inline-flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+    }
+
+    .question-grid-v69{
+      gap:16px!important;
+    }
+    .req-note{
+      font-size:.60rem!important;
+      line-height:1.18!important;
+    }
+  }
+
+  @media (max-width:390px){
+    .question-right-v69 .list-head h3{
+      font-size:.64rem!important;
+    }
+    .question-right-v69 .add-btn{
+      min-width:76px!important;
+      max-width:86px!important;
+      font-size:.60rem!important;
+      padding:0 7px!important;
+    }
+    .question-right-v69 .entry-row{
+      grid-template-columns:minmax(0,1fr) 28px!important;
+      gap:6px!important;
+    }
+    .question-right-v69 .remove-entry{
+      width:28px!important;
+      min-width:28px!important;
+      height:28px!important;
+      min-height:28px!important;
+    }
+  }
+
 </style>
 </head>
 <body data-mode="manometer">
@@ -1923,18 +2054,18 @@
       <div id="alreadyVotedBox" class="already-voted" hidden>Von diesem Gerät wurde bereits Feedback abgegeben. Falls die Administration die Hardware-IDs freigegeben hat, kannst du erneut abstimmen; andernfalls blockiert Apps Script die Mehrfachabgabe.</div>
     </div>
     <div id="navDock" class="nav-dock">
-      <div class="nav-side"><button id="prevBtn" type="button" class="secondary-btn">← Zurück</button><button id="nextBtn" type="button" class="primary-btn">Weiter →</button></div>
+      <div class="nav-side"><button id="prevBtn" type="button" class="secondary-btn no-busy-spinner">← Zurück</button><button id="nextBtn" type="button" class="primary-btn no-busy-spinner">Weiter →</button></div>
       <div class="nav-info"><span id="stepCounter">Kachel 1 / 1</span></div>
       <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
     <div id="mobileNavDock" class="mobile-nav-dock" aria-label="Mobile Feedback-Navigation">
-      <button id="mobilePrevBtn" type="button" class="mobile-nav-btn mobile-prev">← Zurück</button>
-      <button id="mobileNextBtn" type="button" class="mobile-nav-btn mobile-next">Weiter →</button>
+      <button id="mobilePrevBtn" type="button" class="mobile-nav-btn mobile-prev no-busy-spinner">← Zurück</button>
+      <button id="mobileNextBtn" type="button" class="mobile-nav-btn mobile-next no-busy-spinner">Weiter →</button>
       <div id="mobileStepCounter" class="mobile-step-counter">Kachel 1 / 1</div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-mobile-nav-v78"></script>
-  <script src="js/app.js?v=manometer-mobile-nav-v78"></script>
+  <script src="js/config.js?v=manometer-mobile-entryfix-v80"></script>
+  <script src="js/app.js?v=manometer-mobile-entryfix-v80"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -1972,7 +2103,7 @@
     function scoreColor(value){const pct=Math.max(0,Math.min(1,(Number(value||1)-1)/9)); const hue=2+130*pct; const light=52-8*pct; return `hsl(${hue}, 92%, ${light}%)`}
     function rangeGradient(value){const v=Number(value||5); const pct=((v-1)/9)*100; const col=scoreColor(v); return `linear-gradient(90deg, ${col} 0%, ${col} ${pct}%, #e7eef6 ${pct}%, #e7eef6 100%)`}
     function listValues(kind){return Array.from(document.querySelectorAll(`[data-entry-list="${kind}"] .entry-field`)).map(el=>el.value.trim()).filter(Boolean)}
-    function createEntryRow(kind, value){const isSmall=['praise','criticism','suggestions'].includes(kind)||kind==='llmDetails'; const row=document.createElement('div'); row.className='entry-row'; row.innerHTML=isSmall?`<input class="entry-field" type="text" value="${escapeHtml(value||'')}" placeholder="Eintrag hinzufügen …"><button type="button" class="remove-entry" aria-label="Eintrag entfernen">×</button>`:`<textarea class="entry-field" placeholder="Eintrag hinzufügen …">${escapeHtml(value||'')}</textarea><button type="button" class="remove-entry" aria-label="Eintrag entfernen">×</button>`; row.querySelector('.remove-entry').addEventListener('click',()=>{const list=document.querySelector(`[data-entry-list="${kind}"]`); row.remove(); if(list && !list.children.length) addEntry(kind,'')}); const field=row.querySelector('.entry-field'); if(field) field.addEventListener('input',()=>field.classList.remove('invalid')); return row}
+    function createEntryRow(kind, value){const isSmall=['praise','criticism','suggestions'].includes(kind)||kind==='llmDetails'; const row=document.createElement('div'); row.className='entry-row'; row.innerHTML=isSmall?`<input class="entry-field" type="text" value="${escapeHtml(value||'')}" placeholder="Eintrag hinzufügen …"><button type="button" class="remove-entry no-busy-spinner" aria-label="Eintrag entfernen">×</button>`:`<textarea class="entry-field" placeholder="Eintrag hinzufügen …">${escapeHtml(value||'')}</textarea><button type="button" class="remove-entry no-busy-spinner" aria-label="Eintrag entfernen">×</button>`; row.querySelector('.remove-entry').addEventListener('click',()=>{const list=document.querySelector(`[data-entry-list="${kind}"]`); row.remove(); if(list && !list.children.length) addEntry(kind,'')}); const field=row.querySelector('.entry-field'); if(field) field.addEventListener('input',()=>field.classList.remove('invalid')); return row}
     function addEntry(kind, value){
       const list=document.querySelector(`[data-entry-list="${kind}"]`);
       if(!list) return;
@@ -2014,7 +2145,7 @@
               </div>
             </div>
             <div class="question-right question-right-v69">
-              <div class="list-head"><h3>Kritik und Verbesserungsvorschläge</h3><button type="button" class="add-btn" data-add-entry="${question.key}">+ Eintrag</button></div>
+              <div class="list-head"><h3>Kritik und Verbesserungsvorschläge</h3><button type="button" class="add-btn no-busy-spinner" data-add-entry="${question.key}">+ Eintrag</button></div>
               <div class="entry-list" data-entry-list="${question.key}"></div>
             </div>
           </div>
@@ -2026,7 +2157,7 @@
       const stage=document.getElementById('feedbackStage');
       stage.innerHTML='';
       QUESTIONS.forEach((q,i)=>stage.insertAdjacentHTML('beforeend', buildQuestionCard(q,i)));
-      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="generalText"><div class="card-inner"><div class="card-head"><div><span class="kicker">Freitext</span><h2>Allgemeines Lob, Kritik und Anregungen</h2><p>Diese drei Listen sind optional. Jeder Eintrag wird einzeln gespeichert und später einzeln dargestellt.</p></div><div class="counter">Freitext</div></div><div class="text-grid"><div class="text-lists"><div class="list-column"><div class="panel"><div class="list-head"><h3>Lob</h3><button type="button" class="add-btn" data-add-entry="praise">+ Eintrag</button></div><div class="entry-list" data-entry-list="praise"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Kritik</h3><button type="button" class="add-btn" data-add-entry="criticism">+ Eintrag</button></div><div class="entry-list" data-entry-list="criticism"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Anregungen</h3><button type="button" class="add-btn" data-add-entry="suggestions">+ Eintrag</button></div><div class="entry-list" data-entry-list="suggestions"></div></div></div></div></div></div></section>`);
+      stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="generalText"><div class="card-inner"><div class="card-head"><div><span class="kicker">Freitext</span><h2>Allgemeines Lob, Kritik und Anregungen</h2><p>Diese drei Listen sind optional. Jeder Eintrag wird einzeln gespeichert und später einzeln dargestellt.</p></div><div class="counter">Freitext</div></div><div class="text-grid"><div class="text-lists"><div class="list-column"><div class="panel"><div class="list-head"><h3>Lob</h3><button type="button" class="add-btn no-busy-spinner" data-add-entry="praise">+ Eintrag</button></div><div class="entry-list" data-entry-list="praise"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Kritik</h3><button type="button" class="add-btn no-busy-spinner" data-add-entry="criticism">+ Eintrag</button></div><div class="entry-list" data-entry-list="criticism"></div></div></div><div class="list-column"><div class="panel"><div class="list-head"><h3>Anregungen</h3><button type="button" class="add-btn no-busy-spinner" data-add-entry="suggestions">+ Eintrag</button></div><div class="entry-list" data-entry-list="suggestions"></div></div></div></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="presentationMotivation"><div class="card-inner"><div class="yn-layout"><span class="kicker">Zufallspräsentation</span><h2>Die Aussicht auf eine verbindliche Präsentation nach dem Zufallsprinzip hat meine extrinsische Motivation zur Bearbeitung der Aufgaben gesteigert.</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="presentationMotivation" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="presentationMotivation" value="Nein"><span>Nein</span></label></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="avoidCheck"><div class="card-inner"><div class="yn-layout"><h2>Hast du manchmal volle Punktzahl gewählt, um die Pflichtangabe bei Kritik oder Verbesserungsvorschlägen zu vermeiden?</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="avoidCriticism" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="avoidCriticism" value="Nein"><span>Nein</span></label></div></div></div></section>`);
       stage.insertAdjacentHTML('beforeend', `<section class="card" data-step="llmCheck"><div class="card-inner"><div class="yn-layout"><h2>Wurde für die Antwortengenerierung während der Simulation ChatGPT oder ein anderes LLM verwendet?</h2><div class="yn-buttons"><label class="yn-card yes"><input type="radio" name="llmUsed" value="Ja"><span>Ja</span></label><label class="yn-card no"><input type="radio" name="llmUsed" value="Nein"><span>Nein</span></label></div><div class="llm-box"><input id="llmDetails" class="llm-input" type="text" placeholder="Optionale Hinweise zu LLM-Nutzung …"></div></div></div></section>`);
@@ -2075,8 +2206,8 @@
       if(mobileCounter) mobileCounter.textContent=`Kachel ${current+1} / ${steps.length}`;
     }
     function validateStep(step){if(isStepComplete(step)){ step&&step.querySelectorAll('.entry-field').forEach(el=>el.classList.remove('invalid')); return true; } const type=step&&step.dataset.step; if(type==='scale'){ step&&step.querySelectorAll('.entry-field').forEach(el=>{ if(!(el.value||'').trim()) el.classList.add('invalid'); }); setStatus('Bitte ergänze mindestens einen Kritik- oder Verbesserungseintrag.','error'); } else setStatus('Bitte wähle Ja oder Nein.','error'); return false}
-    function goNext(){if(!validateStep(steps[current]))return; setActive(current+1)}
-    function goPrev(){setActive(current-1)}
+    function goNext(){document.querySelectorAll('.is-busy').forEach(function(el){el.classList.remove('is-busy')}); if(!validateStep(steps[current]))return; setActive(current+1)}
+    function goPrev(){document.querySelectorAll('.is-busy').forEach(function(el){el.classList.remove('is-busy')}); setActive(current-1)}
     function collectScores(){const scores={}; QUESTIONS.forEach(q=>scores[q.key]=Number(document.getElementById(q.key).value||1)); return scores}
     function collectImprovements(){const improvements={}; QUESTIONS.forEach(q=>improvements[q.key]=listValues(q.key)); return improvements}
     function jsonp(url, params){return new Promise((resolve,reject)=>{const cb='manometerCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9); const qs=new URLSearchParams(params||{}); qs.set('callback',cb); qs.set('_',Date.now()); const script=document.createElement('script'); let settled=false; window[cb]=function(data){settled=true; cleanup(); resolve(data)}; function cleanup(){try{delete window[cb]}catch(_){} if(script.parentNode)script.parentNode.removeChild(script)} script.onerror=function(){if(!settled){cleanup(); reject(new Error('Manometer-Feedback konnte nicht übertragen werden.'))}}; script.src=url+(url.includes('?')?'&':'?')+qs.toString(); document.body.appendChild(script); setTimeout(()=>{if(!settled){cleanup(); reject(new Error('Zeitüberschreitung beim Übertragen des Feedbacks.'))}},15000)})}
@@ -2105,6 +2236,6 @@
     document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); const mobilePrevBtn=document.getElementById('mobilePrevBtn'); const mobileNextBtn=document.getElementById('mobileNextBtn'); if(mobilePrevBtn) mobilePrevBtn.addEventListener('click',goPrev); if(mobileNextBtn) mobileNextBtn.addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}if(ev.target&&ev.target.id==='restartGameBtn'&&!ev.target.disabled){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
-<script src="js/role_personalizer_v62.js?v=manometer-mobile-nav-v78"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-mobile-entryfix-v80"></script>
 </body>
 </html>

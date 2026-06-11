@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=manometer-mobile-spacing-v76">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-mobile-slider-nav-v77">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -1700,6 +1700,125 @@
     }
   }
 
+
+  /* v77 Smartphone: Sliderposition, Abstände, Weiter-Button erzwingen */
+  @media (max-width:640px){
+    .question-grid-v69{
+      gap:18px!important;
+    }
+    .question-left-v69{
+      gap:18px!important;
+    }
+    .metrics-v69{
+      margin-bottom:8px!important;
+    }
+
+    /* statischen Farbbalken über dem Slider entfernen */
+    .slider-box-v69 .range-bg::before{
+      display:none!important;
+      content:none!important;
+    }
+
+    /* Slider an die Position des entfernten Farbbalkens setzen */
+    .slider-box-v69{
+      grid-template-rows:30px 22px auto!important;
+      gap:8px!important;
+    }
+    .slider-box-v69 .range-bg{
+      grid-row:1!important;
+      height:30px!important;
+      padding:0 6px!important;
+      display:flex!important;
+      align-items:center!important;
+    }
+    .slider-box-v69 input[type=range]{
+      height:24px!important;
+      margin:0!important;
+    }
+    .slider-box-v69 input[type=range]::-webkit-slider-runnable-track{
+      height:14px!important;
+    }
+    .slider-box-v69 input[type=range]::-moz-range-track{
+      height:14px!important;
+    }
+    .tick-row-v69{
+      grid-row:2!important;
+      height:22px!important;
+      padding:0 6px!important;
+      margin:0!important;
+    }
+    .tick-row-v69::before{
+      top:0!important;
+    }
+    .tick-row-v69 .tick-pill{
+      padding-top:8px!important;
+    }
+    .req-note{
+      grid-row:3!important;
+      margin-top:0!important;
+      padding:8px 10px!important;
+    }
+
+    .question-right-v69{
+      margin-top:4px!important;
+      padding-top:14px!important;
+      gap:10px!important;
+    }
+    .question-right-v69 .list-head{
+      margin-bottom:4px!important;
+    }
+
+    /* Zurück und Weiter direkt nebeneinander unten links/rechts */
+    .bottom-nav,.nav-dock{
+      display:grid!important;
+      grid-template-columns:1fr 1fr!important;
+      grid-template-areas:
+        "back next"
+        "info info"!important;
+      column-gap:10px!important;
+      row-gap:2px!important;
+      align-items:center!important;
+      height:64px!important;
+      min-height:64px!important;
+      padding:7px 10px!important;
+    }
+    .nav-side:first-child{
+      grid-area:back!important;
+      justify-content:flex-start!important;
+      display:flex!important;
+    }
+    .nav-side:last-child{
+      grid-area:next!important;
+      justify-content:flex-end!important;
+      display:flex!important;
+      visibility:visible!important;
+    }
+    .nav-info{
+      grid-area:info!important;
+      justify-self:center!important;
+      font-size:.64rem!important;
+      line-height:1!important;
+    }
+    #prevBtn,#nextBtn{
+      display:inline-flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+      min-width:112px!important;
+      max-width:132px!important;
+      height:40px!important;
+      min-height:40px!important;
+      border-radius:999px!important;
+      align-items:center!important;
+      justify-content:center!important;
+    }
+    #nextBtn:disabled{
+      display:inline-flex!important;
+      visibility:visible!important;
+      opacity:.38!important;
+      pointer-events:auto!important;
+    }
+  }
+
 </style>
 </head>
 <body data-mode="manometer">
@@ -1728,8 +1847,8 @@
       <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
   </main>
-  <script src="js/config.js?v=manometer-mobile-spacing-v76"></script>
-  <script src="js/app.js?v=manometer-mobile-spacing-v76"></script>
+  <script src="js/config.js?v=manometer-mobile-slider-nav-v77"></script>
+  <script src="js/app.js?v=manometer-mobile-slider-nav-v77"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -1891,6 +2010,6 @@
     document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}if(ev.target&&ev.target.id==='restartGameBtn'&&!ev.target.disabled){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
-<script src="js/role_personalizer_v62.js?v=manometer-mobile-spacing-v76"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-mobile-slider-nav-v77"></script>
 </body>
 </html>

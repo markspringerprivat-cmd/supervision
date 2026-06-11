@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=presentation-linkage-v86">
+  <link rel="stylesheet" href="css/styles.css?v=group-progress-direct-edit-v87">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -63,14 +63,14 @@
       <p id="presentationInfo">Noch keine Präsentationsdaten geladen.</p>
       <div class="presentation-actions">
         <a id="presentationFinalLink" class="button presentation-open" href="presentation.html">Finale Präsentation ansehen</a>
-        <a id="presentationEditLink" class="button secondary presentation-open" href="zusammenfassung.html">Gruppenpräsentation direkt bearbeiten</a>
+        <a id="presentationEditLink" class="button secondary presentation-open" href="#" data-group-editor-link="1" style="pointer-events:none;opacity:.55">Gruppenpräsentation direkt bearbeiten</a>
         <a class="button secondary" href="index.html">Zurück zur Startseite</a>
       </div>
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=presentation-linkage-v86"></script>
-<script src="js/app.js?v=presentation-linkage-v86"></script>
+<script src="js/config.js?v=group-progress-direct-edit-v87"></script>
+<script src="js/app.js?v=group-progress-direct-edit-v87"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -210,32 +210,50 @@ function render(data){
       finalLink.textContent='Finale Präsentation ansehen';
       finalLink.style.pointerEvents='';
       finalLink.style.opacity='1';
-      editLink.href='gruppe-praesentation-bearbeiten.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber);
-      editLink.textContent='Gruppenpräsentation direkt bearbeiten';
-      editLink.style.pointerEvents='';
-      editLink.style.opacity='1';
+      setDirectEditLink(editLink,data,rowNumber,true);
     }else if(data.hasResult && rowNumber){
       document.getElementById('presentationInfo').textContent='Ein Gruppenergebnis wurde gefunden. Die Präsentation kann jetzt bearbeitet werden.';
       finalLink.href='#';
       finalLink.textContent='Noch keine finale Präsentation vorhanden';
       finalLink.style.pointerEvents='none';
       finalLink.style.opacity='.55';
-      editLink.href='gruppe-praesentation-bearbeiten.html?g='+encodeURIComponent(data.groupId||'')+'&row='+encodeURIComponent(rowNumber);
-      editLink.textContent='Gruppenpräsentation direkt bearbeiten';
-      editLink.style.pointerEvents='';
-      editLink.style.opacity='1';
+      setDirectEditLink(editLink,data,rowNumber,true);
     }else{
       document.getElementById('presentationInfo').textContent='Für diese Gruppe wurde noch kein Gruppenergebnis übermittelt. Die Präsentation kann noch nicht vorbereitet werden.';
       finalLink.href='#';
       finalLink.textContent='Noch keine Präsentation vorhanden';
       finalLink.style.pointerEvents='none';
       finalLink.style.opacity='.55';
-      editLink.href='#';
-      editLink.textContent='Präsentation noch nicht verfügbar';
-      editLink.style.pointerEvents='none';
-      editLink.style.opacity='.55';
+      setDirectEditLink(editLink,data,rowNumber,false);
     }
   }
+
+  function directGroupEditorUrl(data,rowNumber){
+    var gid=(data&&data.groupId)||groupId()||'';
+    var url='gruppe-praesentation-bearbeiten.html';
+    var qs=[];
+    if(gid) qs.push('g='+encodeURIComponent(gid));
+    if(rowNumber) qs.push('row='+encodeURIComponent(rowNumber));
+    return url+(qs.length?('?'+qs.join('&')):'');
+  }
+  function setDirectEditLink(editLink,data,rowNumber,enabled){
+    if(!editLink) return;
+    editLink.textContent=enabled?'Gruppenpräsentation direkt bearbeiten':'Präsentation noch nicht verfügbar';
+    editLink.href=enabled?directGroupEditorUrl(data,rowNumber):'#';
+    editLink.dataset.directGroupEditor=enabled?'1':'0';
+    editLink.style.pointerEvents=enabled?'':'none';
+    editLink.style.opacity=enabled?'1':'.55';
+    if(enabled){
+      editLink.onclick=function(ev){
+        ev.preventDefault();
+        ev.stopPropagation();
+        location.href=directGroupEditorUrl(data,rowNumber);
+      };
+    }else{
+      editLink.onclick=function(ev){ev.preventDefault();};
+    }
+  }
+
   async function boot(){
     var gid=groupId(); var status=document.getElementById('status');
     var url=appUrl(); if(!url){status.textContent='Keine Apps-Script-URL gefunden.';return;}
@@ -246,6 +264,6 @@ function render(data){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=presentation-linkage-v86"></script>
+<script src="js/role_personalizer_v62.js?v=group-progress-direct-edit-v87"></script>
 </body>
 </html>

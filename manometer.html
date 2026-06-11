@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manometer – Feedback</title>
-  <link rel="stylesheet" href="css/styles.css?v=presentation-editor-designfix-v67">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-clean-modern-v68">
   <style>
     :root{
       --bg1:#091528; --bg2:#122644; --bg3:#0e6a7d;
@@ -433,6 +433,277 @@
       .range-ends{order:3!important;margin-top:0!important;font-size:.8rem!important}
     }
 
+  
+    /* v68 Manometer: cleanes modernes Abfrage-Layout */
+    body[data-mode="manometer"]{
+      background:
+        radial-gradient(circle at 7% 12%, rgba(68,133,206,.24), transparent 28%),
+        radial-gradient(circle at 94% 18%, rgba(59,201,219,.14), transparent 24%),
+        linear-gradient(120deg,#0b1830 0%, #112846 52%, #0b1b33 100%)!important;
+    }
+    .shell{
+      padding:64px 24px 22px!important;
+      gap:18px!important;
+    }
+    .progress-wrap{
+      height:8px!important;
+      width:min(1380px,calc(100vw - 64px))!important;
+      background:rgba(255,255,255,.13)!important;
+      border-color:rgba(255,255,255,.16)!important;
+    }
+    .progress-bar{
+      background:linear-gradient(90deg,#7db7ff,#e8f8ff)!important;
+    }
+    .stage-wrap{
+      width:min(1380px,calc(100vw - 64px))!important;
+    }
+    .feedback-stage{
+      height:min(78vh,850px)!important;
+      min-height:620px!important;
+    }
+    .card{
+      border-radius:28px!important;
+      background:linear-gradient(180deg,#f9fbff 0%,#f4f8fc 100%)!important;
+      border:1px solid rgba(221,232,242,.92)!important;
+      box-shadow:0 28px 80px rgba(3,13,31,.28)!important;
+    }
+    .card-inner{
+      padding:28px 36px 30px!important;
+    }
+    .card-head{
+      margin-bottom:18px!important;
+      align-items:center!important;
+    }
+    .kicker{
+      padding:7px 13px!important;
+      background:#eaf2fb!important;
+      color:#244667!important;
+      font-size:.72rem!important;
+      font-weight:820!important;
+      letter-spacing:.07em!important;
+    }
+    .counter{
+      color:#66778b!important;
+      font-weight:760!important;
+      font-size:.93rem!important;
+    }
+    .question-grid{
+      grid-template-columns:minmax(0,1.04fr) minmax(340px,.96fr)!important;
+      gap:24px!important;
+    }
+    .question-left{
+      gap:14px!important;
+    }
+    .metrics{
+      grid-template-columns:118px 1fr!important;
+      gap:14px!important;
+      align-items:stretch!important;
+    }
+    .score-tile{
+      border-radius:20px!important;
+      padding:18px 16px!important;
+      min-height:104px!important;
+      box-shadow:0 16px 34px rgba(14,35,64,.16)!important;
+      align-items:flex-start!important;
+    }
+    .score-tile .value{
+      font-size:2.65rem!important;
+      font-weight:860!important;
+    }
+    .score-tile .caption{
+      font-size:.82rem!important;
+      line-height:1.24!important;
+      font-weight:800!important;
+      margin-top:7px!important;
+    }
+    .mini-stack{
+      display:flex!important;
+      align-items:stretch!important;
+    }
+    .mini-box{
+      width:100%!important;
+      border-radius:18px!important;
+      padding:0 20px!important;
+      background:#edf5fe!important;
+      border:1px solid #d6e5f4!important;
+      color:#294b70!important;
+      font-weight:760!important;
+    }
+    .panel{
+      background:rgba(255,255,255,.86)!important;
+      border:1px solid #d8e5f1!important;
+      border-radius:24px!important;
+      box-shadow:0 14px 34px rgba(15,35,61,.06)!important;
+    }
+    .slider-panel{
+      padding:22px!important;
+    }
+    .question-title{
+      color:#14233a!important;
+      font-size:clamp(1.45rem,1.9vw,2.05rem)!important;
+      font-weight:850!important;
+      line-height:1.16!important;
+      letter-spacing:-.025em!important;
+      margin:0 0 16px!important;
+      max-width:920px!important;
+    }
+    .slider-panel h3,.question-right h3{
+      color:#183a61!important;
+      font-size:1.02rem!important;
+      font-weight:820!important;
+    }
+    .slider-box{
+      border-radius:22px!important;
+      border:1px solid #dbe7f2!important;
+      background:linear-gradient(180deg,#fbfdff,#f6f9fc)!important;
+      padding:22px 24px 18px!important;
+      justify-content:center!important;
+    }
+    .range-bg{
+      padding:24px 0 8px!important;
+    }
+    .range-bg::before{
+      height:14px!important;
+      opacity:.20!important;
+    }
+    input[type=range]::-webkit-slider-runnable-track{
+      height:16px!important;
+      border-radius:999px!important;
+      border:1px solid #cfdce9!important;
+      box-shadow:inset 0 1px 2px rgba(15,23,42,.06)!important;
+    }
+    input[type=range]::-moz-range-track{
+      height:16px!important;
+      border-radius:999px!important;
+      border:1px solid #cfdce9!important;
+      box-shadow:inset 0 1px 2px rgba(15,23,42,.06)!important;
+    }
+    input[type=range]::-webkit-slider-thumb{
+      width:30px!important;
+      height:30px!important;
+      margin-top:-7px!important;
+      background:#2b62a0!important;
+      border:4px solid #fff!important;
+      box-shadow:0 8px 18px rgba(24,58,97,.22)!important;
+    }
+    input[type=range]::-moz-range-thumb{
+      width:24px!important;
+      height:24px!important;
+      background:#2b62a0!important;
+      border:4px solid #fff!important;
+      box-shadow:0 8px 18px rgba(24,58,97,.22)!important;
+    }
+    .range-ends{
+      margin-top:10px!important;
+      color:#5d7188!important;
+      font-weight:760!important;
+      font-size:.88rem!important;
+    }
+    .tick-row{
+      display:grid!important;
+      grid-template-columns:repeat(10,1fr)!important;
+      gap:8px!important;
+      margin-top:14px!important;
+      width:100%!important;
+    }
+    .tick-pill{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      min-width:0!important;
+      height:28px!important;
+      border:1px solid #d7e4f0!important;
+      border-radius:999px!important;
+      background:#fff!important;
+      color:#445f7d!important;
+      font-size:.78rem!important;
+      font-weight:800!important;
+      line-height:1!important;
+      box-shadow:0 2px 8px rgba(15,35,61,.03)!important;
+    }
+    .scale-warning,.req-note{
+      border-radius:14px!important;
+      border:1px solid #f4c7ad!important;
+      background:#fff7f1!important;
+      color:#9a3412!important;
+      font-size:.88rem!important;
+      line-height:1.45!important;
+      font-weight:620!important;
+    }
+    .question-right{
+      padding:22px!important;
+      background:linear-gradient(180deg,#fff,#f9fbfe)!important;
+    }
+    .list-head{
+      margin-bottom:14px!important;
+    }
+    .list-head h3{
+      font-size:1.04rem!important;
+      letter-spacing:-.01em!important;
+    }
+    .add-btn{
+      padding:10px 16px!important;
+      background:#2d67a6!important;
+      box-shadow:0 10px 22px rgba(43,98,160,.18)!important;
+    }
+    .entry-list{
+      gap:12px!important;
+      padding-right:2px!important;
+    }
+    .entry-row{
+      grid-template-columns:1fr 42px!important;
+      gap:10px!important;
+    }
+    .entry-row textarea,.entry-row input,.llm-input{
+      border-radius:18px!important;
+      border:1px solid #cfdce9!important;
+      background:#fff!important;
+      padding:15px 16px!important;
+      box-shadow:0 6px 18px rgba(15,35,61,.035)!important;
+    }
+    .entry-row textarea{
+      min-height:82px!important;
+    }
+    .entry-row textarea:focus,.entry-row input:focus,.llm-input:focus{
+      outline:4px solid rgba(45,103,166,.12)!important;
+      border-color:#8ab4df!important;
+    }
+    .remove-entry{
+      width:40px!important;
+      height:40px!important;
+      border-radius:50%!important;
+      background:#fff!important;
+      border:1px solid #dbe6f0!important;
+      color:#b42318!important;
+      box-shadow:0 6px 16px rgba(15,35,61,.04)!important;
+    }
+    .bottom-nav{
+      width:min(1380px,calc(100vw - 64px))!important;
+      margin:0 auto!important;
+      border-radius:22px!important;
+      background:rgba(38,55,82,.74)!important;
+      border:1px solid rgba(255,255,255,.14)!important;
+      backdrop-filter:blur(18px)!important;
+      box-shadow:0 18px 52px rgba(0,0,0,.18)!important;
+    }
+    .primary-btn,.secondary-btn{
+      border-radius:999px!important;
+      font-weight:820!important;
+    }
+    @media(max-width:960px){
+      .shell{padding:18px 12px!important}
+      .progress-wrap,.stage-wrap,.bottom-nav{width:calc(100vw - 24px)!important}
+      .feedback-stage{height:auto!important;min-height:calc(100dvh - 150px)!important}
+      .card{position:relative!important;min-height:calc(100dvh - 150px)!important}
+      .card-inner{padding:20px!important}
+      .question-grid,.intro-grid,.text-grid{grid-template-columns:1fr!important}
+      .metrics{grid-template-columns:96px 1fr!important}
+      .score-tile{min-height:92px!important}
+      .question-title{font-size:1.35rem!important}
+      .tick-row{gap:5px!important}
+      .tick-pill{height:24px!important;font-size:.72rem!important}
+    }
+
   </style>
 </head>
 <body data-mode="manometer">
@@ -461,8 +732,8 @@
       <div class="nav-side" style="justify-content:flex-end"></div>
     </div>
   </main>
-  <script src="js/config.js?v=presentation-editor-designfix-v67"></script>
-  <script src="js/app.js?v=presentation-editor-designfix-v67"></script>
+  <script src="js/config.js?v=manometer-clean-modern-v68"></script>
+  <script src="js/app.js?v=manometer-clean-modern-v68"></script>
   <script>
   (function(){
     const QUESTIONS = [
@@ -528,22 +799,22 @@
           <div class="question-grid">
             <div class="question-left">
               <div class="metrics">
-                <div class="score-tile" data-color-for="${question.key}"><div class="value" data-value-for="${question.key}">5</div><div class="caption">Bewertung von 10</div></div>
-                <div class="mini-stack"><div class="mini-box">Skala von 1 = gar nicht bis 10 = vollständig.</div></div>
+                <div class="score-tile" data-color-for="${question.key}"><div class="value" data-value-for="${question.key}">5</div><div class="caption">von 10 Punkten</div></div>
+                <div class="mini-stack"><div class="mini-box">1 = gar nicht · 10 = vollständig</div></div>
               </div>
               <div class="panel slider-panel">
                 <h2 class="question-title" style="font-size:clamp(1.25rem,1.75vw,1.85rem);font-weight:650;margin:0 0 14px">${escapeHtml(question.label)}</h2>
-                <h3>Deine Punktevergabe</h3>
+                <h3>Bewertung</h3>
                 <div class="slider-box">
                   <div class="range-bg"><input data-scale-key="${question.key}" id="${question.key}" type="range" min="1" max="10" step="1" value="5"></div>
                   <div class="range-ends"><span>1 · gar nicht</span><span>10 · vollständig</span></div>
                   <div class="tick-row">${tickPills}</div>
-                  <div class="req-note" data-required-note="${question.key}">Bei weniger als zehn Punkten ist mindestens ein Kritik- oder Verbesserungseintrag erforderlich.</div>
+                  <div class="req-note" data-required-note="${question.key}">Bei weniger als 10 Punkten ist mindestens ein konkreter Kritik- oder Verbesserungshinweis erforderlich.</div>
                 </div>
               </div>
             </div>
             <div class="panel question-right">
-              <div class="list-head"><h3>Kritik / Verbesserungsvorschläge</h3><button type="button" class="add-btn" data-add-entry="${question.key}">+ Eintrag</button></div>
+              <div class="list-head"><h3>Kritik und Verbesserungsvorschläge</h3><button type="button" class="add-btn" data-add-entry="${question.key}">+ Eintrag</button></div>
               <div class="entry-list" data-entry-list="${question.key}"></div>
             </div>
           </div>
@@ -625,6 +896,6 @@
     document.getElementById('prevBtn').addEventListener('click',goPrev); document.getElementById('nextBtn').addEventListener('click',goNext); document.getElementById('arrowPrev').addEventListener('click',goPrev); document.getElementById('arrowNext').addEventListener('click',goNext); document.getElementById('manometerForm').addEventListener('submit',(ev)=>{ev.preventDefault(); if(validateStep(steps[current])) saveFeedback()}); document.addEventListener('click',(ev)=>{if(ev.target&&ev.target.id==='startGameBtn'){ev.preventDefault();startGame();}if(ev.target&&ev.target.id==='restartGameBtn'&&!ev.target.disabled){ev.preventDefault();startGame();}}); document.addEventListener('keydown',(ev)=>{if(steps[current]?.dataset.step==='submit'&& !document.getElementById('submitGame').classList.contains('hidden')) return; if(ev.key==='ArrowRight'||ev.key==='PageDown'){ev.preventDefault(); goNext()} if(ev.key==='ArrowLeft'||ev.key==='PageUp'){ev.preventDefault(); goPrev()}}); if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
   })();
   </script>
-<script src="js/role_personalizer_v62.js?v=presentation-editor-designfix-v67"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-clean-modern-v68"></script>
 </body>
 </html>

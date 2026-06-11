@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=supervisor-logic-colors-v111">
+  <link rel="stylesheet" href="css/styles.css?v=manometer-thanks-slide-beige-v113">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -41,7 +41,7 @@
 
     .scale-slide-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);gap:22px;align-items:stretch;min-height:0;flex:1;height:100%;overflow:hidden}.scale-panel,.feedback-panel{border:1px solid rgba(216,227,239,.95);border-radius:24px;background:linear-gradient(180deg,#fff,#f7fbff);box-shadow:0 14px 34px rgba(15,23,42,.07);padding:20px;min-height:0;height:100%;align-self:stretch}.scale-panel{display:grid;grid-template-rows:166px minmax(0,1fr);gap:18px;overflow:hidden}.feedback-panel{display:flex;flex-direction:column;overflow:hidden}.modern-metric{display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:stretch;min-height:0}
     .avg-tile{border-radius:24px;background:linear-gradient(145deg,#ff1744,#ff6d00);color:#fff;padding:20px;min-height:0;height:100%;display:flex;flex-direction:column;justify-content:center;box-shadow:0 18px 34px rgba(31,75,122,.22);transition:background 1s ease}.avg-tile strong{font-size:3.35rem;line-height:1;font-weight:950}.avg-tile span{font-weight:850;color:rgba(255,255,255,.9);margin-top:8px}.mini-stats{display:grid;grid-template-columns:1fr;gap:10px}.mini-stat{border-radius:18px;background:#eef6ff;border:1px solid #d7e6f5;padding:14px 16px;color:#1f426b;font-weight:900;opacity:0;transform:translateY(16px)}.mini-stat span{display:block;color:#64758a;font-weight:750;font-size:.86rem;margin-top:4px}.slide.play .mini-stat{animation:rise .7s ease forwards}.slide.play .mini-stat:nth-child(2){animation-delay:.24s}
-    .scale-viz{position:relative;border:1px solid #d9e5f1;border-radius:24px;padding:18px 16px 14px;background:radial-gradient(circle at top left,rgba(111,168,220,.14),transparent 36%),linear-gradient(180deg,#fbfdff,#f3f8fd);min-height:0;height:100%;overflow:hidden;display:flex;flex-direction:column}.scale-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}.scale-title{font-weight:950;color:#1b3f67}.distribution{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:8px;align-items:stretch;min-height:0;height:100%;padding:14px 4px 0;border-top:1px solid #e3ebf4;margin-top:12px;overflow:hidden}.column{height:100%;min-width:0;display:grid;grid-template-rows:22px minmax(0,1fr) 24px;align-items:stretch;justify-items:center;gap:6px;overflow:hidden}.stripe-stack{width:100%;height:100%;min-height:0;display:flex;flex-direction:column-reverse;align-items:stretch;justify-content:flex-start;gap:3px;padding:6px;border-radius:18px;background:linear-gradient(180deg,rgba(234,242,251,.18),rgba(234,242,251,.85));border:1px solid #e1ebf5;overflow:hidden}.stripe{height:4px;min-height:4px;border-radius:999px;opacity:0;transform:scaleX(.2);transform-origin:left center;box-shadow:0 1px 5px rgba(0,0,0,.18)}.slide.play .stripe{animation:growStripe .42s ease forwards}.tick{width:28px;height:24px;display:grid;place-items:center;border-radius:999px;background:#fff;border:1px solid #dbe6f2;font-weight:950;color:#33516f;font-size:.86rem}.count-badge{display:grid;place-items:center;min-width:26px;height:22px;border-radius:999px;background:#e8f1fb;color:#285b91;font-weight:950;font-size:.78rem}
+    .scale-viz{position:relative;border:1px solid #d9e5f1;border-radius:24px;padding:18px 16px 14px;background:radial-gradient(circle at top left,rgba(111,168,220,.14),transparent 36%),linear-gradient(180deg,#fbfdff,#f3f8fd);min-height:0;height:100%;overflow:hidden;display:flex;flex-direction:column}.scale-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}.scale-title{font-weight:950;color:#1b3f67}.distribution{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:8px;align-items:stretch;min-height:0;height:100%;padding:14px 4px 0;border-top:1px solid #e3ebf4;margin-top:12px;overflow:hidden}.column{height:100%;min-width:0;display:grid;grid-template-rows:22px minmax(0,1fr) 24px;align-items:stretch;justify-items:center;gap:6px;overflow:hidden}.stripe-stack{width:100%;height:100%;min-height:0;display:flex;flex-direction:column-reverse;align-items:stretch;justify-content:flex-start;gap:3px;padding:6px;border-radius:18px;background:linear-gradient(180deg,rgba(234,242,251,.18),rgba(234,242,251,.85));border:1px solid #e1ebf5;overflow:hidden}.stripe-stack .stripe-fill{height:calc(var(--fill-ratio,0) * 100%);min-height:calc(var(--fill-ratio,0) * 100%);display:flex;flex-direction:column-reverse;align-items:stretch;justify-content:space-between;gap:3px}.stripe{flex:1 1 0;min-height:3px;border-radius:999px;opacity:0;transform:scaleX(.2);transform-origin:left center;box-shadow:0 1px 5px rgba(0,0,0,.18)}.slide.play .stripe{animation:growStripe .42s ease forwards}.tick{width:28px;height:24px;display:grid;place-items:center;border-radius:999px;background:#fff;border:1px solid #dbe6f2;font-weight:950;color:#33516f;font-size:.86rem}.count-badge{display:grid;place-items:center;min-width:26px;height:22px;border-radius:999px;background:#e8f1fb;color:#285b91;font-weight:950;font-size:.78rem}
     .feedback-panel h3,.text-block h3,.comments h3{margin:0 0 12px;font-size:1.06rem;color:#193557}.comment-list,.text-card-list{display:grid;gap:10px}.feedback-panel .comment-list{overflow:auto;padding-right:4px;min-height:0;flex:1;align-content:start}.comment,.text-entry{border-radius:16px;padding:14px 16px;background:#fff;border:1px solid #dfe8f1;color:#20344c;white-space:pre-wrap;line-height:1.5;box-shadow:0 8px 20px rgba(15,23,42,.045);opacity:0;transform:translateY(-16px)}.slide.play .comment,.slide.play .text-entry{animation:dropIn .7s ease forwards}.empty{color:var(--muted);font-style:italic;margin:0}
     .comments{margin-top:18px}.general-feedback-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;min-height:0;flex:1}.general-feedback-column{border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,#fff,#f8fbff);padding:18px;min-height:0;overflow:auto}.general-feedback-column h3{margin:0 0 12px;color:#193557}.choice-grid{position:relative;display:grid;grid-template-columns:repeat(2,minmax(160px,260px));gap:46px;align-items:end;justify-content:center;min-height:0;flex:1;height:100%;padding:22px 0 10px}
     .choice-bar-card{background:transparent;border:none;border-radius:0;padding:0;box-shadow:none;display:grid;grid-template-rows:1fr auto;gap:12px;min-height:0;height:100%}
@@ -135,7 +135,34 @@
     }
 
     @media (max-width:980px){.hero-grid,.scale-slide-grid,.modern-metric,.general-feedback-grid,.summary-grid{grid-template-columns:1fr}.scale-slide-grid{overflow:auto}.feedback-panel{max-height:none;min-height:360px}.scale-panel{min-height:520px}}@media (max-width:720px){.results-shell{padding:14px;gap:14px}.topbar,.nav-dock{border-radius:20px}.topbar{flex-direction:column;align-items:flex-start}.topbar-right,.nav-left,.nav-right{width:100%}.nav-dock{flex-direction:column;align-items:stretch}.nav-center{text-align:center}.slide-inner{padding:24px 20px 20px}.deck{height:74vh;min-height:560px}.summary-grid,.choice-grid{grid-template-columns:1fr}.hero-panel,.hero-side,.scale-panel,.feedback-panel{padding:18px}}
-  </style>
+  
+/* v113: Abschlussfolie durchgehend hell-beige statt mittigem Farbverlauf */
+.slide.thanks-slide,
+.slide.final-thanks-slide,
+.slide[data-card="thanks"],
+.slide[data-card="abschluss"]{
+  background:#f4f2ee!important;
+}
+.slide.thanks-slide .slide-inner,
+.slide.final-thanks-slide .slide-inner,
+.slide[data-card="thanks"] .slide-inner,
+.slide[data-card="abschluss"] .slide-inner{
+  background:#f4f2ee!important;
+  background-image:none!important;
+}
+.slide.thanks-slide::before,
+.slide.final-thanks-slide::before,
+.slide[data-card="thanks"]::before,
+.slide[data-card="abschluss"]::before,
+.slide.thanks-slide .slide-inner::before,
+.slide.final-thanks-slide .slide-inner::before,
+.slide[data-card="thanks"] .slide-inner::before,
+.slide[data-card="abschluss"] .slide-inner::before{
+  background:none!important;
+  background-image:none!important;
+}
+
+</style>
 </head>
 <body data-mode="manometer-results">
 <div id="loadingScreen" class="loading-screen"><div class="loading-card"><h2>Auswertung wird geladen</h2><p>Die Präsentation wird vorbereitet.</p><div class="loading-track"><div id="loadingFill" class="loading-fill"></div></div><div id="loadingStatus" class="loading-status">Daten werden geladen …</div></div></div>
@@ -154,8 +181,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=supervisor-logic-colors-v111"></script>
-<script src="js/app.js?v=supervisor-logic-colors-v111"></script>
+<script src="js/config.js?v=manometer-thanks-slide-beige-v113"></script>
+<script src="js/app.js?v=manometer-thanks-slide-beige-v113"></script>
 <script>
 (function(){
   var QUESTIONS=[
@@ -253,15 +280,18 @@
     var cols='',stripeCounter=0;
     for(var d=1;d<=10;d++){
       var n=counts[d]||0;
-      var scaled=Math.round((n/maxBucketCount)*totalStripes);
+      var fillRatio=maxBucketCount?Math.max(0,Math.min(1,n/maxBucketCount)):0;
+      var scaled=Math.round(fillRatio*totalStripes);
       if(n>0&&scaled<1)scaled=1;
+      if(fillRatio>=0.999)scaled=totalStripes;
       if(scaled>totalStripes)scaled=totalStripes;
-      cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack">';
+      cols+='<div class="column"><div class="count-badge">'+n+'</div><div class="stripe-stack" style="--fill-ratio:'+fillRatio.toFixed(4)+'"><div class="stripe-fill">';
       for(var s=0;s<scaled;s++){
-        cols+='<span class="stripe" style="background:'+stripeColor(s)+';animation-delay:'+(0.12+stripeCounter*0.045).toFixed(3)+'s"></span>';
+        var colorIndex=Math.max(0,Math.min(totalStripes-1,Math.round((s/Math.max(1,scaled-1))*(totalStripes-1))));
+        cols+='<span class="stripe" style="background:'+stripeColor(colorIndex)+';animation-delay:'+(0.12+stripeCounter*0.045).toFixed(3)+'s"></span>';
         stripeCounter++;
       }
-      cols+='</div><div class="tick">'+d+'</div></div>';
+      cols+='</div></div><div class="tick">'+d+'</div></div>';
     }
     var comments=listPreviewHtml('Kritik / Verbesserungsvorschläge', improvements, 'Keine Verbesserungsvorschläge oder Kritik zu dieser Frage vorhanden.');
     return '<article class="slide" data-card="scale"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(q.category)+'</span><h2>'+escapeHtml(q.label)+'</h2></div><div class="slide-counter">Frage '+(idx+1)+' von '+QUESTIONS.length+'</div></div><div class="scale-slide-grid"><section class="scale-panel"><div class="modern-metric"><div class="avg-tile" data-color-target="'+(av===null?0:av.toFixed(1))+'"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt von 10</span></div><div class="mini-stats"><div class="mini-stat"><strong data-countto="'+(av===null?'0':av.toFixed(1))+'">0.0</strong><span>Durchschnitt</span></div><div class="mini-stat"><strong data-countto="'+vals.length+'">0</strong><span>Antworten</span></div></div></div><div class="scale-viz"><div class="scale-head"><div class="scale-title">Punkteverteilung</div></div><div class="distribution">'+cols+'</div></div></section><aside class="feedback-panel"><h3>Kritik / Verbesserungsvorschläge</h3><div class="comment-list">'+comments+'</div></aside></div></div></article>'
@@ -271,7 +301,7 @@
   function renderGeneralFeedbackCard(entries){function list(kind,title){var items=[];entries.forEach(function(e){items=items.concat(splitGeneralFeedback(e,kind));});return listPreviewHtml(title,items,'Keine Einträge vorhanden.')}return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">Offene Antworten</span><h2>Allgemeines Lob, Kritik und Anregungen</h2></div><div class="slide-counter">Optional</div></div><div class="general-feedback-grid"><section class="general-feedback-column"><h3>Lob</h3>'+list('praise','Lob')+'</section><section class="general-feedback-column"><h3>Kritik</h3>'+list('criticism','Kritik')+'</section><section class="general-feedback-column"><h3>Anregungen</h3>'+list('suggestions','Anregungen')+'</section></div></div></article>'}
   function renderChoiceCard(title,kicker,entries,key){var yes=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e[key]||'').toLowerCase()==='nein'}).length,total=Math.max(yes+no,1),yesPct=Math.round((yes/total)*100),noPct=Math.round((no/total)*100);return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">'+escapeHtml(kicker)+'</span><h2>'+escapeHtml(title)+'</h2></div><div class="slide-counter">'+(yes+no)+' Antworten</div></div><div class="choice-grid"><div class="choice-total">Gesamt: '+(yes+no)+'</div><section class="choice-bar-card yes"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+yesPct+'%"></div></div></div><div class="choice-axis"><span>Ja: '+yes+'</span><span class="pct">'+yesPct+'%</span></div></section><section class="choice-bar-card no"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+noPct+'%"></div></div></div><div class="choice-axis"><span>Nein: '+no+'</span><span class="pct">'+noPct+'%</span></div></section></div></div></article>'}
   function renderLlmCard(entries){var yes=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='ja'}).length,no=entries.filter(function(e){return String(e.llmUsed||'').toLowerCase()==='nein'}).length,total=Math.max(yes+no,1),yesPct=Math.round((yes/total)*100),noPct=Math.round((no/total)*100);return '<article class="slide"><div class="slide-inner"><div class="slide-head"><div><span class="slide-label">KI / LLM</span><h2>Wurde ChatGPT oder ein anderes LLM verwendet?</h2></div><div class="slide-counter">'+(yes+no)+' Antworten</div></div><div class="choice-grid"><div class="choice-total">Gesamt: '+(yes+no)+'</div><section class="choice-bar-card yes"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+yesPct+'%"></div></div></div><div class="choice-axis"><span>Ja: '+yes+'</span><span class="pct">'+yesPct+'%</span></div></section><section class="choice-bar-card no"><div class="choice-stage"><div class="choice-track"><div class="choice-fill" style="--target-height:'+noPct+'%"></div></div></div><div class="choice-axis"><span>Nein: '+no+'</span><span class="pct">'+noPct+'%</span></div></section></div></div></article>'}
-  function renderThanksCard(){var colors=['#5c95d1','#00c853','#ffd600','#ff6d00','#ff1744','#7048e8'],pieces='';for(var i=0;i<52;i++){pieces+='<span class="confetti-piece" style="left:'+(Math.random()*100).toFixed(2)+'%;background:'+colors[i%colors.length]+';animation-delay:'+(Math.random()*2.4).toFixed(2)+'s;animation-duration:'+(3.2+Math.random()*2.2).toFixed(2)+'s;--drift:'+((-60+Math.random()*120).toFixed(1))+'px"></span>'}return '<article class="slide thanks-slide"><div class="slide-inner"><div class="confetti-layer">'+pieces+'</div><span class="slide-label">Abschluss</span><h2>Vielen Dank für eure Teilnahme.</h2><p>Die anonyme Manometer-Auswertung ist abgeschlossen. Ihr könnt die Präsentation jetzt beenden oder zur Startseite zurückkehren.</p></div></article>'}
+  function renderThanksCard(){var colors=['#5c95d1','#00c853','#ffd600','#ff6d00','#ff1744','#7048e8'],pieces='';for(var i=0;i<52;i++){pieces+='<span class="confetti-piece" style="left:'+(Math.random()*100).toFixed(2)+'%;background:'+colors[i%colors.length]+';animation-delay:'+(Math.random()*2.4).toFixed(2)+'s;animation-duration:'+(3.2+Math.random()*2.2).toFixed(2)+'s;--drift:'+((-60+Math.random()*120).toFixed(1))+'px"></span>'}return '<article class="slide thanks-slide" data-card="thanks"><div class="slide-inner"><div class="confetti-layer">'+pieces+'</div><span class="slide-label">Abschluss</span><h2>Vielen Dank für eure Teilnahme.</h2><p>Die anonyme Manometer-Auswertung ist abgeschlossen. Ihr könnt die Präsentation jetzt beenden oder zur Startseite zurückkehren.</p></div></article>'}
   function render(data){var entries=(data&&data.entries)||[];document.getElementById('responseCount').textContent=entries.length;var html=renderCover();QUESTIONS.forEach(function(q,i){html+=renderScale(q,entries,i)});html+=renderGeneralFeedbackCard(entries);html+=renderChoiceCard('Die Aussicht auf eine verbindliche Präsentation nach dem Zufallsprinzip hat meine extrinsische Motivation zur Bearbeitung der Aufgaben gesteigert.','Zufallspräsentation',entries,'presentationMotivation');html+=renderChoiceCard('Wurde manchmal volle Punktzahl gewählt, um die Pflichtangabe bei der Kritik zu vermeiden?','Zusatzfrage',entries,'avoidCriticism');html+=renderLlmCard(entries);html+=renderOverview(data);html+=renderThanksCard();deck.innerHTML=html;cards=Array.prototype.slice.call(deck.querySelectorAll('.slide'));cards.forEach(function(card){card.getBoundingClientRect()});setActive(0);statusEl.textContent='Auswertung geladen.'}
   function updateProgress(){if(!cards.length)return;progressBar.style.width=(((current+1)/cards.length)*100)+'%';slideCounter.textContent='Kachel '+(current+1)+' / '+cards.length}
   function animateCount(el){
@@ -374,6 +404,6 @@
   document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
-<script src="js/role_personalizer_v62.js?v=supervisor-logic-colors-v111"></script>
+<script src="js/role_personalizer_v62.js?v=manometer-thanks-slide-beige-v113"></script>
 </body>
 </html>

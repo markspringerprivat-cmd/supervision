@@ -9,11 +9,11 @@
     html,body{margin:0;height:100%;overflow:hidden;background:#071323;color:#fff;font-family:"Aptos","Segoe UI Variable","Segoe UI",Roboto,Arial,sans-serif}
     body{position:relative}
     .presenter{position:fixed;inset:0;background:radial-gradient(circle at 12% 18%,rgba(60,120,190,.28),transparent 30%),#071323;overflow:hidden}
-    .stage{position:fixed;inset:18px;overflow:hidden;display:grid;place-items:center}
+    .stage{position:fixed;inset:6px;overflow:hidden;display:grid;place-items:center}
     .slide{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:translateX(70px) scale(.988);transition:opacity .32s ease,transform .42s cubic-bezier(.18,.82,.22,1);pointer-events:none}
     .slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
     .slide.prev{opacity:0;transform:translateX(-70px) scale(.988)}
-    .slide img{max-width:98.2vw;max-height:96.8vh;width:auto;height:auto;border-radius:18px;box-shadow:0 30px 96px rgba(0,0,0,.45);background:#fff}
+    .slide img{max-width:99.6vw;max-height:99.1vh;width:auto;height:auto;border-radius:14px;box-shadow:0 30px 96px rgba(0,0,0,.45);background:#fff}
     .fullscreen-hint{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-18px);z-index:50;opacity:0;pointer-events:none;background:rgba(7,19,35,.94);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 44px rgba(0,0,0,.26);color:#fff;border-radius:999px;padding:11px 18px;font-weight:800;letter-spacing:.01em;transition:opacity .28s ease,transform .28s ease}
     .fullscreen-hint.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .start-overlay{position:fixed;right:18px;bottom:18px;z-index:40;display:flex;gap:10px;transition:opacity .25s ease,transform .25s ease}
@@ -22,8 +22,8 @@
     button.primary{background:#2f6fb0;color:#fff}
     a.light{background:#eef4fb;color:#10223a}
     @media(max-width:760px){
-      .stage{inset:10px}
-      .slide img{max-width:99vw;max-height:98vh;border-radius:12px}
+      .stage{inset:4px}
+      .slide img{max-width:99.7vw;max-height:99.2vh;border-radius:10px}
       .fullscreen-hint{width:calc(100vw - 28px);text-align:center;border-radius:18px}
     }
   </style>

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v28-clean-present">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v30-admin-results-delete">
   <style>
     :root{
       --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
@@ -36,6 +36,33 @@
     .admin-mini-card.results{border-color:var(--yellow)}
     .admin-mini-card.mano{border-color:var(--green)}
     .admin-actions{display:grid;gap:8px;margin-top:10px}
+
+    .admin-actions a.button,
+    .admin-actions button{
+      width:100%;
+      min-height:44px;
+      display:flex!important;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      margin:0;
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:800;
+      box-sizing:border-box;
+    }
+    .admin-actions .secondary,
+    .admin-actions .button{
+      background:#2f5f97!important;
+      color:#fff!important;
+      border:0!important;
+    }
+    .admin-actions .danger-soft{
+      background:#eef3f8!important;
+      color:#8a1f1f!important;
+      border:1px solid #efc5c5!important;
+    }
+
     .admin-actions button,.admin-actions a{width:100%;justify-content:center}
     .small-status{font-size:.82rem;color:#607187;margin:6px 0 0;line-height:1.35}
 .landing-card.main-action-card{
@@ -106,6 +133,15 @@
 <aside class="admin-side-panel" aria-label="Admin-Panel">
   <h3>Admin-Panel</h3>
   <a class="admin-mini-card group" href="gruppenzuweisung.html" data-admin-required="true"><strong>Gruppenzuweisung</strong><small>Teilnehmende und Gruppen verwalten.</small></a>
+  <div class="admin-mini-card results" data-admin-required="true">
+    <strong>Ergebnisse / Roulette</strong>
+    <small>Normale Ergebnisübersicht, Zufallsauswahl und Ergebnisdaten verwalten.</small>
+    <div class="admin-actions">
+      <a class="button" href="ergebnisse.html">Ergebnisse öffnen</a>
+      <button id="deleteMainResultsBtn" type="button" class="secondary danger-soft">Alle Ergebnis-Einträge löschen</button>
+    </div>
+    <p id="deleteMainResultsStatus" class="small-status" aria-live="polite"></p>
+  </div>
   <a class="admin-mini-card results" href="admin-gruppen.html" data-admin-required="true"><strong>Gruppenergebnisse</strong><small>Alle Gruppen, Fortschritt, Abgaben und Präsentationen im Überblick.</small></a>
   <div class="admin-mini-card mano" data-admin-required="true">
     <strong>Manometer-Ergebnisse</strong>
@@ -149,11 +185,11 @@
 
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
 
-<script src="js/config.js?v=landing-v28-clean-present"></script>
-<script src="js/app.js?v=landing-v28-clean-present"></script>
-<script src="js/roles_flow_patch.js?v=landing-v28-clean-present"></script>
+<script src="js/config.js?v=landing-v30-admin-results-delete"></script>
+<script src="js/app.js?v=landing-v30-admin-results-delete"></script>
+<script src="js/roles_flow_patch.js?v=landing-v30-admin-results-delete"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=landing-v28-clean-present"></script>
+<script src="js/guided_flow_patch.js?v=landing-v30-admin-results-delete"></script>
 
 <script>
 (function(){
@@ -237,6 +273,7 @@
       if(!res||res.ok===false) throw new Error((res&&res.error)||'Aktion fehlgeschlagen.');
       if(action==='deleteManometerFeedbackAll' && res.type!=='deleteManometerFeedbackAll') throw new Error('Falscher Apps-Script-Endpunkt.');
       if(action==='resetManometerDeviceIds' && res.type!=='resetManometerDeviceIds') throw new Error('Falscher Apps-Script-Endpunkt.');
+      if(action==='deleteMainResultsAll' && res.type!=='deleteMainResultsAll') throw new Error('Falscher Apps-Script-Endpunkt.');
       status.textContent=okText+' '+(res.deletedRows!==undefined?('Gelöschte Zeilen: '+res.deletedRows+'.'):(res.clearedRows!==undefined?('Freigegebene IDs: '+res.clearedRows+'.'):''));
       try{ if(action==='resetManometerDeviceIds'||action==='deleteManometerFeedbackAll') localStorage.removeItem('manometer_voted_global_v2'); }catch(_){}
     }catch(err){status.textContent='Fehler: '+err.message;}
@@ -247,6 +284,8 @@
     if(del) del.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); if(confirm('Wirklich alle Manometer-Feedbackeinträge löschen?')) callManometerAdmin('deleteManometerFeedbackAll','deleteManometerFeedbackStatus','Alle Manometer-Feedbackeinträge wurden gelöscht.');});
     var reset=document.getElementById('resetManometerDevicesBtn');
     if(reset) reset.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('resetManometerDeviceIds','resetManometerDevicesStatus','Hardware-IDs wurden freigegeben.');});
+    var delResults=document.getElementById('deleteMainResultsBtn');
+    if(delResults) delResults.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); if(confirm('Wirklich alle normalen Ergebnis-Einträge löschen?')) callManometerAdmin('deleteMainResultsAll','deleteMainResultsStatus','Alle normalen Ergebnis-Einträge wurden gelöscht.');});
   });
 })();
 </script>

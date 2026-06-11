@@ -213,6 +213,24 @@
   }
   function patternSize(kind){ if(kind==='dots') return '28px 28px'; if(kind==='grid') return '36px 36px'; if(kind==='diagonal') return '34px 34px'; if(kind==='waves') return '64px 32px'; return 'auto'; }
   function layoutFor(id,type){ return Object.assign({}, defaultLayout(type, slideIndex), isObj(state.layout[id]) ? state.layout[id] : {}); }
+
+  function textFitFontSizeV106(text, layout){
+    const s = String(text == null ? '' : text);
+    const base = Math.max(8, Math.min(72, Number(layout.fontSize || 18) || 18));
+    const wPct = Math.max(1, Number(layout.w || layout.width || 20) || 20);
+    const hPct = Math.max(1, Number(layout.h || layout.height || 10) || 10);
+    const chars = Math.max(1, s.replace(/\s+/g,' ').trim().length);
+    const lines = Math.max(1, s.split(/\n/).length);
+    const approxCharsPerLine = Math.max(1, Math.floor((wPct / 100 * 1600) / (base * 0.58)));
+    const estimatedLines = Math.max(lines, Math.ceil(chars / approxCharsPerLine));
+    const allowedByHeight = Math.floor((hPct / 100 * 900) / (estimatedLines * 1.08));
+    const allowedByWidth = Math.floor((wPct / 100 * 1600) / Math.max(1, Math.min(chars, approxCharsPerLine) * 0.58));
+    return Math.max(8, Math.min(base, allowedByHeight || base, allowedByWidth || base, 56));
+  }
+  function textFitStyleV106(text, layout){
+    return '--v6-fit-font-size:' + textFitFontSizeV106(text, layout) + 'px;';
+  }
+
   function styleFor(l){
     return `left:${num(l.x,0)}%;top:${num(l.y,0)}%;width:${num(l.w ?? l.width,20)}%;height:${num(l.h ?? l.height,10)}%;transform:rotate(${num(l.rot ?? l.rotation,0)}deg);z-index:${num(l.z ?? l.zIndex,20)};font-size:${num(l.fontSize,18)}px;${l.color ? `color:${esc(l.color)};` : ''}`;
   }
@@ -228,14 +246,17 @@
     const l2 = Object.assign({}, l, {color});
     let content = '';
     if(e.type === 'table') content = renderTable(e.table, state.values);
-    else if(e.type === 'thanks') content = `<div class="v6-editable-text">${esc(state.text[elementKey(e.id)] ?? e.html)}</div>`;
+    else if(e.type === 'thanks') {
+      const txt = state.text[elementKey(e.id)] ?? e.html;
+      content = `<div class="v6-editable-text" style="${textFitStyleV106(txt, l2)}">${esc(txt)}</div>`;
+    }
     else {
-      const t = state.text[elementKey(e.id)] !== undefined ? state.text[elementKey(e.id)] : (e.field ? valueText(state.values[e.field]) : e.html);
-      content = `<div class="v6-editable-text">${esc(t)}</div>`;
+      const txt = state.text[elementKey(e.id)] !== undefined ? state.text[elementKey(e.id)] : (e.field ? valueText(state.values[e.field]) : e.html);
+      content = `<div class="v6-editable-text" style="${textFitStyleV106(txt, l2)}">${esc(txt)}</div>`;
     }
     return `<div class="v6-el v6-base v6-type-${esc(e.type)}" data-v6-id="${esc(e.id)}" style="${styleFor(l2)}">${content}</div>`;
   }
-  function renderTextbox(tb){ return `<div class="v6-el v6-textbox" style="${styleFor(Object.assign({}, defaultLayout('textbox',slideIndex), tb))}"><div class="v6-editable-text">${esc(tb.text || '')}</div></div>`; }
+  function renderTextbox(tb){ const l=Object.assign({}, defaultLayout('textbox',slideIndex), tb); const txt=tb.text || ''; return `<div class="v6-el v6-textbox" style="${styleFor(l)}"><div class="v6-editable-text" style="${textFitStyleV106(txt, l)}">${esc(txt)}</div></div>`; }
   function renderSticker(st){ return `<div class="v6-el v6-sticker" style="${styleFor(Object.assign({}, defaultLayout('sticker',slideIndex), st))}"><img src="${esc(st.src)}" alt=""></div>`; }
   function applyTheme(){
     const s = Object.assign({}, THEME_DEFAULT, state.settings || {});

@@ -5391,3 +5391,99 @@ body[data-mode="rolecard"] .role-card-case .notice{font-weight:800}
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* v106: Text in Präsentationsfeldern automatisch an Rahmen anpassen */
+.v6-el{overflow:visible!important}
+.v6-editable-text{
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  overflow:visible!important;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.v6-textbox .v6-editable-text,
+.v6-base .v6-editable-text{
+  font-size:var(--v6-fit-font-size, inherit)!important;
+  line-height:1.05!important;
+}
+.v6-textbox{min-height:6%!important}
+
+
+/* v107: kompakte Simulationskarten und gleichhohe Spalten */
+.compact-phase-layout.two-col,
+.equal-phase-layout.two-col,
+.protocol-task-grid,
+.supervisor-protocol-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:stretch!important;
+  gap:16px!important;
+}
+.equal-fill-card,
+.compact-phase-layout>.card,
+.protocol-task-grid>.card,
+.supervisor-protocol-grid>.card{
+  height:100%!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+.moderation-script{display:flex;flex-direction:column;gap:8px!important}
+.moderation-script .script-step{
+  position:relative;
+  padding:8px 12px!important;
+  border-radius:12px!important;
+  border:1px solid #dce8f5;
+  background:#fff;
+}
+.moderation-script .script-step p{margin:0!important;padding-right:104px}
+.answer-wait.compact-wait{
+  position:absolute!important;
+  right:8px!important;
+  top:7px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:86px!important;
+  max-width:96px!important;
+  padding:4px 7px!important;
+  border-radius:999px!important;
+  background:#fff5cc!important;
+  color:#735c00!important;
+  border:1px solid #efd879!important;
+  font-size:.72rem!important;
+  font-weight:850!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.handoff-note.compact-note{
+  margin-top:8px!important;
+  padding:8px 10px!important;
+  font-size:.82rem!important;
+}
+.protocol-overview-card textarea,
+.required-field-box textarea,
+.required-field-wrap textarea{
+  min-height:46px!important;
+  height:clamp(46px, 8vh, 92px)!important;
+}
+.protocol-overview-card .role-note-block textarea{height:52px!important}
+.protocol-overview-card label,
+.required-field-box label{font-size:.86rem!important}
+.protocol-overview-card h2,
+.moderation-only-card h2,
+.protokoll-note-card h2{font-size:1.1rem!important;margin-bottom:8px!important}
+.protocol-overview-card p.small,
+.protokoll-note-card p{font-size:.9rem!important}
+.protokoll-spacer{flex:1 1 auto;min-height:28px}
+.role-card-main .role-pill,
+.card.muted .role-pill{color:#183a61!important;background:#eef4fb!important;border-color:#d8e5f2!important}
+@media(max-width:900px){
+  .compact-phase-layout.two-col,
+  .equal-phase-layout.two-col,
+  .protocol-task-grid,
+  .supervisor-protocol-grid{grid-template-columns:1fr!important}
+}

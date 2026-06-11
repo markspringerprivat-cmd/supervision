@@ -1,3 +1,18 @@
+
+/* v107 helper: Supervisor*in mit Protokollrolle wird nicht gegen Protokoll-Pflichtfelder geprüft */
+window.__svSupervisorHasProtocolV107 = window.__svSupervisorHasProtocolV107 || function(){
+  try{
+    const p=new URLSearchParams(location.search);
+    if(p.get('members')==='5'||p.get('size')==='5'||p.get('groupSize')==='5'||p.get('mode')==='moderation'||p.get('supervisorMode')==='moderation') return true;
+    const a=(typeof loadObj==='function')?loadObj('assignments',{}):{};
+    if(a&&a.protokoll) return true;
+    const gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+    const m=JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+    return Array.isArray(m)&&m.some(x=>x&&x.role==='protokoll');
+  }catch(_){return false;}
+};
+window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || window.__svSupervisorHasProtocolV107;
+
 /* Guided flow, locked phase status, required validation and presentation save dialog */
 (function(){
   'use strict';
@@ -110,7 +125,7 @@
       if(!next) return;
       const phase=phaseFromPage();
       const isSummaryButton = phase===6 && /zusammenfassen/i.test(next.textContent || '');
-      if(document.body.dataset.role==='supervisor' && typeof window.__svSupervisorHasProtocolV105==='function' && window.__svSupervisorHasProtocolV105()) return;
+      if(document.body.dataset.role==='supervisor' && ((typeof window.__svSupervisorHasProtocolV107==='function' && window.__svSupervisorHasProtocolV107()) || (typeof window.__svSupervisorHasProtocolV105==='function' && window.__svSupervisorHasProtocolV105()))) return;
       if(!isRecorderRole() && !isSummaryButton) return;
       const missing = missingForRange(1, phase, true);
       if(missing.length){
@@ -132,7 +147,7 @@
     btn.setAttribute('href', phase1Href());
     btn.addEventListener('click', async function(e){
       e.preventDefault(); e.stopImmediatePropagation();
-      const go = await niceDialog({title:'Gespräch starten', text:'Warte, bis alle Gruppenmitglieder ihre Notizen abgeschlossen haben. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.', actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]});
+      const go = await niceDialog({title:'Gespräch starten', text:'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.', actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]});
       if(go) location.href = phase1Href();
     }, true);
   }
@@ -298,7 +313,7 @@
     var dialog=window.supervisionNiceDialog;
     var go=function(){location.href=withGroupV99(target);};
     if(typeof dialog==='function'){
-      dialog({title:'Gespräch starten',text:'Warte, bis alle Gruppenmitglieder ihre Notizen abgeschlossen haben. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.',actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]}).then(function(ok){ if(ok) go(); else delete btn.dataset.v99PopupHandled; });
+      dialog({title:'Gespräch starten',text:'Starte das Gespräch bitte erst, wenn alle Teilnehmer*innen mit ihren Gedanken fertig sind. Wenn alle bereit sind, startet ihr gemeinsam mit Phase 1.',actions:[{label:'Weiter bearbeiten',value:false,className:'secondary'},{label:'Gespräch starten',value:true}]}).then(function(ok){ if(ok) go(); else delete btn.dataset.v99PopupHandled; });
     }else{
       if(confirm('Gespräch starten?')) go(); else delete btn.dataset.v99PopupHandled;
     }

@@ -201,7 +201,6 @@
       <div class="card highlight role-card-main">
         <p class="role-pill" style="color:${color(roleKey)}">${esc(label)}</p>
         <h2>${esc(data.title)}</h2>
-        <p><strong>Zugewiesene Person:</strong> <span id="assignedPersonName" data-assigned-name-for="${esc(roleKey)}">${assignedName ? esc(assignedName) : '<span class="sv-spinner tiny"></span> wird geladen / nicht gesetzt'}</span></p>
         <p>${esc(data.intro)}</p>
         <h3>Rollenperspektive</h3>
         <p>${esc(data.perspective)}</p>

@@ -152,8 +152,8 @@
       return {x:10,y:33,w:80,h:44,rot:0,z:20,fontSize:13,color:null};
     }
     if(type === 'note') return {x:14,y:82,w:72,h:7,rot:0,z:20,fontSize:12,color:null};
-    if(type === 'thanks') return {x:15,y:36,w:70,h:22,rot:0,z:20,fontSize:44,color:null};
-    if(type === 'textbox') return {x:12,y:74,w:25,h:10,rot:0,z:80,fontSize:18,color:null};
+    if(type === 'thanks') return {x:10,y:32,w:80,h:28,rot:0,z:20,fontSize:34,color:null};
+    if(type === 'textbox') return {x:12,y:72,w:32,h:12,rot:0,z:80,fontSize:18,color:null};
     if(type === 'sticker') return {x:60,y:48,w:24,h:22,rot:0,z:90};
     return {x:10,y:10,w:80,h:10,rot:0,z:20,fontSize:18,color:null};
   }
@@ -215,6 +215,24 @@
     return Object.assign({}, defaultLayout(type, slideIndex), l);
   }
   function setLayout(id, type, changes){ draft.layout[id] = Object.assign({}, getLayout(id,type), changes || {}); }
+
+  function textFitFontSizeV106(text, layout){
+    const s = String(text == null ? '' : text);
+    const base = Math.max(8, Math.min(72, Number(layout.fontSize || 18) || 18));
+    const wPct = Math.max(1, Number(layout.w || layout.width || 20) || 20);
+    const hPct = Math.max(1, Number(layout.h || layout.height || 10) || 10);
+    const chars = Math.max(1, s.replace(/\s+/g,' ').trim().length);
+    const lines = Math.max(1, s.split(/\n/).length);
+    const approxCharsPerLine = Math.max(1, Math.floor((wPct / 100 * 1600) / (base * 0.58)));
+    const estimatedLines = Math.max(lines, Math.ceil(chars / approxCharsPerLine));
+    const allowedByHeight = Math.floor((hPct / 100 * 900) / (estimatedLines * 1.08));
+    const allowedByWidth = Math.floor((wPct / 100 * 1600) / Math.max(1, Math.min(chars, approxCharsPerLine) * 0.58));
+    return Math.max(8, Math.min(base, allowedByHeight || base, allowedByWidth || base, 56));
+  }
+  function textFitStyleV106(text, layout){
+    return '--v6-fit-font-size:' + textFitFontSizeV106(text, layout) + 'px;';
+  }
+
   function styleFor(layout){
     const fs = layout.fontSize ? `font-size:${Number(layout.fontSize)}px;` : '';
     const col = layout.color ? `color:${layout.color};` : '';
@@ -226,7 +244,10 @@
     const selected = selectedId === id ? ' is-selected' : '';
     let content = '';
     if(type === 'table') content = renderTable(elDef.table, draft.values, editable);
-    else content = `<div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-text="${esc(id)}">${esc(getElementText(elDef))}</div>`;
+    else {
+      const txt=getElementText(elDef);
+      content = `<div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-text="${esc(id)}" style="${textFitStyleV106(txt, layout)}">${esc(txt)}</div>`;
+    }
     return `<div class="v6-el v6-base v6-type-${esc(type)}${selected}" data-v6-id="${esc(id)}" data-v6-type="${esc(type)}" data-v6-deletable="false" style="${styleFor(layout)}">${content}${editable ? handlesHtml(false) : ''}</div>`;
   }
   function handlesHtml(deletable){
@@ -235,7 +256,8 @@
   function renderTextBox(tb, editable){
     const selected = selectedId === tb.id ? ' is-selected' : '';
     const l = Object.assign({}, defaultLayout('textbox'), tb);
-    return `<div class="v6-el v6-textbox${selected}" data-v6-id="${esc(tb.id)}" data-v6-type="textbox" data-v6-deletable="true" style="${styleFor(l)}"><div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-textbox="${esc(tb.id)}">${esc(tb.text || '')}</div>${editable ? handlesHtml(true) : ''}</div>`;
+    const txt=tb.text || '';
+    return `<div class="v6-el v6-textbox${selected}" data-v6-id="${esc(tb.id)}" data-v6-type="textbox" data-v6-deletable="true" style="${styleFor(l)}"><div class="v6-editable-text" contenteditable="${editable ? 'true':'false'}" data-v6-textbox="${esc(tb.id)}" style="${textFitStyleV106(txt, l)}">${esc(txt)}</div>${editable ? handlesHtml(true) : ''}</div>`;
   }
   function renderSticker(st, editable){
     const selected = selectedId === st.id ? ' is-selected' : '';

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gruppe beitreten</title>
+  <link rel="stylesheet" href="css/styles.css?v=group-session-v33">
+  <style>
+    body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
+    .join-shell{width:min(720px,calc(100vw - 34px));margin:0 auto;padding:34px 0 44px;display:grid;gap:18px}
+    .join-card{background:#fff;border:1px solid #d9e5f2;border-radius:28px;padding:26px;box-shadow:0 18px 42px rgba(15,31,53,.08)}
+    .join-card h1{margin:0 0 10px;color:#10223a}
+    .join-card p{color:#607187;line-height:1.55}
+    .form-row{display:grid;gap:8px;margin-bottom:14px}
+    label{font-weight:800;color:#143a63}
+    input,select{border:1px solid #cfe0f1;border-radius:14px;padding:12px 13px;font:inherit;background:#f8fbff}
+    .status{padding:12px 14px;border-radius:16px;background:#eef6ff;border:1px solid #d6e6f7;color:#234972;margin-top:12px}
+    .ok{background:#e9f8ef;border-color:#abe1bd;color:#16703a}
+    .warning{background:#fff2f2;border-color:#efc5c5;color:#8a1f1f}
+  </style>
+</head>
+<body data-mode="join-session">
+<main class="join-shell">
+  <section class="join-card">
+    <h1>Gruppe beitreten</h1>
+    <p>Trage deinen Namen ein. Dein Gerät wird dadurch dieser Gruppe zugeordnet.</p>
+    <div class="form-row">
+      <label for="joinName">Dein Name</label>
+      <input id="joinName" type="text" placeholder="Name">
+    </div>
+    <div class="form-row">
+      <label for="joinDevice">Gerätetyp</label>
+      <select id="joinDevice">
+        <option value="Laptop">Laptop</option>
+        <option value="Tablet">Tablet</option>
+        <option value="Smartphone">Smartphone</option>
+        <option value="Unbekannt">Unbekannt / anderes Gerät</option>
+      </select>
+    </div>
+    <button id="joinGroupBtn" type="button">Gruppe beitreten</button>
+    <p id="joinStatus" class="status">Warte auf Eingabe.</p>
+  </section>
+</main>
+<script src="js/config.js?v=group-session-v33"></script>
+<script src="js/app.js?v=group-session-v33"></script>
+<script src="js/group_session_v33.js?v=group-session-v33"></script>
+</body>
+</html>

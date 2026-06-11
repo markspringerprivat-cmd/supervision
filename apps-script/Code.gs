@@ -8,6 +8,12 @@ const DEVICE_REGISTRY_SHEET_NAME = 'Manometer Geräte';
 const DEVICE_REGISTRY_HEADERS = ['Geräte-ID', 'Zeitpunkt', 'Gruppen-ID', 'Gruppenname', 'Rolle', 'Zugewiesener Name'];
 const MANOMETER_ADMIN_PASSWORD = 'Mark123';
 
+const GROUP_SESSION_SHEET_NAME = 'Gruppen Sessions';
+const GROUP_SESSION_HEADERS = ['Zeitpunkt', 'Gruppen-ID', 'Gruppenname', 'Status', 'Primärgerät-ID', 'Gruppengröße', 'Aktualisiert'];
+const GROUP_MEMBER_SHEET_NAME = 'Gruppen Mitglieder';
+const GROUP_MEMBER_HEADERS = ['Zeitpunkt', 'Gruppen-ID', 'Geräte-ID', 'Name', 'Gerätetyp', 'Rolle', 'Primärgerät', 'Aktualisiert'];
+
+
 const GROUP_REGISTRY_SHEET_NAME = 'Gruppen Registry';
 const GROUP_REGISTRY_HEADERS = ['Zeitpunkt', 'Gruppen-ID', 'Gruppenname', 'Gruppengröße', 'Teilnehmende JSON', 'Zuweisungen JSON', 'Aktualisiert'];
 
@@ -148,6 +154,11 @@ function doPost(e) {
     if (action === 'deletemainresultsall' || action === 'delete_main_results_all' || action === 'clear_results' || action === 'deleteallresults') return deleteMainResultsAllPost_(body);
     if (action === 'deletegroupsall' || action === 'delete_groups_all' || action === 'clear_groups') return deleteGroupsAllPost_(body);
     if (action === 'deletegroup' || action === 'delete_group') return deleteGroupPost_(body);
+    if (action === 'creategroupsession' || action === 'create_group_session') return createGroupSessionPost_(body);
+    if (action === 'joingroupsession' || action === 'join_group_session') return joinGroupSessionPost_(body);
+    if (action === 'listgroupmembers' || action === 'list_group_members') return listGroupMembersPost_(body);
+    if (action === 'assignrolestomembers' || action === 'assign_roles_to_members') return assignRolesToMembersPost_(body);
+    if (action === 'resolveassignedrolefordevice' || action === 'resolve_assigned_role_for_device') return resolveAssignedRoleForDevicePost_(body);
     return saveEntry_(body);
   } catch (err) {
     return jsonOutput_({ ok: false, error: err.message, stack: err.stack || '' });
@@ -173,10 +184,15 @@ function doGet(e) {
     if (action === 'deletemainresultsall' || action === 'delete_main_results_all' || action === 'clear_results' || action === 'deleteallresults') return deleteMainResultsAllGet_(e);
     if (action === 'deletegroupsall' || action === 'delete_groups_all' || action === 'clear_groups') return deleteGroupsAllGet_(e);
     if (action === 'deletegroup' || action === 'delete_group') return deleteGroupGet_(e);
+    if (action === 'creategroupsession' || action === 'create_group_session') return createGroupSessionGet_(e);
+    if (action === 'joingroupsession' || action === 'join_group_session') return joinGroupSessionGet_(e);
+    if (action === 'listgroupmembers' || action === 'list_group_members') return listGroupMembersGet_(e);
+    if (action === 'assignrolestomembers' || action === 'assign_roles_to_members') return assignRolesToMembersGet_(e);
+    if (action === 'resolveassignedrolefordevice' || action === 'resolve_assigned_role_for_device') return resolveAssignedRoleForDeviceGet_(e);
     if (action === 'ping') {
       let spreadsheetName = '';
       try { spreadsheetName = getSpreadsheet_().getName(); } catch (err) { spreadsheetName = 'FEHLER: ' + err.message; }
-      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v21-admin-delete-groups', spreadsheetName: spreadsheetName, deviceRegistrySheet: DEVICE_REGISTRY_SHEET_NAME });
+      return jsonp_(e, { ok: true, message: 'Apps Script läuft.', sheetName: SHEET_NAME, manometer: true, feature: 'manometer-v23-group-session', spreadsheetName: spreadsheetName, deviceRegistrySheet: DEVICE_REGISTRY_SHEET_NAME });
     }
     if (action === 'test') {
       const sheet = getSheet_();
@@ -641,10 +657,10 @@ function saveFeedbackData_(data) {
   const sheet = getFeedbackSheet_();
   data = (data && typeof data === 'object') ? data : {};
   const deviceId = textValue_(data.deviceId || data.device || data.browserId);
-  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v21-admin-delete-groups', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'manometerFeedbackSave', feature: 'manometer-v23-group-session', error: 'Keine Geräte-ID übermittelt.' };
   const duplicateRow = findDeviceRegistryRow_(deviceId);
   if (duplicateRow >= 2) {
-    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v21-admin-delete-groups', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow, source: 'deviceRegistry' };
+    return { ok: false, duplicate: true, type: 'manometerFeedbackSave', feature: 'manometer-v23-group-session', error: 'Von diesem Gerät wurde bereits Feedback abgegeben.', rowNumber: duplicateRow, source: 'deviceRegistry' };
   }
   const scores = isObject_(data.scores) ? data.scores : data;
   const improvements = isObject_(data.improvements) ? data.improvements : {};
@@ -676,7 +692,7 @@ function saveFeedbackData_(data) {
   const savedRow = sheet.getLastRow();
   registerDeviceId_(data);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v21-admin-delete-groups', message: 'Manometer-Feedback gespeichert.', rowNumber: savedRow };
+  return { ok: true, type: 'manometerFeedbackSave', feature: 'manometer-v23-group-session', message: 'Manometer-Feedback gespeichert.', rowNumber: savedRow };
 }
 
 function findFeedbackRowByDeviceId_(sheet, deviceId) {
@@ -705,7 +721,7 @@ function resetManometerDeviceIdsGet_(e) {
 
 function resetManometerDeviceIds_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v21-admin-delete-groups', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'resetManometerDeviceIds', feature: 'manometer-v23-group-session', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const beforeRegistryRows = getDeviceRegistryRowCount_();
@@ -717,7 +733,7 @@ function resetManometerDeviceIds_(password) {
   return {
     ok: true,
     type: 'resetManometerDeviceIds',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     mode: 'recreatedDeviceRegistry',
     message: 'Manometer-Geräte-IDs wurden freigegeben.',
     clearedRows: beforeRegistryRows,
@@ -741,7 +757,7 @@ function deleteManometerFeedbackAllPost_(body) {
 
 function deleteManometerFeedbackAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v21-admin-delete-groups', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteManometerFeedbackAll', feature: 'manometer-v23-group-session', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const beforeFeedbackRows = getFeedbackRowCount_();
@@ -758,7 +774,7 @@ function deleteManometerFeedbackAll_(password) {
   return {
     ok: true,
     type: 'deleteManometerFeedbackAll',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     mode: 'recreatedSheets',
     message: 'Manometer-Feedbackblatt und Geräte-Registry wurden neu erstellt.',
     deletedRows: beforeFeedbackRows,
@@ -794,7 +810,7 @@ function manometerAdminStatus_() {
   return {
     ok: true,
     type: 'manometerAdminStatus',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     feedbackSheetName: FEEDBACK_SHEET_NAME,
     deviceRegistrySheetName: DEVICE_REGISTRY_SHEET_NAME,
     feedbackRows: getFeedbackRowCount_(),
@@ -841,7 +857,7 @@ function registerGroupPost_(body) {
 
 function registerGroup_(params) {
   const groupId = textValue_(params.groupId || params.g || params.groupToken || params.token);
-  if (!groupId) return { ok: false, type: 'registerGroup', feature: 'manometer-v21-admin-delete-groups', error: 'Keine Gruppen-ID übermittelt.' };
+  if (!groupId) return { ok: false, type: 'registerGroup', feature: 'manometer-v23-group-session', error: 'Keine Gruppen-ID übermittelt.' };
   const sheet = getGroupRegistrySheet_();
   const now = new Date();
   const groupName = textValue_(params.groupName || groupId);
@@ -853,11 +869,11 @@ function registerGroup_(params) {
   if (existing >= 2) {
     sheet.getRange(existing, 1, 1, GROUP_REGISTRY_HEADERS.length).setValues([row]);
     SpreadsheetApp.flush();
-    return { ok: true, type: 'registerGroup', feature: 'manometer-v21-admin-delete-groups', mode: 'updated', groupId: groupId, rowNumber: existing };
+    return { ok: true, type: 'registerGroup', feature: 'manometer-v23-group-session', mode: 'updated', groupId: groupId, rowNumber: existing };
   }
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'registerGroup', feature: 'manometer-v21-admin-delete-groups', mode: 'created', groupId: groupId, rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'registerGroup', feature: 'manometer-v23-group-session', mode: 'created', groupId: groupId, rowNumber: sheet.getLastRow() };
 }
 
 function registerDeviceGroupGet_(e) {
@@ -872,8 +888,8 @@ function registerDeviceGroupPost_(body) {
 function registerDeviceGroup_(params) {
   const deviceId = textValue_(params.deviceId || params.device || params.browserId);
   const groupId = textValue_(params.groupId || params.g || params.groupToken || params.token);
-  if (!deviceId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v21-admin-delete-groups', error: 'Keine Geräte-ID übermittelt.' };
-  if (!groupId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v21-admin-delete-groups', error: 'Keine Gruppen-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v23-group-session', error: 'Keine Geräte-ID übermittelt.' };
+  if (!groupId) return { ok: false, type: 'registerDeviceGroup', feature: 'manometer-v23-group-session', error: 'Keine Gruppen-ID übermittelt.' };
 
   const sheet = getDeviceRegistrySheet_();
   const existing = findDeviceRegistryRow_(deviceId);
@@ -890,11 +906,11 @@ function registerDeviceGroup_(params) {
   if (existing >= 2) {
     sheet.getRange(existing, 1, 1, Math.max(DEVICE_REGISTRY_HEADERS.length, row.length)).setValues([row]);
     SpreadsheetApp.flush();
-    return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v21-admin-delete-groups', mode: 'updated', deviceId: deviceId, groupId: groupId, rowNumber: existing };
+    return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v23-group-session', mode: 'updated', deviceId: deviceId, groupId: groupId, rowNumber: existing };
   }
   sheet.appendRow(row);
   SpreadsheetApp.flush();
-  return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v21-admin-delete-groups', mode: 'created', deviceId: deviceId, groupId: groupId, rowNumber: sheet.getLastRow() };
+  return { ok: true, type: 'registerDeviceGroup', feature: 'manometer-v23-group-session', mode: 'created', deviceId: deviceId, groupId: groupId, rowNumber: sheet.getLastRow() };
 }
 
 function resolveDeviceGroupGet_(e) {
@@ -908,15 +924,15 @@ function resolveDeviceGroupPost_(body) {
 
 function resolveDeviceGroup_(params) {
   const deviceId = textValue_(params.deviceId || params.device || params.browserId);
-  if (!deviceId) return { ok: false, type: 'resolveDeviceGroup', feature: 'manometer-v21-admin-delete-groups', error: 'Keine Geräte-ID übermittelt.' };
+  if (!deviceId) return { ok: false, type: 'resolveDeviceGroup', feature: 'manometer-v23-group-session', error: 'Keine Geräte-ID übermittelt.' };
   const sheet = getDeviceRegistrySheet_();
   const row = findDeviceRegistryRow_(deviceId);
-  if (row < 2) return { ok: true, type: 'resolveDeviceGroup', feature: 'manometer-v21-admin-delete-groups', found: false };
+  if (row < 2) return { ok: true, type: 'resolveDeviceGroup', feature: 'manometer-v23-group-session', found: false };
   const values = sheet.getRange(row, 1, 1, Math.max(sheet.getLastColumn(), DEVICE_REGISTRY_HEADERS.length)).getValues()[0];
   return {
     ok: true,
     type: 'resolveDeviceGroup',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     found: true,
     deviceId: values[0] || '',
     timestamp: formatDate_(values[1]),
@@ -973,27 +989,37 @@ function deleteGroupsAllPost_(body) {
 
 function deleteGroupsAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteGroupsAll', feature: 'manometer-v21-admin-delete-groups', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteGroupsAll', feature: 'manometer-v23-group-session', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
   const groupSheet = getGroupRegistrySheet_();
   const deviceSheet = getDeviceRegistrySheet_();
+  const sessionSheet = getGroupSessionSheet_();
+  const memberSheet = getGroupMemberSheet_();
   const beforeGroups = Math.max(0, groupSheet.getLastRow() - 1);
   const beforeDevices = Math.max(0, deviceSheet.getLastRow() - 1);
+  const beforeSessions = Math.max(0, sessionSheet.getLastRow() - 1);
+  const beforeMembers = Math.max(0, memberSheet.getLastRow() - 1);
 
   if (beforeGroups > 0) groupSheet.deleteRows(2, beforeGroups);
   if (beforeDevices > 0) deviceSheet.deleteRows(2, beforeDevices);
+  if (beforeSessions > 0) sessionSheet.deleteRows(2, beforeSessions);
+  if (beforeMembers > 0) memberSheet.deleteRows(2, beforeMembers);
 
   ensureGroupRegistryHeader_(groupSheet);
   ensureDeviceRegistryHeader_(deviceSheet);
+  ensureGroupSessionHeader_(sessionSheet);
+  ensureGroupMemberHeader_(memberSheet);
   SpreadsheetApp.flush();
 
   return {
     ok: true,
     type: 'deleteGroupsAll',
-    feature: 'manometer-v21-admin-delete-groups',
-    message: 'Alle Gruppen und Gerätezuordnungen wurden gelöscht.',
+    feature: 'manometer-v23-group-session',
+    message: 'Alle Gruppen, Gruppensitzungen und Gerätezuordnungen wurden gelöscht.',
     deletedGroups: beforeGroups,
     deletedDevices: beforeDevices,
+    deletedSessions: beforeSessions,
+    deletedMembers: beforeMembers,
     groupsAfter: Math.max(0, groupSheet.getLastRow() - 1),
     devicesAfter: Math.max(0, deviceSheet.getLastRow() - 1)
   };
@@ -1027,32 +1053,40 @@ function deleteRowsByGroupId_(sheet, groupColIndex, groupId) {
 
 function deleteGroup_(password, groupId) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteGroup', feature: 'manometer-v21-admin-delete-groups', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteGroup', feature: 'manometer-v23-group-session', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
   const gid = textValue_(groupId);
-  if (!gid) return { ok: false, type: 'deleteGroup', feature: 'manometer-v21-admin-delete-groups', error: 'Keine Gruppen-ID übermittelt.' };
+  if (!gid) return { ok: false, type: 'deleteGroup', feature: 'manometer-v23-group-session', error: 'Keine Gruppen-ID übermittelt.' };
 
   const groupSheet = getGroupRegistrySheet_();
   const deviceSheet = getDeviceRegistrySheet_();
   const feedbackSheet = getFeedbackSheet_();
+  const sessionSheet = getGroupSessionSheet_();
+  const memberSheet = getGroupMemberSheet_();
 
   const deletedGroups = deleteRowsByGroupId_(groupSheet, 2, gid);
   const deletedDevices = deleteRowsByGroupId_(deviceSheet, 3, gid);
   const deletedFeedback = deleteRowsByGroupId_(feedbackSheet, 3, gid);
+  const deletedSessions = deleteRowsByGroupId_(sessionSheet, 2, gid);
+  const deletedMembers = deleteRowsByGroupId_(memberSheet, 2, gid);
 
   ensureGroupRegistryHeader_(groupSheet);
   ensureDeviceRegistryHeader_(deviceSheet);
   ensureFeedbackHeader_(feedbackSheet);
+  ensureGroupSessionHeader_(sessionSheet);
+  ensureGroupMemberHeader_(memberSheet);
   SpreadsheetApp.flush();
 
   return {
     ok: true,
     type: 'deleteGroup',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     groupId: gid,
     deletedGroups: deletedGroups,
     deletedDevices: deletedDevices,
-    deletedFeedback: deletedFeedback
+    deletedFeedback: deletedFeedback,
+    deletedSessions: deletedSessions,
+    deletedMembers: deletedMembers
   };
 }
 
@@ -1070,7 +1104,7 @@ function deleteMainResultsAllPost_(body) {
 
 function deleteMainResultsAll_(password) {
   if (String(password || '') !== String(MANOMETER_ADMIN_PASSWORD || '')) {
-    return { ok: false, type: 'deleteMainResultsAll', feature: 'manometer-v21-admin-delete-groups', error: 'Admin-Passwort fehlt oder ist falsch.' };
+    return { ok: false, type: 'deleteMainResultsAll', feature: 'manometer-v23-group-session', error: 'Admin-Passwort fehlt oder ist falsch.' };
   }
 
   const sheet = getSheet_();
@@ -1090,12 +1124,240 @@ function deleteMainResultsAll_(password) {
   return {
     ok: true,
     type: 'deleteMainResultsAll',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     message: 'Alle normalen Ergebnis-Einträge wurden gelöscht.',
     deletedRows: deletedRows,
     resultsRowsAfter: Math.max(0, sheet.getLastRow() - 1),
     sheetName: SHEET_NAME
   };
+}
+
+
+
+function getGroupSessionSheet_() {
+  const ss = getSpreadsheet_();
+  let sheet = ss.getSheetByName(GROUP_SESSION_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(GROUP_SESSION_SHEET_NAME);
+  ensureGroupSessionHeader_(sheet);
+  return sheet;
+}
+
+function ensureGroupSessionHeader_(sheet) {
+  sheet.getRange(1, 1, 1, GROUP_SESSION_HEADERS.length).setValues([GROUP_SESSION_HEADERS]);
+  sheet.setFrozenRows(1);
+}
+
+function getGroupMemberSheet_() {
+  const ss = getSpreadsheet_();
+  let sheet = ss.getSheetByName(GROUP_MEMBER_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(GROUP_MEMBER_SHEET_NAME);
+  ensureGroupMemberHeader_(sheet);
+  return sheet;
+}
+
+function ensureGroupMemberHeader_(sheet) {
+  sheet.getRange(1, 1, 1, GROUP_MEMBER_HEADERS.length).setValues([GROUP_MEMBER_HEADERS]);
+  sheet.setFrozenRows(1);
+}
+
+function makeTempGroupId_() {
+  return 'gruppe-' + Utilities.getUuid().slice(0, 8);
+}
+
+function sessionGroupNameFromMembers_(members) {
+  return members.map(function(m){ return textValue_(m.name); }).filter(function(v){ return v; }).join('-').toLowerCase().replace(/[^a-z0-9äöüß]+/gi, '-').replace(/^-|-$/g, '').slice(0, 90);
+}
+
+function findGroupSessionRow_(groupId) {
+  const sheet = getGroupSessionSheet_();
+  const last = sheet.getLastRow();
+  if (last < 2) return 0;
+  const needle = textValue_(groupId);
+  const values = sheet.getRange(2, 2, last - 1, 1).getValues();
+  for (let i = 0; i < values.length; i++) if (textValue_(values[i][0]) === needle) return i + 2;
+  return 0;
+}
+
+function findGroupMemberRow_(groupId, deviceId) {
+  const sheet = getGroupMemberSheet_();
+  const last = sheet.getLastRow();
+  if (last < 2) return 0;
+  const gid = textValue_(groupId);
+  const did = textValue_(deviceId);
+  const values = sheet.getRange(2, 2, last - 1, 2).getValues();
+  for (let i = 0; i < values.length; i++) {
+    if (textValue_(values[i][0]) === gid && textValue_(values[i][1]) === did) return i + 2;
+  }
+  return 0;
+}
+
+function membersForGroup_(groupId) {
+  const sheet = getGroupMemberSheet_();
+  const values = sheet.getDataRange().getValues();
+  const gid = textValue_(groupId);
+  const out = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    if (isEmptyRow_(row)) continue;
+    if (textValue_(row[1]) !== gid) continue;
+    out.push({
+      rowNumber: r + 1,
+      timestamp: formatDate_(row[0]),
+      groupId: row[1] || '',
+      deviceId: row[2] || '',
+      name: row[3] || '',
+      deviceType: row[4] || '',
+      role: row[5] || '',
+      isPrimary: String(row[6]).toLowerCase() === 'true',
+      updated: formatDate_(row[7])
+    });
+  }
+  return out;
+}
+
+function upsertGroupMember_(groupId, deviceId, name, deviceType, role, isPrimary) {
+  const sheet = getGroupMemberSheet_();
+  const rowNo = findGroupMemberRow_(groupId, deviceId);
+  const now = new Date();
+  const existing = rowNo >= 2 ? sheet.getRange(rowNo, 1, 1, GROUP_MEMBER_HEADERS.length).getValues()[0] : null;
+  const row = [
+    existing ? existing[0] : now,
+    groupId,
+    deviceId,
+    textValue_(name),
+    textValue_(deviceType || 'Unbekannt'),
+    textValue_(role || (existing ? existing[5] : '')),
+    !!isPrimary || (existing ? String(existing[6]).toLowerCase() === 'true' : false),
+    now
+  ];
+  if (rowNo >= 2) sheet.getRange(rowNo, 1, 1, GROUP_MEMBER_HEADERS.length).setValues([row]);
+  else sheet.appendRow(row);
+  SpreadsheetApp.flush();
+  return rowNo >= 2 ? rowNo : sheet.getLastRow();
+}
+
+function upsertGroupSession_(groupId, groupName, status, primaryDeviceId, groupSize) {
+  const sheet = getGroupSessionSheet_();
+  const rowNo = findGroupSessionRow_(groupId);
+  const now = new Date();
+  const existing = rowNo >= 2 ? sheet.getRange(rowNo, 1, 1, GROUP_SESSION_HEADERS.length).getValues()[0] : null;
+  const row = [
+    existing ? existing[0] : now,
+    groupId,
+    textValue_(groupName || groupId),
+    textValue_(status || (existing ? existing[3] : 'offen')),
+    textValue_(primaryDeviceId || (existing ? existing[4] : '')),
+    Number(groupSize || (existing ? existing[5] : 0)) || 0,
+    now
+  ];
+  if (rowNo >= 2) sheet.getRange(rowNo, 1, 1, GROUP_SESSION_HEADERS.length).setValues([row]);
+  else sheet.appendRow(row);
+  SpreadsheetApp.flush();
+  return rowNo >= 2 ? rowNo : sheet.getLastRow();
+}
+
+function createGroupSessionGet_(e) {
+  return jsonp_(e, createGroupSession_((e && e.parameter) || {}));
+}
+function createGroupSessionPost_(body) {
+  return jsonOutput_(createGroupSession_(body || {}));
+}
+function createGroupSession_(p) {
+  const deviceId = textValue_(p.deviceId || p.device || p.browserId);
+  const name = textValue_(p.name || p.memberName);
+  const deviceType = textValue_(p.deviceType || 'Unbekannt');
+  if (!deviceId) return { ok:false, type:'createGroupSession', feature:'manometer-v23-group-session', error:'Keine Geräte-ID übermittelt.' };
+  if (!name) return { ok:false, type:'createGroupSession', feature:'manometer-v23-group-session', error:'Kein Name übermittelt.' };
+  const groupId = textValue_(p.groupId || p.g) || makeTempGroupId_();
+  upsertGroupSession_(groupId, groupId, 'offen', deviceId, 1);
+  upsertGroupMember_(groupId, deviceId, name, deviceType, '', true);
+  registerDeviceGroup_({ deviceId: deviceId, groupId: groupId, groupName: groupId, role: '', assignedName: name });
+  const members = membersForGroup_(groupId);
+  return { ok:true, type:'createGroupSession', feature:'manometer-v23-group-session', groupId:groupId, groupName:groupId, members:members };
+}
+
+function joinGroupSessionGet_(e) {
+  return jsonp_(e, joinGroupSession_((e && e.parameter) || {}));
+}
+function joinGroupSessionPost_(body) {
+  return jsonOutput_(joinGroupSession_(body || {}));
+}
+function joinGroupSession_(p) {
+  const groupId = textValue_(p.groupId || p.g);
+  const deviceId = textValue_(p.deviceId || p.device || p.browserId);
+  const name = textValue_(p.name || p.memberName);
+  const deviceType = textValue_(p.deviceType || 'Unbekannt');
+  if (!groupId) return { ok:false, type:'joinGroupSession', feature:'manometer-v23-group-session', error:'Keine Gruppen-ID übermittelt.' };
+  if (!deviceId) return { ok:false, type:'joinGroupSession', feature:'manometer-v23-group-session', error:'Keine Geräte-ID übermittelt.' };
+  if (!name) return { ok:false, type:'joinGroupSession', feature:'manometer-v23-group-session', error:'Kein Name übermittelt.' };
+  if (findGroupSessionRow_(groupId) < 2) upsertGroupSession_(groupId, groupId, 'offen', '', 0);
+  upsertGroupMember_(groupId, deviceId, name, deviceType, '', false);
+  const members = membersForGroup_(groupId);
+  const groupName = sessionGroupNameFromMembers_(members) || groupId;
+  upsertGroupSession_(groupId, groupName, 'offen', '', members.length);
+  registerDeviceGroup_({ deviceId: deviceId, groupId: groupId, groupName: groupName, role: '', assignedName: name });
+  return { ok:true, type:'joinGroupSession', feature:'manometer-v23-group-session', groupId:groupId, groupName:groupName, members:members };
+}
+
+function listGroupMembersGet_(e) {
+  return jsonp_(e, listGroupMembers_((e && e.parameter) || {}));
+}
+function listGroupMembersPost_(body) {
+  return jsonOutput_(listGroupMembers_(body || {}));
+}
+function listGroupMembers_(p) {
+  const groupId = textValue_(p.groupId || p.g);
+  if (!groupId) return { ok:false, type:'listGroupMembers', feature:'manometer-v23-group-session', error:'Keine Gruppen-ID übermittelt.' };
+  const members = membersForGroup_(groupId);
+  const groupName = sessionGroupNameFromMembers_(members) || groupId;
+  return { ok:true, type:'listGroupMembers', feature:'manometer-v23-group-session', groupId:groupId, groupName:groupName, members:members };
+}
+
+function assignRolesToMembersGet_(e) {
+  return jsonp_(e, assignRolesToMembers_((e && e.parameter) || {}));
+}
+function assignRolesToMembersPost_(body) {
+  return jsonOutput_(assignRolesToMembers_(body || {}));
+}
+function assignRolesToMembers_(p) {
+  const groupId = textValue_(p.groupId || p.g);
+  if (!groupId) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v23-group-session', error:'Keine Gruppen-ID übermittelt.' };
+  const roles = ['supervisor','schulleitung','lehrkraft-a','lehrkraft-b','protokoll'];
+  let members = membersForGroup_(groupId);
+  if (members.length < 4) return { ok:false, type:'assignRolesToMembers', feature:'manometer-v23-group-session', error:'Mindestens 4 Gruppenmitglieder erforderlich.' };
+  members = members.slice();
+  for (let i = members.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = members[i]; members[i] = members[j]; members[j] = tmp;
+  }
+  const assignments = {};
+  for (let i = 0; i < Math.min(roles.length, members.length); i++) {
+    members[i].role = roles[i];
+    assignments[roles[i]] = members[i].name;
+    upsertGroupMember_(groupId, members[i].deviceId, members[i].name, members[i].deviceType, roles[i], members[i].isPrimary);
+  }
+  const updatedMembers = membersForGroup_(groupId);
+  const groupName = sessionGroupNameFromMembers_(updatedMembers) || groupId;
+  upsertGroupSession_(groupId, groupName, 'rollen_verteilt', '', updatedMembers.length);
+  registerGroup_({ groupId: groupId, groupName: groupName, groupSize: updatedMembers.length, participants: JSON.stringify(updatedMembers.map(function(m){ return { name:m.name, deviceType:m.deviceType }; })), assignments: JSON.stringify(assignments) });
+  updatedMembers.forEach(function(m){ registerDeviceGroup_({ deviceId:m.deviceId, groupId:groupId, groupName:groupName, role:m.role, assignedName:m.name }); });
+  return { ok:true, type:'assignRolesToMembers', feature:'manometer-v23-group-session', groupId:groupId, groupName:groupName, assignments:assignments, members:updatedMembers };
+}
+
+function resolveAssignedRoleForDeviceGet_(e) {
+  return jsonp_(e, resolveAssignedRoleForDevice_((e && e.parameter) || {}));
+}
+function resolveAssignedRoleForDevicePost_(body) {
+  return jsonOutput_(resolveAssignedRoleForDevice_(body || {}));
+}
+function resolveAssignedRoleForDevice_(p) {
+  const groupId = textValue_(p.groupId || p.g);
+  const deviceId = textValue_(p.deviceId || p.device || p.browserId);
+  if (!groupId || !deviceId) return { ok:false, type:'resolveAssignedRoleForDevice', feature:'manometer-v23-group-session', error:'Gruppen-ID oder Geräte-ID fehlt.' };
+  const rowNo = findGroupMemberRow_(groupId, deviceId);
+  if (rowNo < 2) return { ok:true, type:'resolveAssignedRoleForDevice', feature:'manometer-v23-group-session', found:false };
+  const row = getGroupMemberSheet_().getRange(rowNo, 1, 1, GROUP_MEMBER_HEADERS.length).getValues()[0];
+  return { ok:true, type:'resolveAssignedRoleForDevice', feature:'manometer-v23-group-session', found:true, groupId:row[1]||'', deviceId:row[2]||'', name:row[3]||'', deviceType:row[4]||'', role:row[5]||'', isPrimary:String(row[6]).toLowerCase()==='true' };
 }
 
 
@@ -1163,7 +1425,7 @@ function listGroups_(params) {
     });
   }
   groups.sort(function(a, b){ return String(a.groupName || a.groupId).localeCompare(String(b.groupName || b.groupId)); });
-  return { ok: true, type: 'listGroups', feature: 'manometer-v21-admin-delete-groups', groups: groups, total: groups.length };
+  return { ok: true, type: 'listGroups', feature: 'manometer-v23-group-session', groups: groups, total: groups.length };
 }
 
 
@@ -1208,7 +1470,7 @@ function groupProgress_(params) {
   return {
     ok: true,
     type: 'groupProgress',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     resolvedByDevice: resolvedByDevice,
     deviceId: deviceId,
     groupId: groupId,
@@ -1301,7 +1563,7 @@ function listFeedback_(e) {
   return jsonp_(e, {
     ok: true,
     type: 'manometerFeedbackList',
-    feature: 'manometer-v21-admin-delete-groups',
+    feature: 'manometer-v23-group-session',
     anonymous: true,
     groupIndependent: true,
     entries: entries,

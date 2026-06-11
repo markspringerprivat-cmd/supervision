@@ -123,8 +123,8 @@ function b64urlDecode(str) {
 
 function qs() { return new URLSearchParams(window.location.search); }
 function getGroupId() {
-  const q = qs().get("g");
-  if (q) return q;
+  const q = qs().get("g") || qs().get("groupId");
+  if (q) { localStorage.setItem("sv_current_group", q); return q; }
   const stored = localStorage.getItem("sv_current_group");
   if (stored) return stored;
   const id = "gruppe-" + Date.now().toString(36);
@@ -141,7 +141,7 @@ function saveText(k, value) { localStorage.setItem(key(k), value || ""); }
 function loadText(k) { return localStorage.getItem(key(k)) || ""; }
 
 function hydrateFromQuery() {
-  const group = qs().get("g");
+  const group = qs().get("g") || qs().get("groupId");
   if (group) localStorage.setItem("sv_current_group", group);
   const assign = qs().get("assign");
   const decoded = b64urlDecode(assign);
@@ -1861,8 +1861,8 @@ function installLocalResetControls() {
   bar.innerHTML = `
     <div class="wrap local-reset-inner">
       <span class="local-reset-label">Lokale Arbeitsdaten</span>
-      <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
-      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Alles lokal zurücksetzen</button>
+      <button type="button" class="secondary small-reset" id="clearPageBtn">Lokale Daten löschen</button>
+      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
       <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
     </div>`;
   header.insertAdjacentElement("afterend", bar);
@@ -2212,8 +2212,8 @@ function isGlobalAdminActive() {
 }
 
 function setGlobalAdminActive(value) {
-  if (value) sessionStorage.setItem(GLOBAL_ADMIN_KEY_FINAL, "1");
-  else sessionStorage.removeItem(GLOBAL_ADMIN_KEY_FINAL);
+  if (value) { sessionStorage.setItem(GLOBAL_ADMIN_KEY_FINAL, "1"); sessionStorage.setItem("sv_admin_password", GLOBAL_ADMIN_PASSWORD_VISIBLE_FINAL); localStorage.setItem("sv_admin_password", GLOBAL_ADMIN_PASSWORD_VISIBLE_FINAL); }
+  else { sessionStorage.removeItem(GLOBAL_ADMIN_KEY_FINAL); sessionStorage.removeItem("sv_admin_password"); }
   resultsAdminActive = isGlobalAdminActive();
   updateGlobalAdminUi();
   if (document.body.dataset.mode === "results") {
@@ -2235,6 +2235,7 @@ function handleGlobalAdminClick() {
   const password = prompt("Administrator-Passwort eingeben:");
   if (password === null) return;
   if (password === GLOBAL_ADMIN_PASSWORD_FINAL) {
+    sessionStorage.setItem("sv_admin_password", password); localStorage.setItem("sv_admin_password", password);
     setGlobalAdminActive(true);
   } else {
     alert("Falsches Passwort.");
@@ -2730,19 +2731,14 @@ function installLocalResetControls() {
   bar.innerHTML = `
     <div class="wrap local-reset-inner admin-reset-inner">
       <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
-      <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
-      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
       <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
     </div>`;
   const statusBtn = document.getElementById("globalAdminStatusBtn");
-  const clearPageBtn = document.getElementById("clearPageBtn");
   const clearAllBtn = document.getElementById("clearAllLocalBtn");
   if (statusBtn) statusBtn.onclick = handleGlobalAdminClick;
-  if (clearPageBtn) clearPageBtn.onclick = () => {
-    if (confirm("Lokale Eingaben auf der aktuellen Seite leeren?")) clearCurrentPageInputs();
-  };
   if (clearAllBtn) clearAllBtn.onclick = () => {
-    if (!confirm("Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.")) return;
+    if (!confirm("Warnung: Dadurch werden alle lokal im Browser gespeicherten Daten innerhalb dieser Webseite gelöscht. Diese lokalen Daten können nicht wiederhergestellt werden. Nicht betroffen sind bereits übermittelte Ergebnisse, Feedbacks und Gruppenzuweisungen im Google Sheet.")) return;
     clearAllLocalSupervisionData({ silent: true });
     window.location.href = "index.html";
   };
@@ -6134,8 +6130,8 @@ try {
       <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
       <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
       <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
-      <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
-      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+      <button type="button" class="secondary small-reset" id="clearPageBtn">Lokale Daten löschen</button>
+      <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
       <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
     </div>`;
     const back=document.getElementById('localBackBtn');
@@ -6144,8 +6140,8 @@ try {
     const clearAllBtn=document.getElementById('clearAllLocalBtn');
     if(back) back.onclick=()=>{ if(history.length>1) history.back(); else location.href='index.html'; };
     if(statusBtn) statusBtn.onclick=typeof handleGlobalAdminClick==='function'?handleGlobalAdminClick:undefined;
-    if(clearPageBtn) clearPageBtn.onclick=async()=>{ if(await window.supervisionConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Aktuelle Seite leeren')) clearCurrentPageInputs(); };
-    if(clearAllBtn) clearAllBtn.onclick=async()=>{ if(!(await window.supervisionConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Seite zurücksetzen', true))) return; clearAllLocalSupervisionData({silent:true}); location.href='index.html'; };
+    if(clearPageBtn) clearPageBtn.onclick=async()=>{ if(await window.supervisionConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Lokale Daten löschen')) clearCurrentPageInputs(); };
+    if(clearAllBtn) clearAllBtn.onclick=async()=>{ if(!(await window.supervisionConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Lokale Daten löschen', true))) return; clearAllLocalSupervisionData({silent:true}); location.href='index.html'; };
     if(typeof updateGlobalAdminUi==='function') updateGlobalAdminUi();
   };
 
@@ -6887,8 +6883,8 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
         <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
         <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
         <button type="button" class="admin-status-button" id="globalAdminStatusBtn" data-admin-status-button>Admin-Modus deaktiviert</button>
-        <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
-        <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+        <button type="button" class="secondary small-reset" id="clearPageBtn">Lokale Daten löschen</button>
+        <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
         <span id="pageResetStatus" class="local-reset-status" aria-live="polite"></span>
       </div>
       <button type="button" id="topbarCollapseToggle" class="topbar-collapse-toggle${hintSeen ? '' : ' is-glowing'}" aria-label="Bedienleiste ein- oder ausklappen" aria-expanded="${collapsed ? 'false' : 'true'}">${collapsed ? '<span>Ausklappen</span><span class="topbar-toggle-arrow">↓</span>' : '<span>Einklappen</span><span class="topbar-toggle-arrow">↑</span>'}</button>
@@ -6903,8 +6899,8 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
 
     if (back) back.onclick = () => { if (history.length > 1) history.back(); else location.href = 'index.html'; };
     if (statusBtn) statusBtn.onclick = typeof handleGlobalAdminClick === 'function' ? handleGlobalAdminClick : undefined;
-    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Aktuelle Seite leeren')) clearCurrentPageInputs(); };
-    if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Seite zurücksetzen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
+    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirm('Lokale Eingaben auf der aktuellen Seite leeren?', 'Lokale Daten löschen')) clearCurrentPageInputs(); };
+    if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirm('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Lokale Daten löschen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
     if (toggle) toggle.onclick = () => setTopbarCollapsed(!bar.classList.contains('is-collapsed'));
     if (typeof updateGlobalAdminUi === 'function') updateGlobalAdminUi();
   };
@@ -7197,8 +7193,8 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
           <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
           <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
           <span class="topbar-separator" aria-hidden="true"></span>
-          <button type="button" class="secondary small-reset" id="clearPageBtn">Aktuelle Seite leeren</button>
-          <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Seite zurücksetzen</button>
+          <button type="button" class="secondary small-reset" id="clearPageBtn">Lokale Daten löschen</button>
+          <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
         </div>
         <div class="topbar-nav-right">
           <button type="button" id="topbarCollapseInline" class="topbar-collapse-toggle inline-collapse-toggle${hintSeen ? '' : ' is-glowing'}" data-topbar-collapse-toggle aria-label="Bedienleiste ein- oder ausklappen" aria-expanded="${collapsed ? 'false' : 'true'}">${toggleLabel}</button>
@@ -7214,8 +7210,8 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
     const clearAllBtn = document.getElementById('clearAllLocalBtn');
     if (back) back.onclick = () => { if (history.length > 1) history.back(); else location.href = 'index.html'; };
     if (statusBtn) statusBtn.onclick = typeof handleGlobalAdminClick === 'function' ? handleGlobalAdminClick : undefined;
-    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirmPatch('Lokale Eingaben auf der aktuellen Seite leeren?', 'Aktuelle Seite leeren')) clearCurrentPageInputs(); };
-    if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirmPatch('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Seite zurücksetzen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
+    if (clearPageBtn) clearPageBtn.onclick = async () => { if (await safeConfirmPatch('Lokale Eingaben auf der aktuellen Seite leeren?', 'Lokale Daten löschen')) clearCurrentPageInputs(); };
+    if (clearAllBtn) clearAllBtn.onclick = async () => { if (!(await safeConfirmPatch('Alle lokal gespeicherten Arbeitsdaten dieser Website löschen? Google-Sheet-Ergebnisse bleiben erhalten.', 'Lokale Daten löschen', true))) return; clearAllLocalSupervisionData({ silent: true }); location.href = 'index.html'; };
     bar.querySelectorAll('[data-topbar-collapse-toggle]').forEach(btn => {
       btn.onclick = () => setCollapseUi(bar, !bar.classList.contains('is-collapsed'));
     });

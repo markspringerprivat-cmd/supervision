@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppensupervision ESE</title>
-  <link rel="stylesheet" href="css/styles.css?v=landing-v31-admin-delete-groups">
+  <link rel="stylesheet" href="css/styles.css?v=landing-v32-admin-cleanup">
   <style>
     :root{
       --red:#d62828;--orange:#f77f00;--yellow:#f2c94c;--green:#2f9e44;--blue:#2b65a3;
@@ -69,6 +69,7 @@
     .clickable-admin-card{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
     .clickable-admin-card:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(15,31,53,.12);background:#fbfdff}
     .clickable-admin-card .admin-actions{cursor:default}
+    .admin-reset-all{margin-top:12px;border-top:1px solid #e2e9f2;padding-top:12px}
 
 .landing-card.main-action-card{
       position:relative;
@@ -167,6 +168,10 @@
     <p id="resetManometerDevicesStatus" class="small-status" aria-live="polite"></p>
     <p id="deleteManometerFeedbackStatus" class="small-status" aria-live="polite"></p>
   </div>
+  <div class="admin-actions admin-reset-all">
+    <button id="resetEverythingBtn" type="button" class="secondary danger-soft">Seite zurücksetzen</button>
+    <p id="resetEverythingStatus" class="small-status" aria-live="polite"></p>
+  </div>
 </aside>
 
 <main class="landing-shell">
@@ -198,11 +203,11 @@
 
 <footer><div class="wrap">Prototyp für GitHub Pages · Daten werden lokal im Browser gespeichert, Ergebnisse optional per Google Apps Script übertragen.</div></footer>
 
-<script src="js/config.js?v=landing-v31-admin-delete-groups"></script>
-<script src="js/app.js?v=landing-v31-admin-delete-groups"></script>
-<script src="js/roles_flow_patch.js?v=landing-v31-admin-delete-groups"></script>
+<script src="js/config.js?v=landing-v32-admin-cleanup"></script>
+<script src="js/app.js?v=landing-v32-admin-cleanup"></script>
+<script src="js/roles_flow_patch.js?v=landing-v32-admin-cleanup"></script>
 <script src="js/editor_v6_patch.js?v=editor-v8-handoff"></script>
-<script src="js/guided_flow_patch.js?v=landing-v31-admin-delete-groups"></script>
+<script src="js/guided_flow_patch.js?v=landing-v32-admin-cleanup"></script>
 
 <script>
 (function(){
@@ -260,7 +265,13 @@
     }
   }
   function getScriptUrlLocal(){try{ if(typeof getAppsScriptUrl === 'function') return getAppsScriptUrl(); }catch(_){} return (window.SUPERVISION_CONFIG && window.SUPERVISION_CONFIG.APPS_SCRIPT_URL) || '';}
-  function adminPasswordLocal(){try{return localStorage.getItem('sv_admin_password') || localStorage.getItem('adminPassword') || '';}catch(_){return '';}}
+  function adminPasswordLocal(){
+    try{
+      return sessionStorage.getItem('sv_admin_password') || localStorage.getItem('sv_admin_password') || localStorage.getItem('adminPassword') || (document.body.classList.contains('is-global-admin') ? 'Mark123' : '');
+    }catch(_){
+      return document.body.classList.contains('is-global-admin') ? 'Mark123' : '';
+    }
+  }
   function jsonpLocal(url, params){
     return new Promise(function(resolve,reject){
       var cb='manoAdminCb_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
@@ -278,8 +289,7 @@
     var url=getScriptUrlLocal();
     if(!url){status.textContent='Keine Apps-Script-URL gefunden.';return;}
     var password=adminPasswordLocal();
-    if(!password){password=prompt('Admin-Passwort eingeben:')||'';}
-    if(!password){status.textContent='Vorgang abgebrochen.';return;}
+    if(!password){status.textContent='Bitte zuerst den Admin-Modus aktivieren.';return;}
     status.textContent='Bitte warten …';
     try{
       var res=await jsonpLocal(url,{action:action,adminPassword:password});
@@ -302,6 +312,19 @@
     if(delResults) delResults.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteMainResultsAll','deleteMainResultsStatus','Alle normalen Ergebnis-Einträge wurden gelöscht.');});
     var delGroups=document.getElementById('deleteAllGroupsBtn');
     if(delGroups) delGroups.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation(); callManometerAdmin('deleteGroupsAll','deleteAllGroupsStatus','Alle Gruppen wurden gelöscht.');});
+        var resetEverything=document.getElementById('resetEverythingBtn');
+    if(resetEverything) resetEverything.addEventListener('click',async function(ev){
+      ev.preventDefault();ev.stopPropagation();
+      var status=document.getElementById('resetEverythingStatus');
+      status.textContent='Bitte warten …';
+      try{
+        await callManometerAdmin('deleteMainResultsAll','resetEverythingStatus','Normale Ergebnis-Einträge gelöscht.');
+        await callManometerAdmin('deleteGroupsAll','resetEverythingStatus','Gruppen gelöscht.');
+        await callManometerAdmin('deleteManometerFeedbackAll','resetEverythingStatus','Manometer-Einträge gelöscht.');
+        status.textContent='Alle serverseitigen Einträge wurden zurückgesetzt.';
+      }catch(err){status.textContent='Fehler: '+err.message;}
+    });
+
     document.querySelectorAll('.clickable-admin-card[data-card-href]').forEach(function(card){
       card.addEventListener('click',function(ev){ if(ev.target.closest('button,a')) return; location.href=card.dataset.cardHref; });
       card.addEventListener('keydown',function(ev){ if(ev.key==='Enter'||ev.key===' '){ev.preventDefault(); location.href=card.dataset.cardHref;} });

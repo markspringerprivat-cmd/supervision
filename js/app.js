@@ -9615,3 +9615,98 @@ window.addEventListener('DOMContentLoaded',()=>{
   installAdminAutofillV96();
   updateGlobalAdminUi();
 });
+
+
+/* ============================================================
+   v97: Navigation sichtbar, Rollen-Vorladen, Admin-Dummy, Mobile-Dock-Fix
+   ============================================================ */
+(function(){
+  function isHomePageV97(){
+    var p=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+    return !p || p==='index.html';
+  }
+  function ensureUtilityDockV97(){
+    var dock=document.getElementById('globalUtilityDockV96');
+    if(!dock){
+      dock=document.createElement('div');
+      dock.id='globalUtilityDockV96';
+      dock.className='global-utility-dock';
+      document.body.appendChild(dock);
+    }
+    dock.classList.remove('collapsed');
+    var homeLink=isHomePageV97()?'':'<a href="index.html" class="utility-home">Zur Startseite</a>';
+    dock.innerHTML='<button type="button" class="utility-toggle" aria-expanded="true">☰</button><div class="utility-actions">'+homeLink+'<button type="button" class="utility-admin" data-admin-login>Admin</button></div>';
+    var toggle=dock.querySelector('.utility-toggle');
+    var admin=dock.querySelector('.utility-admin');
+    if(toggle)toggle.onclick=function(){dock.classList.toggle('collapsed');toggle.setAttribute('aria-expanded',String(!dock.classList.contains('collapsed')));};
+    if(admin)admin.onclick=handleGlobalAdminClick;
+  }
+  function preloadRoleContextV97(){
+    var url='';
+    try{ if(typeof getAppsScriptUrl==='function') url=getAppsScriptUrl(); }catch(_){}
+    var gid='';
+    try{
+      var p=new URLSearchParams(location.search);
+      gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+    }catch(_){}
+    if(!url||!gid) return Promise.resolve(false);
+    return new Promise(function(resolve){
+      var cb='preloadRolesV97_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+      var s=document.createElement('script');
+      var done=false;
+      window[cb]=function(data){
+        done=true;
+        try{
+          if(data&&data.ok&&Array.isArray(data.members)){
+            localStorage.setItem('sv_cached_group_members_'+gid, JSON.stringify(data.members));
+            localStorage.setItem('sv_cached_group_members_active', JSON.stringify(data.members));
+          }
+        }catch(_){}
+        cleanup(); resolve(true);
+      };
+      function cleanup(){try{delete window[cb]}catch(_){} if(s.parentNode)s.parentNode.removeChild(s);}
+      s.onerror=function(){if(!done){cleanup();resolve(false);}};
+      s.src=url+(url.indexOf('?')>=0?'&':'?')+'action=listGroupMembers&groupId='+encodeURIComponent(gid)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
+      document.body.appendChild(s);
+      setTimeout(function(){if(!done){cleanup();resolve(false);}},1500);
+    });
+  }
+  function installRolePreloadClicksV97(){
+    var pattern=/(rolle-|phase\d-|gedanken-|ablauf-).*\.html/i;
+    document.addEventListener('click',function(ev){
+      var a=ev.target&&ev.target.closest&&ev.target.closest('a[href],button[data-card-href]');
+      if(!a) return;
+      var href=a.getAttribute('href')||a.getAttribute('data-card-href')||'';
+      if(!pattern.test(href)) return;
+      if(a.dataset.preloadedV97==='1') return;
+      ev.preventDefault();
+      a.dataset.preloadedV97='1';
+      var old=a.textContent;
+      a.classList.add('is-busy');
+      a.textContent='Lädt …';
+      var go=function(){ location.href=href; };
+      Promise.race([preloadRoleContextV97(), new Promise(r=>setTimeout(r,1600))]).then(go).catch(go);
+      setTimeout(function(){try{a.textContent=old;a.classList.remove('is-busy')}catch(_){}},1900);
+    },true);
+  }
+  function installGlobalStylesV97(){
+    if(document.getElementById('globalStylesV97')) return;
+    var st=document.createElement('style');
+    st.id='globalStylesV97';
+    st.textContent='.global-utility-dock{display:flex!important;visibility:visible!important}.global-utility-dock .utility-actions{display:flex!important}.global-utility-dock.collapsed .utility-actions{display:none!important}.global-utility-dock a,.global-utility-dock button{visibility:visible!important}.global-utility-dock .utility-home{display:inline-flex!important}.admin-autofill-v96,[data-admin-autofill]{display:none!important}body.is-global-admin .admin-autofill-v96,body.is-global-admin [data-admin-autofill]{display:inline-flex!important}.small-reset,#clearAllLocalBtn{display:none!important}body.is-global-admin .small-reset,body.is-global-admin #clearAllLocalBtn{display:inline-flex!important}';
+    document.head.appendChild(st);
+  }
+  var oldUpdate=window.updateGlobalAdminUi;
+  window.updateGlobalAdminUi=function(){
+    if(typeof oldUpdate==='function') oldUpdate.apply(this,arguments);
+    var active=false; try{active=isGlobalAdminActive();}catch(_){}
+    document.querySelectorAll('#clearAllLocalBtn,.small-reset').forEach(function(btn){btn.hidden=!active;btn.style.display=active?'inline-flex':'none';});
+    document.querySelectorAll('[data-admin-autofill],.admin-autofill-v96').forEach(function(btn){btn.hidden=!active;btn.style.display=active?'inline-flex':'none';});
+  };
+  window.addEventListener('DOMContentLoaded',function(){
+    installGlobalStylesV97();
+    ensureUtilityDockV97();
+    installRolePreloadClicksV97();
+    if(typeof updateGlobalAdminUi==='function') updateGlobalAdminUi();
+  });
+})();

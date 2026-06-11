@@ -211,18 +211,28 @@
     if(!window.jsQR || !video || !video.videoWidth || !video.videoHeight) return '';
     if(!roleScannerCanvas) roleScannerCanvas=document.createElement('canvas');
     const canvas=roleScannerCanvas;
-    const w=video.videoWidth;
-    const h=video.videoHeight;
-    canvas.width=w;
-    canvas.height=h;
+    const fullW=video.videoWidth;
+    const fullH=video.videoHeight;
     const ctx=canvas.getContext('2d',{willReadFrequently:true});
-    ctx.drawImage(video,0,0,w,h);
-    const img=ctx.getImageData(0,0,w,h);
-    const code=window.jsQR(img.data,w,h,{inversionAttempts:'attemptBoth'});
-    return code && code.data ? String(code.data).trim() : '';
+    function tryArea(sx,sy,sw,sh){
+      canvas.width=sw;
+      canvas.height=sh;
+      ctx.drawImage(video,sx,sy,sw,sh,0,0,sw,sh);
+      const img=ctx.getImageData(0,0,sw,sh);
+      const code=window.jsQR(img.data,sw,sh,{inversionAttempts:'attemptBoth'});
+      return code&&code.data?String(code.data).trim():'';
+    }
+    let raw=tryArea(0,0,fullW,fullH);
+    if(raw) return raw;
+    const size=Math.floor(Math.min(fullW,fullH)*0.82);
+    const sx=Math.floor((fullW-size)/2), sy=Math.floor((fullH-size)/2);
+    raw=tryArea(sx,sy,size,size);
+    if(raw) return raw;
+    const small=Math.floor(Math.min(fullW,fullH)*0.62);
+    return tryArea(Math.floor((fullW-small)/2),Math.floor((fullH-small)/2),small,small);
   }
 
-  async function openRoleScanner(){
+    async function openRoleScanner(){
     const modal=document.getElementById('roleScannerModal');
     const video=document.getElementById('roleScanVideo');
     if(!modal || !video) return;
@@ -253,14 +263,11 @@
       }
 
       let jsQrReady=false;
-      if(!barcodeDetector){
-        roleScannerStatus('Scanner wird vorbereitet …');
-        try{ await loadJsQrFallback(); jsQrReady=!!window.jsQR; }
-        catch(_){ jsQrReady=false; }
-      }
+      roleScannerStatus('Scanner wird vorbereitet …');
+      try{ await loadJsQrFallback(); jsQrReady=!!window.jsQR; }
+      catch(_){ jsQrReady=false; }
 
-      if(barcodeDetector) roleScannerStatus('QR-Code im Kamerabild ausrichten …');
-      else if(jsQrReady) roleScannerStatus('QR-Code im Kamerabild ausrichten …');
+      if(barcodeDetector || jsQrReady) roleScannerStatus('QR-Code ruhig und möglichst groß in die Mitte halten …');
       else roleScannerStatus('Automatisches Erkennen ist in diesem Browser nicht verfügbar. Bitte Link unten einfügen.','warning');
 
       roleScannerTimer=setInterval(async()=>{
@@ -270,7 +277,8 @@
           if(barcodeDetector){
             const codes=await barcodeDetector.detect(video);
             if(codes && codes.length) raw=(codes[0].rawValue||'').trim();
-          }else if(window.jsQR){
+          }
+          if(!raw && window.jsQR){
             raw=detectWithJsQr(video);
           }
           if(!raw) return;
@@ -284,7 +292,7 @@
         }catch(err){
           // Bei einzelnen Erkennungsfehlern weiter scannen.
         }
-      },450);
+      },220);
     }catch(err){
       roleScannerStatus('Kamera konnte nicht geöffnet werden. Bitte Browser-Kamerazugriff erlauben oder Link unten einfügen.','warning');
     }

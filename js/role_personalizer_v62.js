@@ -42,9 +42,14 @@
   }
   function fromLocal(){
     let a={};
+    const gid=groupId();
     try{a=JSON.parse(localStorage.getItem('sv_role_names_v58')||'{}')||{};}catch(_){}
     try{
-      const assignments=JSON.parse(localStorage.getItem('sv_default_assignments')||localStorage.getItem('sv_'+groupId()+'_assignments')||'{}')||{};
+      const cached=JSON.parse(localStorage.getItem('sv_cached_group_members_'+gid)||localStorage.getItem('sv_cached_group_members_active')||'[]')||[];
+      if(Array.isArray(cached)) cached.forEach(m=>{if(m&&m.role&&m.name&&!a[m.role])a[m.role]=m.name;});
+    }catch(_){}
+    try{
+      const assignments=JSON.parse(localStorage.getItem('sv_default_assignments')||localStorage.getItem('sv_'+gid+'_assignments')||'{}')||{};
       Object.keys(assignments).forEach(k=>{if(!a[k])a[k]=assignments[k];});
     }catch(_){}
     return a;

@@ -9508,3 +9508,25 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
   document.addEventListener('DOMContentLoaded',()=>{checkGroupExistsGuard();});
 })();
 
+
+
+/* v61 kleine Wartespinner an Buttons */
+(function(){
+  const WAIT_TEXT=/weiter|start|öffnen|speichern|übermitteln|verteilen|gruppe|feedback|beitritt|scannen|löschen|aktualisieren|laden/i;
+  function busy(el){
+    if(!el || el.classList.contains('no-busy-spinner')) return;
+    const text=(el.textContent||'')+' '+(el.getAttribute('aria-label')||'');
+    if(!WAIT_TEXT.test(text)) return;
+    el.classList.add('is-busy');
+    clearTimeout(el.__svBusyTimer);
+    el.__svBusyTimer=setTimeout(()=>{try{el.classList.remove('is-busy')}catch(_){}},9000);
+  }
+  document.addEventListener('click',function(ev){
+    const el=ev.target&&ev.target.closest&&ev.target.closest('button,a.button,.button');
+    if(!el) return;
+    if(el.matches('[href="#"],[disabled],[aria-disabled="true"]')) return;
+    busy(el);
+  },true);
+  window.svSetButtonBusy=function(el,on){try{el&&el.classList.toggle('is-busy',!!on)}catch(_){}};
+})();
+

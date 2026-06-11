@@ -351,23 +351,48 @@
     if(!role)return;
     const gid=groupIdFromUrl();
     const main=document.querySelector('main');
-    const original=main ? main.innerHTML : '';
-    if(main) main.style.visibility='hidden';
+    const target=document.getElementById('roleCard');
+
+    // Wichtig: Die Rollenkarte darf nie leer bleiben. Erst lokal rendern, danach serverseitig prüfen.
+    try{
+      if(typeof window.initRoleCard === 'function') window.initRoleCard();
+      else if(typeof initRoleCard === 'function') initRoleCard();
+    }catch(_){}
+
+    // Wenn keine Gruppen-ID im Link/lokalen Speicher vorhanden ist, keine Serverprüfung erzwingen.
+    if(!gid){
+      if(target && !target.innerHTML.trim()){
+        target.innerHTML='<section class="card warning"><h2>Rollenkarte wird vorbereitet</h2><p>Es wurde keine Gruppen-ID gefunden. Öffne die Rollenkarte am besten über die Rollenübersicht oder den QR-Code der Rollenverteilung.</p></section>';
+      }
+      return;
+    }
+
+    let guardNote=document.getElementById('roleGuardLoading');
+    if(!guardNote && main){
+      guardNote=document.createElement('p');
+      guardNote.id='roleGuardLoading';
+      guardNote.className='small role-guard-loading';
+      guardNote.innerHTML='<span class="sv-spinner"></span> Rollen-Zuordnung wird geprüft …';
+      const nav=main.querySelector('.nav-row');
+      if(nav) nav.insertAdjacentElement('beforebegin', guardNote);
+      else main.prepend(guardNote);
+    }
+
     try{
       const res=await jsonp({action:'resolveAssignedRoleForDevice',groupId:gid,deviceId:deviceId()});
+      if(guardNote) guardNote.remove();
       if(!res||res.ok===false||!res.found){
-        if(main){main.style.visibility='visible';main.innerHTML=`<section class="card"><h2>Gerät nicht zugeordnet</h2><p>Dieses Gerät ist dieser Gruppe noch nicht zugeordnet. Bitte tritt zuerst über den Gruppen-QR-Code bei.</p><a class="button secondary" href="rollen.html">Zur Rollenverteilung</a></section>`;}
+        if(main){main.innerHTML=`<section class="card"><h2>Gerät nicht zugeordnet</h2><p>Dieses Gerät ist dieser Gruppe noch nicht zugeordnet. Bitte tritt zuerst über den Gruppen-QR-Code bei.</p><a class="button secondary" href="rollen.html?groupId=${esc(encodeURIComponent(gid))}">Zur Rollenverteilung</a></section>`;}
         return;
       }
       if(!res.role){
-        if(main){main.style.visibility='visible';main.innerHTML=`<section class="card"><h2>Rolle noch nicht verteilt</h2><p>Dieses Gerät ist der Gruppe zugeordnet, aber die Rollen wurden noch nicht verteilt.</p><a class="button" href="${esc('rollen.html?groupId='+encodeURIComponent(gid))}">Zur Rollenübersicht</a></section>`;}
+        if(main){main.innerHTML=`<section class="card"><h2>Rolle noch nicht verteilt</h2><p>Dieses Gerät ist der Gruppe zugeordnet, aber die Rollen wurden noch nicht verteilt.</p><a class="button" href="${esc('rollen.html?groupId='+encodeURIComponent(gid))}">Zur Rollenübersicht</a></section>`;}
         return;
       }
       if(res.role!==role){
-        if(main){main.style.visibility='visible';main.innerHTML=`<section class="card"><h2>Falsche Rollenkarte</h2><p>Du bist <strong>${esc(ROLE_LABELS[res.role]||res.role)}</strong>. Bitte öffne die Übersicht und nutze deine zugeteilte Rollenkarte.</p><a class="button" href="${esc('rollen.html?groupId='+encodeURIComponent(gid))}">Zur Rollenübersicht</a><p class="small">Dort findest du alle Rollenkarten und QR-Codes der fertigen Rollenverteilung.</p></section>`;}
+        if(main){main.innerHTML=`<section class="card"><h2>Falsche Rollenkarte</h2><p>Du bist <strong>${esc(ROLE_LABELS[res.role]||res.role)}</strong>. Bitte öffne die Übersicht und nutze deine zugeteilte Rollenkarte.</p><a class="button" href="${esc('rollen.html?groupId='+encodeURIComponent(gid))}">Zur Rollenübersicht</a><p class="small">Dort findest du alle Rollenkarten und QR-Codes der fertigen Rollenverteilung.</p></section>`;}
         return;
       }
-      if(main){main.style.visibility='visible';}
       try{
         if(typeof window.initRoleCard === 'function') window.initRoleCard();
         else if(typeof initRoleCard === 'function') initRoleCard();
@@ -379,7 +404,13 @@
         }catch(_){}
       },150);
     }catch(err){
-      if(main){main.style.visibility='visible';main.innerHTML=`<section class="card warning"><h2>Prüfung nicht möglich</h2><p>${esc(err.message)}</p></section>`;}
+      if(guardNote) {
+        guardNote.className='small role-guard-loading warning';
+        guardNote.textContent='Zuordnung konnte gerade nicht geprüft werden. Die Rollenkarte bleibt sichtbar.';
+      }
+      try{
+        if(target && !target.innerHTML.trim() && typeof window.initRoleCard === 'function') window.initRoleCard();
+      }catch(_){}
     }
   }
 

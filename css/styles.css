@@ -5207,3 +5207,13 @@ body[data-mode="results"] .result-card[aria-current="true"].is-winner{
 @media(max-width:900px){.three-col{grid-template-columns:1fr}}
 
 .readonly-group-name{background:#eef3f8!important;color:#52687f!important;cursor:not-allowed!important;border-color:#d7e3ef!important}
+
+
+/* v61 Lade-/Warteanzeige */
+.sv-spinner{display:inline-block;width:1em;height:1em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-.18em;margin-right:.45em;animation:svSpin .75s linear infinite}
+.sv-spinner.tiny{width:.85em;height:.85em;border-width:1.8px;margin-right:.35em}
+@keyframes svSpin{to{transform:rotate(360deg)}}
+.button.is-busy,button.is-busy,a.button.is-busy{position:relative;opacity:.86;pointer-events:none}
+.button.is-busy::after,button.is-busy::after,a.button.is-busy::after{content:"";display:inline-block;width:1em;height:1em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;margin-left:.55em;vertical-align:-.18em;animation:svSpin .75s linear infinite}
+.role-guard-loading{display:flex;align-items:center;gap:.3em;color:#52687f;margin:12px 0}
+.role-guard-loading.warning{color:#8a5a00;background:#fff7e6;border:1px solid #f0d69a;border-radius:12px;padding:10px 12px}

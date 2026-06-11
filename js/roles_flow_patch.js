@@ -2095,11 +2095,21 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     }).join('');
     const next=document.getElementById('flowNext');
     if(next){
-      next.href=thoughtTargetV101();
-      next.classList.remove('disabled','is-busy');
-      next.removeAttribute('aria-disabled');
-      next.textContent='Weiter: Mach dir Gedanken';
-      next.style.pointerEvents='auto';
+      const target=thoughtTargetV101();
+      const clean=next.cloneNode(true);
+      clean.href=target;
+      clean.classList.remove('disabled','is-busy');
+      clean.removeAttribute('aria-disabled');
+      clean.textContent='Weiter: Mach dir Gedanken';
+      clean.style.pointerEvents='auto';
+      clean.dataset.v102Direct='1';
+      clean.addEventListener('click',function(ev){
+        ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
+        location.href=target;
+      },true);
+      next.replaceWith(clean);
     }
   }
   window.renderFlowCardsV101=renderFlowCardsV101;
@@ -2108,4 +2118,28 @@ In einer Unterrichtsstunde entsteht vor der Klasse der Eindruck, dass beide Lehr
     setTimeout(renderFlowCardsV101,80);
     setTimeout(renderFlowCardsV101,350);
   });
+})();
+
+
+/* v102: Protokoll-/Ablauf-Weiterbutton gegen alte Sperr-Handler absichern */
+(function(){
+  function targetV102(){
+    try{
+      var p=new URLSearchParams(location.search);
+      var role=p.get('role')||document.body.dataset.role||document.body.dataset.flowProfile||'supervisor';
+      if(role==='lehrkraft') role='lehrkraft-a';
+      var gid=p.get('g')||p.get('groupId')||localStorage.getItem('sv_current_group')||localStorage.getItem('sv_group_id')||'';
+      return 'gedanken-'+role+'.html'+(gid?'?g='+encodeURIComponent(gid):'');
+    }catch(_){return 'gedanken-protokoll.html';}
+  }
+  document.addEventListener('click',function(ev){
+    var a=ev.target&&ev.target.closest&&ev.target.closest('#flowNext');
+    if(!a) return;
+    var href=a.getAttribute('href')||targetV102();
+    if(!href || href==='#') href=targetV102();
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    location.href=href;
+  },true);
 })();

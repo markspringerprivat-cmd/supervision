@@ -187,7 +187,8 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
         <article class="sv-guidance-card is-active" data-tx="0">
           <h2>Ergebnis übermitteln</h2>
           <p>Sende jetzt das Gruppenergebnis mit der gespeicherten Präsentationsgestaltung ab. Danach startet die Manometer-Feedbackphase.</p>
-          <label for="groupName">Gruppenname</label><input id="groupName" type="text">
+          <label for="groupName">Gruppenname</label><input id="groupName" type="text" readonly aria-readonly="true" class="readonly-group-name" tabindex="-1">
+          <div class="warning-box red-info-box"><strong>Hinweis:</strong> Die erstellte Präsentation kann später auf der Startseite unter <strong>„Gruppenfortschritt einsehen“</strong> bearbeitet werden.</div>
           <div class="nav-row"><button id="submitResults" type="button">Ergebnis übermitteln</button></div>
           <p id="submitStatus" class="small"></p>
         </article>
@@ -198,6 +199,7 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
             <img id="manometerQr" class="qr share-qr" alt="QR-Code zum Manometer-Feedback">
             <div><a id="manometerFeedbackLink" class="button" href="manometer.html" aria-disabled="true">Feedback starten in 5</a></div>
           </div>
+          <div class="warning-box red-info-box"><strong>Hinweis:</strong> Der Feedback-Code und der Feedback-Link stehen zusätzlich auf der Startseite unter <strong>„Gruppenfortschritt einsehen“</strong> zur Verfügung.</div>
           <p id="manometerReadHint" class="small">Der Button wird gleich aktiviert. Nutzt die Zeit, damit jede Person aus der Gruppe den QR-Code scannen kann.</p>
         </article>
       </section>`;
@@ -205,7 +207,10 @@ window.__svSupervisorHasProtocolV105 = window.__svSupervisorHasProtocolV105 || w
     const input=document.getElementById('groupName');
     if(input){
       try{ const d=typeof collectSupervisorData==='function'?collectSupervisorData():{}; input.value=ltxt('summary_group_name') || d.groupName || gid(); }catch(_){ input.value=ltxt('summary_group_name') || gid(); }
-      input.addEventListener('input',()=>{try{ if(typeof saveText==='function') saveText('summary_group_name', input.value); }catch(_){}});
+      input.readOnly=true;
+      input.setAttribute('aria-readonly','true');
+      input.classList.add('readonly-group-name');
+      input.setAttribute('tabindex','-1');
     }
     function manometerUrl(page){ const u=new URL(page || 'manometer.html', location.href); const g=gid(); if(g) u.searchParams.set('g',g); return u.toString(); }
     function refreshLinks(){

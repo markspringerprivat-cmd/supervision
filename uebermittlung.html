@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ergebnis übermitteln</title>
-  <link rel="stylesheet" href="css/styles.css?v=qr-scanner-unrestricted-v131">
+  <link rel="stylesheet" href="css/styles.css?v=uebermittlung-feedback-hints-v133">
 </head>
 <body data-mode="summary" data-role="supervisor">
 <header><div class="wrap"><h1>Ergebnis übermitteln</h1><p>Ergebnis speichern und anschließend Feedback starten</p></div></header>
@@ -13,7 +13,11 @@
     <h2>Ergebnis übermitteln</h2>
     <p>Sende jetzt das Gruppenergebnis mit der gespeicherten Präsentationsgestaltung ab. Danach geht es weiter zum Manometer-Feedback.</p>
     <label for="groupName">Gruppenname</label>
-    <input id="groupName" type="text" readonly aria-readonly="true" class="readonly-group-name">
+    <input id="groupName" type="text" readonly aria-readonly="true" class="readonly-group-name" tabindex="-1">
+
+    <div class="warning-box red-info-box">
+      <strong>Hinweis:</strong> Die erstellte Präsentation kann später auf der Startseite unter <strong>„Gruppenfortschritt einsehen“</strong> bearbeitet werden.
+    </div>
     <div class="nav-row">
       <button id="submitResults" type="button">Ergebnis übermitteln</button>
     </div>
@@ -21,9 +25,9 @@
   </section>
 </main>
 <footer><div class="wrap">Gruppen-ID: <span data-group-id></span></div></footer>
-<script src="js/config.js?v=qr-scanner-unrestricted-v131"></script><script src="js/app.js?v=qr-scanner-unrestricted-v131"></script>
-<script src="js/roles_flow_patch.js?v=qr-scanner-unrestricted-v131"></script>
-<script src="js/guided_flow_patch.js?v=qr-scanner-unrestricted-v131"></script>
+<script src="js/config.js?v=uebermittlung-feedback-hints-v133"></script><script src="js/app.js?v=uebermittlung-feedback-hints-v133"></script>
+<script src="js/roles_flow_patch.js?v=uebermittlung-feedback-hints-v133"></script>
+<script src="js/guided_flow_patch.js?v=uebermittlung-feedback-hints-v133"></script>
 
 <script id="uebermittlung_groupname_readonly_v121">
 (function(){

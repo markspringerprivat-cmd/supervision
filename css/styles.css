@@ -5671,3 +5671,39 @@ input[readonly].readonly-group-name{
 .v6-modal .v6-handle{
   z-index:2147483600!important;
 }
+
+
+/* v132: Gedankenphase - Gespräch erst nach Eintrag starten */
+#startPhase1.is-disabled,
+#startPhase1[aria-disabled="true"]{
+  opacity:.48!important;
+  filter:grayscale(.35)!important;
+  cursor:not-allowed!important;
+}
+.prep-required-status{
+  margin:14px 0!important;
+}
+
+
+/* v133: Hinweise bei Übermittlung und Feedback */
+.red-info-box,
+.warning-box.red-info-box{
+  margin:14px 0!important;
+  padding:14px 16px!important;
+  border-radius:16px!important;
+  border:1px solid #efb4b4!important;
+  background:#fff0f0!important;
+  color:#8a1f1f!important;
+  font-weight:760!important;
+  line-height:1.45!important;
+}
+#groupName.readonly-group-name,
+input#groupName[readonly]{
+  background:#eef3f8!important;
+  color:#52687f!important;
+  border-color:#d7e3ef!important;
+  cursor:not-allowed!important;
+  pointer-events:none!important;
+  user-select:none!important;
+  box-shadow:none!important;
+}

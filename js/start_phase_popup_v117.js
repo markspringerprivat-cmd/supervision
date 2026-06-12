@@ -94,6 +94,12 @@
       ev.preventDefault();
       ev.stopPropagation();
       ev.stopImmediatePropagation();
+      if(document.body && document.body.dataset && document.body.dataset.mode === 'prep'){
+        if(typeof window.prepHasRequiredThoughtV132 === 'function' && !window.prepHasRequiredThoughtV132()){
+          if(typeof window.prepUpdateStartButtonV132 === 'function') window.prepUpdateStartButtonV132();
+          return;
+        }
+      }
       openDialog();
     }, true);
   }

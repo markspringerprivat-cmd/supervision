@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=uebermittlung-feedback-hints-v133">
+  <link rel="stylesheet" href="css/styles.css?v=nav-yellow-separator-remove-v135">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -39,6 +39,12 @@
 <body>
 <header><div class="wrap topbar"><div><h1>Gruppenfortschritt</h1><p>Eigene Gruppenergebnisse und Feedbackstatus</p></div></div></header>
 <main class="progress-shell">
+
+  <button id="groupProgressRefreshCard" type="button" class="card highlight refresh-card-v134" aria-label="Gruppenfortschritt aktualisieren">
+    <h2>Aktualisieren</h2>
+    <p>Aktualisieren, um neu hinzugefügte Fortschritte und Inhalte korrekt darzustellen.</p>
+  </button>
+
   <section class="progress-hero">
     <h1 id="title">Gruppenfortschritt</h1>
     <p id="subtitle">Die Übersicht wird geladen …</p><div id="memberList" class="member-list"></div>
@@ -69,8 +75,8 @@
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=uebermittlung-feedback-hints-v133"></script>
-<script src="js/app.js?v=uebermittlung-feedback-hints-v133"></script>
+<script src="js/config.js?v=nav-yellow-separator-remove-v135"></script>
+<script src="js/app.js?v=nav-yellow-separator-remove-v135"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
@@ -262,6 +268,20 @@ function render(data){
     catch(err){status.textContent='Fehler: '+err.message;}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+<script id="group_progress_refresh_v134">
+(function(){
+  function install(){
+    var card=document.getElementById('groupProgressRefreshCard');
+    if(!card) return;
+    card.addEventListener('click', function(){
+      try{ location.reload(); }
+      catch(_){ location.href = location.href; }
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install);
+  else install();
 })();
 </script>
 </body>

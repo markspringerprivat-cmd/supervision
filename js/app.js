@@ -7141,7 +7141,6 @@ try { if (window.deleteSingleResult) deleteSingleResult = window.deleteSingleRes
         <div class="topbar-nav-left">
           <a class="button secondary small-reset start-nav-button" href="index.html">Zurück zum Start</a>
           <button type="button" class="secondary small-reset back-nav-button" id="localBackBtn">Zurück</button>
-          <span class="topbar-separator" aria-hidden="true"></span>
           <button type="button" class="secondary small-reset" id="clearPageBtn">Lokale Daten löschen</button>
           <button type="button" class="secondary small-reset" id="clearAllLocalBtn">Lokale Daten löschen</button>
         </div>

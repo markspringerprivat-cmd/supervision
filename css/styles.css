@@ -5707,3 +5707,33 @@ input#groupName[readonly]{
   user-select:none!important;
   box-shadow:none!important;
 }
+
+
+/* v134: Gruppenfortschritt-Aktualisierungskachel */
+.refresh-card-v134{
+  width:100%;
+  text-align:left;
+  cursor:pointer;
+  border:1px solid #c9def2!important;
+  background:#eef6ff!important;
+  color:#183a61!important;
+  margin-bottom:18px!important;
+}
+.refresh-card-v134:hover,
+.refresh-card-v134:focus{
+  border-color:#2f68b8!important;
+  box-shadow:0 12px 34px rgba(47,104,184,.16)!important;
+  transform:translateY(-1px);
+}
+.refresh-card-v134 h2{margin-top:0!important;}
+
+
+/* v135: gelben Trennstrich in rechter Navigationsleiste entfernen */
+.topbar-separator{
+  display:none!important;
+  width:0!important;
+  border:0!important;
+  background:transparent!important;
+  margin:0!important;
+  padding:0!important;
+}

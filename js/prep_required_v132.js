@@ -1,7 +1,7 @@
 /* v132: Gedankenphase braucht Eintrag vor Gesprächsstart */
 (function(){
   'use strict';
-  const MSG = 'Bitte notiere zuerst mindestens einen Gedanken. Erst danach kann das Gespräch gestartet werden.';
+  const MSG = 'Bitte fülle zuerst alle Gedankenfelder aus. Erst danach kann das Gespräch gestartet werden.';
 
   function isPrepPage(){
     return document.body && document.body.dataset && document.body.dataset.mode === 'prep';
@@ -14,7 +14,12 @@
   }
 
   function hasEntry(){
-    return fields().some(el => String(el.value !== undefined ? el.value : el.textContent || '').trim().length > 0);
+    const requiredFields = fields();
+    if(!requiredFields.length) return false;
+    return requiredFields.every(el => String(el.value !== undefined ? el.value : el.textContent || '').trim().length > 0);
+  }
+  function missingCount(){
+    return fields().filter(el => !String(el.value !== undefined ? el.value : el.textContent || '').trim()).length;
   }
 
   function statusEl(){
@@ -41,7 +46,7 @@
     btn.dataset.prepReady = ok ? '1' : '0';
     btn.style.pointerEvents = 'auto';
     const st = statusEl();
-    st.textContent = ok ? 'Gedanke eingetragen. Das Gespräch kann gestartet werden.' : MSG;
+    st.textContent = ok ? 'Alle Gedankenfelder sind ausgefüllt. Das Gespräch kann gestartet werden.' : (MSG + ' Noch offen: ' + missingCount() + '.');
     st.className = 'status ' + (ok ? 'ok' : 'warning') + ' prep-required-status';
   }
 
@@ -56,7 +61,7 @@
     setButtonState();
     const st = statusEl();
     try{ st.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
-    const first = fields()[0];
+    const first = fields().find(el => !String(el.value !== undefined ? el.value : el.textContent || '').trim()) || fields()[0];
     if(first) setTimeout(()=>{ try{ first.focus({preventScroll:true}); }catch(_){} }, 160);
     return true;
   }

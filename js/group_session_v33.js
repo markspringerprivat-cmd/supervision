@@ -166,20 +166,58 @@
   let roleScannerCanvas = null;
   let roleScannerJsQrPromise = null;
 
-  function normalizeScannedRoleTarget(text){
+  function normalizeScannedQrTarget(text){
     const value=String(text||'').trim();
-    if(!value) return '';
-    let url='';
+    if(!value) return {kind:'empty', target:'', text:''};
     try{
-      if(/^https?:\/\//i.test(value)) url=new URL(value).toString();
-      else if(/\.html(\?|$)/i.test(value)) url=new URL(value, location.href).toString();
-      else return '';
-      const u=new URL(url, location.href);
-      const file=(u.pathname.split('/').pop()||'').toLowerCase();
-      const allowed=['rolle-supervisor.html','rolle-schulleitung.html','rolle-lehrkraft-a.html','rolle-lehrkraft-b.html','rolle-protokoll.html'];
-      if(!allowed.includes(file)) return '';
-      return u.toString();
-    }catch(_){ return ''; }
+      if(/^https?:\/\//i.test(value)){
+        return {kind:'url', target:new URL(value).toString(), text:value};
+      }
+      if(/^file:\/\//i.test(value)){
+        return {kind:'url', target:value, text:value};
+      }
+      if(/\.html(\?|#|$)/i.test(value)){
+        return {kind:'url', target:new URL(value, location.href).toString(), text:value};
+      }
+      if(/^[\w.-]+\.html(?:[?#].*)?$/i.test(value)){
+        return {kind:'url', target:new URL(value, location.href).toString(), text:value};
+      }
+      return {kind:'text', target:'', text:value};
+    }catch(_){
+      return {kind:'text', target:'', text:value};
+    }
+  }
+  function normalizeScannedRoleTarget(text){
+    const res=normalizeScannedQrTarget(text);
+    return res && res.kind==='url' ? res.target : '';
+  }
+  function handleAnyScannedQr(raw){
+    const res=normalizeScannedQrTarget(raw);
+    if(!res || res.kind==='empty'){
+      roleScannerStatus('Kein QR-Inhalt erkannt.','warning');
+      return;
+    }
+    if(res.kind==='url' && res.target){
+      closeRoleScanner();
+      location.href=res.target;
+      return;
+    }
+    closeRoleScanner();
+    renderScannedTextResult(res.text);
+  }
+  function renderScannedTextResult(text){
+    const main=document.querySelector('main');
+    const safe=esc(text);
+    if(main){
+      main.innerHTML=`<section class="join-card"><h1>QR-Code erkannt</h1><p>Der QR-Code enthält keinen Link, sondern Text:</p><div class="status ok" style="white-space:pre-wrap;word-break:break-word">${safe}</div><div class="join-actions"><button id="copyScannedQrTextBtn" type="button">Text kopieren</button><button id="scanRoleCardBtn" type="button" class="ghost">Weiteren QR-Code scannen</button><a class="button-like ghost" href="index.html">Zur Startseite</a></div><p id="joinStatus" class="status">Text erkannt.</p></section>`;
+      document.getElementById('copyScannedQrTextBtn')?.addEventListener('click',async()=>{
+        try{await navigator.clipboard.writeText(text); status('joinStatus','Text wurde kopiert.','ok');}
+        catch(_){status('joinStatus','Kopieren nicht möglich.','warning');}
+      });
+      document.getElementById('scanRoleCardBtn')?.addEventListener('click',openRoleScanner);
+    }else{
+      alert(text);
+    }
   }
 
   function closeRoleScanner(){
@@ -295,13 +333,7 @@
             raw=detectWithJsQr(video);
           }
           if(!raw) return;
-          const target=normalizeScannedRoleTarget(raw);
-          if(!target){
-            roleScannerStatus('QR erkannt, aber keine gültige Rollenkarten-Adresse.','warning');
-            return;
-          }
-          closeRoleScanner();
-          location.href=target;
+          handleAnyScannedQr(raw);
         }catch(err){
           // Bei einzelnen Erkennungsfehlern weiter scannen.
         }
@@ -320,7 +352,7 @@
     const intro=options.already
       ? 'Dieses Gerät ist bereits in dieser Gruppe registriert.'
       : 'Dein Gerät wurde erfolgreich dieser Gruppe zugeordnet.';
-    main.innerHTML=`<section class="join-card"><h1>${esc(title)}</h1><p><strong>${esc(name)}</strong>: ${esc(intro)}</p><p>Warte jetzt, bis die Gruppenleitung die Rollen verteilt hat. Scanne danach im nächsten Schritt den QR-Code deiner zugeteilten Rollenkarte.</p><div class="join-actions"><button id="scanRoleCardBtn" type="button">QR-Code Rollenkarte scannen</button><a class="button-like ghost" href="${esc(groupOverviewUrl(groupId))}">Zur Gruppenübersicht</a></div><p id="joinStatus" class="status ok">Du kannst jetzt auf die Rollenverteilung deiner Gruppe warten.</p></section>`;
+    main.innerHTML=`<section class="join-card"><h1>${esc(title)}</h1><p><strong>${esc(name)}</strong>: ${esc(intro)}</p><p>Warte jetzt, bis die Gruppenleitung die Rollen verteilt hat. Scanne danach im nächsten Schritt den QR-Code deiner Rollenkarte oder einen anderen benötigten QR-Code.</p><div class="join-actions"><button id="scanRoleCardBtn" type="button">QR-Code scannen</button><a class="button-like ghost" href="${esc(groupOverviewUrl(groupId))}">Zur Gruppenübersicht</a></div><p id="joinStatus" class="status ok">Du kannst jetzt auf die Rollenverteilung deiner Gruppe warten.</p></section>`;
     document.getElementById('scanRoleCardBtn')?.addEventListener('click', openRoleScanner);
   }
 
@@ -614,7 +646,7 @@
     if(select)select.value=detectDeviceType();
     document.getElementById('closeRoleScannerBtn')?.addEventListener('click', closeRoleScanner);
     document.getElementById('roleScannerModal')?.addEventListener('click', (e)=>{ if(e.target && e.target.id==='roleScannerModal') closeRoleScanner(); });
-    document.getElementById('openScannedRoleBtn')?.addEventListener('click', ()=>{ const value=document.getElementById('roleScanManual')?.value||''; const target=normalizeScannedRoleTarget(value); if(!target){ roleScannerStatus('Bitte einen gültigen Link zur Rollenkarte einfügen.','warning'); return; } closeRoleScanner(); location.href=target; });
+    document.getElementById('openScannedRoleBtn')?.addEventListener('click', ()=>{ const value=document.getElementById('roleScanManual')?.value||''; handleAnyScannedQr(value); });
     const already=await checkAlreadyJoinedOnJoinPage();
     if(already)return;
     document.getElementById('joinGroupBtn')?.addEventListener('click',()=>joinGroup().catch(e=>status('joinStatus',e.message,'warning')));

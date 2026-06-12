@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppe beitreten</title>
-  <link rel="stylesheet" href="css/styles.css?v=remove-role-personalizer-case-text-v129">
+  <link rel="stylesheet" href="css/styles.css?v=qr-scanner-unrestricted-v131">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .join-shell{width:min(720px,calc(100vw - 34px));margin:0 auto;padding:34px 0 44px;display:grid;gap:18px}
@@ -65,18 +65,18 @@
 
 <div id="roleScannerModal" class="scanner-modal" aria-hidden="true">
   <div class="scanner-box">
-    <div class="scanner-head"><h2>QR-Code Rollenkarte scannen</h2><button id="closeRoleScannerBtn" type="button" class="scanner-close" aria-label="Schließen">×</button></div>
-    <p>Scanne im nächsten Schritt den QR-Code deiner Rollenkarte. Der Scanner nutzt BarcodeDetector oder einen jsQR-Fallback. Erlaube den Kamerazugriff. Falls das Gerät das nicht unterstützt, füge den Link unten ein.</p>
+    <div class="scanner-head"><h2>QR-Code scannen</h2><button id="closeRoleScannerBtn" type="button" class="scanner-close" aria-label="Schließen">×</button></div>
+    <p>Scanne einen beliebigen QR-Code. Links werden direkt geöffnet; reine Textinhalte werden angezeigt. Der Scanner nutzt BarcodeDetector oder einen jsQR-Fallback. Erlaube den Kamerazugriff. Falls das Gerät das nicht unterstützt, füge den Inhalt unten ein.</p>
     <video id="roleScanVideo" playsinline muted></video>
     <div id="roleScannerStatus" class="scanner-status">Scanner wird vorbereitet …</div>
     <div class="scanner-fallback">
-      <input id="roleScanManual" type="text" placeholder="Alternativ Link der Rollenkarte einfügen …">
+      <input id="roleScanManual" type="text" placeholder="Alternativ QR-Inhalt oder Link einfügen …">
       <button id="openScannedRoleBtn" type="button">Öffnen</button>
     </div>
   </div>
 </div>
-<script src="js/config.js?v=remove-role-personalizer-case-text-v129"></script>
-<script src="js/app.js?v=remove-role-personalizer-case-text-v129"></script>
-<script src="js/group_session_v33.js?v=remove-role-personalizer-case-text-v129"></script>
+<script src="js/config.js?v=qr-scanner-unrestricted-v131"></script>
+<script src="js/app.js?v=qr-scanner-unrestricted-v131"></script>
+<script src="js/group_session_v33.js?v=qr-scanner-unrestricted-v131"></script>
 </body>
 </html>

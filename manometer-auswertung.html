@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Manometer – Auswertung</title>
-  <link rel="stylesheet" href="css/styles.css?v=nav-yellow-separator-remove-v135">
+  <link rel="stylesheet" href="css/styles.css?v=group-progress-refresh-button-style-v137">
   <style>
     :root{
       --bg:#091426; --bg2:#152745; --panel:rgba(255,255,255,.94);
@@ -213,6 +213,37 @@
   display:none!important;
 }
 
+
+/* v136: Abschlussfenster / rechte Zusammenfassungskachel scrollbar halten */
+.hero-grid{
+  min-height:0!important;
+  overflow:hidden!important;
+}
+.hero-side{
+  min-height:0!important;
+  max-height:100%!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+.hero-side .summary-list{
+  min-height:0!important;
+  max-height:100%!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding-right:8px!important;
+  overscroll-behavior:contain!important;
+  scrollbar-width:thin;
+}
+.hero-side .summary-list::-webkit-scrollbar{width:8px}
+.hero-side .summary-list::-webkit-scrollbar-thumb{background:#c8d8ea;border-radius:999px}
+.hero-side .summary-note{
+  flex:0 0 auto!important;
+}
+.slide-inner{
+  min-height:0!important;
+}
+
 </style>
 
 <style id="thanks_beige_hardfix_v116">
@@ -253,8 +284,8 @@
     <div id="entryPopupGrid" class="entry-popup-grid"></div>
   </div>
 </div>
-<script src="js/config.js?v=nav-yellow-separator-remove-v135"></script>
-<script src="js/app.js?v=nav-yellow-separator-remove-v135"></script>
+<script src="js/config.js?v=group-progress-refresh-button-style-v137"></script>
+<script src="js/app.js?v=group-progress-refresh-button-style-v137"></script>
 <script>
 (function(){
   var QUESTIONS=[

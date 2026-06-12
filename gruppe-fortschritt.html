@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gruppenfortschritt</title>
-  <link rel="stylesheet" href="css/styles.css?v=nav-yellow-separator-remove-v135">
+  <link rel="stylesheet" href="css/styles.css?v=group-progress-refresh-button-style-v137">
   <style>
     body{background:linear-gradient(135deg,#eef5fb,#f8fbff)}
     .progress-shell{width:min(1280px,calc(100vw - 36px));margin:0 auto;padding:26px 0 40px;display:grid;gap:18px}
@@ -40,9 +40,8 @@
 <header><div class="wrap topbar"><div><h1>Gruppenfortschritt</h1><p>Eigene Gruppenergebnisse und Feedbackstatus</p></div></div></header>
 <main class="progress-shell">
 
-  <button id="groupProgressRefreshCard" type="button" class="card highlight refresh-card-v134" aria-label="Gruppenfortschritt aktualisieren">
-    <h2>Aktualisieren</h2>
-    <p>Aktualisieren, um neu hinzugefügte Fortschritte und Inhalte korrekt darzustellen.</p>
+  <button id="groupProgressRefreshCard" type="button" class="refresh-card-v137" aria-label="Gruppenfortschritt aktualisieren">
+    Aktualisiere, um neu hinzugefügte Fortschritte und Inhalte korrekt darzustellen.
   </button>
 
   <section class="progress-hero">
@@ -75,8 +74,8 @@
     </aside>
   </section>
 </main>
-<script src="js/config.js?v=nav-yellow-separator-remove-v135"></script>
-<script src="js/app.js?v=nav-yellow-separator-remove-v135"></script>
+<script src="js/config.js?v=group-progress-refresh-button-style-v137"></script>
+<script src="js/app.js?v=group-progress-refresh-button-style-v137"></script>
 <script>
 (function(){
   function appUrl(){try{if(typeof getAppsScriptUrl==='function')return getAppsScriptUrl()}catch(_){}return(window.SUPERVISION_CONFIG&&window.SUPERVISION_CONFIG.APPS_SCRIPT_URL)||''}
